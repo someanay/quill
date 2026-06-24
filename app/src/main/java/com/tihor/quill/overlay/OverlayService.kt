@@ -1,14 +1,19 @@
 package com.tihor.quill.overlay
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 
 /**
  * Hosts the floating bubble in a [WindowManager] overlay window (spec §3.1). M1 is a plain started
@@ -28,7 +33,33 @@ class OverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        goForeground()
         addBubble()
+    }
+
+    /**
+     * Promote to a foreground service so the bubble survives the app being backgrounded. On
+     * MagicOS a plain *started* service (and its overlay) is trimmed the moment another app comes
+     * forward — defeating the whole "float over other apps" purpose. M1 uses the `specialUse` type
+     * since the recorder (and the microphone type) arrive at M4.
+     */
+    private fun goForeground() {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Quill bubble", NotificationManager.IMPORTANCE_LOW)
+                .apply { description = "Keeps the dictation bubble available over other apps." },
+        )
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Quill bubble active")
+            .setContentText("Tap the bubble to dictate.")
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setOngoing(true)
+            .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -106,10 +137,12 @@ class OverlayService : Service() {
 
     companion object {
         private const val TAG = "Quill.Overlay"
+        private const val CHANNEL_ID = "quill_overlay"
+        private const val NOTIFICATION_ID = 1
         const val ACTION_STOP = "com.tihor.quill.overlay.STOP"
 
         fun start(context: Context) {
-            context.startService(Intent(context, OverlayService::class.java))
+            ContextCompat.startForegroundService(context, Intent(context, OverlayService::class.java))
         }
 
         fun stop(context: Context) {

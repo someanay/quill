@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- M1: the bubble FGS runs as specialUse (no recorder yet). Switches to the microphone type
+         at M4 when OverlayService owns the AudioRecorder (spec §3.1 / §5). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
@@ -35,10 +38,16 @@
             </intent-filter>
         </activity>
 
-        <!-- Hosts the floating bubble overlay (M1). Becomes an FGS type=microphone at M4. -->
+        <!-- Hosts the floating bubble overlay (M1). foregroundServiceType becomes "microphone" at
+             M4 when it also owns the recorder (spec §3.1 / §5). -->
         <service
             android:name=".overlay.OverlayService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="floating_dictation_bubble_overlay" />
+        </service>
     </application>
 
 </manifest>

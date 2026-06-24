@@ -37,13 +37,25 @@ not proceed until build + tests + the manual script all pass, then commit.
 - [x] Draggable bubble via `WindowManager`, appears over other apps; dismiss via long-press (`OverlayService` + `BubbleView`). *Snooze stubbed into dismiss for M1.*
 - [x] Bubble visual states stubbed: idle / recording / transcribing / paste / error (`BubbleState`; tap cycles them; contrast-safe per spec §3.1 — drop shadow + white ring + state-coloured fill)
 - [x] **Test:** drag/snap/tap geometry isolated into pure `BubbleGeometry` + unit-tested (`BubbleGeometryTest`, 8 cases, green). Overlay rendering itself is the manual script (`testing_plan.md` §2).
-- [ ] **Verify:** bubble shows over a different app, drags, snaps to edge, cycles states, dismisses, survives backgrounding — **blocked on a device unlock** (phone is secure-locked; overlays don't render over the keyguard and the un-exported service can't be poked from adb). Code/build/install gate is green.
+- [~] **Verify:** Confirmed via adb on the Honor device — bubble **renders** (contrast-safe slate disc + white ring, screenshotted), **snaps to the right edge** on show (x = screenWidth − bubbleWidth), permission flow works, and the **overlay window persists across backgrounding** once it's an FGS (`dumpsys window`: same window id before/after opening Settings). **Still needs hands-on finger testing** (see below) — folded into the M3 physical-test stop.
 
-> **M1 notes:** Started service (not yet FGS) for M1 — a visible overlay window keeps the process
-> perceptible, so the bubble survives backgrounding without a notification; upgrades to
-> `foregroundServiceType="microphone"` at M4 (spec §5). Tap cycles states (no recorder yet);
-> long-press dismisses. Overlay permission granted for dev via
-> `adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow`.
+> **M1 notes & device findings (Honor BVL-N49 / MagicOS, Android 16):**
+> - **Pulled the FGS forward from M4 to M1.** A plain *started* service's overlay was trimmed by
+>   MagicOS the instant another app came forward — failing M1's "float over other apps". Fixed by
+>   running `OverlayService` as a foreground service now (`specialUse` type + low-priority
+>   notification; flips to `microphone` at M4 when it owns the recorder). Window now survives
+>   backgrounding.
+> - **MagicOS hides background-app overlays until Quill is whitelisted.** Even as an FGS, the overlay
+>   shows over our *own* app but `isOnScreen=false` over other apps until Quill is added to MagicOS
+>   **App launch management** (Auto-launch / Secondary launch / Run in background) + Battery
+>   **Unrestricted**. This is the documented Honor setup (`testing_plan.md` §2) the plan schedules
+>   before M4; it's needed at M1 here. Not settable via adb (HONOR PowerGenie, not a standard appop);
+>   doze-whitelist + RUN_IN_BACKGROUND appops did **not** override it.
+> - **adb-injected taps/swipes can't drive the bubble.** `input tap/swipe` follow *input focus*, so
+>   they land on MainActivity beneath the `FLAG_NOT_FOCUSABLE` overlay, never the bubble. Real finger
+>   touches hit-test to the top window. So tap-cycle / drag / long-press are verified by the
+>   unit-tested geometry (`BubbleGeometryTest`) + **physical** testing, not adb.
+> - Overlay permission granted for dev via `adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow`.
 
 ## M2 — Accessibility service skeleton
 - [ ] `accessibility_service_config.xml` per `spec.md` §4 (no `isAccessibilityTool`)

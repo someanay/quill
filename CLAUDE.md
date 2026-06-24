@@ -55,6 +55,23 @@ poorly and won't reproduce MagicOS's background-killing.
 # Accessibility service must be enabled via Settings.Secure (see M2).
 ```
 
+**Honor/MagicOS dev gotchas (learned on this device — save yourself the chase):**
+- **Whitelist Quill before trusting any background behaviour.** MagicOS hides background-app
+  *overlays* (the bubble shows over our own app but `isOnScreen=false` over others) and kills
+  background services until Quill is added to **App launch management** (Auto-launch / Secondary
+  launch / Run in background) + Battery **Unrestricted**. This is a physical Settings step (HONOR
+  PowerGenie) — **not** settable via adb; `dumpsys deviceidle whitelist +` and `RUN_IN_BACKGROUND`
+  appops do **not** override it. Verify overlay visibility with
+  `adb shell "dumpsys window windows | grep -A40 'u0 com.tihor.quill}:'"` → look at `isOnScreen=`.
+- **adb-injected `input tap`/`swipe` do not reach overlay windows.** They follow input focus, so
+  they hit the Activity beneath a `FLAG_NOT_FOCUSABLE` overlay, never the bubble. Bubble gestures
+  must be tested with a real finger; cover the math with unit tests (`BubbleGeometry`) instead.
+- **Screenshots:** capture on-device then pull — `adb shell screencap -p /sdcard/x.png` +
+  `adb pull`. Piping `adb exec-out screencap -p > x.png` through **PowerShell** corrupts the binary
+  (UTF-16/BOM); use the Bash tool or the pull approach.
+- The device secure-locks; visual checks need it unlocked. `adb shell svc power stayon true` keeps
+  the screen on while charging.
+
 ---
 
 ## Toolchain (this project is on a bleeding-edge, future-dated stack)
