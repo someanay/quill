@@ -168,12 +168,19 @@ not proceed until build + tests + the manual script all pass, then commit.
 > - **Dev trigger for the pipeline:** `am broadcast -a com.tihor.quill.DEBUG_SET_KEY --es key '<key>'`
 >   then `DEBUG_RECORD_START`/`_STOP` (debug builds).
 
-## M7 — Secrets & settings
-- [ ] `SecretStore`: Keystore AES-256-GCM; encrypt key blob; exclude from Auto Backup
-- [ ] API-key entry screen (validate by a test transcription)
-- [ ] `SettingsRepository` (DataStore): provider, model, language hint, private mode, session cap
-- [ ] **Test (write first):** `SecretStore` round-trip (encrypt→store→retrieve == original; ciphertext ≠ raw); `SettingsRepository` persistence; backup-exclusion check
-- [ ] **Verify:** key persists encrypted, survives restart, excluded from backup, never in logs; settings round-trip.
+## M7 — Secrets & settings ✅ (commit `feat: keystore secrets, settings, provider seam + Ink&Signal theme (M7)`)
+> **Design foundation established first** (design_system.md): `ui/theme` (Color/QuillColors/Theme/Shape/Type — hard-set Ink&Signal scheme, no dynamic colour) + `ui/components` (Wordmark, SectionHeader, StatusPill, Banner). Bubble restyled to §9 (brand/gold/busy gradients, gold listening halo + 1.8 s pulse, 2.5 dp white ring + drop shadow, mic/spinner/copy/bang glyphs, reduced-motion aware). Home/key/settings screens are on-design (verified via screenshots, dark theme).
+- [x] `SecretStore`: `KeystoreSecretStore` AES-256-GCM, non-exportable AndroidKeyStore key; ciphertext+IV in app-private files; **not** EncryptedSharedPreferences (deprecated). Excluded from Auto Backup (`data_extraction_rules.xml` + `backup_rules.xml`).
+- [x] API-key entry screen (`ApiKeyActivity`): masked monospace field, **validate by a test transcription** (`KeyValidator` — tiny silent WAV → Valid / Rejected / Unverified), encryption reassurance banner.
+- [x] `SettingsRepository` (DataStore): provider, model, language hint, cleanup, private mode, session cap, onboarding-complete. `SettingsActivity` on-design.
+- [x] **Provider seam:** `SttProvider` (Groq default + only v1-shipping; OpenAI/OpenRouter defined) + `TranscriptionClientFactory` — a second provider slots in behind `TranscriptionClient` (OpenRouter adapter drops in later). Only Groq is selectable/shipping in v1.
+- [x] **Test (write first):** `AesGcmCipherTest` (round-trip, ciphertext≠plaintext, fresh IV, wrong-key fails); `SettingsRepositoryTest` (Robolectric, defaults + round-trip).
+- [x] **Verify (adb on device):** key **persists encrypted** (`strings` on the blob shows no key), **survives force-stop+restart** (decrypts → Groq 401, not "no key"), **never in logs** (grep for key = empty), backup-excluded (config); settings round-trip (test). 51 unit tests green; R8 release builds.
+
+> **M7 notes:** Key is encrypted-at-rest immediately (the M6 in-memory `TempApiKeyHolder` is removed).
+> The **insert-vs-replace toggle** (tracked P1) was *not* added — it would be a no-op until the
+> insert-at-cursor logic exists; left as the tracked P1. `InkMeter` (§10) lands at M8 (mic-test).
+> Dev: `adb shell am broadcast -a com.tihor.quill.DEBUG_SET_KEY --es key '<key>'`.
 
 ## M8 — Onboarding flow
 - [ ] Sequential permission steps (mic → overlay → accessibility-with-disclosure), plain-language copy

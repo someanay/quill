@@ -23,13 +23,16 @@ import com.tihor.quill.accessibility.InsertResult
 import com.tihor.quill.accessibility.QuillAccessibilityService
 import com.tihor.quill.audio.AudioRecorder
 import com.tihor.quill.audio.StopReason
-import com.tihor.quill.secrets.TempApiKeyHolder
-import com.tihor.quill.stt.OpenAiCompatibleTranscriptionClient
+import com.tihor.quill.secrets.KeystoreSecretStore
+import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.settings.SettingsRepository
+import com.tihor.quill.settings.TranscriptionClientFactory
 import com.tihor.quill.stt.TranscriptionOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -51,12 +54,8 @@ class OverlayService : Service() {
     private var currentRecording: File? = null
     private var debugReceiver: BroadcastReceiver? = null
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
-    private val transcriptionClient by lazy {
-        OpenAiCompatibleTranscriptionClient(
-            baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
-            apiKey = { TempApiKeyHolder.key.orEmpty() }, // M7: SecretStore (Keystore-backed)
-        )
-    }
+    private val secretStore: SecretStore by lazy { KeystoreSecretStore(this) }
+    private val settingsRepository by lazy { SettingsRepository(this) }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -77,7 +76,8 @@ class OverlayService : Service() {
                 when (intent?.action) {
                     ACTION_DEBUG_RECORD_START -> bubble?.let { startRecording(it) }
                     ACTION_DEBUG_RECORD_STOP -> audioRecorder.requestStop()
-                    ACTION_DEBUG_SET_KEY -> TempApiKeyHolder.key = intent.getStringExtra("key")
+                    ACTION_DEBUG_SET_KEY ->
+                        intent.getStringExtra("key")?.let { secretStore.put(SecretStore.ALIAS_STT_KEY, it) }
                 }
             }
         }
@@ -210,16 +210,19 @@ class OverlayService : Service() {
      * the temp WAV is kept for retry; on a successful transcript+insert it is deleted (spec §4.3).
      */
     private fun transcribeAndInject(wav: File) {
-        if (!TempApiKeyHolder.isSet()) {
-            Log.w(TAG, "No API key set — enter one in the app (M7 adds secure storage).")
-            flash(bubble, BubbleState.ERROR)
-            return
-        }
         bubble?.state = BubbleState.TRANSCRIBING
         scope.launch {
-            val result = transcriptionClient.transcribe(
+            val key = secretStore.get(SecretStore.ALIAS_STT_KEY)
+            if (key.isNullOrBlank()) {
+                Log.w(TAG, "No API key set — add one in Quill settings.")
+                flash(bubble, BubbleState.ERROR)
+                return@launch
+            }
+            val settings = settingsRepository.settings.first()
+            val client = TranscriptionClientFactory.create(settings.provider, apiKey = { key })
+            val result = client.transcribe(
                 audio = wav,
-                opts = TranscriptionOptions(model = OpenAiCompatibleTranscriptionClient.GROQ_DEFAULT_MODEL),
+                opts = TranscriptionOptions(model = settings.sttModel, language = settings.languageHint),
             )
             result.fold(
                 onSuccess = { onTranscript(wav, it.text) },
