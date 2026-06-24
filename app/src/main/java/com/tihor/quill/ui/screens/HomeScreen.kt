@@ -2,6 +2,7 @@ package com.tihor.quill.ui.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.ui.app.QuillBottomNav
@@ -64,12 +67,16 @@ fun HomeScreen(nav: QuillNav) {
 
     var hasOverlay by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
     var bubbleOn by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
+    var a11yOn by remember { mutableStateOf(AccessibilityUtil.isServiceEnabled(context)) }
 
-    // Re-check the overlay grant whenever we resume (the user may toggle it in system settings).
+    // Re-check grants whenever we resume (the OS may revoke accessibility to save battery).
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) hasOverlay = OverlayPermission.isGranted(context)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasOverlay = OverlayPermission.isGranted(context)
+                a11yOn = AccessibilityUtil.isServiceEnabled(context)
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -113,6 +120,18 @@ fun HomeScreen(nav: QuillNav) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
+            if (!a11yOn) {
+                Banner(
+                    title = "Quill stopped typing into apps",
+                    text = "Accessibility is off — tap to switch it back on.",
+                    icon = Icons.Rounded.WarningAmber,
+                    kind = PillKind.ERROR,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clickable { nav.navigate(Screen.Recovery) },
+                )
+                Spacer(Modifier.padding(top = 6.dp))
+            }
             MasterToggleCard(on = bubbleOn, onToggle = ::setBubble)
 
             if (bubbleOn) {

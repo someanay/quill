@@ -12,6 +12,8 @@ import com.tihor.quill.ui.screens.BubbleAppearanceScreen
 import com.tihor.quill.ui.screens.CustomWordsScreen
 import com.tihor.quill.ui.screens.HistoryScreen
 import com.tihor.quill.ui.screens.HomeScreen
+import com.tihor.quill.ui.screens.CrashReportScreen
+import com.tihor.quill.ui.screens.PermissionRevokedScreen
 import com.tihor.quill.ui.screens.PrivacyScreen
 import com.tihor.quill.ui.screens.SettingsScreen
 import com.tihor.quill.ui.screens.SpeechModelScreen
@@ -35,5 +37,7 @@ fun QuillApp() {
         Screen.BubbleAppearance -> BubbleAppearanceScreen(nav)
         Screen.Advanced -> AdvancedScreen(nav)
         Screen.About -> AboutScreen(nav)
+        Screen.Recovery -> PermissionRevokedScreen(nav)
+        Screen.CrashReport -> CrashReportScreen(nav)
     }
 }

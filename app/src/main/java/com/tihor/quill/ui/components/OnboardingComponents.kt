@@ -24,7 +24,7 @@ import com.tihor.quill.ui.theme.BrandGradient
 import com.tihor.quill.ui.theme.GoldGradient
 import com.tihor.quill.ui.theme.quill
 
-enum class IllustrationVariant { BRAND, GOLD, OK }
+enum class IllustrationVariant { BRAND, GOLD, OK, ERROR }
 
 /** Permission/empty/success illustration (design_system.md §8.16). */
 @Composable
@@ -38,10 +38,12 @@ fun PermissionIllustration(
         IllustrationVariant.BRAND -> BrandGradient
         IllustrationVariant.GOLD -> GoldGradient
         IllustrationVariant.OK -> listOf(q.ok, q.ok)
+        IllustrationVariant.ERROR -> com.tihor.quill.ui.theme.ErrorGradient
     }
     val glow = when (variant) {
         IllustrationVariant.GOLD -> q.goldSoft
         IllustrationVariant.OK -> q.okSoft
+        IllustrationVariant.ERROR -> MaterialTheme.colorScheme.errorContainer
         else -> q.brandSoft
     }
     val ringColor = q.lineStrong

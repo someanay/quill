@@ -38,6 +38,10 @@ sealed interface Screen {
     data object BubbleAppearance : Screen
     data object Advanced : Screen
     data object About : Screen
+
+    // System states
+    data object Recovery : Screen
+    data object CrashReport : Screen
 }
 
 /** Minimal observable back stack: tabs reset to a single root; details push/pop. */

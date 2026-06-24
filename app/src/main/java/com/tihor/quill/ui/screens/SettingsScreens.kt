@@ -613,6 +613,11 @@ fun PrivacyScreen(nav: QuillNav) {
         SectionHeader("Diagnostics")
         QuillListContainer {
             SwitchRow("Share crash reports", crashReports, { crashReports = it }, "Only if a crash happens — you review first")
+            RowDivider()
+            QuillRow(
+                title = "See an example report", subtitle = "Exactly what a report contains",
+                onClick = { nav.navigate(Screen.CrashReport) }, trailing = { RowChevron() },
+            )
         }
         HelpText("Reports include the error, app version and device — never your audio, text, clipboard, or key.")
 
