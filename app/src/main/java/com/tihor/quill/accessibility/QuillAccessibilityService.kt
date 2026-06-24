@@ -100,6 +100,12 @@ class QuillAccessibilityService : AccessibilityService() {
     /** Package of the currently focused editable field (M9 history "target app"); null if none. */
     fun focusedPackageName(): String? = focusedEditable?.packageName?.toString()
 
+    /** True if an editable text field is focused right now — used to warn before recording starts. */
+    fun isEditableFocused(): Boolean {
+        val tracked = focusedEditable?.also { runCatching { it.refresh() } }
+        return (tracked ?: currentInputFocus())?.isEditable == true
+    }
+
     private fun currentInputFocus(): AccessibilityNodeInfo? =
         runCatching { findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
 

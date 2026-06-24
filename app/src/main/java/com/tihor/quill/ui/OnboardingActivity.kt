@@ -164,6 +164,21 @@ private fun OnboardingFlow(onFinish: () -> Unit) {
 
     BackHandler(enabled = step != Step.SPLASH) { back() }
 
+    // Accessibility enablement lags the toggle (the service binds asynchronously) and the settings
+    // screen returns no result — so poll while on this step and auto-advance the moment it's on,
+    // instead of leaving the user staring at "turn it on" after they already did.
+    LaunchedEffect(step) {
+        if (step == Step.ACC_ENABLE) {
+            while (step == Step.ACC_ENABLE) {
+                if (AccessibilityUtil.isServiceEnabled(context)) {
+                    step = Step.ALL_SET
+                    break
+                }
+                kotlinx.coroutines.delay(300)
+            }
+        }
+    }
+
     fun finishOnboarding() {
         scope.launch { settings.setOnboardingComplete(true) }
         if (OverlayPermission.isGranted(context)) OverlayService.start(context)

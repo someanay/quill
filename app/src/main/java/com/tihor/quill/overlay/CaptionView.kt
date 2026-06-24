@@ -31,7 +31,9 @@ class CaptionView(context: Context) : View(context) {
     private val padH = dp(12f)
     private val padV = dp(9f)
     private val shadowPad = dp(10f)
-    private val cardH = dp(40f)
+    private val cardH1 = dp(40f) // single line
+    private val cardH2 = dp(54f) // two lines (error / offline) — taller so they don't overlap
+    private fun cardH(): Float = if (lines().second != null) cardH2 else cardH1
     private val meterBars = 6
     private val barW = dp(2.5f)
     private val barGap = dp(2.5f)
@@ -85,18 +87,19 @@ class CaptionView(context: Context) : View(context) {
     }
 
     val viewWidth: Int get() = (contentWidth() + padH * 2 + shadowPad * 2).toInt()
-    val viewHeight: Int get() = (cardH + shadowPad * 2).toInt()
+    val viewHeight: Int get() = (cardH() + shadowPad * 2).toInt()
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(viewWidth, viewHeight)
     }
 
     override fun onDraw(canvas: Canvas) {
+        val cardH = cardH()
         val left = shadowPad
         val top = (height - cardH) / 2f
         val right = width - shadowPad
         val bottom = top + cardH
-        val radius = cardH / 2f
+        val radius = cardH1 / 2f
         canvas.drawRoundRect(RectF(left, top, right, bottom), radius, radius, cardPaint)
 
         val cy = (top + bottom) / 2f
@@ -121,9 +124,12 @@ class CaptionView(context: Context) : View(context) {
         if (sub == null) {
             canvas.drawText(lead, left + padH, cy + textPaint.textSize / 3f, textPaint)
         } else {
-            canvas.drawText(lead, left + padH, top + padV + textPaint.textSize, textPaint)
+            // Two lines: stack a leading + muted sub-line, centred, with a gap so they never overlap.
+            val gap = dp(6f)
+            val blockTop = cy - (textPaint.textSize + gap + subPaint.textSize) / 2f
+            canvas.drawText(lead, left + padH, blockTop + textPaint.textSize, textPaint)
             subPaint.color = 0xFF6E6E81.toInt() // muted
-            canvas.drawText(sub, left + padH, bottom - padV - subPaint.textSize / 3f, subPaint)
+            canvas.drawText(sub, left + padH, blockTop + textPaint.textSize + gap + subPaint.textSize, subPaint)
         }
     }
 }

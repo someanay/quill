@@ -262,20 +262,25 @@ class OverlayService : Service() {
      * → stop. The transcript + injection get wired between "stop" and "idle" at M5–M6.
      */
     private fun onBubbleTap(view: BubbleView) {
-        if (sensitiveActive && !audioRecorder.isRecording) {
-            // Board F4: refuse to record into password/banking fields; the bubble is already dimmed.
-            android.widget.Toast.makeText(
-                this, "Dictation is off in password fields — for your security.",
-                android.widget.Toast.LENGTH_SHORT,
-            ).show()
-            return
-        }
         if (audioRecorder.isRecording) {
             audioRecorder.requestStop() // onFinished updates the UI
             return
         }
+        if (sensitiveActive) {
+            // Board F4: refuse to record into password/banking fields; the bubble is already dimmed.
+            toast("Dictation is off in password fields — for your security.")
+            return
+        }
+        // Warn up front (not after the recording) if there's nowhere to insert the result.
+        if (QuillAccessibilityService.instance?.isEditableFocused() != true) {
+            toast("No text input selected!")
+            return
+        }
         startRecording(view)
     }
+
+    private fun toast(message: String) =
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
 
     private fun startRecording(view: BubbleView) {
         if (!audioRecorder.hasMicPermission()) {
