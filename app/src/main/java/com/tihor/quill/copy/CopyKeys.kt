@@ -98,6 +98,166 @@ object CopyKeys {
     const val HISTORY_CLEAR_BODY = "history.clear.body"
     const val HISTORY_CLEAR_CONFIRM = "history.clear.confirm"
 
+    // --- Home (overridable) ---
+    const val HOME_BANNER_A11Y_OFF_TEXT = "home.banner.a11y_off_text"
+    const val HOME_GROUP_TODAY = "home.group.today"
+    const val HOME_TODAY_DICTATIONS = "home.today.dictations"
+    const val HOME_TODAY_DICTATIONS_SUB = "home.today.dictations_sub"
+    const val HOME_TODAY_LAST_USED = "home.today.last_used"
+    const val HOME_TODAY_LAST_USED_SUB = "home.today.last_used_sub"
+    const val HOME_GROUP_TIP = "home.group.tip"
+    const val HOME_TIP_TITLE = "home.tip.title"
+    const val HOME_TIP_TEXT = "home.tip.text"
+    const val HOME_PAUSED_BANNER_TITLE = "home.paused.banner_title"
+    const val HOME_PAUSED_BANNER_TEXT = "home.paused.banner_text"
+    const val HOME_PAUSED_FOOTER = "home.paused.footer"
+    const val HOME_TOGGLE_ON_TITLE = "home.toggle.on_title"
+    const val HOME_TOGGLE_OFF_TITLE = "home.toggle.off_title"
+    const val HOME_TOGGLE_ON_SUB = "home.toggle.on_sub"
+    const val HOME_TOGGLE_OFF_SUB = "home.toggle.off_sub"
+
+    // --- Settings (overridable) ---
+    const val SETTINGS_TITLE = "settings.title"
+    const val SETTINGS_GROUP_DICTATION = "settings.group.dictation"
+    const val SETTINGS_GROUP_CAPTURE = "settings.group.capture"
+    const val SETTINGS_GROUP_PRIVACY = "settings.group.privacy"
+    const val SETTINGS_ROW_SPEECH_MODEL = "settings.row.speech_model"
+    const val SETTINGS_ROW_API_KEYS = "settings.row.api_keys"
+    const val SETTINGS_ROW_CLEANUP = "settings.row.cleanup"
+    const val SETTINGS_ROW_CUSTOM_WORDS = "settings.row.custom_words"
+    const val SETTINGS_KEYS_SET = "settings.keys.set"
+    const val SETTINGS_ROW_AUDIO = "settings.row.audio"
+    const val SETTINGS_ROW_BUBBLE = "settings.row.bubble"
+    const val SETTINGS_ROW_PRIVACY = "settings.row.privacy"
+    const val SETTINGS_ROW_ADVANCED = "settings.row.advanced"
+    const val SETTINGS_ROW_ABOUT = "settings.row.about"
+
+    const val SETTINGS_SPEECH_TITLE = "settings.speech.title"
+    const val SETTINGS_SPEECH_PROVIDER = "settings.speech.provider"
+    const val SETTINGS_SPEECH_PROVIDER_CUSTOM = "settings.speech.provider_custom"
+    const val SETTINGS_SPEECH_MODEL = "settings.speech.model"
+    const val SETTINGS_MODEL_TURBO_SUB = "settings.speech.model_turbo_sub"
+    const val SETTINGS_MODEL_ACCURATE_SUB = "settings.speech.model_accurate_sub"
+    const val SETTINGS_SPEECH_LANGUAGE = "settings.speech.language"
+    const val SETTINGS_LANG_EN = "settings.speech.lang_en"
+    const val SETTINGS_LANG_AUTO = "settings.speech.lang_auto"
+    const val SETTINGS_LANG_HI = "settings.speech.lang_hi"
+    const val SETTINGS_LANGUAGE_HELP = "settings.speech.language_help"
+
+    const val SETTINGS_KEYS_TITLE = "settings.keys.title"
+    const val SETTINGS_KEYS_EMPTY_TITLE = "settings.keys.empty_title"
+    const val SETTINGS_KEYS_EMPTY_BODY = "settings.keys.empty_body"
+    const val SETTINGS_KEYS_ADD = "settings.keys.add"
+    const val SETTINGS_KEYS_BANNER = "settings.keys.banner"
+    const val SETTINGS_KEYS_SECTION = "settings.keys.section"
+    const val SETTINGS_KEYS_ROLE_STT = "settings.keys.role_stt"
+    const val SETTINGS_KEYS_HELP = "settings.keys.help"
+    const val SETTINGS_KEYS_REPLACE = "settings.keys.replace"
+    const val SETTINGS_KEYS_TEST = "settings.keys.test"
+    const val SETTINGS_KEYS_REMOVE = "settings.keys.remove"
+
+    const val SETTINGS_CLEANUP_TITLE = "settings.cleanup.title"
+    const val SETTINGS_CLEANUP_TIDY_TITLE = "settings.cleanup.tidy_title"
+    const val SETTINGS_CLEANUP_TIDY_SUB = "settings.cleanup.tidy_sub"
+    const val SETTINGS_CLEANUP_WHAT = "settings.cleanup.what"
+    const val SETTINGS_CLEANUP_BEFORE = "settings.cleanup.before"
+    const val SETTINGS_CLEANUP_AFTER = "settings.cleanup.after"
+    const val SETTINGS_CLEANUP_MODEL = "settings.cleanup.model"
+    const val SETTINGS_CLEANUP_HELP = "settings.cleanup.help"
+
+    const val SETTINGS_WORDS_TITLE = "settings.words.title"
+    const val SETTINGS_WORDS_BODY = "settings.words.body"
+    const val SETTINGS_WORDS_EMPTY_TITLE = "settings.words.empty_title"
+    const val SETTINGS_WORDS_EMPTY_SUB = "settings.words.empty_sub"
+    const val SETTINGS_WORDS_ADD = "settings.words.add"
+
+    const val SETTINGS_AUDIO_TITLE = "settings.audio.title"
+    const val SETTINGS_AUDIO_START_STOP = "settings.audio.start_stop"
+    const val SETTINGS_AUDIO_TRIGGER = "settings.audio.trigger"
+    const val SETTINGS_AUDIO_TRIGGER_SUB = "settings.audio.trigger_sub"
+    const val SETTINGS_AUDIO_TRIGGER_VALUE = "settings.audio.trigger_value"
+    const val SETTINGS_AUDIO_HOLD = "settings.audio.hold"
+    const val SETTINGS_AUDIO_HOLD_SUB = "settings.audio.hold_sub"
+    const val SETTINGS_AUDIO_MAX_LENGTH = "settings.audio.max_length"
+    const val SETTINGS_AUDIO_AUTOSTOP = "settings.audio.autostop"
+    const val SETTINGS_AUDIO_SILENCE = "settings.audio.silence"
+    const val SETTINGS_AUDIO_SILENCE_SUB = "settings.audio.silence_sub"
+    const val SETTINGS_AUDIO_SILENCE_BANNER = "settings.audio.silence_banner"
+    const val SETTINGS_AUDIO_FORMAT = "settings.audio.format"
+    const val SETTINGS_AUDIO_FORMAT_SUB = "settings.audio.format_sub"
+    const val SETTINGS_AUDIO_FORMAT_VALUE = "settings.audio.format_value"
+
+    const val SETTINGS_PRIVACY_TITLE = "settings.privacy.title"
+    const val SETTINGS_PRIVACY_BANNER_TITLE = "settings.privacy.banner_title"
+    const val SETTINGS_PRIVACY_BANNER_TEXT = "settings.privacy.banner_text"
+    const val SETTINGS_PRIVACY_PRIVATE_MODE = "settings.privacy.private_mode"
+    const val SETTINGS_PRIVACY_PRIVATE_MODE_SUB = "settings.privacy.private_mode_sub"
+    const val SETTINGS_PRIVACY_HISTORY = "settings.privacy.history"
+    const val SETTINGS_PRIVACY_HISTORY_SUB = "settings.privacy.history_sub"
+    const val SETTINGS_PRIVACY_DIAGNOSTICS = "settings.privacy.diagnostics"
+    const val SETTINGS_PRIVACY_CRASH = "settings.privacy.crash"
+    const val SETTINGS_PRIVACY_CRASH_SUB = "settings.privacy.crash_sub"
+    const val SETTINGS_PRIVACY_EXAMPLE = "settings.privacy.example"
+    const val SETTINGS_PRIVACY_EXAMPLE_SUB = "settings.privacy.example_sub"
+    const val SETTINGS_PRIVACY_DIAG_HELP = "settings.privacy.diag_help"
+    const val SETTINGS_PRIVACY_PERMISSIONS = "settings.privacy.permissions"
+    const val SETTINGS_PRIVACY_MIC = "settings.privacy.mic"
+    const val SETTINGS_PRIVACY_ACCESSIBILITY = "settings.privacy.accessibility"
+
+    const val SETTINGS_BUBBLE_TITLE = "settings.bubble.title"
+    const val SETTINGS_BUBBLE_HELP = "settings.bubble.help"
+    const val SETTINGS_BUBBLE_PREVIEW_LIGHT = "settings.bubble.preview_light"
+    const val SETTINGS_BUBBLE_PREVIEW_DARK = "settings.bubble.preview_dark"
+    const val SETTINGS_BUBBLE_SIZE = "settings.bubble.size"
+    const val SETTINGS_BUBBLE_THEME = "settings.bubble.theme"
+
+    const val SETTINGS_ADVANCED_TITLE = "settings.advanced.title"
+    const val SETTINGS_ADVANCED_ENDPOINT = "settings.advanced.endpoint"
+    const val SETTINGS_ADVANCED_ENDPOINT_HELP = "settings.advanced.endpoint_help"
+    const val SETTINGS_ADVANCED_TIMEOUT = "settings.advanced.timeout"
+    const val SETTINGS_ADVANCED_TIMEOUT_SUB = "settings.advanced.timeout_sub"
+    const val SETTINGS_ADVANCED_TIMEOUT_VALUE = "settings.advanced.timeout_value"
+    const val SETTINGS_ADVANCED_KEEPALIVE = "settings.advanced.keepalive"
+    const val SETTINGS_ADVANCED_KEEPALIVE_SUB = "settings.advanced.keepalive_sub"
+    const val SETTINGS_ADVANCED_BATTERY = "settings.advanced.battery"
+    const val SETTINGS_ADVANCED_BATTERY_SUB = "settings.advanced.battery_sub"
+    const val SETTINGS_ADVANCED_RESET = "settings.advanced.reset"
+    const val SETTINGS_ADVANCED_RESET_SETTINGS = "settings.advanced.reset_settings"
+    const val SETTINGS_ADVANCED_CLEAR = "settings.advanced.clear"
+    const val SETTINGS_ADVANCED_CLEAR_CONFIRM_TITLE = "settings.advanced.clear_confirm_title"
+    const val SETTINGS_ADVANCED_CLEAR_CONFIRM_BODY = "settings.advanced.clear_confirm_body"
+    const val SETTINGS_ADVANCED_CLEAR_CONFIRM_CTA = "settings.advanced.clear_confirm_cta"
+
+    const val SETTINGS_ABOUT_TITLE = "settings.about.title"
+    const val SETTINGS_ABOUT_VERSION = "settings.about.version"
+    const val SETTINGS_ABOUT_PRIVACY_POLICY = "settings.about.privacy_policy"
+    const val SETTINGS_ABOUT_TERMS = "settings.about.terms"
+    const val SETTINGS_ABOUT_LICENSES = "settings.about.licenses"
+    const val SETTINGS_ABOUT_FEEDBACK = "settings.about.feedback"
+    const val SETTINGS_ABOUT_FOOTER = "settings.about.footer"
+
+    // --- System state (overridable; recovery title shared with Home) ---
+    const val SYSTEM_RECOVERY_TITLE = "system.recovery.title"
+    const val SYSTEM_RECOVERY_BANNER_TEXT = "system.recovery.banner_text"
+    const val SYSTEM_RECOVERY_HEADING = "system.recovery.heading"
+    const val SYSTEM_RECOVERY_BODY = "system.recovery.body"
+    const val SYSTEM_RECOVERY_CTA = "system.recovery.cta"
+    const val SYSTEM_RECOVERY_WHY = "system.recovery.why"
+    const val SYSTEM_CRASH_TITLE = "system.crash.title"
+    const val SYSTEM_CRASH_BODY = "system.crash.body"
+    const val SYSTEM_CRASH_BANNER = "system.crash.banner"
+    const val SYSTEM_CRASH_ALWAYS = "system.crash.always"
+    const val SYSTEM_CRASH_SEND = "system.crash.send"
+    const val SYSTEM_CRASH_DONT_SEND = "system.crash.dont_send"
+
+    // --- Shared values (overridable) ---
+    const val VALUE_ON = "value.on"
+    const val VALUE_OFF = "value.off"
+    const val VALUE_NONE = "value.none"
+    const val VALUE_GRANTED = "value.granted"
+    const val VALUE_VALID = "value.valid"
+    const val VALUE_CHECK = "value.check"
+
     // --- Compliance (binary-only; NEVER overridable) ---
     const val DISCLOSURE_TITLE = "compliance.accessibility.disclosure_title"
     const val DISCLOSURE_BODY = "compliance.accessibility.disclosure_body"
@@ -146,6 +306,51 @@ object CopyKeys {
             HISTORY_EMPTY_OFF_TITLE, HISTORY_EMPTY_OFF_BODY, HISTORY_EMPTY_OFF_CTA,
             HISTORY_SHEET_COPY, HISTORY_SHEET_SHARE, HISTORY_SHEET_DELETE,
             HISTORY_CLEAR_TITLE, HISTORY_CLEAR_BODY, HISTORY_CLEAR_CONFIRM,
+            HOME_BANNER_A11Y_OFF_TEXT, HOME_GROUP_TODAY, HOME_TODAY_DICTATIONS, HOME_TODAY_DICTATIONS_SUB,
+            HOME_TODAY_LAST_USED, HOME_TODAY_LAST_USED_SUB, HOME_GROUP_TIP, HOME_TIP_TITLE, HOME_TIP_TEXT,
+            HOME_PAUSED_BANNER_TITLE, HOME_PAUSED_BANNER_TEXT, HOME_PAUSED_FOOTER,
+            HOME_TOGGLE_ON_TITLE, HOME_TOGGLE_OFF_TITLE, HOME_TOGGLE_ON_SUB, HOME_TOGGLE_OFF_SUB,
+            SETTINGS_TITLE, SETTINGS_GROUP_DICTATION, SETTINGS_GROUP_CAPTURE, SETTINGS_GROUP_PRIVACY,
+            SETTINGS_ROW_SPEECH_MODEL, SETTINGS_ROW_API_KEYS, SETTINGS_ROW_CLEANUP, SETTINGS_ROW_CUSTOM_WORDS,
+            SETTINGS_KEYS_SET, SETTINGS_ROW_AUDIO, SETTINGS_ROW_BUBBLE, SETTINGS_ROW_PRIVACY,
+            SETTINGS_ROW_ADVANCED, SETTINGS_ROW_ABOUT,
+            SETTINGS_SPEECH_TITLE, SETTINGS_SPEECH_PROVIDER, SETTINGS_SPEECH_PROVIDER_CUSTOM,
+            SETTINGS_SPEECH_MODEL, SETTINGS_MODEL_TURBO_SUB, SETTINGS_MODEL_ACCURATE_SUB,
+            SETTINGS_SPEECH_LANGUAGE, SETTINGS_LANG_EN, SETTINGS_LANG_AUTO, SETTINGS_LANG_HI,
+            SETTINGS_LANGUAGE_HELP,
+            SETTINGS_KEYS_TITLE, SETTINGS_KEYS_EMPTY_TITLE, SETTINGS_KEYS_EMPTY_BODY, SETTINGS_KEYS_ADD,
+            SETTINGS_KEYS_BANNER, SETTINGS_KEYS_SECTION, SETTINGS_KEYS_ROLE_STT, SETTINGS_KEYS_HELP,
+            SETTINGS_KEYS_REPLACE, SETTINGS_KEYS_TEST, SETTINGS_KEYS_REMOVE,
+            SETTINGS_CLEANUP_TITLE, SETTINGS_CLEANUP_TIDY_TITLE, SETTINGS_CLEANUP_TIDY_SUB,
+            SETTINGS_CLEANUP_WHAT, SETTINGS_CLEANUP_BEFORE, SETTINGS_CLEANUP_AFTER,
+            SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP,
+            SETTINGS_WORDS_TITLE, SETTINGS_WORDS_BODY, SETTINGS_WORDS_EMPTY_TITLE, SETTINGS_WORDS_EMPTY_SUB,
+            SETTINGS_WORDS_ADD,
+            SETTINGS_AUDIO_TITLE, SETTINGS_AUDIO_START_STOP, SETTINGS_AUDIO_TRIGGER, SETTINGS_AUDIO_TRIGGER_SUB,
+            SETTINGS_AUDIO_TRIGGER_VALUE, SETTINGS_AUDIO_HOLD, SETTINGS_AUDIO_HOLD_SUB,
+            SETTINGS_AUDIO_MAX_LENGTH, SETTINGS_AUDIO_AUTOSTOP, SETTINGS_AUDIO_SILENCE,
+            SETTINGS_AUDIO_SILENCE_SUB, SETTINGS_AUDIO_SILENCE_BANNER, SETTINGS_AUDIO_FORMAT,
+            SETTINGS_AUDIO_FORMAT_SUB, SETTINGS_AUDIO_FORMAT_VALUE,
+            SETTINGS_PRIVACY_TITLE, SETTINGS_PRIVACY_BANNER_TITLE, SETTINGS_PRIVACY_BANNER_TEXT,
+            SETTINGS_PRIVACY_PRIVATE_MODE, SETTINGS_PRIVACY_PRIVATE_MODE_SUB, SETTINGS_PRIVACY_HISTORY,
+            SETTINGS_PRIVACY_HISTORY_SUB, SETTINGS_PRIVACY_DIAGNOSTICS, SETTINGS_PRIVACY_CRASH,
+            SETTINGS_PRIVACY_CRASH_SUB, SETTINGS_PRIVACY_EXAMPLE, SETTINGS_PRIVACY_EXAMPLE_SUB,
+            SETTINGS_PRIVACY_DIAG_HELP, SETTINGS_PRIVACY_PERMISSIONS, SETTINGS_PRIVACY_MIC,
+            SETTINGS_PRIVACY_ACCESSIBILITY,
+            SETTINGS_BUBBLE_TITLE, SETTINGS_BUBBLE_HELP, SETTINGS_BUBBLE_PREVIEW_LIGHT,
+            SETTINGS_BUBBLE_PREVIEW_DARK, SETTINGS_BUBBLE_SIZE, SETTINGS_BUBBLE_THEME,
+            SETTINGS_ADVANCED_TITLE, SETTINGS_ADVANCED_ENDPOINT, SETTINGS_ADVANCED_ENDPOINT_HELP,
+            SETTINGS_ADVANCED_TIMEOUT, SETTINGS_ADVANCED_TIMEOUT_SUB, SETTINGS_ADVANCED_TIMEOUT_VALUE,
+            SETTINGS_ADVANCED_KEEPALIVE, SETTINGS_ADVANCED_KEEPALIVE_SUB, SETTINGS_ADVANCED_BATTERY,
+            SETTINGS_ADVANCED_BATTERY_SUB, SETTINGS_ADVANCED_RESET, SETTINGS_ADVANCED_RESET_SETTINGS,
+            SETTINGS_ADVANCED_CLEAR, SETTINGS_ADVANCED_CLEAR_CONFIRM_TITLE,
+            SETTINGS_ADVANCED_CLEAR_CONFIRM_BODY, SETTINGS_ADVANCED_CLEAR_CONFIRM_CTA,
+            SETTINGS_ABOUT_TITLE, SETTINGS_ABOUT_VERSION, SETTINGS_ABOUT_PRIVACY_POLICY,
+            SETTINGS_ABOUT_TERMS, SETTINGS_ABOUT_LICENSES, SETTINGS_ABOUT_FEEDBACK, SETTINGS_ABOUT_FOOTER,
+            SYSTEM_RECOVERY_TITLE, SYSTEM_RECOVERY_BANNER_TEXT, SYSTEM_RECOVERY_HEADING, SYSTEM_RECOVERY_BODY,
+            SYSTEM_RECOVERY_CTA, SYSTEM_RECOVERY_WHY, SYSTEM_CRASH_TITLE, SYSTEM_CRASH_BODY,
+            SYSTEM_CRASH_BANNER, SYSTEM_CRASH_ALWAYS, SYSTEM_CRASH_SEND, SYSTEM_CRASH_DONT_SEND,
+            VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
             PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY, WELCOME_PRIVACY_PILL,

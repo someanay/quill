@@ -33,6 +33,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tihor.quill.accessibility.AccessibilityUtil
+import com.tihor.quill.copy.CopyKeys as K
+import com.tihor.quill.copy.copy
 import com.tihor.quill.ui.app.QuillNav
 import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.IllustrationVariant
@@ -51,7 +53,7 @@ import com.tihor.quill.ui.theme.quill
 fun PermissionRevokedScreen(nav: QuillNav) {
     val context = LocalContext.current
     Scaffold(
-        topBar = { QuillTopBar(title = { QuillTopBarTitle("Quill") }, onBack = nav::back) },
+        topBar = { QuillTopBar(title = { QuillTopBarTitle("Quill") }, onBack = nav::back) }, // copy-exempt
         modifier = Modifier.fillMaxSize(),
     ) { padding ->
         Column(
@@ -59,26 +61,26 @@ fun PermissionRevokedScreen(nav: QuillNav) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Banner(
-                title = "Quill stopped typing into apps",
-                text = "Your phone switched off Accessibility access — Quill can't insert text until it's back on.",
+                title = copy(K.SYSTEM_RECOVERY_TITLE),
+                text = copy(K.SYSTEM_RECOVERY_BANNER_TEXT),
                 icon = Icons.Rounded.WarningAmber, kind = PillKind.ERROR,
             )
             Spacer(Modifier.height(20.dp))
             PermissionIllustration(Icons.Rounded.AccessibilityNew, variant = IllustrationVariant.ERROR)
             Spacer(Modifier.height(18.dp))
-            Text("Let's switch it back on", style = MaterialTheme.typography.titleMedium)
+            Text(copy(K.SYSTEM_RECOVERY_HEADING), style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Some phones turn this off to save battery. Turning it back on takes two taps.",
+                copy(K.SYSTEM_RECOVERY_BODY),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(28.dp))
-            QuillPrimaryButton("Re-enable Accessibility", onClick = {
+            QuillPrimaryButton(copy(K.SYSTEM_RECOVERY_CTA), onClick = {
                 context.startActivity(AccessibilityUtil.settingsIntent())
             })
             Spacer(Modifier.height(10.dp))
-            QuillGhostButton("Why did this happen?", onClick = { /* OEM battery-manager explainer */ })
+            QuillGhostButton(copy(K.SYSTEM_RECOVERY_WHY), onClick = { /* OEM battery-manager explainer */ })
         }
     }
 }
@@ -90,39 +92,39 @@ fun CrashReportScreen(nav: QuillNav) {
     var alwaysSend by rememberSaveable { mutableStateOf(false) } // TODO(M11): persist opt-in
 
     Scaffold(
-        topBar = { QuillTopBar(title = { QuillTopBarTitle("Send crash report?") }, onBack = nav::back) },
+        topBar = { QuillTopBar(title = { QuillTopBarTitle(copy(K.SYSTEM_CRASH_TITLE)) }, onBack = nav::back) },
         modifier = Modifier.fillMaxSize(),
     ) { padding ->
         Column(
             Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         ) {
             Text(
-                "Quill closed unexpectedly last time. You can send a report to help fix it — here's exactly what it contains:",
+                copy(K.SYSTEM_CRASH_BODY),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted,
             )
             Spacer(Modifier.height(12.dp))
             CodeBlock(
                 included = listOf(
-                    "error: IllegalStateException",
-                    "screen: OverlayService.onStart",
-                    "app: 1.0.0 (build 1)",
-                    "device: Honor Magic6 Pro · A14",
+                    "error: IllegalStateException", // copy-exempt
+                    "screen: OverlayService.onStart", // copy-exempt
+                    "app: 1.0.0 (build 1)", // copy-exempt
+                    "device: Honor Magic6 Pro · A14", // copy-exempt
                 ),
-                excluded = listOf("no transcript text", "no audio", "no clipboard", "no API key"),
+                excluded = listOf("no transcript text", "no audio", "no clipboard", "no API key"), // copy-exempt
             )
             Spacer(Modifier.height(12.dp))
             Banner(
-                text = "Sent through your own share sheet — you choose the app, nothing auto-uploads.",
+                text = copy(K.SYSTEM_CRASH_BANNER),
                 icon = Icons.Rounded.Shield, kind = PillKind.OK,
             )
             Spacer(Modifier.height(12.dp))
             QuillListContainer {
-                QuillRow(title = "Always send reports automatically", trailing = {
+                QuillRow(title = copy(K.SYSTEM_CRASH_ALWAYS), trailing = {
                     Switch(checked = alwaysSend, onCheckedChange = { alwaysSend = it })
                 })
             }
             Spacer(Modifier.height(20.dp))
-            QuillPrimaryButton("Send via…", onClick = {
+            QuillPrimaryButton(copy(K.SYSTEM_CRASH_SEND), onClick = {
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, "Quill crash report\nerror: IllegalStateException\nscreen: OverlayService.onStart")
@@ -130,7 +132,7 @@ fun CrashReportScreen(nav: QuillNav) {
                 context.startActivity(Intent.createChooser(send, null))
             }, leadingIcon = Icons.Rounded.Share)
             Spacer(Modifier.height(10.dp))
-            QuillGhostButton("Don't send", onClick = nav::back)
+            QuillGhostButton(copy(K.SYSTEM_CRASH_DONT_SEND), onClick = nav::back)
         }
     }
 }

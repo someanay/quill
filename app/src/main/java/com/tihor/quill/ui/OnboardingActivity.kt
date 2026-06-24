@@ -405,15 +405,15 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
         Text(copy(K.KEY_BODY), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
         Spacer(Modifier.height(16.dp))
 
-        FieldLabel("Provider")
+        FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            QuillChip("Groq", selected = true, onClick = {})
-            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false)
-            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false)
-            QuillChip("Custom", selected = false, onClick = {}, enabled = false)
+            QuillChip("Groq", selected = true, onClick = {}) // copy-exempt
+            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false) // copy-exempt
+            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false) // copy-exempt
+            QuillChip(copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM), selected = false, onClick = {}, enabled = false)
         }
         Spacer(Modifier.height(16.dp))
 

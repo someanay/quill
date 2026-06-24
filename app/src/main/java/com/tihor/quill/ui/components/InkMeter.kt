@@ -37,7 +37,7 @@ fun InkMeter(
     val smoothed by animateFloatAsState(
         targetValue = target,
         animationSpec = tween(durationMillis = if (reduced) 0 else 110),
-        label = "inkMeterAmplitude",
+        label = "inkMeterAmplitude", // copy-exempt
     )
 
     val barWidth = (if (large) 5f else 4f).dp

@@ -59,6 +59,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.tihor.quill.accessibility.AccessibilityUtil
+import com.tihor.quill.copy.CopyKeys as K
+import com.tihor.quill.copy.copy
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.settings.QuillSettings
@@ -141,7 +143,7 @@ fun SettingsScreen(nav: QuillNav) {
         .count { secretStore.contains(it) }
 
     Scaffold(
-        topBar = { QuillTopBar(title = { QuillTopBarTitle("Settings") }) },
+        topBar = { QuillTopBar(title = { QuillTopBarTitle(copy(K.SETTINGS_TITLE)) }) },
         bottomBar = { QuillBottomNav(Screen.Settings, nav::switchTab) },
         modifier = Modifier.fillMaxSize(),
     ) { padding ->
@@ -153,67 +155,67 @@ fun SettingsScreen(nav: QuillNav) {
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 16.dp),
         ) {
-            SectionHeader("Dictation")
+            SectionHeader(copy(K.SETTINGS_GROUP_DICTATION))
             QuillListContainer {
                 QuillRow(
-                    leadIcon = Icons.Rounded.GraphicEq, title = "Speech & model",
+                    leadIcon = Icons.Rounded.GraphicEq, title = copy(K.SETTINGS_ROW_SPEECH_MODEL),
                     onClick = { nav.navigate(Screen.SpeechModel) },
                     trailing = { RowValueChevron("${settings.provider.displayName} · ${shortModel(settings.sttModel)}") },
                 )
                 RowDivider()
                 QuillRow(
-                    leadIcon = Icons.Rounded.Key, title = "API keys",
+                    leadIcon = Icons.Rounded.Key, title = copy(K.SETTINGS_ROW_API_KEYS),
                     onClick = { nav.navigate(Screen.ApiKeys) },
-                    trailing = { RowValueChevron(if (keyCount == 0) "None" else "$keyCount set") },
+                    trailing = { RowValueChevron(if (keyCount == 0) copy(K.VALUE_NONE) else copy(K.SETTINGS_KEYS_SET, keyCount)) },
                 )
                 RowDivider()
                 QuillRow(
-                    leadIcon = Icons.Rounded.AutoAwesome, title = "Clean up with AI",
+                    leadIcon = Icons.Rounded.AutoAwesome, title = copy(K.SETTINGS_ROW_CLEANUP),
                     onClick = { nav.navigate(Screen.AiCleanup) },
-                    trailing = { RowValueChevron(if (settings.cleanupEnabled) "On" else "Off") },
+                    trailing = { RowValueChevron(if (settings.cleanupEnabled) copy(K.VALUE_ON) else copy(K.VALUE_OFF)) },
                 )
                 RowDivider()
                 QuillRow(
-                    leadIcon = Icons.Rounded.Create, title = "Custom words",
+                    leadIcon = Icons.Rounded.Create, title = copy(K.SETTINGS_ROW_CUSTOM_WORDS),
                     onClick = { nav.navigate(Screen.CustomWords) },
-                    trailing = { RowValueChevron("0") },
+                    trailing = { RowValueChevron("0") }, // copy-exempt
                 )
             }
 
-            SectionHeader("Capture & bubble")
+            SectionHeader(copy(K.SETTINGS_GROUP_CAPTURE))
             QuillListContainer {
                 QuillRow(
                     leadIcon = Icons.Rounded.Mic, leadVariant = LeadIconVariant.GOLD,
-                    title = "Audio & recording",
+                    title = copy(K.SETTINGS_ROW_AUDIO),
                     onClick = { nav.navigate(Screen.AudioRecording) },
                     trailing = { RowChevron() },
                 )
                 RowDivider()
                 QuillRow(
-                    leadIcon = Icons.Rounded.PictureInPicture, title = "Bubble appearance",
+                    leadIcon = Icons.Rounded.PictureInPicture, title = copy(K.SETTINGS_ROW_BUBBLE),
                     onClick = { nav.navigate(Screen.BubbleAppearance) },
                     trailing = { RowChevron() },
                 )
             }
 
-            SectionHeader("Privacy & data")
+            SectionHeader(copy(K.SETTINGS_GROUP_PRIVACY))
             QuillListContainer {
                 QuillRow(
-                    leadIcon = Icons.Rounded.Shield, title = "Privacy",
+                    leadIcon = Icons.Rounded.Shield, title = copy(K.SETTINGS_ROW_PRIVACY),
                     onClick = { nav.navigate(Screen.Privacy) },
                     trailing = { RowChevron() },
                 )
                 RowDivider()
                 QuillRow(
                     leadIcon = Icons.Rounded.Layers, leadVariant = LeadIconVariant.PLAIN,
-                    title = "Advanced",
+                    title = copy(K.SETTINGS_ROW_ADVANCED),
                     onClick = { nav.navigate(Screen.Advanced) },
                     trailing = { RowChevron() },
                 )
                 RowDivider()
                 QuillRow(
                     leadIcon = Icons.Rounded.Info, leadVariant = LeadIconVariant.PLAIN,
-                    title = "About & legal",
+                    title = copy(K.SETTINGS_ROW_ABOUT),
                     onClick = { nav.navigate(Screen.About) },
                     trailing = { RowChevron() },
                 )
@@ -240,56 +242,53 @@ fun SpeechModelScreen(nav: QuillNav) {
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
-    DetailScaffold("Speech & model", nav) {
-        FieldLabel("Provider", Modifier.padding(top = 8.dp))
+    DetailScaffold(copy(K.SETTINGS_SPEECH_TITLE), nav) {
+        FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER), Modifier.padding(top = 8.dp))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Only Groq ships in v1; the rest are shown disabled so the roadmap is legible.
-            QuillChip("Groq", selected = true, onClick = {})
-            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false)
-            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false)
-            QuillChip("Custom", selected = false, onClick = {}, enabled = false)
+            QuillChip("Groq", selected = true, onClick = {}) // copy-exempt
+            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false) // copy-exempt
+            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false) // copy-exempt
+            QuillChip(copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM), selected = false, onClick = {}, enabled = false)
         }
 
-        FieldLabel("Model", Modifier.padding(top = 16.dp))
+        FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
         QuillListContainer {
             ModelRow(
-                "whisper-large-v3-turbo", "Fastest · recommended",
+                "whisper-large-v3-turbo", copy(K.SETTINGS_MODEL_TURBO_SUB), // copy-exempt
                 selected = settings.sttModel.contains("turbo"),
                 onClick = { scope.launch { repo.setSttModel("whisper-large-v3-turbo") } },
             )
             RowDivider()
             ModelRow(
-                "whisper-large-v3", "Most accurate",
+                "whisper-large-v3", copy(K.SETTINGS_MODEL_ACCURATE_SUB), // copy-exempt
                 selected = settings.sttModel == "whisper-large-v3",
                 onClick = { scope.launch { repo.setSttModel("whisper-large-v3") } },
             )
         }
 
-        FieldLabel("Spoken language", Modifier.padding(top = 16.dp))
+        FieldLabel(copy(K.SETTINGS_SPEECH_LANGUAGE), Modifier.padding(top = 16.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             QuillChip(
-                "English (Roman)",
+                copy(K.SETTINGS_LANG_EN),
                 selected = settings.languageHint == "en",
                 onClick = { scope.launch { repo.setLanguageHint("en") } },
             )
             QuillChip(
-                "Auto-detect",
+                copy(K.SETTINGS_LANG_AUTO),
                 selected = settings.languageHint == QuillSettings.LANGUAGE_AUTO,
                 onClick = { scope.launch { repo.setLanguageHint(QuillSettings.LANGUAGE_AUTO) } },
             )
             QuillChip(
-                "Hindi (Devanagari)",
+                copy(K.SETTINGS_LANG_HI),
                 selected = settings.languageHint == "hi",
                 onClick = { scope.launch { repo.setLanguageHint("hi") } },
             )
         }
-        HelpText(
-            "English keeps mixed Hindi-English speech in Roman script (\"aaj ka\"). " +
-                "Auto-detect or Hindi give native script.",
-        )
+        HelpText(copy(K.SETTINGS_LANGUAGE_HELP))
     }
 }
 
@@ -315,24 +314,24 @@ fun ApiKeysScreen(nav: QuillNav) {
     val secretStore = remember { KeystoreSecretStore(context) }
     var sttKey by rememberSaveable { mutableStateOf(secretStore.get(SecretStore.ALIAS_STT_KEY).orEmpty()) }
 
-    DetailScaffold("API keys", nav) {
+    DetailScaffold(copy(K.SETTINGS_KEYS_TITLE), nav) {
         if (sttKey.isBlank()) {
             // Empty state (C3c) — zero keys, just the invitation to add one.
             Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     com.tihor.quill.ui.components.PermissionIllustration(Icons.Rounded.Key)
                     Spacer(Modifier.height(20.dp))
-                    Text("No keys yet", style = MaterialTheme.typography.titleMedium)
+                    Text(copy(K.SETTINGS_KEYS_EMPTY_TITLE), style = MaterialTheme.typography.titleMedium)
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Quill needs a speech-to-text key to transcribe. Add one to start dictating again.",
+                        copy(K.SETTINGS_KEYS_EMPTY_BODY),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.quill.text2,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(24.dp))
                     com.tihor.quill.ui.components.QuillPrimaryButton(
-                        "Add a key", onClick = { nav.navigate(Screen.SpeechModel) },
+                        copy(K.SETTINGS_KEYS_ADD), onClick = { nav.navigate(Screen.SpeechModel) },
                         leadingIcon = Icons.Rounded.Key,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -341,21 +340,21 @@ fun ApiKeysScreen(nav: QuillNav) {
         } else {
             Spacer(Modifier.height(8.dp))
             Banner(
-                text = "Keys are encrypted in this device's keystore and never leave it or appear in logs.",
+                text = copy(K.SETTINGS_KEYS_BANNER),
                 icon = Icons.Rounded.Lock, kind = PillKind.OK,
             )
-            SectionHeader("Your keys")
+            SectionHeader(copy(K.SETTINGS_KEYS_SECTION))
             KeyCard(
-                role = "Speech-to-text", provider = "Groq",
+                role = copy(K.SETTINGS_KEYS_ROLE_STT), provider = "Groq", // copy-exempt
                 masked = mask(sttKey), roleIcon = Icons.Rounded.GraphicEq,
                 onRemove = { secretStore.clear(SecretStore.ALIAS_STT_KEY); sttKey = "" },
             )
             Spacer(Modifier.height(14.dp))
             com.tihor.quill.ui.components.QuillTonalButton(
-                "Add a key", onClick = { /* TODO(M7+): multi-key entry */ },
+                copy(K.SETTINGS_KEYS_ADD), onClick = { /* TODO(M7+): multi-key entry */ },
                 leadingIcon = Icons.Rounded.Key,
             )
-            HelpText("Your cleanup model reuses this key unless you add a separate one.")
+            HelpText(copy(K.SETTINGS_KEYS_HELP))
         }
     }
 }
@@ -376,7 +375,7 @@ private fun KeyCard(
                     Text(role, style = MaterialTheme.typography.titleMedium)
                     Text(provider, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.muted)
                 }
-                StatusPill("Valid", PillKind.OK)
+                StatusPill(copy(K.VALUE_VALID), PillKind.OK)
             }
             Spacer(Modifier.height(12.dp))
             Row(
@@ -389,11 +388,11 @@ private fun KeyCard(
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                LinkText("Replace") { }
+                LinkText(copy(K.SETTINGS_KEYS_REPLACE)) { }
                 Dot()
-                LinkText("Test again") { }
+                LinkText(copy(K.SETTINGS_KEYS_TEST)) { }
                 Dot()
-                LinkText("Remove", color = MaterialTheme.colorScheme.error, onClick = onRemove)
+                LinkText(copy(K.SETTINGS_KEYS_REMOVE), color = MaterialTheme.colorScheme.error, onClick = onRemove)
             }
         }
     }
@@ -429,7 +428,7 @@ private fun LinkText(text: String, color: Color = MaterialTheme.quill.brandInk, 
 
 @Composable
 private fun Dot() {
-    Text("·", color = MaterialTheme.quill.faint, style = MaterialTheme.typography.bodyMedium)
+    Text("·", color = MaterialTheme.quill.faint, style = MaterialTheme.typography.bodyMedium) // copy-exempt
 }
 
 private fun mask(key: String): String {
@@ -449,7 +448,7 @@ fun AiCleanupScreen(nav: QuillNav) {
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
-    DetailScaffold("Clean up with AI", nav) {
+    DetailScaffold(copy(K.SETTINGS_CLEANUP_TITLE), nav) {
         Spacer(Modifier.height(8.dp))
         QuillCard {
             Row(
@@ -459,9 +458,9 @@ fun AiCleanupScreen(nav: QuillNav) {
             ) {
                 com.tihor.quill.ui.components.LeadIcon(Icons.Rounded.AutoAwesome)
                 Column(Modifier.weight(1f)) {
-                    Text("Tidy my dictation", style = MaterialTheme.typography.titleMedium)
+                    Text(copy(K.SETTINGS_CLEANUP_TIDY_TITLE), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Remove filler, fix punctuation",
+                        copy(K.SETTINGS_CLEANUP_TIDY_SUB),
                         style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.muted,
                     )
                 }
@@ -472,18 +471,18 @@ fun AiCleanupScreen(nav: QuillNav) {
             }
         }
 
-        SectionHeader("What it does")
+        SectionHeader(copy(K.SETTINGS_CLEANUP_WHAT))
         QuillCard {
             Column(Modifier.padding(16.dp)) {
-                Text("Before", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint)
+                Text(copy(K.SETTINGS_CLEANUP_BEFORE), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint)
                 Text(
-                    "\"um so like can you send me the uh the report by friday\"",
+                    "\"um so like can you send me the uh the report by friday\"", // copy-exempt
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.text2,
                     modifier = Modifier.padding(top = 2.dp, bottom = 10.dp),
                 )
-                Text("After", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.brandInk)
+                Text(copy(K.SETTINGS_CLEANUP_AFTER), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.brandInk)
                 Text(
-                    "\"Can you send me the report by Friday?\"",
+                    "\"Can you send me the report by Friday?\"", // copy-exempt
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -492,9 +491,9 @@ fun AiCleanupScreen(nav: QuillNav) {
 
         Spacer(Modifier.height(14.dp))
         QuillListContainer {
-            QuillRow(title = "Cleanup model", trailing = { RowValueChevron("llama-3.3-70b") })
+            QuillRow(title = copy(K.SETTINGS_CLEANUP_MODEL), trailing = { RowValueChevron("llama-3.3-70b") }) // copy-exempt
         }
-        HelpText("If cleanup ever fails, your raw transcript is inserted instead — never blocked.")
+        HelpText(copy(K.SETTINGS_CLEANUP_HELP))
     }
 }
 
@@ -505,11 +504,11 @@ fun AiCleanupScreen(nav: QuillNav) {
 @Composable
 fun CustomWordsScreen(nav: QuillNav) {
     DetailScaffold(
-        "Custom words", nav,
+        copy(K.SETTINGS_WORDS_TITLE), nav,
         actions = {
             androidx.compose.material3.IconButton(onClick = { /* TODO(P1.5) */ }) {
                 Icon(
-                    Icons.Rounded.Add, contentDescription = "Add a word",
+                    Icons.Rounded.Add, contentDescription = copy(K.SETTINGS_WORDS_ADD),
                     tint = MaterialTheme.quill.brandInk,
                 )
             }
@@ -517,17 +516,17 @@ fun CustomWordsScreen(nav: QuillNav) {
     ) {
         Spacer(Modifier.height(8.dp))
         Text(
-            "Teach Quill names and terms it keeps mishearing. Each is matched and replaced after transcription.",
+            copy(K.SETTINGS_WORDS_BODY),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted,
             modifier = Modifier.padding(bottom = 14.dp),
         )
         // Placeholder until the substitution map ships (P1.5).
         QuillListContainer {
-            QuillRow(title = "No custom words yet", subtitle = "Tap + to add a name or term", trailing = {})
+            QuillRow(title = copy(K.SETTINGS_WORDS_EMPTY_TITLE), subtitle = copy(K.SETTINGS_WORDS_EMPTY_SUB), trailing = {})
         }
         Spacer(Modifier.height(14.dp))
         com.tihor.quill.ui.components.QuillTonalButton(
-            "Add a word", onClick = { /* TODO(P1.5) */ },
+            copy(K.SETTINGS_WORDS_ADD), onClick = { /* TODO(P1.5) */ },
             leadingIcon = Icons.Rounded.Add,
         )
     }
@@ -546,19 +545,19 @@ fun AudioRecordingScreen(nav: QuillNav) {
     var holdToTalk by rememberSaveable { mutableStateOf(false) } // TODO(M11): persist
     var stopOnSilence by rememberSaveable { mutableStateOf(true) } // TODO(M4): wire to recorder
 
-    DetailScaffold("Audio & recording", nav) {
-        FieldLabel("Start & stop", Modifier.padding(top = 8.dp))
+    DetailScaffold(copy(K.SETTINGS_AUDIO_TITLE), nav) {
+        FieldLabel(copy(K.SETTINGS_AUDIO_START_STOP), Modifier.padding(top = 8.dp))
         QuillListContainer {
-            QuillRow(title = "Trigger", subtitle = "How recording starts", trailing = { RowValueChevron("Tap to toggle") })
+            QuillRow(title = copy(K.SETTINGS_AUDIO_TRIGGER), subtitle = copy(K.SETTINGS_AUDIO_TRIGGER_SUB), trailing = { RowValueChevron(copy(K.SETTINGS_AUDIO_TRIGGER_VALUE)) })
             RowDivider()
-            SwitchRow("Hold-to-talk", holdToTalk, { holdToTalk = it }, "Press & hold for quick snippets")
+            SwitchRow(copy(K.SETTINGS_AUDIO_HOLD), holdToTalk, { holdToTalk = it }, copy(K.SETTINGS_AUDIO_HOLD_SUB))
         }
 
-        FieldLabel("Max recording length", Modifier.padding(top = 16.dp))
+        FieldLabel(copy(K.SETTINGS_AUDIO_MAX_LENGTH), Modifier.padding(top = 16.dp))
         QuillCard {
             Column(Modifier.padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Auto-stops at", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
+                    Text(copy(K.SETTINGS_AUDIO_AUTOSTOP), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
                     Text(formatCap(settings.sessionCapSeconds), style = MaterialTheme.typography.titleMedium)
                 }
                 Slider(
@@ -572,19 +571,19 @@ fun AudioRecordingScreen(nav: QuillNav) {
 
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
-            SwitchRow("Stop on silence", stopOnSilence, { stopOnSilence = it }, "End after a quiet pause")
+            SwitchRow(copy(K.SETTINGS_AUDIO_SILENCE), stopOnSilence, { stopOnSilence = it }, copy(K.SETTINGS_AUDIO_SILENCE_SUB))
         }
         Spacer(Modifier.height(10.dp))
         Banner(
-            text = "In very noisy places this may not trigger — the max-length limit always applies.",
+            text = copy(K.SETTINGS_AUDIO_SILENCE_BANNER),
             icon = Icons.Rounded.Info, kind = PillKind.LIVE,
         )
 
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
             QuillRow(
-                title = "Upload format", subtitle = "FLAC · smaller, lossless",
-                trailing = { Text("Recommended", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint) },
+                title = copy(K.SETTINGS_AUDIO_FORMAT), subtitle = copy(K.SETTINGS_AUDIO_FORMAT_SUB),
+                trailing = { Text(copy(K.SETTINGS_AUDIO_FORMAT_VALUE), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint) },
             )
         }
     }
@@ -609,50 +608,50 @@ fun PrivacyScreen(nav: QuillNav) {
     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     val a11yOn = AccessibilityUtil.isServiceEnabled(context)
 
-    DetailScaffold("Privacy", nav) {
+    DetailScaffold(copy(K.SETTINGS_PRIVACY_TITLE), nav) {
         Spacer(Modifier.height(8.dp))
         Banner(
-            title = "Nothing is collected by Quill.",
-            text = "Audio goes only to your provider; everything else stays on this phone.",
+            title = copy(K.SETTINGS_PRIVACY_BANNER_TITLE),
+            text = copy(K.SETTINGS_PRIVACY_BANNER_TEXT),
             icon = Icons.Rounded.Shield, kind = PillKind.OK,
         )
         Spacer(Modifier.height(14.dp))
         QuillListContainer {
             SwitchRow(
-                "Private mode", settings.privateMode,
-                { scope.launch { repo.setPrivateMode(it) } }, "Don't save any transcripts",
+                copy(K.SETTINGS_PRIVACY_PRIVATE_MODE), settings.privateMode,
+                { scope.launch { repo.setPrivateMode(it) } }, copy(K.SETTINGS_PRIVACY_PRIVATE_MODE_SUB),
             )
             RowDivider()
             SwitchRow(
-                "Save dictation history",
+                copy(K.SETTINGS_PRIVACY_HISTORY),
                 settings.historyEnabled,
                 { scope.launch { repo.setHistoryEnabled(it) } },
-                "Keep the last 1,000 on device",
+                copy(K.SETTINGS_PRIVACY_HISTORY_SUB),
             )
         }
 
-        SectionHeader("Diagnostics")
+        SectionHeader(copy(K.SETTINGS_PRIVACY_DIAGNOSTICS))
         QuillListContainer {
-            SwitchRow("Share crash reports", crashReports, { crashReports = it }, "Only if a crash happens — you review first")
+            SwitchRow(copy(K.SETTINGS_PRIVACY_CRASH), crashReports, { crashReports = it }, copy(K.SETTINGS_PRIVACY_CRASH_SUB))
             RowDivider()
             QuillRow(
-                title = "See an example report", subtitle = "Exactly what a report contains",
+                title = copy(K.SETTINGS_PRIVACY_EXAMPLE), subtitle = copy(K.SETTINGS_PRIVACY_EXAMPLE_SUB),
                 onClick = { nav.navigate(Screen.CrashReport) }, trailing = { RowChevron() },
             )
         }
-        HelpText("Reports include the error, app version and device — never your audio, text, clipboard, or key.")
+        HelpText(copy(K.SETTINGS_PRIVACY_DIAG_HELP))
 
-        SectionHeader("Permissions")
+        SectionHeader(copy(K.SETTINGS_PRIVACY_PERMISSIONS))
         QuillListContainer {
             QuillRow(
-                leadIcon = Icons.Rounded.Mic, leadVariant = LeadIconVariant.PLAIN, title = "Microphone",
-                trailing = { StatusPill(if (micGranted) "Granted" else "Off", if (micGranted) PillKind.OK else PillKind.ERROR) },
+                leadIcon = Icons.Rounded.Mic, leadVariant = LeadIconVariant.PLAIN, title = copy(K.SETTINGS_PRIVACY_MIC),
+                trailing = { StatusPill(if (micGranted) copy(K.VALUE_GRANTED) else copy(K.VALUE_OFF), if (micGranted) PillKind.OK else PillKind.ERROR) },
             )
             RowDivider()
             QuillRow(
                 leadIcon = Icons.Rounded.AccessibilityNew,
-                leadVariant = LeadIconVariant.PLAIN, title = "Accessibility",
-                trailing = { StatusPill(if (a11yOn) "On" else "Off", if (a11yOn) PillKind.OK else PillKind.ERROR) },
+                leadVariant = LeadIconVariant.PLAIN, title = copy(K.SETTINGS_PRIVACY_ACCESSIBILITY),
+                trailing = { StatusPill(if (a11yOn) copy(K.VALUE_ON) else copy(K.VALUE_OFF), if (a11yOn) PillKind.OK else PillKind.ERROR) },
             )
         }
     }
@@ -668,7 +667,7 @@ fun BubbleAppearanceScreen(nav: QuillNav) {
     var size by rememberSaveable { mutableStateOf("Medium") } // TODO(M11): persist
     var theme by rememberSaveable { mutableStateOf("Match system") } // TODO(M11): persist
 
-    DetailScaffold("Bubble appearance", nav) {
+    DetailScaffold(copy(K.SETTINGS_BUBBLE_TITLE), nav) {
         Spacer(Modifier.height(8.dp))
         QuillCard {
             Row(
@@ -676,22 +675,22 @@ fun BubbleAppearanceScreen(nav: QuillNav) {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PreviewTile(Color(0xFFF0F1F6), "Light app", Color(0xFF9A9AAC))
-                PreviewTile(Color(0xFF15161C), "Dark app", Color(0xFF888888))
+                PreviewTile(Color(0xFFF0F1F6), copy(K.SETTINGS_BUBBLE_PREVIEW_LIGHT), Color(0xFF9A9AAC))
+                PreviewTile(Color(0xFF15161C), copy(K.SETTINGS_BUBBLE_PREVIEW_DARK), Color(0xFF888888))
             }
         }
-        HelpText("The light ring keeps the bubble visible on any background.", Modifier.fillMaxWidth())
+        HelpText(copy(K.SETTINGS_BUBBLE_HELP), Modifier.fillMaxWidth())
 
-        FieldLabel("Size", Modifier.padding(top = 16.dp))
+        FieldLabel(copy(K.SETTINGS_BUBBLE_SIZE), Modifier.padding(top = 16.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Small", "Medium", "Large").forEach {
+            listOf("Small", "Medium", "Large").forEach { // copy-exempt
                 QuillChip(it, selected = size == it, onClick = { size = it })
             }
         }
 
-        FieldLabel("Theme", Modifier.padding(top = 16.dp))
+        FieldLabel(copy(K.SETTINGS_BUBBLE_THEME), Modifier.padding(top = 16.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Match system", "Light", "Dark").forEach {
+            listOf("Match system", "Light", "Dark").forEach { // copy-exempt
                 QuillChip(it, selected = theme == it, onClick = { theme = it })
             }
         }
@@ -724,43 +723,43 @@ fun AdvancedScreen(nav: QuillNav) {
     var keepAlive by rememberSaveable { mutableStateOf(true) } // TODO(M11): persist
     var showClearConfirm by rememberSaveable { mutableStateOf(false) }
 
-    DetailScaffold("Advanced", nav) {
-        FieldLabel("Custom endpoint (base URL)", Modifier.padding(top = 8.dp))
+    DetailScaffold(copy(K.SETTINGS_ADVANCED_TITLE), nav) {
+        FieldLabel(copy(K.SETTINGS_ADVANCED_ENDPOINT), Modifier.padding(top = 8.dp))
         OutlinedTextField(
             value = baseUrl,
             onValueChange = { baseUrl = it },
             singleLine = true,
-            placeholder = { Text("https://api.groq.com/openai/v1", style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
+            placeholder = { Text("https://api.groq.com/openai/v1", style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) }, // copy-exempt
             leadingIcon = { Icon(Icons.Rounded.Language, contentDescription = null) },
             textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
             shape = MaterialTheme.shapes.small,
             modifier = Modifier.fillMaxWidth(),
         )
-        HelpText("For any OpenAI-compatible provider. Changing this re-validates your key.")
+        HelpText(copy(K.SETTINGS_ADVANCED_ENDPOINT_HELP))
 
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
-            QuillRow(title = "Request timeout", subtitle = "Give up after…", trailing = { RowValueChevron("30 s") })
+            QuillRow(title = copy(K.SETTINGS_ADVANCED_TIMEOUT), subtitle = copy(K.SETTINGS_ADVANCED_TIMEOUT_SUB), trailing = { RowValueChevron(copy(K.SETTINGS_ADVANCED_TIMEOUT_VALUE)) })
             RowDivider()
-            SwitchRow("Keep bubble alive aggressively", keepAlive, { keepAlive = it }, "Helps on phones that kill apps")
+            SwitchRow(copy(K.SETTINGS_ADVANCED_KEEPALIVE), keepAlive, { keepAlive = it }, copy(K.SETTINGS_ADVANCED_KEEPALIVE_SUB))
             RowDivider()
             QuillRow(
-                title = "Battery exemption", subtitle = "Allow running unrestricted",
-                trailing = { StatusPill("Check", PillKind.INFO) },
+                title = copy(K.SETTINGS_ADVANCED_BATTERY), subtitle = copy(K.SETTINGS_ADVANCED_BATTERY_SUB),
+                trailing = { StatusPill(copy(K.VALUE_CHECK), PillKind.INFO) },
             )
         }
 
-        SectionHeader("Reset")
+        SectionHeader(copy(K.SETTINGS_ADVANCED_RESET))
         QuillListContainer {
             QuillRow(
                 leadIcon = Icons.Rounded.RestartAlt, leadVariant = LeadIconVariant.PLAIN,
-                title = "Reset settings to default",
+                title = copy(K.SETTINGS_ADVANCED_RESET_SETTINGS),
                 onClick = { /* TODO(M7): reset DataStore */ }, trailing = { RowChevron() },
             )
             RowDivider()
             QuillRow(
                 leadIcon = Icons.Rounded.DeleteOutline, leadVariant = LeadIconVariant.ERROR,
-                title = "Clear all data & keys", titleColor = MaterialTheme.colorScheme.error,
+                title = copy(K.SETTINGS_ADVANCED_CLEAR), titleColor = MaterialTheme.colorScheme.error,
                 onClick = { showClearConfirm = true }, trailing = { RowChevron() },
             )
         }
@@ -769,9 +768,9 @@ fun AdvancedScreen(nav: QuillNav) {
     if (showClearConfirm) {
         ConfirmDialog(
             icon = Icons.Rounded.DeleteOutline,
-            title = "Clear all data & keys?",
-            body = "This removes your saved key and resets every setting on this device. It can't be undone.",
-            confirmLabel = "Clear everything",
+            title = copy(K.SETTINGS_ADVANCED_CLEAR_CONFIRM_TITLE),
+            body = copy(K.SETTINGS_ADVANCED_CLEAR_CONFIRM_BODY),
+            confirmLabel = copy(K.SETTINGS_ADVANCED_CLEAR_CONFIRM_CTA),
             onConfirm = {
                 secretStore.clear(SecretStore.ALIAS_STT_KEY)
                 secretStore.clear(SecretStore.ALIAS_LLM_KEY)
@@ -788,33 +787,33 @@ fun AdvancedScreen(nav: QuillNav) {
 
 @Composable
 fun AboutScreen(nav: QuillNav) {
-    DetailScaffold("About", nav) {
+    DetailScaffold(copy(K.SETTINGS_ABOUT_TITLE), nav) {
         Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             com.tihor.quill.ui.components.PermissionIllustration(com.tihor.quill.ui.components.QuillIcons.Feather)
             Spacer(Modifier.height(10.dp))
             Text(
-                "Quill",
+                "Quill", // copy-exempt
                 style = MaterialTheme.typography.titleLarge.copy(fontFamily = com.tihor.quill.ui.theme.WordmarkFont),
             )
             Text(
-                "Version ${com.tihor.quill.BuildConfig.VERSION_NAME} · build ${com.tihor.quill.BuildConfig.VERSION_CODE}",
+                copy(K.SETTINGS_ABOUT_VERSION, com.tihor.quill.BuildConfig.VERSION_NAME, com.tihor.quill.BuildConfig.VERSION_CODE),
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint,
                 modifier = Modifier.padding(top = 2.dp),
             )
         }
         Spacer(Modifier.height(8.dp))
         QuillListContainer {
-            QuillRow(title = "Privacy Policy", onClick = {}, trailing = { RowChevron() })
+            QuillRow(title = copy(K.SETTINGS_ABOUT_PRIVACY_POLICY), onClick = {}, trailing = { RowChevron() })
             RowDivider()
-            QuillRow(title = "Terms of Service", onClick = {}, trailing = { RowChevron() })
+            QuillRow(title = copy(K.SETTINGS_ABOUT_TERMS), onClick = {}, trailing = { RowChevron() })
             RowDivider()
-            QuillRow(title = "Open-source licenses", onClick = {}, trailing = { RowChevron() })
+            QuillRow(title = copy(K.SETTINGS_ABOUT_LICENSES), onClick = {}, trailing = { RowChevron() })
             RowDivider()
-            QuillRow(title = "Send feedback", onClick = {}, trailing = { RowChevron() })
+            QuillRow(title = copy(K.SETTINGS_ABOUT_FEEDBACK), onClick = {}, trailing = { RowChevron() })
         }
         Spacer(Modifier.height(24.dp))
         Text(
-            "Made for people who'd rather talk than type.",
+            copy(K.SETTINGS_ABOUT_FOOTER),
             style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )

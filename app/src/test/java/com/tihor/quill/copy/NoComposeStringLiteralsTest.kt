@@ -5,41 +5,48 @@ import org.junit.Test
 import java.io.File
 
 /**
- * CI/lint guard (spec §2.3 / M8): no hardcoded user-facing string literals in composables — copy is
- * read by key via `copy(CopyKeys.X)`. Scans the on-design onboarding flow (the first fully-keyed
- * flow). Extend [SCANNED] as more screens migrate to the Copy Catalog.
+ * CI/lint guard (spec §2.3): no hardcoded user-facing string literals in the UI — copy is read by key
+ * via `copy(CopyKeys.X)`. Scans **every** `.kt` under `ui/` recursively (screens, app, components) so
+ * a new screen can't silently drift back to literals. A line tagged `// copy-exempt` is skipped, so
+ * the rare genuine non-UI string (brand name, model id, demo/sample data) is visible in diffs.
  */
 class NoComposeStringLiteralsTest {
 
-    private val scanned = listOf(
-        "src/main/java/com/tihor/quill/ui/OnboardingActivity.kt",
-        "src/main/java/com/tihor/quill/ui/screens/HistoryScreen.kt",
+    // Each flags a user-facing string literal. `\"` = a literal double-quote opening a Kotlin string.
+    private val patterns = listOf(
+        Regex("Text\\s*\\(\\s*\""), // Text("…")
+        Regex("\\b(?:title|text|subtitle|label|placeholder)\\s*=\\s*\""), // named-arg literals (Banner/QuillRow/fields)
+        Regex(
+            "\\b(?:QuillPrimaryButton|QuillTonalButton|QuillGhostButton|QuillDangerButton|" +
+                "QuillChip|FieldLabel|HelpText|SectionHeader|QuillTopBarTitle)\\s*\\(\\s*\"",
+        ), // text-first component literals
     )
 
     @Test
-    fun onboardingComposables_useCopyKeys_notTextLiterals() {
-        // Matches a Text( call whose first argument is a string literal, e.g. Text("hello").
-        val textLiteral = Regex("Text\\s*\\(\\s*\"")
+    fun uiComposables_useCopyKeys_notLiterals() {
+        val base = baseUiDir()
         val offenders = mutableListOf<String>()
-        var filesFound = 0
-
-        for (rel in scanned) {
-            val file = resolve(rel) ?: continue
-            filesFound++
-            file.readLines().forEachIndexed { index, line ->
-                if (textLiteral.containsMatchIn(line)) {
-                    offenders += "${file.name}:${index + 1}: ${line.trim()}"
+        base.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
+            file.readLines().forEachIndexed { i, line ->
+                if (line.contains("copy-exempt")) return@forEachIndexed
+                if (patterns.any { it.containsMatchIn(line) }) {
+                    offenders += "${file.relativeTo(base)}:${i + 1}: ${line.trim()}"
                 }
             }
         }
-
-        assertTrue("Could not locate source files to scan (working dir issue).", filesFound > 0)
+        if (offenders.isNotEmpty()) {
+            println("Copy-Catalog offenders (${offenders.size}):\n" + offenders.joinToString("\n"))
+        }
         assertTrue(
-            "Hardcoded Text(\"…\") literals found — use copy(CopyKeys.X):\n${offenders.joinToString("\n")}",
+            "User-facing string literals in ui/ — use copy(CopyKeys.X) or mark // copy-exempt:\n" +
+                offenders.joinToString("\n"),
             offenders.isEmpty(),
         )
     }
 
-    private fun resolve(rel: String): File? =
-        listOf(File(rel), File("app/$rel")).firstOrNull { it.exists() }
+    private fun baseUiDir(): File = listOf(
+        File("app/src/main/java/com/tihor/quill/ui"),
+        File("src/main/java/com/tihor/quill/ui"),
+    ).firstOrNull { it.isDirectory }
+        ?: error("Could not locate ui/ source dir (working dir = ${File("").absolutePath})")
 }

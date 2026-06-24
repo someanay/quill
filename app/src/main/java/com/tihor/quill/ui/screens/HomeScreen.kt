@@ -40,6 +40,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.tihor.quill.accessibility.AccessibilityUtil
+import com.tihor.quill.copy.CopyKeys as K
+import com.tihor.quill.copy.copy
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.ui.app.QuillBottomNav
@@ -122,8 +124,8 @@ fun HomeScreen(nav: QuillNav) {
         ) {
             if (!a11yOn) {
                 Banner(
-                    title = "Quill stopped typing into apps",
-                    text = "Accessibility is off — tap to switch it back on.",
+                    title = copy(K.SYSTEM_RECOVERY_TITLE),
+                    text = copy(K.HOME_BANNER_A11Y_OFF_TEXT),
                     icon = Icons.Rounded.WarningAmber,
                     kind = PillKind.ERROR,
                     modifier = Modifier
@@ -135,43 +137,43 @@ fun HomeScreen(nav: QuillNav) {
             MasterToggleCard(on = bubbleOn, onToggle = ::setBubble)
 
             if (bubbleOn) {
-                SectionHeader("Today")
+                SectionHeader(copy(K.HOME_GROUP_TODAY))
                 QuillListContainer {
                     QuillRow(
                         leadIcon = Icons.Rounded.GraphicEq,
                         leadVariant = LeadIconVariant.GOLD,
-                        title = "0 dictations",
-                        subtitle = "No words written yet today",
+                        title = copy(K.HOME_TODAY_DICTATIONS),
+                        subtitle = copy(K.HOME_TODAY_DICTATIONS_SUB),
                     )
                     RowDivider()
                     QuillRow(
                         leadIcon = Icons.Rounded.Schedule,
                         leadVariant = LeadIconVariant.PLAIN,
-                        title = "Last used",
-                        subtitle = "Not yet — tap the bubble in any app",
+                        title = copy(K.HOME_TODAY_LAST_USED),
+                        subtitle = copy(K.HOME_TODAY_LAST_USED_SUB),
                         onClick = { nav.switchTab(Screen.History) },
                         trailing = { RowChevron() },
                     )
                 }
 
-                SectionHeader("Tip")
+                SectionHeader(copy(K.HOME_GROUP_TIP))
                 Banner(
-                    title = "Long-press the bubble to move it.",
-                    text = "Drop it anywhere along the edge.",
+                    title = copy(K.HOME_TIP_TITLE),
+                    text = copy(K.HOME_TIP_TEXT),
                     icon = Icons.Rounded.Info,
                     kind = PillKind.INFO,
                 )
             } else {
                 Spacer(Modifier.padding(top = 14.dp))
                 Banner(
-                    title = "Turn Quill on to bring back the bubble.",
-                    text = "Nothing runs in the background while it's off.",
+                    title = copy(K.HOME_PAUSED_BANNER_TITLE),
+                    text = copy(K.HOME_PAUSED_BANNER_TEXT),
                     icon = Icons.Rounded.Info,
                     kind = PillKind.LIVE,
                 )
                 Column(Modifier.fillMaxWidth().weight(1f), verticalArrangement = Arrangement.Bottom) {
                     Text(
-                        "No dictations while paused",
+                        copy(K.HOME_PAUSED_FOOTER),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.quill.muted,
                         textAlign = TextAlign.Center,
@@ -203,11 +205,11 @@ private fun MasterToggleCard(on: Boolean, onToggle: (Boolean) -> Unit) {
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (on) "Quill is on" else "Quill is paused",
+                    if (on) copy(K.HOME_TOGGLE_ON_TITLE) else copy(K.HOME_TOGGLE_OFF_TITLE),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    if (on) "Bubble is floating & ready" else "The bubble is hidden",
+                    if (on) copy(K.HOME_TOGGLE_ON_SUB) else copy(K.HOME_TOGGLE_OFF_SUB),
                     style = MaterialTheme.typography.labelSmall,
                     color = q.muted,
                 )
