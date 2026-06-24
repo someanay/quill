@@ -52,7 +52,13 @@ poorly and won't reproduce MagicOS's background-killing.
 & $adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow   # overlay
 & $adb shell pm grant com.tihor.quill android.permission.RECORD_AUDIO
 & $adb shell pm grant com.tihor.quill android.permission.POST_NOTIFICATIONS
-# Accessibility service must be enabled via Settings.Secure (see M2).
+# Accessibility service must be enabled via Settings.Secure (see M2):
+& $adb shell settings put secure enabled_accessibility_services com.tihor.quill/com.tihor.quill.accessibility.QuillAccessibilityService
+& $adb shell settings put secure accessibility_enabled 1
+
+# Trigger text injection without the bubble (debug builds only — M3). Quote the WHOLE am line so
+# the space in the text isn't parsed as a pkg= arg:
+& $adb shell "am broadcast -a com.tihor.quill.DEBUG_INJECT --es text 'hello world'"
 ```
 
 **Honor/MagicOS dev gotchas (learned on this device — save yourself the chase):**

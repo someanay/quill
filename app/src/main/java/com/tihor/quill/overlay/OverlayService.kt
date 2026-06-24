@@ -14,6 +14,8 @@ import android.view.Gravity
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.tihor.quill.accessibility.InsertResult
+import com.tihor.quill.accessibility.QuillAccessibilityService
 
 /**
  * Hosts the floating bubble in a [WindowManager] overlay window (spec §3.1). M1 is a plain started
@@ -79,8 +81,8 @@ class OverlayService : Service() {
             return
         }
         val view = BubbleView(this)
-        view.onTap = { view.state = view.state.next() } // M1: cycle states for visual verification
-        view.onLongPress = { stopSelf() }               // M1: long-press dismisses
+        view.onTap = { onBubbleTap(view) }
+        view.onLongPress = { stopSelf() }               // long-press dismisses
         view.onDragStart = {}
         view.onDrag = { dx, dy -> moveBy(dx, dy) }
         view.onDragEnd = { snapToEdge() }
@@ -100,6 +102,40 @@ class OverlayService : Service() {
         windowManager.addView(view, params)
         bubble = view
         Log.i(TAG, "Bubble added at x=${params.x} y=${params.y}")
+    }
+
+    /**
+     * M3 bubble behaviour: a tap inserts a hardcoded "hello world" into the focused field via the
+     * accessibility service (the recorder + real transcript arrive at M4–M6). In the PASTE state a
+     * tap performs the clipboard paste (the "Tap to Paste" rung). The bubble state reflects the
+     * outcome.
+     */
+    private fun onBubbleTap(view: BubbleView) {
+        val a11y = QuillAccessibilityService.instance
+        if (a11y == null) {
+            Log.w(TAG, "Accessibility service not connected; cannot inject.")
+            flash(view, BubbleState.ERROR)
+            return
+        }
+        if (view.state == BubbleState.PASTE) {
+            val pasted = a11y.pasteIntoFocused()
+            view.state = if (pasted) BubbleState.IDLE else BubbleState.ERROR
+            return
+        }
+        when (a11y.injectText("hello world")) {
+            InsertResult.Success -> flash(view, BubbleState.TRANSCRIBING, then = BubbleState.IDLE)
+            InsertResult.NeedsClipboardFallback -> view.state = BubbleState.PASTE
+            InsertResult.RefusedSensitive -> flash(view, BubbleState.ERROR)
+            InsertResult.NoEditableField -> flash(view, BubbleState.ERROR)
+        }
+    }
+
+    /** Briefly show [state], then return to [then] (default keeps [state]). */
+    private fun flash(view: BubbleView, state: BubbleState, then: BubbleState = state) {
+        view.state = state
+        if (then != state) {
+            view.postDelayed({ if (bubble === view) view.state = then }, 700)
+        }
     }
 
     private fun moveBy(dxPx: Float, dyPx: Float) {

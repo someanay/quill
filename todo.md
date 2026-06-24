@@ -77,13 +77,25 @@ not proceed until build + tests + the manual script all pass, then commit.
 >   `adb shell settings put secure enabled_accessibility_services com.tihor.quill/com.tihor.quill.accessibility.QuillAccessibilityService`
 >   then `adb shell settings put secure accessibility_enabled 1` (append, don't clobber existing services).
 
-## M3 — Text injection (hardcoded string)
-- [ ] `TextInjector`: **resolve the true editable node** (SET_TEXT-capable / `isEditable`, not the focus wrapper — see `spec.md` §5 blueprint), then read text + selection → compose → `ACTION_SET_TEXT` → `ACTION_SET_SELECTION`
-- [ ] **Dump real nodes** (Accessibility Scanner / `uiautomator dump`) for each matrix app on the Honor device and tune the resolver before declaring M3 done
-- [ ] Clipboard fallback as a **user-initiated "Tap to Paste"** state; set `EXTRA_IS_SENSITIVE`; **restore the prior clip only after a *confirmed* paste** (re-read the node's text/selection to verify the transcript landed). On a **manual** paste, offer a short-lived **"restore previous clipboard"** affordance instead — **never a silent timed restore** (it races the user's paste; see `spec.md` §5 ladder)
-- [ ] Sensitive-field guard: refuse to write password/banking fields
-- [ ] **Test (write first):** unit-test the insert-at-cursor composition (existing text + caret + transcript → expected string, incl. spacing rules); the cross-app matrix in `testing_plan.md` §3 is the real gate
-- [ ] **Verify:** tapping the bubble inserts "hello world" into the focused field in **≥3 apps** (incl. Chrome/WebView); fallback path proven where SET_TEXT is rejected; password field untouched.
+## M3 — Text injection (hardcoded string) — code ✅, cross-app matrix is YOUR physical gate
+- [x] `TextInjector` / `AccessibilityTextInjector`: resolve the true editable node, read text+selection → `InsertionComposer.compose` → `ACTION_SET_TEXT` → `ACTION_SET_SELECTION` (caret repositioned). Ignores hint text so it never appends to a placeholder.
+- [x] **Node resolution made SAFE** (`EditableNodeResolver`): focus node → **isFocused** editable descendant → editable ancestor. Deliberately does **not** pick "first editable descendant" — that wandered to the wrong field in a multi-input web form (a real bug caught on-device). Focus is also tracked from focus **events** (`event.source`), which is more reliable than `findFocus(FOCUS_INPUT)` for WebViews.
+- [~] **Dump real nodes per matrix app + tune** — this is the on-device tuning (`spec.md` §5D) that belongs to your physical matrix run; the resolver is a safe starting point.
+- [x] Clipboard fallback (`AccessibilityTextInjector`): sets the clip with `EXTRA_IS_SENSITIVE`, **restores the prior clip only after a confirmed paste** (re-reads the node), never a silent timed restore. Wired to the bubble PASTE state (tap-to-paste). *Full confirm/restore couldn't be exercised headlessly — part of your matrix run.*
+- [x] Sensitive-field guard: refuses to inject when the focused field is sensitive (`SensitiveFieldClassifier`). Reliable for **native** password fields (isPassword / password inputType). **Limitation:** Chrome **web** password inputs may report `isPassword=false` at the a11y layer (seen on-device) — web banking can't be detected this way; native banking apps (the real P0-5 case) are detected.
+- [x] **Test (write first):** `InsertionComposerTest` (10 cases, green) — empty/append/no-double-space/mid-insert/replace-selection/unset-caret/spacing.
+- [~] **Verify:** Confirmed via adb (debug broadcast trigger) — `ACTION_SET_TEXT` inserts "hello world" with correct caret into Chrome's **native omnibox** AND a **WebView** text field; resolver targets the focused field (no wandering). **≥3 real apps incl. fallback + "banking field untouched" is your physical matrix** (`testing_plan.md` §3) — the inherently-manual M3 gate.
+
+> **M3 notes:**
+> - **Bubble tap now injects** (M1 state-cycling replaced): a tap inserts "hello world" into the
+>   focused field via the accessibility service; PASTE-state tap performs the clipboard paste. (Real
+>   transcript replaces the hardcoded string at M4–M6.) **Bubble taps can't be driven by adb** (overlay
+>   isn't focusable) — so injection was verified via a debug broadcast and the bubble path is part of
+>   your physical test.
+> - **Dev trigger:** `adb shell "am broadcast -a com.tihor.quill.DEBUG_INJECT --es text 'hello world'"`
+>   (debug builds only; the receiver is registered by the a11y service). `DEBUG_PASTE` triggers paste.
+>   **Quote the whole `am` line for the device shell** or the space in the text becomes a `pkg=` arg.
+> - **Compose / Samsung / banking** node behaviour is unknown until you run the §3 matrix on the phone.
 
 ## M4 — Audio capture in a microphone foreground service
 > **Before starting M4, manually whitelist Quill on your Honor dev device** (App launch → Manual →
