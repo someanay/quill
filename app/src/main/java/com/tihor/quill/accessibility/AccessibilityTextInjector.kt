@@ -125,6 +125,7 @@ class AccessibilityTextInjector(private val context: Context) : TextInjector {
                 isPassword = node.isPassword,
                 inputType = node.inputType,
                 className = node.className,
+                packageName = node.packageName,
             ),
         )
 

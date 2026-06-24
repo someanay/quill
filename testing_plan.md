@@ -131,18 +131,32 @@ fallback.**
 
 | App / surface | SET_TEXT | Paste fallback | Cursor correct | Notes |
 |---|---|---|---|---|
-| Messages (AOSP/Google) | | | | |
-| WhatsApp | | | | |
-| Gmail compose | | | | |
-| Chrome address bar | | | | WebView-class field |
-| Chrome web text field | | | | WebView; SET_TEXT often ❌ → fallback |
-| Google search bar | | | | |
+| Messages (AOSP/Google) | ✅ | | ✅ | M3 hand-test passed (native) |
+| WhatsApp | ✅ | | ✅ | M3 hand-test passed (native) |
+| Gmail compose | ✅ | | ✅ | M3 hand-test passed (native) |
+| Chrome address bar | 🚫 | 🚫 | — | **Refused by browser-safety rule** (see note) |
+| Chrome web text field | 🚫 | 🚫 | — | **Refused by browser-safety rule** — was ⚠️ paste before the rule |
+| Google search bar | | | | (in-app native ✅ expected; in-browser 🚫) |
 | Notes (Keep) | | | | |
 | Slack | | | | |
-| A Jetpack Compose `TextField` | | | | Compose node exposure varies |
+| A Jetpack Compose `TextField` | | | | Compose node exposure varies — untested |
 | Instagram DM | | | | |
 | Samsung Messages / Notes | | | | OEM editor |
-| A banking app login | | | | **Must be ❌ by design — not touched** |
+| A banking app login (native) | ✅❌ refused | — | — | M3 hand-test: **untouched, refused** ✅ (correct) |
+
+> **M3 hand-test (2026-06-24, Honor BVL-N49):** native fields (WhatsApp, Gmail, Messages) inject
+> cleanly at the cursor; native banking/password field refused/untouched; clipboard paste-fallback
+> confirmed working *before* the browser-safety rule (bubble showed P, pasted on tap, prior clipboard
+> restored); bubble gestures (tap-inject, drag-snap, long-press-dismiss) all good.
+>
+> **Browser-safety rule (added post-matrix, by request):** Chrome reports web `<input type=password>`
+> as `isPassword=false` with a plain-text input type — indistinguishable from a normal web text field.
+> So in any **browser context** Quill now refuses to inject unless the type *positively* confirms a
+> non-secret (email / url / phone / date). This safely catches undetectable web passwords, but it also
+> disables dictation into the **URL bar and generic web text fields** (they refuse rather than
+> paste-fall-back). Deliberate safety-over-convenience trade-off; covered by `SensitiveFieldClassifierTest`.
+> *If too broad, the one-line softening is to return the clipboard fallback (manual paste) for
+> unconfirmable browser fields instead of a hard refuse.*
 
 ---
 

@@ -98,7 +98,9 @@ class QuillAccessibilityService : AccessibilityService() {
 
     private fun isSensitive(node: AccessibilityNodeInfo): Boolean =
         SensitiveFieldClassifier.isSensitive(
-            SensitiveFieldClassifier.EditableFieldInfo(node.isPassword, node.inputType, node.className),
+            SensitiveFieldClassifier.EditableFieldInfo(
+                node.isPassword, node.inputType, node.className, node.packageName,
+            ),
         )
 
     /** Dev-only: `adb shell am broadcast -a com.tihor.quill.DEBUG_INJECT --es text "hello world"`. */

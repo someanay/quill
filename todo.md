@@ -96,6 +96,18 @@ not proceed until build + tests + the manual script all pass, then commit.
 >   (debug builds only; the receiver is registered by the a11y service). `DEBUG_PASTE` triggers paste.
 >   **Quote the whole `am` line for the device shell** or the space in the text becomes a `pkg=` arg.
 > - **Compose / Samsung / banking** node behaviour is unknown until you run the §3 matrix on the phone.
+>
+> **M3 hand-test PASSED (2026-06-24, Honor):** native WhatsApp/Gmail/Messages inject at the cursor ✅;
+> Chrome paste-fallback worked (P state → tap → paste → prior clipboard restored) ✅; native
+> banking/password refused/untouched ✅; bubble gestures ✅. (Matrix filled in `testing_plan.md` §3.)
+>
+> **Web-password safety rule (closed, by request — not deferred):** Chrome reports web password
+> inputs as `isPassword=false` with plain `TYPE_CLASS_TEXT`, indistinguishable from a web text field.
+> So `SensitiveFieldClassifier` now treats **any browser-context editable field whose type isn't
+> *positively* confirmed non-secret (email/url/phone/date) as sensitive → refuse**. Unit-tested
+> (`SensitiveFieldClassifierTest`, browser cases) and verified on-device (Chrome omnibox now
+> `RefusedSensitive`). Trade-off: also disables dictation into the URL bar + generic web text fields
+> (safety over convenience, as requested). Softening option noted in `testing_plan.md` §3.
 
 ## M4 — Audio capture in a microphone foreground service
 > **Before starting M4, manually whitelist Quill on your Honor dev device** (App launch → Manual →
