@@ -27,6 +27,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -165,7 +166,10 @@ fun LeadIcon(
 // Card + list container — `.card` and `.list` (surface, hairline border, 16dp corners).
 // ============================================================================
 
-/** A surface card with the hairline border + soft elevation of `.card`. */
+/**
+ * A surface card with the hairline border + soft elevation of `.card`. A real [Surface] so it sets
+ * `contentColor` = onSurface — text inside adapts to the theme instead of defaulting to black.
+ */
 @Composable
 fun QuillCard(
     modifier: Modifier = Modifier,
@@ -173,18 +177,13 @@ fun QuillCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val q = MaterialTheme.quill
-    Column(
-        modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(
-                if (border != null) 1.5.dp else 1.dp,
-                border ?: q.line,
-                MaterialTheme.shapes.medium,
-            ),
-        content = content,
-    )
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(if (border != null) 1.5.dp else 1.dp, border ?: q.line),
+    ) { Column(content = content) }
 }
 
 /** A bordered, rounded container for a stack of [QuillRow]s — the `.list` unit. Rows self-divide. */
@@ -194,14 +193,13 @@ fun QuillListContainer(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val q = MaterialTheme.quill
-    Column(
-        modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, q.line, MaterialTheme.shapes.medium),
-        content = content,
-    )
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, q.line),
+    ) { Column(content = content) }
 }
 
 /** Hairline between rows inside a [QuillListContainer] (`.row` border-top). */

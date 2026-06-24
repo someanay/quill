@@ -1,6 +1,7 @@
 package com.tihor.quill.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -53,9 +54,15 @@ fun QuillTheme(
     dark: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(LocalQuillColors provides if (dark) DarkExt else LightExt) {
+    val scheme = if (dark) DarkScheme else LightScheme
+    CompositionLocalProvider(
+        LocalQuillColors provides if (dark) DarkExt else LightExt,
+        // Default loose text/icons to onBackground so unspecified-colour Text never falls back to
+        // black on the dark theme (Surfaces still override this to onSurface for their content).
+        LocalContentColor provides scheme.onBackground,
+    ) {
         MaterialTheme(
-            colorScheme = if (dark) DarkScheme else LightScheme,
+            colorScheme = scheme,
             typography = QuillType,
             shapes = QuillShapes,
             content = content,
