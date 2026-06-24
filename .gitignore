@@ -1,0 +1,22 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.keystore
+keystore.properties
+/app/release/
+
+# build outputs
+/app/build/
+/build/
+
+# dev scratch (screenshots etc.)
+/shot.png
+*.tmp.png
