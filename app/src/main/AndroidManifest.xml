@@ -34,6 +34,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Hosts the floating bubble overlay (M1). Becomes an FGS type=microphone at M4. -->
+        <service
+            android:name=".overlay.OverlayService"
+            android:exported="false" />
     </application>
 
 </manifest>

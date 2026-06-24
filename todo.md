@@ -32,12 +32,18 @@ not proceed until build + tests + the manual script all pass, then commit.
 > - **Room deferred to M9.** Room (KSP) is only needed for history (P1, M9); wiring it now buys nothing and adds an annotation processor to every early build.
 > - **NDK / libFLAC encoder deferred to M4** (per the explicit instruction to keep early builds simple). FLAC encoding is a pre-upload step needed first at M4/M5.
 
-## M1 — Overlay bubble (do this before the recorder)
-- [ ] Overlay-permission request flow (`ACTION_MANAGE_OVERLAY_PERMISSION`) + state check
-- [ ] Draggable bubble via `WindowManager`, appears over other apps; snooze/dismiss
-- [ ] Bubble visual states stubbed: idle / recording / transcribing / paste / error
-- [ ] **Test:** overlay behaviour is mostly manual — add the M1 script to `testing_plan.md` §2 and run it; unit-test any drag/snap geometry helper that can be isolated
-- [ ] **Verify:** bubble shows over a different app (e.g. Settings), drags, dismisses; survives app backgrounding.
+## M1 — Overlay bubble (do this before the recorder) — code/build/install ✅, visual verify pending unlock
+- [x] Overlay-permission request flow (`ACTION_MANAGE_OVERLAY_PERMISSION`) + state check (`OverlayPermission`; `MainActivity` requests + re-checks on return)
+- [x] Draggable bubble via `WindowManager`, appears over other apps; dismiss via long-press (`OverlayService` + `BubbleView`). *Snooze stubbed into dismiss for M1.*
+- [x] Bubble visual states stubbed: idle / recording / transcribing / paste / error (`BubbleState`; tap cycles them; contrast-safe per spec §3.1 — drop shadow + white ring + state-coloured fill)
+- [x] **Test:** drag/snap/tap geometry isolated into pure `BubbleGeometry` + unit-tested (`BubbleGeometryTest`, 8 cases, green). Overlay rendering itself is the manual script (`testing_plan.md` §2).
+- [ ] **Verify:** bubble shows over a different app, drags, snaps to edge, cycles states, dismisses, survives backgrounding — **blocked on a device unlock** (phone is secure-locked; overlays don't render over the keyguard and the un-exported service can't be poked from adb). Code/build/install gate is green.
+
+> **M1 notes:** Started service (not yet FGS) for M1 — a visible overlay window keeps the process
+> perceptible, so the bubble survives backgrounding without a notification; upgrades to
+> `foregroundServiceType="microphone"` at M4 (spec §5). Tap cycles states (no recorder yet);
+> long-press dismisses. Overlay permission granted for dev via
+> `adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow`.
 
 ## M2 — Accessibility service skeleton
 - [ ] `accessibility_service_config.xml` per `spec.md` §4 (no `isAccessibilityTool`)
