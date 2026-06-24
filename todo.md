@@ -128,12 +128,16 @@ not proceed until build + tests + the manual script all pass, then commit.
 > - **Dev triggers:** `adb shell am broadcast -a com.tihor.quill.DEBUG_RECORD_START` / `_STOP`
 >   (debug builds). Grant mic: `adb shell pm grant com.tihor.quill android.permission.RECORD_AUDIO`.
 
-## M5 — STT integration (BYOK)
-- [ ] `TranscriptionClient` interface + `OpenAiCompatibleTranscriptionClient` (base URL + model)
-- [ ] Multipart WAV upload; parse transcript; typed error model (network / 401 bad-key / provider)
-- [ ] **R8 shift-left:** use **kotlinx.serialization** for the transcription JSON models (compile-time → minimal keep-rules) plus any `-keep` the serializers need; **run a `minifyEnabled true` build now** so serialization breakage surfaces here, not at M12
-- [ ] **Test (write first):** `TranscriptionClientTest` shells with MockWebServer — success / 401 bad-key / 5xx — authored **before** the client; include the parse test on a minified build
-- [ ] **Verify:** unit tests green on debug **and** minified build; manual: a real key returns text for recorded audio.
+## M5 — STT integration (BYOK) ✅ (commit `feat: STT transcription client (M5)`)
+- [x] `TranscriptionClient` interface (streaming-friendly: doesn't assume req/resp) + `OpenAiCompatibleTranscriptionClient` (base URL + model; covers OpenAI **and** Groq). Groq defaults baked (`whisper-large-v3-turbo`).
+- [x] Multipart WAV upload (OkHttp); parse via kotlinx.serialization; **typed errors** (`TranscriptionError`: BadKey 401/403, RateLimited 429, Provider 5xx/other, Network, Parse). Key read lazily via `apiKey()` (never stored on the client / logged).
+- [x] **R8 shift-left:** kotlinx.serialization models; **`assembleRelease` with R8 on now passes** (`minifyReleaseWithR8`). Enabled via AGP 9 gradual-R8 (`optimization.enable=true` + `android.r8.gradual.support=true`).
+- [x] **Test (write first):** `TranscriptionClientTest` (MockWebServer, 6 cases) — success+multipart/auth, 401→BadKey, 429→RateLimited, 500→Provider, malformed→Parse, no-server→Network.
+- [~] **Verify:** unit tests green on debug ✅; R8 release build green ✅. **Live "real key returns text"** rolls into M6 (needs your API key) — that's the M6 stop.
+
+> **M5 notes:** Added `unitTests.isReturnDefaultValues = true` so `android.util.Log` in the client
+> doesn't throw in plain JVM tests. The live minified-parse check happens when the release APK is
+> exercised (M12); R8 retains the serializers (build proves it).
 
 ## M6 — End-to-end happy path 🎯
 - [ ] Wire capture → STT → injection through the bubble

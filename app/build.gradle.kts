@@ -20,8 +20,9 @@ android {
 
     buildTypes {
         release {
+            // R8 on from M5 (shift-left): catch serialization/reflection stripping early, not at M12.
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -36,6 +37,7 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true // Robolectric
+            isReturnDefaultValues = true     // android.util.Log etc. return defaults, don't throw
         }
     }
 }
