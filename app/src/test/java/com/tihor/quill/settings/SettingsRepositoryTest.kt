@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,7 +23,8 @@ class SettingsRepositoryTest {
         val s = repo().settings.first()
         assertEquals(SttProvider.GROQ, s.provider)
         assertEquals(SttProvider.GROQ.defaultModel, s.sttModel)
-        assertNull(s.languageHint)
+        // Default is English so mixed-language (Hinglish) dictation comes out in Roman script.
+        assertEquals("en", s.languageHint)
         assertFalse(s.privateMode)
         assertTrue(s.cleanupEnabled)
         assertEquals(300, s.sessionCapSeconds)
@@ -49,11 +49,15 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun blankLanguageHint_isStoredAsNull() = runTest {
+    fun languageHint_roundTripsCodesAndAutoSentinel() = runTest {
         val r = repo()
-        r.setLanguageHint("fr")
-        assertEquals("fr", r.settings.first().languageHint)
+        r.setLanguageHint("hi")
+        assertEquals("hi", r.settings.first().languageHint)
+        // Auto-detect is an explicit choice, distinct from the "en" default.
+        r.setLanguageHint(QuillSettings.LANGUAGE_AUTO)
+        assertEquals(QuillSettings.LANGUAGE_AUTO, r.settings.first().languageHint)
+        // Clearing falls back to the English default.
         r.setLanguageHint("")
-        assertNull(r.settings.first().languageHint)
+        assertEquals("en", r.settings.first().languageHint)
     }
 }

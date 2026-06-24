@@ -62,18 +62,6 @@
             android:label="@string/app_name"
             android:theme="@style/Theme.Quill" />
 
-        <activity
-            android:name=".ui.ApiKeyActivity"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.Quill" />
-
-        <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.Quill" />
-
         <!-- Accessibility service: detects the focused field + (from M3) inserts dictation.
              Gated by the system BIND_ACCESSIBILITY_SERVICE permission; config in res/xml. -->
         <service

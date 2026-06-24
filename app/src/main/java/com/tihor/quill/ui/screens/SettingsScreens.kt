@@ -269,16 +269,27 @@ fun SpeechModelScreen(nav: QuillNav) {
         }
 
         FieldLabel("Spoken language", Modifier.padding(top = 16.dp))
-        OutlinedTextField(
-            value = settings.languageHint.orEmpty(),
-            onValueChange = { scope.launch { repo.setLanguageHint(it) } },
-            singleLine = true,
-            placeholder = { Text("Auto-detect") },
-            leadingIcon = { Icon(Icons.Rounded.Language, contentDescription = null) },
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier.fillMaxWidth(),
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            QuillChip(
+                "English (Roman)",
+                selected = settings.languageHint == "en",
+                onClick = { scope.launch { repo.setLanguageHint("en") } },
+            )
+            QuillChip(
+                "Auto-detect",
+                selected = settings.languageHint == QuillSettings.LANGUAGE_AUTO,
+                onClick = { scope.launch { repo.setLanguageHint(QuillSettings.LANGUAGE_AUTO) } },
+            )
+            QuillChip(
+                "Hindi (Devanagari)",
+                selected = settings.languageHint == "hi",
+                onClick = { scope.launch { repo.setLanguageHint("hi") } },
+            )
+        }
+        HelpText(
+            "English keeps mixed Hindi-English speech in Roman script (\"aaj ka\"). " +
+                "Auto-detect or Hindi give native script.",
         )
-        HelpText("A hint can improve accuracy. Leave it blank if you switch languages.")
     }
 }
 

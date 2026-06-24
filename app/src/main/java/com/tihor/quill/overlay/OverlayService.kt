@@ -26,8 +26,10 @@ import com.tihor.quill.audio.AudioRecorder
 import com.tihor.quill.audio.StopReason
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.settings.QuillSettings
 import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.settings.TranscriptionClientFactory
+import com.tihor.quill.stt.RomanizePrompt
 import com.tihor.quill.stt.TranscriptionOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -322,9 +324,15 @@ class OverlayService : Service() {
             }
             val settings = settingsRepository.settings.first()
             val client = TranscriptionClientFactory.create(settings.provider, apiKey = { key })
+            // "auto" → null (let the provider detect). English seeds the Hinglish romanization prompt.
+            val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
             val result = client.transcribe(
                 audio = wav,
-                opts = TranscriptionOptions(model = settings.sttModel, language = settings.languageHint),
+                opts = TranscriptionOptions(
+                    model = settings.sttModel,
+                    language = language,
+                    prompt = RomanizePrompt.promptFor(language),
+                ),
             )
             result.fold(
                 onSuccess = { onTranscript(wav, it.text) },
