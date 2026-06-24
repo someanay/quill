@@ -15,14 +15,22 @@ not proceed until build + tests + the manual script all pass, then commit.
 
 ---
 
-## M0 — Project scaffold
-- [ ] Create Android Studio project (Kotlin, Compose, **`applicationId com.tihor.quill`**, minSdk 29, targetSdk latest stable)
-- [ ] Gradle Kotlin DSL + version catalog; add Hilt, Coroutines, Retrofit/OkHttp, **kotlinx.serialization**, Room, DataStore, **a native FLAC encoder (libFLAC via NDK/JNI)** for WAV→FLAC upload (spec §2.2)
-- [ ] Package structure (`overlay/`, `accessibility/`, `audio/`, `stt/`, `secrets/`, `settings/`, `history/`, `ui/`)
-- [ ] Base `AndroidManifest.xml` (permissions per `spec.md` §4), empty launcher Activity
-- [ ] Lint/format config; (optional) GitHub Actions build-on-PR
-- [ ] **Test (harness):** wire JUnit + Robolectric + MockWebServer + Compose-test deps; add one trivial passing test so CI actually runs the suite
-- [ ] **Verify:** app builds and installs; blank launcher screen opens; CI green.
+## M0 — Project scaffold ✅ (commit `chore: project scaffold (M0)`)
+- [x] Create Android Studio project (Kotlin, Compose, **`applicationId com.tihor.quill`**, minSdk 29, targetSdk 36)
+- [x] Gradle Kotlin DSL + version catalog; add Coroutines, Retrofit/OkHttp, **kotlinx.serialization**, DataStore — see deviations below
+- [x] Package structure (`overlay/`, `accessibility/`, `audio/`, `stt/`, `secrets/`, `settings/`, `history/`, `ui/`) — empty pkgs hold a `.gitkeep`
+- [x] Base `AndroidManifest.xml` (permissions per `spec.md` §5), empty launcher Activity (`MainActivity`, Compose)
+- [ ] ~~Lint/format config; GitHub Actions build-on-PR~~ — deferred (optional; no remote/CI set up yet)
+- [x] **Test (harness):** wired JUnit + Robolectric + MockWebServer + Compose-test deps; two trivial passing tests (`SmokeTest`, `RobolectricSmokeTest`)
+- [x] **Verify:** `clean assembleDebug` + `testDebugUnitTest` green; `installDebug` ok; `MainActivity` launches top-most. *(Visual peek at the blank screen pending a device unlock — phone is secure-locked; build/install/launch confirmed via gradle + `dumpsys window`.)*
+
+> **M0 deviations (recorded per the working rule):**
+> - **The wizard project was View-based, not Compose** (no `MainActivity`, appcompat/Material theme). Added Jetpack Compose (BOM `2026.06.00`, activity-compose 1.13.0, Material 3) + a minimal `QuillTheme`; switched the XML window theme to a platform parent so we don't pull in the Material *View* library.
+> - **compileSdk 36 → 37**: the future-dated `androidx.core 1.19.0` requires compileSdk 37 (AGP auto-resolved `android-37`). targetSdk stays 36.
+> - **Toolchain is bleeding-edge / future-dated**: AGP 9.2.1, Gradle 9.4.1, Kotlin 2.2.10 with AGP's **built-in Kotlin**. Library versions were resolved empirically (build errors, not guesses): coroutines 1.11.0, serialization-json 1.11.0, retrofit 3.0.0, okhttp 5.4.0, datastore 1.3.0-alpha09 (stable lags this stack).
+> - **Hilt deferred → manual DI.** `spec.md` §1 explicitly allows manual DI ("acceptable given the small surface"). Avoids KSP version-matching fragility against AGP-9-built-in-Kotlin and honours the "early builds simple" instruction. Revisit only if DI grows unwieldy.
+> - **Room deferred to M9.** Room (KSP) is only needed for history (P1, M9); wiring it now buys nothing and adds an annotation processor to every early build.
+> - **NDK / libFLAC encoder deferred to M4** (per the explicit instruction to keep early builds simple). FLAC encoding is a pre-upload step needed first at M4/M5.
 
 ## M1 — Overlay bubble (do this before the recorder)
 - [ ] Overlay-permission request flow (`ACTION_MANAGE_OVERLAY_PERMISSION`) + state check
