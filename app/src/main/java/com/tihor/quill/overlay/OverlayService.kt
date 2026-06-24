@@ -15,6 +15,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -48,8 +49,22 @@ class OverlayService : Service() {
     private lateinit var windowManager: WindowManager
     private var bubble: BubbleView? = null
     private lateinit var params: WindowManager.LayoutParams
+    private var caption: CaptionView? = null
+    private lateinit var captionParams: WindowManager.LayoutParams
+    private var recordSeconds = 0
+
+    private val density by lazy { resources.displayMetrics.density }
+    private fun dpx(v: Float) = (v * density).toInt()
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val timerTick = object : Runnable {
+        override fun run() {
+            recordSeconds++
+            caption?.configure(CaptionView.Mode.RECORDING, bubble?.level ?: 0f, recordSeconds)
+            positionCaption()
+            mainHandler.postDelayed(this, 1000)
+        }
+    }
     private val audioRecorder by lazy { AudioRecorder(this) }
     private var currentRecording: File? = null
     private var debugReceiver: BroadcastReceiver? = null
@@ -159,7 +174,65 @@ class OverlayService : Service() {
         }
         windowManager.addView(view, params)
         bubble = view
+
+        // Companion status caption (board E2–E5 / F3): hidden until a state needs it.
+        val cap = CaptionView(this)
+        captionParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            PixelFormat.TRANSLUCENT,
+        ).apply { gravity = Gravity.TOP or Gravity.START }
+        cap.visibility = View.GONE
+        windowManager.addView(cap, captionParams)
+        caption = cap
+
         Log.i(TAG, "Bubble added at x=${params.x} y=${params.y}")
+    }
+
+    /** Drive the bubble state and its caption together (board E). */
+    private fun applyState(state: BubbleState) {
+        bubble?.state = state
+        val cap = caption ?: return
+        when (state) {
+            BubbleState.IDLE -> { stopTimer(); cap.visibility = View.GONE }
+            BubbleState.RECORDING -> {
+                recordSeconds = 0
+                cap.configure(CaptionView.Mode.RECORDING, bubble?.level ?: 0f, 0)
+                cap.visibility = View.VISIBLE
+                positionCaption()
+                mainHandler.postDelayed(timerTick, 1000)
+            }
+            BubbleState.TRANSCRIBING -> showCaption(CaptionView.Mode.TRANSCRIBING)
+            BubbleState.PASTE -> showCaption(CaptionView.Mode.PASTE)
+            BubbleState.ERROR -> showCaption(CaptionView.Mode.ERROR)
+        }
+    }
+
+    private fun showCaption(mode: CaptionView.Mode) {
+        stopTimer()
+        val cap = caption ?: return
+        cap.configure(mode)
+        cap.visibility = View.VISIBLE
+        positionCaption()
+    }
+
+    private fun stopTimer() = mainHandler.removeCallbacks(timerTick)
+
+    /** Tuck the caption beside the visible bubble — left if the bubble hugs the right edge. */
+    private fun positionCaption() {
+        val view = bubble ?: return
+        val cap = caption ?: return
+        if (cap.visibility != View.VISIBLE) return
+        val (sw, _) = screenSize()
+        val w = cap.viewWidth
+        val h = cap.viewHeight
+        val pad = dpx(34f) // tuck under the bubble's halo/shadow padding
+        val onRight = params.x + view.viewSize / 2 > sw / 2
+        captionParams.x = if (onRight) (params.x - w + pad).coerceAtLeast(0) else params.x + view.viewSize - pad
+        captionParams.y = params.y + (view.viewSize - h) / 2
+        runCatching { windowManager.updateViewLayout(cap, captionParams) }
     }
 
     /**
@@ -177,16 +250,22 @@ class OverlayService : Service() {
     private fun startRecording(view: BubbleView) {
         if (!audioRecorder.hasMicPermission()) {
             Log.w(TAG, "Mic permission not granted; cannot record (onboarding handles the grant).")
-            flash(view, BubbleState.ERROR)
+            applyState(BubbleState.ERROR)
             return
         }
         val output = File(cacheDir, "quill_${System.currentTimeMillis()}.wav")
         currentRecording = output
         setForeground(microphone = true)
-        view.state = BubbleState.RECORDING
+        applyState(BubbleState.RECORDING)
         audioRecorder.start(
             output = output,
-            onAmplitude = { rms -> mainHandler.post { bubble?.level = (rms / 8000f).coerceIn(0f, 1f) } },
+            onAmplitude = { rms ->
+                mainHandler.post {
+                    val level = (rms / 8000f).coerceIn(0f, 1f)
+                    bubble?.level = level
+                    caption?.setLevel(level)
+                }
+            },
             onWarning = { mainHandler.post { Log.i(TAG, "Approaching session cap.") } },
             onFinished = { file, reason -> mainHandler.post { onRecordingFinished(file, reason) } },
         )
@@ -197,7 +276,7 @@ class OverlayService : Service() {
         bubble?.let { it.level = 0f }
         Log.i(TAG, "WAV saved: ${file.name} (${file.length()} bytes), reason=$reason")
         if (reason == StopReason.ERROR) {
-            flash(bubble, BubbleState.ERROR)
+            applyState(BubbleState.ERROR)
             return
         }
         currentRecording = file
@@ -210,12 +289,12 @@ class OverlayService : Service() {
      * the temp WAV is kept for retry; on a successful transcript+insert it is deleted (spec §4.3).
      */
     private fun transcribeAndInject(wav: File) {
-        bubble?.state = BubbleState.TRANSCRIBING
+        applyState(BubbleState.TRANSCRIBING)
         scope.launch {
             val key = secretStore.get(SecretStore.ALIAS_STT_KEY)
             if (key.isNullOrBlank()) {
                 Log.w(TAG, "No API key set — add one in Quill settings.")
-                flash(bubble, BubbleState.ERROR)
+                applyState(BubbleState.ERROR)
                 return@launch
             }
             val settings = settingsRepository.settings.first()
@@ -228,7 +307,7 @@ class OverlayService : Service() {
                 onSuccess = { onTranscript(wav, it.text) },
                 onFailure = { err ->
                     Log.w(TAG, "Transcription failed: ${err.message}") // keep WAV for retry
-                    flash(bubble, BubbleState.ERROR)
+                    applyState(BubbleState.ERROR)
                 },
             )
         }
@@ -237,37 +316,28 @@ class OverlayService : Service() {
     private fun onTranscript(wav: File, text: String) {
         if (text.isBlank()) {
             Log.i(TAG, "Empty transcript — didn't catch that.")
-            flash(bubble, BubbleState.ERROR)
+            applyState(BubbleState.ERROR)
             return
         }
         val a11y = QuillAccessibilityService.instance
         if (a11y == null) {
             Log.w(TAG, "Accessibility service not connected; cannot insert.")
-            flash(bubble, BubbleState.ERROR)
+            applyState(BubbleState.ERROR)
             return
         }
         when (a11y.injectText(text)) {
             InsertResult.Success -> {
-                flash(bubble, BubbleState.IDLE)
+                applyState(BubbleState.IDLE)
                 wav.delete()
             }
             InsertResult.NeedsClipboardFallback -> {
-                bubble?.state = BubbleState.PASTE // transcript is on the clipboard; tap to paste
+                applyState(BubbleState.PASTE) // transcript is on the clipboard; tap to paste
                 wav.delete()
             }
             InsertResult.RefusedSensitive, InsertResult.NoEditableField -> {
-                flash(bubble, BubbleState.ERROR)
+                applyState(BubbleState.ERROR)
                 wav.delete()
             }
-        }
-    }
-
-    /** Briefly show [state], then return to [then] (default keeps [state]). */
-    private fun flash(view: BubbleView?, state: BubbleState, then: BubbleState = state) {
-        view ?: return
-        view.state = state
-        if (then != state) {
-            view.postDelayed({ if (bubble === view) view.state = then }, 700)
         }
     }
 
@@ -277,6 +347,7 @@ class OverlayService : Service() {
         params.x = BubbleGeometry.clamp(params.x + dxPx.toInt(), 0, (sw - view.viewSize).coerceAtLeast(0))
         params.y = BubbleGeometry.clampY(params.y + dyPx.toInt(), view.viewSize, sh)
         windowManager.updateViewLayout(view, params)
+        positionCaption()
     }
 
     private fun snapToEdge() {
@@ -284,6 +355,7 @@ class OverlayService : Service() {
         val (sw, _) = screenSize()
         params.x = BubbleGeometry.snapTargetX(params.x, view.viewSize, sw)
         windowManager.updateViewLayout(view, params)
+        positionCaption()
     }
 
     @Suppress("DEPRECATION")
@@ -300,9 +372,12 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         runCatching { scope.cancel() }
+        stopTimer()
         debugReceiver?.let { runCatching { unregisterReceiver(it) } }
         debugReceiver = null
         runCatching { audioRecorder.stop() }
+        caption?.let { runCatching { windowManager.removeView(it) } }
+        caption = null
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
         super.onDestroy()
