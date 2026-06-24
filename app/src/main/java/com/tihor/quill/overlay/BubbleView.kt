@@ -37,6 +37,13 @@ class BubbleView(
             invalidate()
         }
 
+    /** Live input level 0..1 for the RECORDING meter (spec §3.1 / PRD §5). */
+    var level: Float = 0f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+            if (state == BubbleState.RECORDING) invalidate()
+        }
+
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
@@ -106,7 +113,11 @@ class BubbleView(
     private fun drawGlyph(canvas: Canvas, cx: Float, cy: Float, r: Float) {
         when (state) {
             BubbleState.IDLE -> Unit // bare circle
-            BubbleState.RECORDING -> canvas.drawCircle(cx, cy, r * 0.32f, glyphPaint)
+            BubbleState.RECORDING -> {
+                // Inner dot pulses with the live input level (0.32r..0.6r).
+                val radius = r * (0.32f + 0.28f * level)
+                canvas.drawCircle(cx, cy, radius, glyphPaint)
+            }
             BubbleState.TRANSCRIBING -> {
                 val dot = r * 0.13f
                 val gap = r * 0.42f

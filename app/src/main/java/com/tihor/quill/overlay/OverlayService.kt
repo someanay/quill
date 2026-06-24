@@ -3,19 +3,25 @@ package com.tihor.quill.overlay
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.tihor.quill.accessibility.InsertResult
-import com.tihor.quill.accessibility.QuillAccessibilityService
+import com.tihor.quill.BuildConfig
+import com.tihor.quill.audio.AudioRecorder
+import com.tihor.quill.audio.StopReason
+import java.io.File
 
 /**
  * Hosts the floating bubble in a [WindowManager] overlay window (spec §3.1). M1 is a plain started
@@ -30,37 +36,70 @@ class OverlayService : Service() {
     private var bubble: BubbleView? = null
     private lateinit var params: WindowManager.LayoutParams
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val audioRecorder by lazy { AudioRecorder(this) }
+    private var currentRecording: File? = null
+    private var debugReceiver: BroadcastReceiver? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        goForeground()
+        createNotificationChannel()
+        setForeground(microphone = false)
         addBubble()
+        registerDebugReceiverIfDebug()
     }
 
-    /**
-     * Promote to a foreground service so the bubble survives the app being backgrounded. On
-     * MagicOS a plain *started* service (and its overlay) is trimmed the moment another app comes
-     * forward — defeating the whole "float over other apps" purpose. M1 uses the `specialUse` type
-     * since the recorder (and the microphone type) arrive at M4.
-     */
-    private fun goForeground() {
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(
+    /** Dev-only: drive recording without tapping the (un-injectable) overlay — M4 verification. */
+    private fun registerDebugReceiverIfDebug() {
+        if (!BuildConfig.DEBUG) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    ACTION_DEBUG_RECORD_START -> bubble?.let { startRecording(it) }
+                    ACTION_DEBUG_RECORD_STOP -> audioRecorder.requestStop()
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(ACTION_DEBUG_RECORD_START)
+            addAction(ACTION_DEBUG_RECORD_STOP)
+        }
+        ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
+        debugReceiver = receiver
+    }
+
+    private fun createNotificationChannel() {
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Quill bubble", NotificationManager.IMPORTANCE_LOW)
                 .apply { description = "Keeps the dictation bubble available over other apps." },
         )
+    }
+
+    /**
+     * Foreground-service promotion. `specialUse` keeps the bubble alive over other apps (M1); the
+     * `microphone` type is added only while recording (M4) — the visible overlay is what legally lets
+     * the mic FGS start from the background (spec §5). We drop the mic type when recording stops so
+     * the mic-in-use indicator and capture don't linger.
+     */
+    private fun setForeground(microphone: Boolean) {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Quill bubble active")
-            .setContentText("Tap the bubble to dictate.")
+            .setContentTitle(if (microphone) "Quill is listening" else "Quill bubble active")
+            .setContentText(if (microphone) "Recording… tap the bubble to stop." else "Tap the bubble to dictate.")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
             .build()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
+                var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                if (microphone) type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                startForeground(NOTIFICATION_ID, notification, type)
+            }
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && microphone ->
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+            else -> startForeground(NOTIFICATION_ID, notification)
         }
     }
 
@@ -105,33 +144,48 @@ class OverlayService : Service() {
     }
 
     /**
-     * M3 bubble behaviour: a tap inserts a hardcoded "hello world" into the focused field via the
-     * accessibility service (the recorder + real transcript arrive at M4–M6). In the PASTE state a
-     * tap performs the clipboard paste (the "Tap to Paste" rung). The bubble state reflects the
-     * outcome.
+     * M4 bubble behaviour: tap toggles recording. Tap (idle) → start the mic FGS + record; tap again
+     * → stop. The transcript + injection get wired between "stop" and "idle" at M5–M6.
      */
     private fun onBubbleTap(view: BubbleView) {
-        val a11y = QuillAccessibilityService.instance
-        if (a11y == null) {
-            Log.w(TAG, "Accessibility service not connected; cannot inject.")
+        if (audioRecorder.isRecording) {
+            audioRecorder.requestStop() // onFinished updates the UI
+            return
+        }
+        startRecording(view)
+    }
+
+    private fun startRecording(view: BubbleView) {
+        if (!audioRecorder.hasMicPermission()) {
+            Log.w(TAG, "Mic permission not granted; cannot record (onboarding handles the grant).")
             flash(view, BubbleState.ERROR)
             return
         }
-        if (view.state == BubbleState.PASTE) {
-            val pasted = a11y.pasteIntoFocused()
-            view.state = if (pasted) BubbleState.IDLE else BubbleState.ERROR
-            return
+        val output = File(cacheDir, "quill_${System.currentTimeMillis()}.wav")
+        currentRecording = output
+        setForeground(microphone = true)
+        view.state = BubbleState.RECORDING
+        audioRecorder.start(
+            output = output,
+            onAmplitude = { rms -> mainHandler.post { bubble?.level = (rms / 8000f).coerceIn(0f, 1f) } },
+            onWarning = { mainHandler.post { Log.i(TAG, "Approaching session cap.") } },
+            onFinished = { file, reason -> mainHandler.post { onRecordingFinished(file, reason) } },
+        )
+    }
+
+    private fun onRecordingFinished(file: File, reason: StopReason) {
+        setForeground(microphone = false)
+        bubble?.let { it.level = 0f }
+        when (reason) {
+            StopReason.ERROR -> flash(bubble, BubbleState.ERROR)
+            else -> bubble?.state = BubbleState.IDLE // M6 will transcribe + inject here
         }
-        when (a11y.injectText("hello world")) {
-            InsertResult.Success -> flash(view, BubbleState.TRANSCRIBING, then = BubbleState.IDLE)
-            InsertResult.NeedsClipboardFallback -> view.state = BubbleState.PASTE
-            InsertResult.RefusedSensitive -> flash(view, BubbleState.ERROR)
-            InsertResult.NoEditableField -> flash(view, BubbleState.ERROR)
-        }
+        Log.i(TAG, "WAV saved: ${file.absolutePath} (${file.length()} bytes), reason=$reason")
     }
 
     /** Briefly show [state], then return to [then] (default keeps [state]). */
-    private fun flash(view: BubbleView, state: BubbleState, then: BubbleState = state) {
+    private fun flash(view: BubbleView?, state: BubbleState, then: BubbleState = state) {
+        view ?: return
         view.state = state
         if (then != state) {
             view.postDelayed({ if (bubble === view) view.state = then }, 700)
@@ -166,6 +220,9 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        debugReceiver?.let { runCatching { unregisterReceiver(it) } }
+        debugReceiver = null
+        runCatching { audioRecorder.stop() }
         bubble?.let { runCatching { windowManager.removeView(it) } }
         bubble = null
         super.onDestroy()
@@ -176,6 +233,8 @@ class OverlayService : Service() {
         private const val CHANNEL_ID = "quill_overlay"
         private const val NOTIFICATION_ID = 1
         const val ACTION_STOP = "com.tihor.quill.overlay.STOP"
+        const val ACTION_DEBUG_RECORD_START = "com.tihor.quill.DEBUG_RECORD_START"
+        const val ACTION_DEBUG_RECORD_STOP = "com.tihor.quill.DEBUG_RECORD_STOP"
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(context, Intent(context, OverlayService::class.java))

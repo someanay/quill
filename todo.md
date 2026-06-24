@@ -109,19 +109,24 @@ not proceed until build + tests + the manual script all pass, then commit.
 > `RefusedSensitive`). Trade-off: also disables dictation into the URL bar + generic web text fields
 > (safety over convenience, as requested). Softening option noted in `testing_plan.md` §3.
 
-## M4 — Audio capture in a microphone foreground service
-> **Before starting M4, manually whitelist Quill on your Honor dev device** (App launch → Manual →
-> enable all three; Battery → Protected/unrestricted). See `testing_plan.md`. Without this, MagicOS
-> kills the service mid-development and you'll chase ghosts.
-- [ ] `OverlayService` as FGS `type=microphone` + persistent notification
-- [ ] `AudioRecorder(input = handset default)` — **`AudioRecord`** 16 kHz mono PCM → WAV in cache, then **encode to FLAC** (**libFLAC via NDK/JNI** — Android has no one-call PCM→`.flac` and `MediaMuxer` exposes no FLAC output; spec §2.2) before upload; route input through the `AudioRoutingManager` seam so BT drops in later (decision: `spec.md` §2.2)
-- [ ] Start recording from bubble tap (background-start permitted via the visible overlay)
-- [ ] Mic runtime-permission handling; session cap (default 300 s) with pre-limit warning
-- [ ] **Silence auto-stop (v1):** compute RMS from the capture frames; auto-stop after a conservative quiet window (tune so mid-sentence pauses don't cut off) — guards against forgotten-stop uploads
-- [ ] **Minimal keep-alive (pulled forward from M11 because Honor needs it now):** sticky FGS +
-      battery-optimisation-exemption prompt + auto-restart on app foreground
-- [ ] **Test (write first):** unit-test the WAV header (16 kHz / mono / 16-bit) and the session-cap timer; run the Honor survival script in `testing_plan.md`
-- [ ] **Verify:** tap → records → valid WAV saved; works with screen on; revoking mic mid-session does **not** crash; **service survives backgrounding on the Honor device**.
+## M4 — Audio capture in a microphone foreground service ✅ (commit `feat: audio capture in mic FGS (M4)`)
+> Honor whitelist DONE (user, 2026-06-24).
+- [x] `OverlayService` FGS adds `type=microphone` while recording (manifest `specialUse|microphone`); drops the mic type on stop. Notification updates ("Quill is listening").
+- [x] `AudioRecorder(input = handset default)` — **`AudioRecord`** (VOICE_RECOGNITION) 16 kHz mono PCM → WAV in cache; routes input through the `AudioRoutingManager` seam (`HandsetAudioRoutingManager`). **FLAC deferred** behind the `AudioEncoder` seam (`WavPassthroughEncoder`) — see note.
+- [x] Start recording from bubble tap (background-start permitted via the visible overlay). Tap toggles record/stop; live level feeds the bubble (`BubbleView.level`).
+- [x] Mic runtime-permission handling (`hasMicPermission` → ERROR state if missing); session cap (300 s) + pre-limit warning (`RecordingLimits`).
+- [x] **Silence auto-stop (v1):** RMS per buffer → `SilenceDetector` (fixed threshold, conservative quiet window + startup grace). Unit-tested; live tuning is a manual step.
+- [~] **Minimal keep-alive:** sticky FGS ✅ (`START_STICKY`). Battery-exemption **prompt** + auto-restart-on-foreground folded into M8/M11 (the Honor whitelist is done manually for dev).
+- [x] **Test (write first):** `WavHeaderTest` (16 kHz/mono/16-bit), `SilenceDetectorTest`, `RecordingLimitsTest` — all green.
+- [x] **Verify (adb on Honor):** record → **valid WAV** (header dumped: `RIFF/WAVE`, PCM, mono, 0x3e80=16000 Hz, 16-bit; 4.2 s = 134400 PCM bytes); screen on ✅; revoking mic mid-session → **no crash** (OS kills+restarts process, sticky FGS recovers) ✅. *(Bubble-tap start + on-screen level meter + live silence-stop are part of your physical pass; driven here via `DEBUG_RECORD_START/STOP`.)*
+
+> **M4 deviations:**
+> - **FLAC encoder deferred** (NDK not provisioned; native CMake build on AGP 9.2.1 is high-risk).
+>   v1 records WAV; `AudioEncoder`/`WavPassthroughEncoder` seam is in place so libFLAC drops in with
+>   no caller change. **Groq/OpenAI accept WAV**, so M5/M6 work without it. Revisit before release
+>   (upload-size optimization). This is the NDK/FLAC item originally slated for M4.
+> - **Dev triggers:** `adb shell am broadcast -a com.tihor.quill.DEBUG_RECORD_START` / `_STOP`
+>   (debug builds). Grant mic: `adb shell pm grant com.tihor.quill android.permission.RECORD_AUDIO`.
 
 ## M5 — STT integration (BYOK)
 - [ ] `TranscriptionClient` interface + `OpenAiCompatibleTranscriptionClient` (base URL + model)
