@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +32,7 @@ import com.tihor.quill.accessibility.AccessibilityDisclosureActivity
 import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
+import com.tihor.quill.secrets.TempApiKeyHolder
 import com.tihor.quill.ui.theme.QuillTheme
 
 /**
@@ -109,8 +111,20 @@ private fun BubbleControls(modifier: Modifier = Modifier) {
             Text(if (a11yEnabled) "Review accessibility setup" else "Set up accessibility")
         }
 
+        var apiKey by remember { mutableStateOf(TempApiKeyHolder.key.orEmpty()) }
+        OutlinedTextField(
+            value = apiKey,
+            onValueChange = { apiKey = it; TempApiKeyHolder.key = it.trim() },
+            label = { Text("Groq API key (temporary — encrypted at M7)") },
+            singleLine = true,
+        )
         Text(
-            "Tap the bubble to cycle states · drag to move (snaps to edge) · long-press to dismiss",
+            if (TempApiKeyHolder.isSet()) "API key: set" else "API key: not set",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        Text(
+            "Tap the bubble to record · tap again to stop → transcribe → insert · drag to move · long-press to dismiss",
             style = MaterialTheme.typography.bodySmall,
         )
     }

@@ -139,11 +139,20 @@ not proceed until build + tests + the manual script all pass, then commit.
 > doesn't throw in plain JVM tests. The live minified-parse check happens when the release APK is
 > exercised (M12); R8 retains the serializers (build proves it).
 
-## M6 — End-to-end happy path 🎯
-- [ ] Wire capture → STT → injection through the bubble
-- [ ] States flow correctly: recording → transcribing → inserted (or fallback)
-- [ ] **Test:** the end-to-end manual script across ≥3 apps (this one is inherently manual)
-- [ ] **Verify:** speak → text appears in the focused field across ≥3 apps. *This is the v1 proof point.*
+## M6 — End-to-end happy path 🎯 — code ✅, YOUR live test pending (commit `feat: end-to-end dictation pipeline (M6)`)
+- [x] Wire capture → STT → injection through the bubble (`OverlayService.transcribeAndInject` → `onTranscript`): record → transcribe (Groq) → `injectText`.
+- [x] States flow: RECORDING → TRANSCRIBING → IDLE (inserted) / PASTE (clipboard fallback) / ERROR. Empty transcript → "didn't catch that" (ERROR). Temp WAV deleted on success/fallback, **kept on failure** for retry (spec §4.3).
+- [~] **Test:** end-to-end manual script across ≥3 apps — **yours** (needs a real Groq key + speech).
+- [~] **Verify:** Pipeline verified on-device against the **real Groq endpoint** (record → WAV → multipart upload → 401 → typed `BadKey`/ERROR; WAV kept). **Live success path (speak → text lands) is your test** with your key. *This is the v1 proof point.*
+
+> **M6 notes:**
+> - **Temporary key entry:** `TempApiKeyHolder` (in-memory, no plaintext at rest) + a key field in
+>   `MainActivity`. **M7 replaces it** with Keystore-encrypted `SecretStore`.
+> - **Provider hardcoded to Groq** (`whisper-large-v3-turbo`) for M6; the provider/model **settings UI is M7**.
+> - **Retry UI deferred:** on failure the WAV is kept but there's no explicit Retry button yet (the
+>   bubble shows ERROR). Wire an explicit Retry/"recording saved" affordance at M11 (PRD §5.7).
+> - **Dev trigger for the pipeline:** `am broadcast -a com.tihor.quill.DEBUG_SET_KEY --es key '<key>'`
+>   then `DEBUG_RECORD_START`/`_STOP` (debug builds).
 
 ## M7 — Secrets & settings
 - [ ] `SecretStore`: Keystore AES-256-GCM; encrypt key blob; exclude from Auto Backup
