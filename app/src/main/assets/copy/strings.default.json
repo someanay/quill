@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "locale": "en",
+  "updatedAt": "2026-06-24T00:00:00Z",
+  "strings": {
+    "onboarding.splash.tagline": "Dictate into any app",
+
+    "onboarding.welcome.title": "Dictate into any app you use",
+    "onboarding.welcome.body": "Quill puts a floating bubble over every app. Tap it, speak, and your words land in the field — transcribed by your own provider key.",
+    "onboarding.welcome.cta": "Get started",
+
+    "onboarding.howitworks.title": "How it works",
+    "onboarding.howitworks.step1": "Tap the floating bubble in any app to start recording.",
+    "onboarding.howitworks.step2": "Speak, then tap again — Quill transcribes with your key.",
+    "onboarding.howitworks.step3": "Your words are inserted at the cursor. Nothing is sent to us.",
+    "onboarding.howitworks.cta": "Continue",
+
+    "onboarding.checklist.title": "Three quick steps",
+    "onboarding.checklist.key": "Add your API key",
+    "onboarding.checklist.mic": "Allow the microphone",
+    "onboarding.checklist.overlay": "Allow the floating bubble",
+    "onboarding.checklist.accessibility": "Turn on insert-into-apps",
+    "onboarding.checklist.cta": "Continue",
+
+    "onboarding.key.title": "Add your speech-to-text key",
+    "onboarding.key.body": "Quill uses your own provider key (Groq by default). It's encrypted on this device and sent only to your provider.",
+    "onboarding.key.field_label": "API key",
+    "onboarding.key.cta": "Save & verify",
+    "onboarding.key.where_link": "Where do I get a key?",
+    "onboarding.key.verifying": "Checking your key…",
+    "onboarding.key.valid": "Key verified",
+
+    "key.error.invalid": "That key was rejected (401). Check you copied it fully.",
+    "key.error.network": "Couldn't reach the provider. Check your connection and try again.",
+
+    "onboarding.mic.title": "Allow the microphone",
+    "onboarding.mic.cta": "Allow microphone",
+    "onboarding.mictest.title": "Say something",
+    "onboarding.mictest.body": "Let's check your mic. Speak now — you should see the strokes move.",
+    "onboarding.mictest.cta": "Sounds good",
+    "onboarding.mictest.heard": "Heard you loud and clear.",
+
+    "onboarding.overlay.title": "Allow the floating bubble",
+    "onboarding.overlay.cta": "Allow display over apps",
+
+    "onboarding.accessibility.enable_title": "Turn on insert-into-apps",
+    "onboarding.accessibility.enable_cta": "Open Accessibility settings",
+
+    "onboarding.allset.title": "You're all set",
+    "onboarding.allset.body": "Open any app, tap the bubble, and start dictating.",
+    "onboarding.allset.cta": "Try a dictation",
+
+    "action.not_now": "Not now",
+    "action.continue": "Continue",
+    "action.back": "Back",
+    "status.done": "Done",
+
+    "compliance.accessibility.disclosure_title": "Allow Quill to insert dictation",
+    "compliance.accessibility.disclosure_body": "To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.",
+    "compliance.accessibility.disclosure_accept": "I understand — open Accessibility settings",
+    "compliance.accessibility.disclosure_decline": "Not now",
+    "compliance.rationale.mic": "Quill needs the microphone to record what you dictate. Audio is sent only to the speech provider whose key you supply, and is deleted after a successful transcription.",
+    "compliance.rationale.overlay": "The floating bubble needs permission to display over other apps. That bubble is also what lets Quill record while you're in another app.",
+    "compliance.rationale.accessibility": "Quill uses accessibility only to detect the focused text field and insert your dictation. It never reads or writes password or banking fields.",
+    "compliance.privacy.promise": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
+    "compliance.key.required_title": "You'll need your own API key",
+    "compliance.key.required_body": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us."
+  }
+}

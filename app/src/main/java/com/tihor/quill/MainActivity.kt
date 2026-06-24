@@ -46,6 +46,7 @@ import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.ui.ApiKeyActivity
+import com.tihor.quill.ui.OnboardingActivity
 import com.tihor.quill.ui.SettingsActivity
 import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.PillKind
@@ -114,6 +115,11 @@ private fun HomeScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text("Dictate into any app", style = MaterialTheme.typography.headlineSmall)
+
+            Button(
+                onClick = { context.startActivity(Intent(context, OnboardingActivity::class.java)) },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Set up Quill (walk onboarding)") }
             Text(
                 "Status — overlay: ${onOff(hasOverlay)} · accessibility: ${onOff(a11yEnabled)} · key: ${if (hasKey) "set" else "not set"}",
                 style = MaterialTheme.typography.bodyMedium,

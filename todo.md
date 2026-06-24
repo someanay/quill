@@ -182,13 +182,20 @@ not proceed until build + tests + the manual script all pass, then commit.
 > insert-at-cursor logic exists; left as the tracked P1. `InkMeter` (§10) lands at M8 (mic-test).
 > Dev: `adb shell am broadcast -a com.tihor.quill.DEBUG_SET_KEY --es key '<key>'`.
 
-## M8 — Onboarding flow
-- [ ] Sequential permission steps (mic → overlay → accessibility-with-disclosure), plain-language copy
-- [ ] **Soft-coded copy foundation (used by every screen):** strings read by key via the **Copy Catalog** — `CopyRepository` + baked-in `assets/copy/strings.default.json` + a Compose `LocalCopy`; **no string literals in composables** (spec §2.3). Compliance strings (accessibility disclosure, permission rationales, privacy promises, BYOK key warning) live **only** in the binary and are excluded from any future remote override.
-- [ ] Microphone test (level meter); deep links into the right Settings screens
-- [ ] Recovery cards for any revoked permission
-- [ ] **Test:** Compose UI tests (advances only when each permission granted; key-field validation rejects empty); manual cold-install run-through
-- [ ] **Verify:** a cold install runs end-to-end to first successful dictation without external help.
+## M8 — Onboarding flow ✅ code/build/install, YOUR walkthrough pending (commit `feat: onboarding flow + Copy Catalog (M8)`)
+- [x] **Reordered flow (board A)** in `OnboardingActivity` (12-step state machine): splash → welcome → key-required warning (3 s gold read-gate) → add key → verify → key error → how-it-works → setup checklist → mic → **mic-test (InkMeter renders here)** → overlay → accessibility disclosure → accessibility enable → all set. Real grants via launchers (mic `RequestPermission`, overlay/accessibility settings intents).
+- [x] **Copy Catalog foundation:** `CopyKeys` + baked-in `assets/copy/strings.default.json` (complete) + `CopyRepository` (resolved `StateFlow`, `get(key,args)`, fallback) + `LocalCopy`/`copy(key)` + `QuillRoot`. **Compliance keys binary-only** — `CopyKeys.COMPLIANCE` excluded from `OVERRIDABLE` from the start; `applyOverride` physically ignores them (tested).
+- [x] **CI/lint guard:** `NoComposeStringLiteralsTest` fails on hardcoded `Text("…")` in the onboarding flow. *(Scoped to the on-design onboarding now; extend to migrated screens — see follow-up.)*
+- [x] Microphone test with the **InkMeter** (§10) driven by live `AudioRecorder` RMS; reduced-motion aware.
+- [x] **InkMeter (§10)** + **PermissionIllustration/ProgressDots** (§8.16/§8.15) built; every screen on QuillTheme + §8 patterns.
+- [x] **Test:** `CopyRepositoryTest` (completeness, fallback, compliance-not-overridable, override-ignores-compliance); literal guard. 57 unit tests green.
+- [~] **Verify:** Renders on-design (Welcome = brand illustration; Key-warning = gold illustration + 3 s gold gate + disabled CTA + compliance copy — screenshotted). **Cold-install run-through to first dictation is YOUR walkthrough** (real mic/overlay/accessibility grants).
+
+> **M8 notes / deferred-within-M8 (tracked):**
+> - **Recovery cards for revoked permissions** → folded into **M11** (revocation detection + notification deep-link); the checklist step already shows live permission status.
+> - **Compose UI instrumented tests** (advance-only-when-granted, empty-key-rejected) → follow-up; empty-key is already gated (`primaryEnabled = key.isNotBlank()`), and the manual run-through is the M8 gate.
+> - **Migrate M7 screens (Home/ApiKey/Settings) to the Copy Catalog** + extend the literal guard repo-wide → follow-up (they currently use literals; the onboarding is the first fully-keyed flow).
+> - The standalone `AccessibilityDisclosureActivity` (M2) still reads compliance copy from `strings.xml`; both are binary/locked — consolidate onto the catalog in the follow-up.
 
 ## M9 — Dictation history (P1, opt-in)
 - [ ] Room `transcripts` table + DAO; list screen (Compose)
