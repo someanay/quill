@@ -7,20 +7,36 @@
     "onboarding.splash.tagline": "Dictate into any app",
 
     "onboarding.welcome.title": "Dictate into any app you use",
-    "onboarding.welcome.body": "Quill puts a floating bubble over every app. Tap it, speak, and your words land in the field — transcribed by your own provider key.",
+    "onboarding.welcome.body": "A bubble floats over every app. Tap it, speak, and your words land right where the cursor is.",
     "onboarding.welcome.cta": "Get started",
+    "onboarding.welcome.already": "Already set up?",
+    "onboarding.welcome.open": "Open Quill",
 
-    "onboarding.howitworks.title": "How it works",
-    "onboarding.howitworks.step1": "Tap the floating bubble in any app to start recording.",
-    "onboarding.howitworks.step2": "Speak, then tap again — Quill transcribes with your key.",
-    "onboarding.howitworks.step3": "Your words are inserted at the cursor. Nothing is sent to us.",
-    "onboarding.howitworks.cta": "Continue",
+    "onboarding.key.warning.free_tier": "You bring the key — some providers (like Groq) have a free tier to start.",
+    "onboarding.key.warning.usage": "Your provider may charge for usage — Quill itself is free.",
+    "onboarding.key.warning.reading": "Take a moment to read this",
+    "onboarding.key.warning.accept": "I understand — add my key",
 
-    "onboarding.checklist.title": "Three quick steps",
-    "onboarding.checklist.key": "Add your API key",
-    "onboarding.checklist.mic": "Allow the microphone",
-    "onboarding.checklist.overlay": "Allow the floating bubble",
-    "onboarding.checklist.accessibility": "Turn on insert-into-apps",
+    "onboarding.howitworks.eyebrow": "Three steps",
+    "onboarding.howitworks.title": "From voice to text, on your terms",
+    "onboarding.howitworks.t1": "Tap & speak",
+    "onboarding.howitworks.t2": "Your provider transcribes",
+    "onboarding.howitworks.t3": "It writes where you are",
+    "onboarding.howitworks.step1": "The bubble starts listening — tap again to send.",
+    "onboarding.howitworks.step2": "Audio goes straight to your speech-to-text key. No middleman.",
+    "onboarding.howitworks.step3": "Text drops in at the cursor — chat, email, search, notes.",
+    "onboarding.howitworks.cta": "Next",
+
+    "onboarding.checklist.title": "You're connected",
+    "onboarding.checklist.progress": "%1$d of %2$d done",
+    "onboarding.checklist.key": "Add your key",
+    "onboarding.checklist.key_sub": "Groq · connected",
+    "onboarding.checklist.mic": "Microphone",
+    "onboarding.checklist.mic_sub": "So Quill can hear you",
+    "onboarding.checklist.overlay": "Floating bubble",
+    "onboarding.checklist.overlay_sub": "Display over other apps",
+    "onboarding.checklist.accessibility": "Type into apps",
+    "onboarding.checklist.accessibility_sub": "Accessibility access",
     "onboarding.checklist.cta": "Continue",
 
     "onboarding.key.title": "Add your speech-to-text key",
@@ -47,9 +63,11 @@
     "onboarding.accessibility.enable_title": "Turn on insert-into-apps",
     "onboarding.accessibility.enable_cta": "Open Accessibility settings",
 
-    "onboarding.allset.title": "You're all set",
-    "onboarding.allset.body": "Open any app, tap the bubble, and start dictating.",
-    "onboarding.allset.cta": "Try a dictation",
+    "onboarding.allset.title": "You're ready to write",
+    "onboarding.allset.body": "The bubble is live. Open any app, focus a text field, and give it a try.",
+    "onboarding.allset.cta": "Try your first dictation",
+    "onboarding.allset.look": "Look for this in the corner of your screen.",
+    "onboarding.allset.home_link": "Go to Quill home",
 
     "action.not_now": "Not now",
     "action.continue": "Continue",
@@ -65,6 +83,7 @@
     "compliance.rationale.accessibility": "Quill uses accessibility only to detect the focused text field and insert your dictation. It never reads or writes password or banking fields.",
     "compliance.privacy.promise": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
     "compliance.key.required_title": "You'll need your own API key",
-    "compliance.key.required_body": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us."
+    "compliance.key.required_body": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us.",
+    "compliance.privacy.welcome_pill": "Your key, your audio — nothing through our servers"
   }
 }
