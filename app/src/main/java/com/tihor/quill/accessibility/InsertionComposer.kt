@@ -14,6 +14,31 @@ object InsertionComposer {
     data class Composition(val newText: String, val newCaret: Int)
 
     /**
+     * Hint-aware [compose]. A field that is only showing its placeholder/hint is treated as **empty**
+     * so `ACTION_SET_TEXT` replaces it with exactly the transcript — never appends the placeholder
+     * (the WhatsApp "Message" prefix bug). A field counts as showing its hint when
+     * [isShowingHintText] is true (the documented signal) **or** its [fieldText] equals its
+     * [hintText] (some apps, e.g. WhatsApp, surface the hint as text without setting the flag).
+     */
+    fun composeForField(
+        fieldText: CharSequence?,
+        hintText: CharSequence?,
+        isShowingHintText: Boolean,
+        selStart: Int,
+        selEnd: Int,
+        transcript: String,
+    ): Composition {
+        val text = fieldText?.toString() ?: ""
+        val hint = hintText?.toString()
+        val showingHint = isShowingHintText || (!hint.isNullOrEmpty() && text == hint)
+        return if (showingHint) {
+            compose(existing = "", selStart = -1, selEnd = -1, transcript = transcript)
+        } else {
+            compose(existing = text, selStart = selStart, selEnd = selEnd, transcript = transcript)
+        }
+    }
+
+    /**
      * @param existing current field text
      * @param selStart selection/caret start; <0 or out-of-range is treated as end-of-text
      * @param selEnd   selection end; the [selStart, selEnd] range is replaced (Android selection)

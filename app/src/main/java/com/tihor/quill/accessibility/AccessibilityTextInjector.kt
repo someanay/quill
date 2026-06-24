@@ -56,14 +56,20 @@ class AccessibilityTextInjector(private val context: Context) : TextInjector {
     }
 
     private fun trySetText(target: AccessibilityNodeInfo, text: String): InsertResult {
-        // When the field is showing placeholder/hint text, `node.text` is the hint, not real
-        // content — treat the field as empty so we don't append to the placeholder.
-        val showingHint = target.isShowingHintText
-        val existing = if (showingHint) "" else target.text?.toString() ?: ""
-        val comp = InsertionComposer.compose(
-            existing = existing,
-            selStart = if (showingHint) -1 else target.textSelectionStart,
-            selEnd = if (showingHint) -1 else target.textSelectionEnd,
+        // Hint-aware: a field only showing its placeholder is treated as empty so SET_TEXT replaces
+        // it with exactly the transcript (never appends the hint, e.g. WhatsApp "Message").
+        // Log only the hint + flags, never the field content (privacy, spec §6).
+        Log.d(
+            TAG,
+            "field hint='${target.hintText}' showingHint=${target.isShowingHintText} " +
+                "textLen=${target.text?.length ?: 0}",
+        )
+        val comp = InsertionComposer.composeForField(
+            fieldText = target.text,
+            hintText = target.hintText,
+            isShowingHintText = target.isShowingHintText,
+            selStart = target.textSelectionStart,
+            selEnd = target.textSelectionEnd,
             transcript = text,
         )
         val setArgs = Bundle().apply {

@@ -97,6 +97,17 @@ not proceed until build + tests + the manual script all pass, then commit.
 >   **Quote the whole `am` line for the device shell** or the space in the text becomes a `pkg=` arg.
 > - **Compose / Samsung / banking** node behaviour is unknown until you run the §3 matrix on the phone.
 >
+> **Hint-prefix bug FIXED (2026-06-24):** WhatsApp (and similar) surfaced the field's hint ("Message")
+> as the node `text` *without* setting `isShowingHintText`, so the injector appended dictation to it
+> ("Message" + text). `InsertionComposer.composeForField` now treats a field as empty when
+> `isShowingHintText` **or** `text == hintText`, so `ACTION_SET_TEXT` writes exactly the transcript.
+> Covered by `InsertionComposerTest` (6 hint cases) + `HintNodeInjectionTest` (Robolectric, real
+> `AccessibilityNodeInfo` with text==hintText → exact transcript, no prefix). A privacy-safe debug log
+> (`field hint='…' showingHint=… textLen=…`, never content) aids the on-device re-check.
+> **Re-check note:** synthetic `adb input tap` does **not** fire the `TYPE_VIEW_FOCUSED` events real
+> finger taps do, so native-field injection can't be driven headlessly — **re-run the matrix by hand**
+> (WhatsApp/Gmail/Messages) to confirm no prefix; `adb logcat -s Quill.Inject` shows the hint/flag.
+>
 > **M3 hand-test PASSED (2026-06-24, Honor):** native WhatsApp/Gmail/Messages inject at the cursor ✅;
 > Chrome paste-fallback worked (P state → tap → paste → prior clipboard restored) ✅; native
 > banking/password refused/untouched ✅; bubble gestures ✅. (Matrix filled in `testing_plan.md` §3.)
