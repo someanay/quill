@@ -24,6 +24,8 @@ data class QuillSettings(
     val languageHint: String = DEFAULT_LANGUAGE, // ISO code, or LANGUAGE_AUTO for auto-detect
     val cleanupEnabled: Boolean = true,
     val privateMode: Boolean = false,
+    /** Save dictation history on device (M9). Opt-in: default OFF; [privateMode] hard-overrides it. */
+    val historyEnabled: Boolean = false,
     val sessionCapSeconds: Int = 300,
     val onboardingComplete: Boolean = false,
 ) {
@@ -43,6 +45,7 @@ class SettingsRepository(private val context: Context) {
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
             cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: true,
             privateMode = p[Keys.PRIVATE_MODE] ?: false,
+            historyEnabled = p[Keys.HISTORY_ENABLED] ?: false,
             sessionCapSeconds = p[Keys.SESSION_CAP_SECONDS] ?: 300,
             onboardingComplete = p[Keys.ONBOARDING_COMPLETE] ?: false,
         )
@@ -67,6 +70,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun setPrivateMode(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.PRIVATE_MODE] = enabled }
 
+    suspend fun setHistoryEnabled(enabled: Boolean) =
+        context.settingsDataStore.edit { it[Keys.HISTORY_ENABLED] = enabled }
+
     suspend fun setSessionCapSeconds(seconds: Int) =
         context.settingsDataStore.edit { it[Keys.SESSION_CAP_SECONDS] = seconds }
 
@@ -79,6 +85,7 @@ class SettingsRepository(private val context: Context) {
         val LANGUAGE_HINT = stringPreferencesKey("language_hint")
         val CLEANUP_ENABLED = booleanPreferencesKey("cleanup_enabled")
         val PRIVATE_MODE = booleanPreferencesKey("private_mode")
+        val HISTORY_ENABLED = booleanPreferencesKey("history_enabled")
         val SESSION_CAP_SECONDS = intPreferencesKey("session_cap_seconds")
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
     }

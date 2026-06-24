@@ -13,6 +13,7 @@ class NoComposeStringLiteralsTest {
 
     private val scanned = listOf(
         "src/main/java/com/tihor/quill/ui/OnboardingActivity.kt",
+        "src/main/java/com/tihor/quill/ui/screens/HistoryScreen.kt",
     )
 
     @Test

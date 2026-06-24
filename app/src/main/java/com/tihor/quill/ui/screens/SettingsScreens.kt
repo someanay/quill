@@ -602,7 +602,6 @@ fun PrivacyScreen(nav: QuillNav) {
     val repo = remember { SettingsRepository(context) }
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
-    var saveHistory by rememberSaveable { mutableStateOf(true) } // TODO(M9): wire to history store
     var crashReports by rememberSaveable { mutableStateOf(true) } // TODO(M11): wire to crash opt-in
 
     val micGranted = androidx.core.content.ContextCompat.checkSelfPermission(
@@ -624,7 +623,12 @@ fun PrivacyScreen(nav: QuillNav) {
                 { scope.launch { repo.setPrivateMode(it) } }, "Don't save any transcripts",
             )
             RowDivider()
-            SwitchRow("Save dictation history", saveHistory, { saveHistory = it }, "Keep the last 1,000 on device")
+            SwitchRow(
+                "Save dictation history",
+                settings.historyEnabled,
+                { scope.launch { repo.setHistoryEnabled(it) } },
+                "Keep the last 1,000 on device",
+            )
         }
 
         SectionHeader("Diagnostics")
@@ -829,6 +833,7 @@ fun ConfirmDialog(
     confirmLabel: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    cancelLabel: String = "Cancel",
 ) {
     androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
         QuillCard {
@@ -840,7 +845,7 @@ fun ConfirmDialog(
                 Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
                 Spacer(Modifier.height(18.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    com.tihor.quill.ui.components.QuillGhostButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                    com.tihor.quill.ui.components.QuillGhostButton(cancelLabel, onClick = onDismiss, modifier = Modifier.weight(1f))
                     com.tihor.quill.ui.components.QuillDangerButton(confirmLabel, onClick = onConfirm, modifier = Modifier.weight(1f))
                 }
             }

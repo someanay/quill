@@ -77,7 +77,26 @@ object CopyKeys {
     const val ACTION_NOT_NOW = "action.not_now"
     const val ACTION_CONTINUE = "action.continue"
     const val ACTION_BACK = "action.back"
+    const val ACTION_CANCEL = "action.cancel"
     const val STATUS_DONE = "status.done"
+
+    // --- History (M9, overridable) ---
+    const val HISTORY_TITLE = "history.title"
+    const val HISTORY_CLEAR_ALL = "history.clear_all"
+    const val HISTORY_GROUP_TODAY = "history.group.today"
+    const val HISTORY_GROUP_YESTERDAY = "history.group.yesterday"
+    const val HISTORY_EMPTY_ON_TITLE = "history.empty.on_title"
+    const val HISTORY_EMPTY_ON_BODY = "history.empty.on_body"
+    const val HISTORY_EMPTY_ON_CTA = "history.empty.on_cta"
+    const val HISTORY_EMPTY_OFF_TITLE = "history.empty.off_title"
+    const val HISTORY_EMPTY_OFF_BODY = "history.empty.off_body"
+    const val HISTORY_EMPTY_OFF_CTA = "history.empty.off_cta"
+    const val HISTORY_SHEET_COPY = "history.sheet.copy"
+    const val HISTORY_SHEET_SHARE = "history.sheet.share"
+    const val HISTORY_SHEET_DELETE = "history.sheet.delete"
+    const val HISTORY_CLEAR_TITLE = "history.clear.title"
+    const val HISTORY_CLEAR_BODY = "history.clear.body"
+    const val HISTORY_CLEAR_CONFIRM = "history.clear.confirm"
 
     // --- Compliance (binary-only; NEVER overridable) ---
     const val DISCLOSURE_TITLE = "compliance.accessibility.disclosure_title"
@@ -121,7 +140,12 @@ object CopyKeys {
             MIC_TITLE, MIC_CTA, MICTEST_TITLE, MICTEST_BODY, MICTEST_CTA, MICTEST_HEARD,
             OVERLAY_TITLE, OVERLAY_CTA, ACC_ENABLE_TITLE, ACC_ENABLE_CTA,
             ALLSET_TITLE, ALLSET_BODY, ALLSET_CTA, ALLSET_LOOK, ALLSET_HOME_LINK,
-            ACTION_NOT_NOW, ACTION_CONTINUE, ACTION_BACK, STATUS_DONE,
+            ACTION_NOT_NOW, ACTION_CONTINUE, ACTION_BACK, ACTION_CANCEL, STATUS_DONE,
+            HISTORY_TITLE, HISTORY_CLEAR_ALL, HISTORY_GROUP_TODAY, HISTORY_GROUP_YESTERDAY,
+            HISTORY_EMPTY_ON_TITLE, HISTORY_EMPTY_ON_BODY, HISTORY_EMPTY_ON_CTA,
+            HISTORY_EMPTY_OFF_TITLE, HISTORY_EMPTY_OFF_BODY, HISTORY_EMPTY_OFF_CTA,
+            HISTORY_SHEET_COPY, HISTORY_SHEET_SHARE, HISTORY_SHEET_DELETE,
+            HISTORY_CLEAR_TITLE, HISTORY_CLEAR_BODY, HISTORY_CLEAR_CONFIRM,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
             PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY, WELCOME_PRIVACY_PILL,

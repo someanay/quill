@@ -97,6 +97,9 @@ class QuillAccessibilityService : AccessibilityService() {
         return focus != null && injector.paste(focus)
     }
 
+    /** Package of the currently focused editable field (M9 history "target app"); null if none. */
+    fun focusedPackageName(): String? = focusedEditable?.packageName?.toString()
+
     private fun currentInputFocus(): AccessibilityNodeInfo? =
         runCatching { findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
 

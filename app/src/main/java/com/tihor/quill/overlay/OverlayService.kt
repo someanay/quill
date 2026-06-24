@@ -24,6 +24,7 @@ import com.tihor.quill.accessibility.InsertResult
 import com.tihor.quill.accessibility.QuillAccessibilityService
 import com.tihor.quill.audio.AudioRecorder
 import com.tihor.quill.audio.StopReason
+import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.settings.QuillSettings
@@ -74,6 +75,10 @@ class OverlayService : Service() {
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private val secretStore: SecretStore by lazy { KeystoreSecretStore(this) }
     private val settingsRepository by lazy { SettingsRepository(this) }
+    private val historyRepository by lazy { HistoryRepository(this) }
+
+    /** Package of the field where the current recording started — saved as the history "target app". */
+    private var recordingPackage: String? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -280,6 +285,7 @@ class OverlayService : Service() {
         }
         val output = File(cacheDir, "quill_${System.currentTimeMillis()}.wav")
         currentRecording = output
+        recordingPackage = QuillAccessibilityService.instance?.focusedPackageName()
         setForeground(microphone = true)
         applyState(BubbleState.RECORDING)
         audioRecorder.start(
@@ -335,7 +341,20 @@ class OverlayService : Service() {
                 ),
             )
             result.fold(
-                onSuccess = { onTranscript(wav, it.text) },
+                onSuccess = {
+                    // Save on a successful transcription (gated), BEFORE insertion — a transcript that
+                    // fails to land is exactly when a saved copy is the safety net (M9).
+                    val pkg = recordingPackage
+                    historyRepository.maybeSave(
+                        historyEnabled = settings.historyEnabled,
+                        privateMode = settings.privateMode,
+                        text = it.text,
+                        packageName = pkg,
+                        appLabel = appLabelFor(pkg),
+                        timestamp = System.currentTimeMillis(),
+                    )
+                    onTranscript(wav, it.text)
+                },
                 onFailure = { err ->
                     Log.w(TAG, "Transcription failed: ${err.message}") // keep WAV for retry
                     applyState(BubbleState.ERROR)
@@ -370,6 +389,14 @@ class OverlayService : Service() {
                 wav.delete()
             }
         }
+    }
+
+    /** Human-readable app name for [pkg] (the history "target app"); null/raw pkg if unresolvable. */
+    private fun appLabelFor(pkg: String?): String? {
+        pkg ?: return null
+        return runCatching {
+            packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
+        }.getOrNull() ?: pkg
     }
 
     private fun moveBy(dxPx: Float, dyPx: Float) {
