@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -271,6 +272,70 @@ fun RowChevron() {
         contentDescription = null,
         tint = MaterialTheme.quill.faint,
         modifier = Modifier.size(20.dp),
+    )
+}
+
+// ============================================================================
+// Chip — the pill selector `.chip` / `.chip.on` (provider, size, theme pickers).
+// ============================================================================
+
+@Composable
+fun QuillChip(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val q = MaterialTheme.quill
+    val bg = if (selected) q.brandSoft else MaterialTheme.colorScheme.surface
+    val fg = when {
+        !enabled -> q.faint
+        selected -> q.brandInk
+        else -> q.text2
+    }
+    Row(
+        modifier
+            .clip(CircleShape)
+            .background(bg)
+            .then(if (selected) Modifier else Modifier.border(1.dp, q.lineStrong, CircleShape))
+            .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 32.dp)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (selected) {
+            Icon(
+                androidx.compose.material.icons.Icons.Rounded.Check,
+                contentDescription = null,
+                tint = fg,
+                modifier = Modifier.size(14.dp),
+            )
+        }
+        Text(text, style = MaterialTheme.typography.labelMedium, color = fg)
+    }
+}
+
+/** The small bold label above a field/chip row (`.flabel-i`). */
+@Composable
+fun FieldLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.quill.text2,
+        modifier = modifier.padding(start = 2.dp, bottom = 6.dp),
+    )
+}
+
+/** Muted helper text under a field (`.help`). [bad] flips it to the error colour. */
+@Composable
+fun HelpText(text: String, modifier: Modifier = Modifier, bad: Boolean = false) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = if (bad) MaterialTheme.colorScheme.error else MaterialTheme.quill.muted,
+        modifier = modifier.padding(start = 2.dp, top = 6.dp),
     )
 }
 

@@ -15,7 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tihor.quill.ui.components.QuillTopBar
 import com.tihor.quill.ui.components.QuillTopBarTitle
+import com.tihor.quill.ui.screens.AboutScreen
+import com.tihor.quill.ui.screens.AdvancedScreen
+import com.tihor.quill.ui.screens.AiCleanupScreen
+import com.tihor.quill.ui.screens.ApiKeysScreen
+import com.tihor.quill.ui.screens.AudioRecordingScreen
+import com.tihor.quill.ui.screens.BubbleAppearanceScreen
+import com.tihor.quill.ui.screens.CustomWordsScreen
 import com.tihor.quill.ui.screens.HomeScreen
+import com.tihor.quill.ui.screens.PrivacyScreen
+import com.tihor.quill.ui.screens.SettingsScreen
+import com.tihor.quill.ui.screens.SpeechModelScreen
 import com.tihor.quill.ui.theme.quill
 
 /** Single-activity root: hosts the back stack and dispatches to the current [Screen]. */
@@ -27,16 +37,16 @@ fun QuillApp() {
     when (nav.current) {
         Screen.Home -> HomeScreen(nav)
         Screen.History -> Placeholder(nav, "History")
-        Screen.Settings -> Placeholder(nav, "Settings")
-        Screen.SpeechModel -> Placeholder(nav, "Speech & model")
-        Screen.ApiKeys -> Placeholder(nav, "API keys")
-        Screen.AiCleanup -> Placeholder(nav, "Clean up with AI")
-        Screen.CustomWords -> Placeholder(nav, "Custom words")
-        Screen.AudioRecording -> Placeholder(nav, "Audio & recording")
-        Screen.Privacy -> Placeholder(nav, "Privacy")
-        Screen.BubbleAppearance -> Placeholder(nav, "Bubble appearance")
-        Screen.Advanced -> Placeholder(nav, "Advanced")
-        Screen.About -> Placeholder(nav, "About")
+        Screen.Settings -> SettingsScreen(nav)
+        Screen.SpeechModel -> SpeechModelScreen(nav)
+        Screen.ApiKeys -> ApiKeysScreen(nav)
+        Screen.AiCleanup -> AiCleanupScreen(nav)
+        Screen.CustomWords -> CustomWordsScreen(nav)
+        Screen.AudioRecording -> AudioRecordingScreen(nav)
+        Screen.Privacy -> PrivacyScreen(nav)
+        Screen.BubbleAppearance -> BubbleAppearanceScreen(nav)
+        Screen.Advanced -> AdvancedScreen(nav)
+        Screen.About -> AboutScreen(nav)
     }
 }
 
