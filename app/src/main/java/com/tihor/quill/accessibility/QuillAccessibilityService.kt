@@ -45,8 +45,10 @@ class QuillAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_VIEW_CLICKED,
             -> updateFocusedEditable(event)
 
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ->
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 focusedEditable = null // left the field / switched app — drop the stale node
+                updateSensitive(false)
+            }
         }
     }
 
@@ -55,6 +57,7 @@ class QuillAccessibilityService : AccessibilityService() {
         if (source != null && source.isEditable) {
             focusedEditable = source
             val sensitive = isSensitive(source)
+            updateSensitive(sensitive)
             Log.i(
                 TAG,
                 "Editable focused: pkg=${source.packageName} class=${source.className} " +
@@ -64,6 +67,7 @@ class QuillAccessibilityService : AccessibilityService() {
         } else if (event.eventType == AccessibilityEvent.TYPE_VIEW_FOCUSED) {
             // Focus moved to a non-editable view — forget the previous field.
             focusedEditable = null
+            updateSensitive(false)
             Log.d(TAG, "Focus in ${event.packageName}: non-editable ${source?.className}")
         }
     }
@@ -152,5 +156,20 @@ class QuillAccessibilityService : AccessibilityService() {
         @Volatile
         var instance: QuillAccessibilityService? = null
             private set
+
+        /** True while a password/banking field is focused — the overlay dims the bubble (board F4). */
+        @Volatile
+        var sensitiveFieldFocused: Boolean = false
+            private set
+
+        /** Observer (the overlay) notified when the focused field's sensitivity changes. */
+        @Volatile
+        var sensitiveListener: ((Boolean) -> Unit)? = null
+
+        private fun updateSensitive(value: Boolean) {
+            if (sensitiveFieldFocused == value) return
+            sensitiveFieldFocused = value
+            sensitiveListener?.invoke(value)
+        }
     }
 }

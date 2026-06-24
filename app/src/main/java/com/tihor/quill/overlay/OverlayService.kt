@@ -52,6 +52,7 @@ class OverlayService : Service() {
     private var caption: CaptionView? = null
     private lateinit var captionParams: WindowManager.LayoutParams
     private var recordSeconds = 0
+    private var sensitiveActive = false
 
     private val density by lazy { resources.displayMetrics.density }
     private fun dpx(v: Float) = (v * density).toInt()
@@ -80,7 +81,21 @@ class OverlayService : Service() {
         createNotificationChannel()
         setForeground(microphone = false)
         addBubble()
+        // Board F4: dim the bubble while a password/banking field is focused.
+        QuillAccessibilityService.sensitiveListener = { s -> mainHandler.post { onSensitiveField(s) } }
+        onSensitiveField(QuillAccessibilityService.sensitiveFieldFocused)
         registerDebugReceiverIfDebug()
+    }
+
+    private fun onSensitiveField(sensitive: Boolean) {
+        sensitiveActive = sensitive
+        bubble?.alpha = if (sensitive) 0.45f else 1f
+        if (sensitive) {
+            android.widget.Toast.makeText(
+                this, "Dictation is off in password fields — for your security.",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        }
     }
 
     /** Dev-only: drive recording without tapping the (un-injectable) overlay — M4 verification. */
@@ -240,6 +255,14 @@ class OverlayService : Service() {
      * → stop. The transcript + injection get wired between "stop" and "idle" at M5–M6.
      */
     private fun onBubbleTap(view: BubbleView) {
+        if (sensitiveActive && !audioRecorder.isRecording) {
+            // Board F4: refuse to record into password/banking fields; the bubble is already dimmed.
+            android.widget.Toast.makeText(
+                this, "Dictation is off in password fields — for your security.",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
         if (audioRecorder.isRecording) {
             audioRecorder.requestStop() // onFinished updates the UI
             return
@@ -372,6 +395,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         runCatching { scope.cancel() }
+        QuillAccessibilityService.sensitiveListener = null
         stopTimer()
         debugReceiver?.let { runCatching { unregisterReceiver(it) } }
         debugReceiver = null
