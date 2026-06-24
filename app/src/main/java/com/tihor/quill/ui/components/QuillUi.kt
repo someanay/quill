@@ -128,7 +128,7 @@ private fun ButtonContent(text: String, leadingIcon: ImageVector?) {
         Icon(leadingIcon, contentDescription = null, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
     }
-    Text(text, style = MaterialTheme.typography.labelLarge)
+    Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, softWrap = false)
 }
 
 // ============================================================================
@@ -257,7 +257,13 @@ fun QuillRow(
 @Composable
 fun RowValueChevron(value: String? = null) {
     if (value != null) {
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.quill.muted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Spacer(Modifier.width(6.dp))
     }
     RowChevron()
@@ -311,7 +317,7 @@ fun QuillChip(
                 modifier = Modifier.size(14.dp),
             )
         }
-        Text(text, style = MaterialTheme.typography.labelMedium, color = fg)
+        Text(text, style = MaterialTheme.typography.labelMedium, color = fg, maxLines = 1, softWrap = false)
     }
 }
 

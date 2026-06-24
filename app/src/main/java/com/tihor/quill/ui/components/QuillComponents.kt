@@ -60,7 +60,7 @@ fun StatusPill(text: String, kind: PillKind, modifier: Modifier = Modifier) {
         if (kind == PillKind.LIVE) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(q.gold))
         }
-        Text(text, style = MaterialTheme.typography.labelSmall, color = content)
+        Text(text, style = MaterialTheme.typography.labelSmall, color = content, maxLines = 1, softWrap = false)
     }
 }
 

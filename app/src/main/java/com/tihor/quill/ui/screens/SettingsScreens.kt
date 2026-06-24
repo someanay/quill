@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -230,6 +232,7 @@ private fun shortModel(model: String): String = when {
 // C2 — Speech & model
 // ============================================================================
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SpeechModelScreen(nav: QuillNav) {
     val context = LocalContext.current
@@ -239,7 +242,10 @@ fun SpeechModelScreen(nav: QuillNav) {
 
     DetailScaffold("Speech & model", nav) {
         FieldLabel("Provider", Modifier.padding(top = 8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             // Only Groq ships in v1; the rest are shown disabled so the roadmap is legible.
             QuillChip("Groq", selected = true, onClick = {})
             QuillChip("OpenAI", selected = false, onClick = {}, enabled = false)
@@ -641,6 +647,7 @@ fun PrivacyScreen(nav: QuillNav) {
 // C8 — Bubble appearance (stubbed selectors)
 // ============================================================================
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BubbleAppearanceScreen(nav: QuillNav) {
     var size by rememberSaveable { mutableStateOf("Medium") } // TODO(M11): persist
@@ -661,14 +668,14 @@ fun BubbleAppearanceScreen(nav: QuillNav) {
         HelpText("The light ring keeps the bubble visible on any background.", Modifier.fillMaxWidth())
 
         FieldLabel("Size", Modifier.padding(top = 16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Small", "Medium", "Large").forEach {
                 QuillChip(it, selected = size == it, onClick = { size = it })
             }
         }
 
         FieldLabel("Theme", Modifier.padding(top = 16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Match system", "Light", "Dark").forEach {
                 QuillChip(it, selected = theme == it, onClick = { theme = it })
             }
