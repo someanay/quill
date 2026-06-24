@@ -775,7 +775,7 @@ fun AdvancedScreen(nav: QuillNav) {
 fun AboutScreen(nav: QuillNav) {
     DetailScaffold("About", nav) {
         Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            com.tihor.quill.ui.components.PermissionIllustration(Icons.Rounded.Create)
+            com.tihor.quill.ui.components.PermissionIllustration(com.tihor.quill.ui.components.QuillIcons.Feather)
             Spacer(Modifier.height(10.dp))
             Text(
                 "Quill",

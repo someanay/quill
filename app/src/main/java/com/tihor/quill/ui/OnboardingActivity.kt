@@ -507,7 +507,6 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
     val hasAcc = AccessibilityUtil.isServiceEnabled(context)
     val done = listOf(true, hasMic, hasOverlay, hasAcc)
     val doneCount = done.count { it }
-    val nextIndex = done.indexOfFirst { !it }
 
     FormStep(onBack = onBack, primaryLabel = copy(K.CHECKLIST_CTA), onPrimary = onNext) {
         Spacer(Modifier.height(4.dp))
@@ -517,13 +516,13 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
         }
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
-            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY), copy(K.CHECKLIST_KEY_SUB), 0, done, nextIndex)
+            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY), copy(K.CHECKLIST_KEY_SUB), done[0])
             RowDivider()
-            ChecklistRow(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.CHECKLIST_MIC), copy(K.CHECKLIST_MIC_SUB), 1, done, nextIndex)
+            ChecklistRow(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.CHECKLIST_MIC), copy(K.CHECKLIST_MIC_SUB), done[1])
             RowDivider()
-            ChecklistRow(Icons.Rounded.PictureInPicture, LeadIconVariant.PLAIN, copy(K.CHECKLIST_OVERLAY), copy(K.CHECKLIST_OVERLAY_SUB), 2, done, nextIndex)
+            ChecklistRow(Icons.Rounded.PictureInPicture, LeadIconVariant.PLAIN, copy(K.CHECKLIST_OVERLAY), copy(K.CHECKLIST_OVERLAY_SUB), done[2])
             RowDivider()
-            ChecklistRow(Icons.Rounded.AccessibilityNew, LeadIconVariant.PLAIN, copy(K.CHECKLIST_ACCESSIBILITY), copy(K.CHECKLIST_ACC_SUB), 3, done, nextIndex)
+            ChecklistRow(Icons.Rounded.AccessibilityNew, LeadIconVariant.PLAIN, copy(K.CHECKLIST_ACCESSIBILITY), copy(K.CHECKLIST_ACC_SUB), done[3])
         }
         Spacer(Modifier.height(16.dp))
         LinearProgressIndicator(
@@ -541,20 +540,18 @@ private fun ChecklistRow(
     variant: LeadIconVariant,
     title: String,
     subtitle: String,
-    index: Int,
-    done: List<Boolean>,
-    nextIndex: Int,
+    done: Boolean,
 ) {
     QuillRow(
         leadIcon = icon,
-        leadVariant = if (done[index]) LeadIconVariant.OK else variant,
+        leadVariant = if (done) LeadIconVariant.OK else variant,
         title = title,
         subtitle = subtitle,
         trailing = {
-            when {
-                done[index] -> Icon(Icons.Rounded.Check, contentDescription = "Done", tint = MaterialTheme.quill.ok, modifier = Modifier.size(20.dp))
-                index == nextIndex -> QuillChip(copy(K.ACTION_CONTINUE), selected = false, onClick = {})
-                else -> Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.quill.lineStrong))
+            if (done) {
+                Icon(Icons.Rounded.Check, contentDescription = "Done", tint = MaterialTheme.quill.ok, modifier = Modifier.size(20.dp))
+            } else {
+                Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.quill.lineStrong))
             }
         },
     )
