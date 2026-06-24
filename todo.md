@@ -157,7 +157,7 @@ not proceed until build + tests + the manual script all pass, then commit.
 - [x] Wire capture → STT → injection through the bubble (`OverlayService.transcribeAndInject` → `onTranscript`): record → transcribe (Groq) → `injectText`.
 - [x] States flow: RECORDING → TRANSCRIBING → IDLE (inserted) / PASTE (clipboard fallback) / ERROR. Empty transcript → "didn't catch that" (ERROR). Temp WAV deleted on success/fallback, **kept on failure** for retry (spec §4.3).
 - [~] **Test:** end-to-end manual script across ≥3 apps — **yours** (needs a real Groq key + speech).
-- [~] **Verify:** Pipeline verified on-device against the **real Groq endpoint** (record → WAV → multipart upload → 401 → typed `BadKey`/ERROR; WAV kept). **Live success path (speak → text lands) is your test** with your key. *This is the v1 proof point.*
+- [x] **Verify:** ✅ **Confirmed on the phone (2026-06-24):** dictation lands in WhatsApp / Gmail / Messages with no placeholder prefix, transcript accurate, latency fine on WiFi. **The v1 proof point is met.** (Pipeline also verified against the real Groq endpoint via adb: record → WAV → upload → typed errors.)
 
 > **M6 notes:**
 > - **Temporary key entry:** `TempApiKeyHolder` (in-memory, no plaintext at rest) + a key field in
@@ -225,6 +225,21 @@ not proceed until build + tests + the manual script all pass, then commit.
 - [ ] **Publish pipeline:** a GitHub Action signs the bundle with the Ed25519 **private key (CI secret only)** and deploys `en.json` + `.sig` to the static host — private key never in the app **or** the authoring browser
 - [ ] **Test (write first):** offline/airplane cold-start renders the full UI from baked-in (no blank keys); tampered / invalid-sig bundle rejected; lower-or-equal `revision` ignored; a locked key inside a bundle is ignored; placeholder-parity + schema failures reject the whole bundle; toggle-off disables the fetch
 - [ ] **Verify:** with the toggle on and a newer valid bundle published, the app fetches and applies it on next launch; in airplane mode the UI is identical and unbroken from baked-in defaults.
+
+---
+
+---
+
+## Tracked refinements (P1 — designed-for, not built now)
+
+- **Insert-at-cursor when a field has genuine content.** v1 *replaces* the whole field on inject
+  (M3 decision — the only safe behaviour when placeholders are indistinguishable from content, e.g.
+  WhatsApp `text="Message"`, no hint metadata). This wipes a real half-typed draft. The refinement:
+  preserve existing content and insert at the cursor **when the field genuinely has content** —
+  needs reliable per-app emptiness detection (the accessibility tree alone doesn't give it; explore
+  selection/caret signals + per-app tuning). Natural home: an **"insert vs replace" setting**
+  (M7 settings surface) defaulting to replace. The pure logic still exists in git history
+  (`InsertionComposer.compose`, insert-at-cursor + spacing) to restore. (Origin: M3, 2026-06-24.)
 
 ---
 

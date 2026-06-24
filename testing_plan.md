@@ -73,9 +73,12 @@ close to a worst-case device for this app. Record pass/fail + device + OS versio
    recording saved + Retry offered. 4. **Minified build:** run a `minifyEnabled true` variant and
    confirm the transcription response still parses (catches R8 stripping the JSON models early).
 
-**End-to-end (M6)**
+**End-to-end (M6)** — ✅ PASSED on Honor BVL-N49 (2026-06-24)
 1. Speak into WhatsApp/Gmail/Chrome → correct text lands at the cursor. 2. Latency for a short
    utterance feels ≤~3 s.
+> Result: lands cleanly in WhatsApp / Gmail / Messages, **no placeholder prefix** (after the M3
+> replace-whole-field fix), transcript accurate, latency fine on WiFi. v1 🎯 met. Note: v1 replaces
+> the field on inject (see todo.md tracked P1 "insert-at-cursor when a field has genuine content").
 
 **Secrets (M7)**
 1. Enter key → restart device → key still works. 2. Trigger a backup/restore (or inspect backup
