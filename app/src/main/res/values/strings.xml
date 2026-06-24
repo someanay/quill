@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">Quill</string>
+
+    <!--
+      COMPLIANCE COPY — BINARY-ONLY. Do NOT move these into the Copy Catalog / OTA layer (CLAUDE.md
+      hard rule, spec §2.3). The accessibility disclosure + the service description must match real
+      behaviour, be present at Play review, and never be remotely overridable.
+    -->
+    <string name="accessibility_service_description">Quill uses accessibility to detect the text field you are focused on and to insert your dictated text into it. It reads the focused field only to position and place dictation, and never reads or writes password or banking fields. Quill does not collect your data or send it to any server we operate.</string>
+
+    <string name="a11y_disclosure_title">Allow Quill to insert dictation</string>
+    <string name="a11y_disclosure_body">To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.</string>
+    <string name="a11y_disclosure_accept">I understand — open Accessibility settings</string>
+    <string name="a11y_disclosure_decline">Not now</string>
 </resources>

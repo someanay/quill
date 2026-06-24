@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,7 +23,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.tihor.quill.accessibility.AccessibilityDisclosureActivity
+import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.ui.theme.QuillTheme
@@ -49,40 +55,63 @@ class MainActivity : ComponentActivity() {
 private fun BubbleControls(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var hasOverlay by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
+    var a11yEnabled by remember { mutableStateOf(AccessibilityUtil.isServiceEnabled(context)) }
+
+    // Re-check permission state whenever we return to the foreground (user may have toggled either
+    // the overlay or the accessibility service in system settings).
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasOverlay = OverlayPermission.isGranted(context)
+                a11yEnabled = AccessibilityUtil.isServiceEnabled(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val overlaySettingsLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
-        // Re-check after returning from the system overlay-permission screen.
         hasOverlay = OverlayPermission.isGranted(context)
     }
 
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
     ) {
         Text("Quill", style = MaterialTheme.typography.headlineMedium)
+
         Text(
             if (hasOverlay) "Overlay permission: granted" else "Overlay permission: not granted",
             style = MaterialTheme.typography.bodyMedium,
         )
-
         if (!hasOverlay) {
             Button(onClick = { overlaySettingsLauncher.launch(OverlayPermission.settingsIntent(context)) }) {
                 Text("Grant \"display over other apps\"")
             }
         } else {
-            Button(onClick = { OverlayService.start(context) }) {
-                Text("Show bubble")
-            }
-            Button(onClick = { OverlayService.stop(context) }) {
-                Text("Hide bubble")
-            }
-            Text(
-                "Tap the bubble to cycle states · drag to move (snaps to edge) · long-press to dismiss",
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Button(onClick = { OverlayService.start(context) }) { Text("Show bubble") }
+            Button(onClick = { OverlayService.stop(context) }) { Text("Hide bubble") }
         }
+
+        Text(
+            if (a11yEnabled) "Accessibility service: enabled" else "Accessibility service: off",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Button(onClick = {
+            context.startActivity(
+                android.content.Intent(context, AccessibilityDisclosureActivity::class.java),
+            )
+        }) {
+            Text(if (a11yEnabled) "Review accessibility setup" else "Set up accessibility")
+        }
+
+        Text(
+            "Tap the bubble to cycle states · drag to move (snaps to edge) · long-press to dismiss",
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }

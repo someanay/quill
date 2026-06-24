@@ -48,6 +48,28 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="floating_dictation_bubble_overlay" />
         </service>
+
+        <!-- Prominent disclosure shown before enabling the accessibility service (spec §8). -->
+        <activity
+            android:name=".accessibility.AccessibilityDisclosureActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Quill" />
+
+        <!-- Accessibility service: detects the focused field + (from M3) inserts dictation.
+             Gated by the system BIND_ACCESSIBILITY_SERVICE permission; config in res/xml. -->
+        <service
+            android:name=".accessibility.QuillAccessibilityService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
     </application>
 
 </manifest>

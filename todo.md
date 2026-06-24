@@ -57,13 +57,25 @@ not proceed until build + tests + the manual script all pass, then commit.
 >   unit-tested geometry (`BubbleGeometryTest`) + **physical** testing, not adb.
 > - Overlay permission granted for dev via `adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow`.
 
-## M2 — Accessibility service skeleton
-- [ ] `accessibility_service_config.xml` per `spec.md` §4 (no `isAccessibilityTool`)
-- [ ] Prominent-disclosure + affirmative-consent screen **before** sending the user to enable it
-- [ ] Enable flow (`ACTION_ACCESSIBILITY_SETTINGS`) + enabled-state detection
-- [ ] On focus change, log focused editable node's package/class + sensitive-field flag
-- [ ] **Test (write first):** unit-test the sensitive-field classifier (node props → `isSensitive`); manual focus-logging script for real apps
-- [ ] **Verify:** focusing a field in WhatsApp/Gmail logs the node + package; password field flagged sensitive.
+## M2 — Accessibility service skeleton ✅ (commit `feat: accessibility service skeleton (M2)`)
+- [x] `accessibility_service_config.xml` per `spec.md` §5 (no `isAccessibilityTool`; `typeViewFocused|typeWindowStateChanged`, `flagDefault|flagRetrieveInteractiveWindows`, `feedbackGeneric`, `canRetrieveWindowContent`, description)
+- [x] Prominent-disclosure + affirmative-consent screen **before** enabling (`AccessibilityDisclosureActivity`); copy is **binary-only** compliance text in `strings.xml` (hard rule)
+- [x] Enable flow (`ACTION_ACCESSIBILITY_SETTINGS`) + enabled-state detection (`AccessibilityUtil.isServiceEnabled` via `Settings.Secure`; `MainActivity` re-checks on resume)
+- [x] On focus change, log focused editable node's package/class + sensitive-field flag (`QuillAccessibilityService`)
+- [x] **Test (write first):** `SensitiveFieldClassifierTest` (6 cases, green) — password flag + text/number password inputType variations → sensitive; ordinary text/email/number/phone → not
+- [~] **Verify:** Confirmed on the Honor device via adb — service **connects** (`Quill.A11y: Service connected.`), enabled-detection works, and focusing Chrome's native omnibox logs `pkg=com.android.chrome class=EditText inputType=0xa0001 sensitive=false`. **Native** editable resolution works.
+
+> **M2 notes:**
+> - **Web inputs don't resolve yet** — focusing a Chrome *web* password field surfaced only a wrapper
+>   `FrameLayout`, not the editable node. That's the exact WebView complexity spec §5 calls out as an
+>   **M3** task ("resolve the *true* editable node — do not trust the focused node"). M2 deliberately
+>   does naive `findFocus(FOCUS_INPUT)`/`event.source` logging only.
+> - **Live password-field → sensitive** is proven by `SensitiveFieldClassifierTest` (unit) now and is
+>   re-checked physically at M3 ("password field untouched"). The live native-password demo over adb
+>   was skipped (couldn't cleanly launch a native password field headlessly).
+> - Enable the service for dev via:
+>   `adb shell settings put secure enabled_accessibility_services com.tihor.quill/com.tihor.quill.accessibility.QuillAccessibilityService`
+>   then `adb shell settings put secure accessibility_enabled 1` (append, don't clobber existing services).
 
 ## M3 — Text injection (hardcoded string)
 - [ ] `TextInjector`: **resolve the true editable node** (SET_TEXT-capable / `isEditable`, not the focus wrapper — see `spec.md` §5 blueprint), then read text + selection → compose → `ACTION_SET_TEXT` → `ACTION_SET_SELECTION`

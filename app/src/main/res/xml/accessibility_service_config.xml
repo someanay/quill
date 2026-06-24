@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quill accessibility service config (spec.md §5). Deliberately NOT isAccessibilityTool — Quill
+     is a productivity tool, so it uses the prominent-disclosure + Play-declaration route (spec §8).
+     The description below is shown by the system on the enable screen; it is binary-only copy. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeViewFocused|typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.tihor.quill.MainActivity" />
