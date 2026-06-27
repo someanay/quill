@@ -80,6 +80,18 @@ object CopyKeys {
     const val ACTION_CANCEL = "action.cancel"
     const val STATUS_DONE = "status.done"
 
+    // --- Navigation tab labels (overridable) ---
+    const val NAV_HOME = "nav.home"
+    const val NAV_HISTORY = "nav.history"
+    const val NAV_SETTINGS = "nav.settings"
+
+    // --- Accessibility labels (icon contentDescription, overridable) ---
+    const val A11Y_BACK = "a11y.back"
+    const val A11Y_SETTINGS = "a11y.settings"
+    const val A11Y_SELECTED = "a11y.selected"
+    const val A11Y_SHOW_KEY = "a11y.show_key"
+    const val A11Y_HIDE_KEY = "a11y.hide_key"
+
     // --- History (M9, overridable) ---
     const val HISTORY_TITLE = "history.title"
     const val HISTORY_CLEAR_ALL = "history.clear_all"
@@ -322,6 +334,8 @@ object CopyKeys {
             SETTINGS_KEYS_BANNER, SETTINGS_KEYS_SECTION, SETTINGS_KEYS_ROLE_STT, SETTINGS_KEYS_HELP,
             SETTINGS_KEYS_REPLACE, SETTINGS_KEYS_TEST, SETTINGS_KEYS_REMOVE,
             SETTINGS_CLEANUP_TITLE, SETTINGS_CLEANUP_TIDY_TITLE, SETTINGS_CLEANUP_TIDY_SUB,
+            NAV_HOME, NAV_HISTORY, NAV_SETTINGS,
+            A11Y_BACK, A11Y_SETTINGS, A11Y_SELECTED, A11Y_SHOW_KEY, A11Y_HIDE_KEY,
             SETTINGS_CLEANUP_WHAT, SETTINGS_CLEANUP_BEFORE, SETTINGS_CLEANUP_AFTER,
             SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP,
             SETTINGS_WORDS_TITLE, SETTINGS_WORDS_BODY, SETTINGS_WORDS_EMPTY_TITLE, SETTINGS_WORDS_EMPTY_SUB,

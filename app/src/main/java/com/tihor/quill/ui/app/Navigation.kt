@@ -13,6 +13,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
+import com.tihor.quill.copy.CopyKeys as K
+import com.tihor.quill.copy.copy
 import com.tihor.quill.ui.theme.quill
 
 /**
@@ -61,9 +63,9 @@ class QuillNav {
 fun QuillBottomNav(current: Screen, onSelect: (Screen) -> Unit) {
     val q = MaterialTheme.quill
     val items = listOf(
-        Triple(Screen.Home, Icons.Rounded.Home, "Home"),
-        Triple(Screen.History, Icons.Rounded.Schedule, "History"),
-        Triple(Screen.Settings, Icons.Rounded.Settings, "Settings"),
+        Triple(Screen.Home, Icons.Rounded.Home, copy(K.NAV_HOME)),
+        Triple(Screen.History, Icons.Rounded.Schedule, copy(K.NAV_HISTORY)),
+        Triple(Screen.Settings, Icons.Rounded.Settings, copy(K.NAV_SETTINGS)),
     )
     NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
         items.forEach { (screen, icon, label) ->

@@ -14,6 +14,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.tihor.quill.copy.CopyKeys as K
+import com.tihor.quill.copy.copy
 
 /** App bar matching the board `.appbar`: optional back chevron, left title slot, trailing actions. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +32,7 @@ fun QuillTopBar(
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.Rounded.ArrowBackIosNew,
-                        contentDescription = "Back",
+                        contentDescription = copy(K.A11Y_BACK),
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

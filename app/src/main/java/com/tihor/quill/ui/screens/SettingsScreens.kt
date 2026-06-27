@@ -297,7 +297,7 @@ private fun ModelRow(title: String, subtitle: String, selected: Boolean, onClick
     QuillRow(title = title, subtitle = subtitle, onClick = onClick, trailing = {
         if (selected) {
             Icon(
-                Icons.Rounded.Check, contentDescription = "Selected",
+                Icons.Rounded.Check, contentDescription = copy(K.A11Y_SELECTED),
                 tint = MaterialTheme.quill.brandInk, modifier = Modifier.size(20.dp),
             )
         }

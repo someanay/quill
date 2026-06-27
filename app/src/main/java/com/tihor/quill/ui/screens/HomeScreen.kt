@@ -107,7 +107,7 @@ fun HomeScreen(nav: QuillNav) {
                 title = { Wordmark() },
                 actions = {
                     IconButton(onClick = { nav.switchTab(Screen.Settings) }) {
-                        Icon(Icons.Rounded.Settings, contentDescription = "Settings")
+                        Icon(Icons.Rounded.Settings, contentDescription = copy(K.A11Y_SETTINGS))
                     }
                 },
             )

@@ -121,7 +121,7 @@ fun Wordmark(modifier: Modifier = Modifier) {
         }
         Spacer(Modifier.width(10.dp))
         Text(
-            "Quill",
+            "Quill", // copy-exempt — brand wordmark, not localizable copy
             fontFamily = com.tihor.quill.ui.theme.WordmarkFont,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,

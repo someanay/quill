@@ -444,7 +444,7 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
                 IconButton(onClick = { reveal = !reveal }) {
                     Icon(
                         if (reveal) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                        contentDescription = if (reveal) "Hide key" else "Show key",
+                        contentDescription = if (reveal) copy(K.A11Y_HIDE_KEY) else copy(K.A11Y_SHOW_KEY),
                     )
                 }
             },
@@ -564,7 +564,7 @@ private fun ChecklistRow(
         subtitle = subtitle,
         trailing = {
             if (done) {
-                Icon(Icons.Rounded.Check, contentDescription = "Done", tint = MaterialTheme.quill.ok, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.Check, contentDescription = copy(K.STATUS_DONE), tint = MaterialTheme.quill.ok, modifier = Modifier.size(20.dp))
             } else {
                 Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.quill.lineStrong))
             }

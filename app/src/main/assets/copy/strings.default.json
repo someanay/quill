@@ -75,6 +75,16 @@
     "action.cancel": "Cancel",
     "status.done": "Done",
 
+    "nav.home": "Home",
+    "nav.history": "History",
+    "nav.settings": "Settings",
+
+    "a11y.back": "Back",
+    "a11y.settings": "Settings",
+    "a11y.selected": "Selected",
+    "a11y.show_key": "Show key",
+    "a11y.hide_key": "Hide key",
+
     "history.title": "History",
     "history.clear_all": "Clear all",
     "history.group.today": "Today",
