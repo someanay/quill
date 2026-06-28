@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
+  "revision": 2,
   "locale": "en",
-  "updatedAt": "2026-06-24T00:00:00Z",
+  "updatedAt": "2026-06-28T00:00:00Z",
   "strings": {
     "onboarding.splash.tagline": "Dictate into any app",
 
@@ -243,6 +243,8 @@
     "settings.advanced.timeout_value": "30 s",
     "settings.advanced.keepalive": "Keep bubble alive aggressively",
     "settings.advanced.keepalive_sub": "Helps on phones that kill apps",
+    "settings.advanced.copy_updates": "Check for updated text",
+    "settings.advanced.copy_updates_sub": "Lets Quill download improved wording for its screens. Signed and verified on-device; no personal data is sent.",
     "settings.advanced.battery": "Battery exemption",
     "settings.advanced.battery_sub": "Open battery settings → find Quill → allow unrestricted",
     "settings.advanced.reset": "Reset",

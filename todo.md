@@ -233,15 +233,25 @@ not proceed until build + tests + the manual script all pass, then commit.
 
 ## M13 — Soft-coded copy: OTA updates + authoring pipeline
 *The foundation (`CopyRepository`, baked-in `strings.default.json`, Compose `LocalCopy`) lands in M8; this milestone adds **remote delivery**. If OTA ships in v1, its data-safety + privacy-policy items must be settled alongside M12; otherwise OTA is a clean **1.1 fast-follow** with soft-coding already in place.*
-- [ ] `CopyUpdater`: launch-time, off-main GET of `/copy/{locale}.json` (+ `.sig`); short timeout; silent failure; **never on the UI critical path**
-- [ ] **Ed25519 signature verify** against a public key **pinned in the binary** (Tink or `java.security`); reject unsigned / bad-sig / tampered bundles
-- [ ] On-device **schema validation** (required keys, length caps, **placeholder-arg parity**) + **monotonic-revision** rollback guard; apply **atomically** to the cache or not at all
-- [ ] **Locked-key allowlist** enforced: a remote bundle can never override the accessibility disclosure, permission rationales, privacy promises, or the BYOK key warning (spec §2.3 / §6)
-- [ ] **"Check for updated text"** toggle in Advanced (default on); privacy-policy line covering the read-only fetch
+
+**M13a — device-side verified fetch + cache + 3-layer resolution: DONE (2026-06-28).** New `copy/ota/` package
+(`Ed25519Verifier` via `net.i2p.crypto:eddsa` — uniform on API 29–37, no platform "Ed25519" provider;
+`CopyBundleCanonical` defines the exact signed bytes; `CopyBundleVerifier`, `CopyBundleCache`,
+`CopyUpdateStore`, `CopyUpdater`). Cache re-verified + applied at launch (flicker-free, next-launch apply);
+compliance lock untouched. Canonical-input contract is in `CopyBundleCanonical` KDoc (and the uncommitted
+`docs/copy-bundle-format.md` draft for M13b). 31 unit tests; `assembleRelease` green.
+*Follow-ups (non-blocking): (1) add a real RFC-8032 known-answer vector once M13b's reference signer exists,
+as the cross-spec check; (2) `CopyUpdater.BASE_URL` stays a placeholder until the CDN lands in M13b.*
+
+- [x] `CopyUpdater`: launch-time, off-main GET of `/copy/{locale}.json`; short timeout; silent failure; **never on the UI critical path** *(uses ETag/If-None-Match on `en.json` rather than a separate `.sig`; signature is an in-bundle field)*
+- [x] **Ed25519 signature verify** against a public key **pinned in the binary** (`net.i2p.crypto:eddsa`, not the platform provider); reject unsigned / bad-sig / tampered bundles
+- [x] On-device **schema validation** (required keys, **placeholder-arg parity**) + **monotonic-revision** rollback guard; apply **atomically** to the cache or not at all *(length caps deferred — not in M13a scope)*
+- [x] **Locked-key allowlist** enforced: a remote bundle can never override the accessibility disclosure, permission rationales, privacy promises, or the BYOK key warning (spec §2.3 / §6)
+- [x] **"Check for updated text"** toggle in Advanced (default on); privacy-policy line covering the read-only fetch *(toggle wired; privacy-policy line tracked with the uncommitted docs drafts)*
 - [ ] **CI guard:** build fails if `strings.default.json` is missing any key referenced in code (layer-1 completeness); lint guard against string literals in composables
 - [ ] **Authoring tool** (separate from the app — recommend a small **Next.js page on Vercel**): edit copy by key/screen, show baked-in default read-only beside an editable override, char caps, placeholder hints, lock badges; validate; bump `revision`; **commit plaintext** to the repo
 - [ ] **Publish pipeline:** a GitHub Action signs the bundle with the Ed25519 **private key (CI secret only)** and deploys `en.json` + `.sig` to the static host — private key never in the app **or** the authoring browser
-- [ ] **Test (write first):** offline/airplane cold-start renders the full UI from baked-in (no blank keys); tampered / invalid-sig bundle rejected; lower-or-equal `revision` ignored; a locked key inside a bundle is ignored; placeholder-parity + schema failures reject the whole bundle; toggle-off disables the fetch
+- [x] **Test (write first):** offline/airplane cold-start renders the full UI from baked-in (no blank keys); tampered / invalid-sig bundle rejected; lower-or-equal `revision` ignored; a locked key inside a bundle is ignored; placeholder-parity + schema failures reject the whole bundle; toggle-off disables the fetch *(covered by `copy/ota/*Test`; offline = `CopyUpdater` failure path keeps baked-in)*
 - [ ] **Verify:** with the toggle on and a newer valid bundle published, the app fetches and applies it on next launch; in airplane mode the UI is identical and unbroken from baked-in defaults.
 
 ---

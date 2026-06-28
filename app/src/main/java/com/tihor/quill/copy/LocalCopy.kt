@@ -21,7 +21,12 @@ object Copy {
 
     fun repository(context: Context): CopyRepository =
         instance ?: synchronized(this) {
-            instance ?: CopyRepository(context.applicationContext).also { instance = it }
+            instance ?: CopyRepository(context.applicationContext).also {
+                // Layer 2 (spec §2.3): re-verify + apply the cached OTA bundle once, before first read,
+                // so every entry point (activities, overlay, notifications) sees the same resolved copy.
+                it.applyCachedOverride(context.applicationContext)
+                instance = it
+            }
         }
 }
 

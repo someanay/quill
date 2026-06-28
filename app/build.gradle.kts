@@ -107,6 +107,10 @@ dependencies {
     // Settings persistence (spec §4.1)
     implementation(libs.androidx.datastore.preferences)
 
+    // OTA copy-bundle Ed25519 verification (spec §2.3 / §6; M13a). Pure-Java, no NDK, no platform
+    // "Ed25519" provider (which would NoSuchAlgorithmException on API 29–32).
+    implementation(libs.eddsa)
+
     // Unit tests
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

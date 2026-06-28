@@ -74,3 +74,9 @@
 
 # --- Coroutines --------------------------------------------------------------
 -dontwarn kotlinx.coroutines.**
+
+# --- Ed25519 (net.i2p.crypto:eddsa, OTA copy verification, M13a) -------------
+# Pure-Java verifier referenced directly (no reflection on our side), so reachable code is kept
+# automatically. dontwarn silences references to optional JCA provider plumbing we don't exercise.
+-dontwarn net.i2p.crypto.eddsa.**
+-keep class net.i2p.crypto.eddsa.** { *; }

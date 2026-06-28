@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
+import com.tihor.quill.copy.Copy
 import com.tihor.quill.copy.QuillRoot
 import com.tihor.quill.crash.CrashReporter
 import com.tihor.quill.reliability.ForegroundRecovery
@@ -31,6 +32,15 @@ class MainActivity : ComponentActivity() {
         // Opt-in, local-first crash reporting (M11): no-ops unless the user turned it on.
         CrashReporter.install(this, settings.crashReportingEnabled)
         if (!settings.onboardingComplete) startActivity(Intent(this, OnboardingActivity::class.java))
+
+        // M13a: layer-3 OTA copy fetch — off the critical path, gated by the "Check for updated text"
+        // setting (default ON). Never blocks UI; an accepted bundle is cached and applied next launch.
+        // Failure/offline/bad bundle is silent (cached-or-baked-in stands).
+        if (settings.copyUpdatesEnabled) {
+            lifecycleScope.launch {
+                runCatching { Copy.repository(applicationContext).newUpdater(applicationContext).checkForUpdate() }
+            }
+        }
 
         setContent { QuillRoot { QuillApp() } }
     }
