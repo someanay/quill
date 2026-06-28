@@ -6,12 +6,16 @@ import android.text.InputType
  * Decides whether a focused editable field is **sensitive** — a password (or banking-style secret)
  * field that Quill must neither read nor write (PRD §4 edge case, P0-5; spec §5 step B.5).
  *
- * Native fields are trusted to report `isPassword` / password input types. **Browser/WebView fields
- * are not:** Chrome can report a web `<input type=password>` as `isPassword=false` with a plain
- * `TYPE_CLASS_TEXT` input type — indistinguishable from a normal web text field. So in a browser
- * context we invert the default: a field is sensitive **unless** its type *positively* confirms a
- * non-secret kind (email / url / phone / date). Plain text, number, or no-type can't be confirmed
- * safe, so we refuse them rather than rely on a flag Chrome doesn't set.
+ * A field is sensitive when it carries a **positive** password signal: the node's `isPassword` flag,
+ * or a password input-type variation (including the web-password variation Chrome reports for
+ * `<input type=password>`). Everything else — plain text, email, search boxes, address bars — is
+ * dictatable, in browsers and native apps alike.
+ *
+ * We deliberately do **not** treat every browser text field as sensitive. That blanket rule made
+ * normal web forms (and address bars, search boxes, comment fields) undictatable, which is the
+ * common case. The residual risk — a site stripping the password variation off a real password box —
+ * is covered downstream: a dictation that can't be safely inserted is never lost, it falls back to
+ * the clipboard with a notification rather than being written into the wrong field.
  *
  * Pure and Android-constant-only so it is unit-testable on the JVM.
  */
@@ -26,14 +30,9 @@ object SensitiveFieldClassifier {
     )
 
     fun isSensitive(field: EditableFieldInfo): Boolean {
-        // The node's own password flag / password input type is authoritative when present.
+        // The node's own password flag / password input type is authoritative.
         if (field.isPassword) return true
         if (isPasswordInputType(field.inputType)) return true
-
-        // Browser context: refuse unless the type positively confirms a non-secret field.
-        if (isBrowserContext(field.packageName) && !confirmsNonSensitiveType(field.inputType)) {
-            return true
-        }
         return false
     }
 
@@ -49,39 +48,4 @@ object SensitiveFieldClassifier {
             else -> false
         }
     }
-
-    /**
-     * In a browser, only these clearly-non-secret kinds are trusted. Plain text/number/datetime-less
-     * and `TYPE_NULL` are deliberately *not* confirmed (a password or PIN can masquerade as them).
-     */
-    private fun confirmsNonSensitiveType(inputType: Int): Boolean {
-        val variation = inputType and InputType.TYPE_MASK_VARIATION
-        return when (inputType and InputType.TYPE_MASK_CLASS) {
-            InputType.TYPE_CLASS_TEXT ->
-                variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS ||
-                    variation == InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS ||
-                    variation == InputType.TYPE_TEXT_VARIATION_URI
-
-            InputType.TYPE_CLASS_PHONE -> true
-            InputType.TYPE_CLASS_DATETIME -> true
-            else -> false
-        }
-    }
-
-    private fun isBrowserContext(packageName: CharSequence?): Boolean {
-        val pkg = packageName?.toString() ?: return false
-        if (pkg in BROWSER_PACKAGES) return true
-        // Heuristic for the long tail of browsers / WebView-host packages.
-        return pkg.contains("browser") || pkg.contains("chrome")
-    }
-
-    private val BROWSER_PACKAGES = setOf(
-        "com.android.chrome", "com.chrome.beta", "com.chrome.dev", "com.chrome.canary",
-        "org.mozilla.firefox", "org.mozilla.focus",
-        "com.microsoft.emmx", "com.brave.browser",
-        "com.opera.browser", "com.opera.mini.native", "com.opera.gx",
-        "com.sec.android.app.sbrowser",
-        "com.duckduckgo.mobile.android",
-        "com.kiwibrowser.browser", "com.vivaldi.browser", "com.UCMobile.intl",
-    )
 }

@@ -51,27 +51,27 @@ class SensitiveFieldClassifierTest {
         assertFalse(isSensitive(field(0)))
     }
 
-    // --- Browser-context safety rule: Chrome can report a web password as plain text with
-    //     isPassword=false, so in a browser we refuse anything not positively confirmed safe. ---
+    // --- Browser fields are NOT sensitive by default: only a positive password signal blocks
+    //     dictation. Plain text / search boxes / address bars in a browser must be dictatable. ---
 
     @Test
-    fun browser_plainText_isSensitive_couldBeMasqueradingPassword() {
-        // A web <input type=text> reports 0x1 (TYPE_CLASS_TEXT) — same as a stripped web password.
-        assertTrue(isSensitive(browserField(InputType.TYPE_CLASS_TEXT)))
+    fun browser_plainText_isNotSensitive() {
+        // A web <input type=text>, an address bar, or a search box reports TYPE_CLASS_TEXT — dictatable.
+        assertFalse(isSensitive(browserField(InputType.TYPE_CLASS_TEXT)))
     }
 
     @Test
-    fun browser_nullType_isSensitive() {
-        assertTrue(isSensitive(browserField(InputType.TYPE_NULL)))
+    fun browser_nullType_isNotSensitive() {
+        assertFalse(isSensitive(browserField(InputType.TYPE_NULL)))
     }
 
     @Test
-    fun browser_number_isSensitive_couldBePin() {
-        assertTrue(isSensitive(browserField(InputType.TYPE_CLASS_NUMBER)))
+    fun browser_number_isNotSensitive() {
+        assertFalse(isSensitive(browserField(InputType.TYPE_CLASS_NUMBER)))
     }
 
     @Test
-    fun browser_email_url_phone_areConfirmedSafe() {
+    fun browser_email_url_phone_areNotSensitive() {
         assertFalse(isSensitive(browserField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)))
         assertFalse(isSensitive(browserField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)))
         assertFalse(isSensitive(browserField(InputType.TYPE_CLASS_PHONE)))
@@ -79,22 +79,21 @@ class SensitiveFieldClassifierTest {
 
     @Test
     fun browser_webPassword_isSensitive_viaPasswordRule() {
+        // The one browser case that still blocks: an explicitly-typed web password field.
         assertTrue(isSensitive(browserField(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)))
     }
 
     @Test
-    fun nonBrowser_plainTextAndNull_areNotSensitive() {
-        // Native fields are trusted: a plain or untyped native EditText is fine to dictate into.
-        assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.whatsapp")))
-        assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_NULL, packageName = "com.whatsapp")))
+    fun browser_passwordFlag_isSensitive() {
+        assertTrue(isSensitive(EditableFieldInfo(isPassword = true, inputType = InputType.TYPE_CLASS_TEXT, packageName = "com.android.chrome")))
     }
 
     @Test
-    fun browserDetection_byKnownPackageAndHeuristic() {
-        assertTrue(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.android.chrome")))
-        assertTrue(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.sec.android.app.sbrowser")))
-        assertTrue(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.acme.coolbrowser")))
-        // Not a browser → plain text allowed.
+    fun anyApp_plainTextAndNull_areNotSensitive() {
+        // Plain or untyped editable fields are fine to dictate into, browser or not.
+        assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.whatsapp")))
+        assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_NULL, packageName = "com.whatsapp")))
+        assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.android.chrome")))
         assertFalse(isSensitive(EditableFieldInfo(false, InputType.TYPE_CLASS_TEXT, packageName = "com.google.android.gm")))
     }
 
