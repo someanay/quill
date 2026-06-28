@@ -20,3 +20,4 @@ keystore.properties
 # dev scratch (screenshots etc.)
 /shot.png
 *.tmp.png
+uidump*.xml
