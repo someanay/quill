@@ -44,6 +44,7 @@ sealed interface Screen {
     // System states
     data object Recovery : Screen
     data object CrashReport : Screen
+    data object OemSurvival : Screen
 }
 
 /** Minimal observable back stack: tabs reset to a single root; details push/pop. */

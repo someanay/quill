@@ -77,6 +77,8 @@ import com.tihor.quill.audio.StopReason
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.history.HistoryRepository
+import com.tihor.quill.crash.CrashReporter
+import com.tihor.quill.reliability.BatteryOptimization
 import com.tihor.quill.settings.AppDataReset
 import com.tihor.quill.settings.CustomWord
 import com.tihor.quill.settings.CustomWordsStore
@@ -984,8 +986,13 @@ fun PrivacyScreen(nav: QuillNav) {
 
         SectionHeader(copy(K.SETTINGS_PRIVACY_DIAGNOSTICS))
         QuillListContainer {
-            // Crash-report opt-in persists + wires a reporter in M11; honest placeholder until then.
-            ComingSoonRow(copy(K.SETTINGS_PRIVACY_CRASH), copy(K.SETTINGS_PRIVACY_CRASH_SUB))
+            // M11: opt-in, local-first crash reporting. Default OFF; keep the reporter's cached flag
+            // in sync so it doesn't read DataStore at crash time.
+            SwitchRow(
+                copy(K.SETTINGS_PRIVACY_CRASH), settings.crashReportingEnabled,
+                { on -> scope.launch { repo.setCrashReportingEnabled(on) }; CrashReporter.setEnabled(on) },
+                copy(K.SETTINGS_PRIVACY_CRASH_SUB),
+            )
             RowDivider()
             QuillRow(
                 title = copy(K.SETTINGS_PRIVACY_EXAMPLE), subtitle = copy(K.SETTINGS_PRIVACY_EXAMPLE_SUB),
@@ -1093,6 +1100,8 @@ fun AdvancedScreen(nav: QuillNav) {
     val historyRepo = remember { HistoryRepository(context) }
     val wordsStore = remember { CustomWordsStore(context) }
     val scope = rememberCoroutineScope()
+    val settings by repo.settings.collectAsState(initial = QuillSettings())
+    var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
     var showClearConfirm by rememberSaveable { mutableStateOf(false) }
     var showResetConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -1106,9 +1115,30 @@ fun AdvancedScreen(nav: QuillNav) {
             RowDivider()
             ComingSoonRow(copy(K.SETTINGS_ADVANCED_TIMEOUT), copy(K.SETTINGS_ADVANCED_TIMEOUT_SUB))
             RowDivider()
-            ComingSoonRow(copy(K.SETTINGS_ADVANCED_KEEPALIVE), copy(K.SETTINGS_ADVANCED_KEEPALIVE_SUB))
+            // M11: real keep-alive (reboot + foreground recovery) and battery-exemption controls.
+            SwitchRow(
+                copy(K.SETTINGS_ADVANCED_KEEPALIVE), settings.bootRestore,
+                { scope.launch { repo.setBootRestore(it) } }, copy(K.SETTINGS_ADVANCED_KEEPALIVE_SUB),
+            )
             RowDivider()
-            ComingSoonRow(copy(K.SETTINGS_ADVANCED_BATTERY), copy(K.SETTINGS_ADVANCED_BATTERY_SUB))
+            QuillRow(
+                title = copy(K.SETTINGS_ADVANCED_BATTERY), subtitle = copy(K.SETTINGS_ADVANCED_BATTERY_SUB),
+                trailing = {
+                    StatusPill(
+                        if (batteryExempt) copy(K.VALUE_GRANTED) else copy(K.VALUE_CHECK),
+                        if (batteryExempt) PillKind.OK else PillKind.INFO,
+                    )
+                },
+                onClick = {
+                    runCatching { context.startActivity(BatteryOptimization.requestIntent(context)) }
+                        .onFailure { runCatching { context.startActivity(BatteryOptimization.settingsIntent()) } }
+                },
+            )
+            RowDivider()
+            QuillRow(
+                title = copy(K.SETTINGS_SURVIVAL_ROW),
+                onClick = { nav.navigate(Screen.OemSurvival) }, trailing = { RowChevron() },
+            )
         }
 
         SectionHeader(copy(K.SETTINGS_ADVANCED_RESET))

@@ -38,6 +38,27 @@ data class QuillSettings(
     val bubbleSize: String = BUBBLE_SIZE_MEDIUM,
     /** App theme: [APP_THEME_SYSTEM] / [APP_THEME_LIGHT] / [APP_THEME_DARK] — drives the whole UI. */
     val appTheme: String = APP_THEME_SYSTEM,
+    /**
+     * Reliability/"keep alive" (M11). When on, Quill restores the bubble after reboot and after an
+     * incidental process kill (only when foregrounded — never an illegal background start). Default ON;
+     * it never fights a deliberate force-stop (the OS blocks that for us).
+     */
+    val bootRestore: Boolean = true,
+    /**
+     * Whether the user currently wants the bubble running (the Home master toggle). Persisted so boot
+     * + foreground recovery know there is something to restore; cleared when the user turns it off.
+     */
+    val bubbleActive: Boolean = false,
+    /**
+     * Opt-in local-first crash reporting (M11). Default OFF (privacy posture): nothing is collected or
+     * shared unless the user turns this on and explicitly shares a report.
+     */
+    val crashReportingEnabled: Boolean = false,
+    /**
+     * Set when foreground recovery finds the bubble was killed while the user wanted it on. Gates the
+     * battery-exemption re-prompt (only re-ask once a kill has actually happened); cleared on grant.
+     */
+    val bubbleWasKilled: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_LANGUAGE = "en"
@@ -75,6 +96,10 @@ class SettingsRepository(private val context: Context) {
             onboardingComplete = p[Keys.ONBOARDING_COMPLETE] ?: false,
             bubbleSize = p[Keys.BUBBLE_SIZE] ?: QuillSettings.BUBBLE_SIZE_MEDIUM,
             appTheme = p[Keys.APP_THEME] ?: QuillSettings.APP_THEME_SYSTEM,
+            bootRestore = p[Keys.BOOT_RESTORE] ?: true,
+            bubbleActive = p[Keys.BUBBLE_ACTIVE] ?: false,
+            crashReportingEnabled = p[Keys.CRASH_REPORTING] ?: false,
+            bubbleWasKilled = p[Keys.BUBBLE_WAS_KILLED] ?: false,
         )
     }
 
@@ -115,6 +140,18 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAppTheme(theme: String) =
         context.settingsDataStore.edit { it[Keys.APP_THEME] = theme }
 
+    suspend fun setBootRestore(enabled: Boolean) =
+        context.settingsDataStore.edit { it[Keys.BOOT_RESTORE] = enabled }
+
+    suspend fun setBubbleActive(active: Boolean) =
+        context.settingsDataStore.edit { it[Keys.BUBBLE_ACTIVE] = active }
+
+    suspend fun setCrashReportingEnabled(enabled: Boolean) =
+        context.settingsDataStore.edit { it[Keys.CRASH_REPORTING] = enabled }
+
+    suspend fun setBubbleWasKilled(killed: Boolean) =
+        context.settingsDataStore.edit { it[Keys.BUBBLE_WAS_KILLED] = killed }
+
     /** Full wipe: every preference reverts to its default (incl. onboarding). For "clear all data". */
     suspend fun clear() = context.settingsDataStore.edit { it.clear() }
 
@@ -140,5 +177,9 @@ class SettingsRepository(private val context: Context) {
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
         val BUBBLE_SIZE = stringPreferencesKey("bubble_size")
         val APP_THEME = stringPreferencesKey("app_theme")
+        val BOOT_RESTORE = booleanPreferencesKey("boot_restore")
+        val BUBBLE_ACTIVE = booleanPreferencesKey("bubble_active")
+        val CRASH_REPORTING = booleanPreferencesKey("crash_reporting")
+        val BUBBLE_WAS_KILLED = booleanPreferencesKey("bubble_was_killed")
     }
 }

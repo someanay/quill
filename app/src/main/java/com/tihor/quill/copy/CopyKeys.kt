@@ -289,6 +289,24 @@ object CopyKeys {
     const val SYSTEM_CRASH_SEND = "system.crash.send"
     const val SYSTEM_CRASH_DONT_SEND = "system.crash.dont_send"
 
+    // --- M11 reliability / OEM survival (overridable) ---
+    const val RELIABILITY_BOOT_CHANNEL = "reliability.boot.channel"
+    const val RELIABILITY_BOOT_TITLE = "reliability.boot.title"
+    const val RELIABILITY_BOOT_TEXT = "reliability.boot.text"
+    const val INJECT_FAILED_TITLE = "inject.failed.title"
+    const val INJECT_FAILED_TEXT = "inject.failed.text"
+    const val INJECT_REVOKED_TITLE = "inject.revoked.title"
+    const val INJECT_REVOKED_TEXT = "inject.revoked.text"
+    const val INJECT_REENABLE_ACTION = "inject.reenable.action"
+    const val HOME_BATTERY_TITLE = "home.battery.title"
+    const val HOME_BATTERY_TEXT = "home.battery.text"
+    const val SETTINGS_SURVIVAL_ROW = "settings.survival.row"
+    const val SETTINGS_SURVIVAL_TITLE = "settings.survival.title"
+    const val SETTINGS_SURVIVAL_BODY = "settings.survival.body"
+    const val SETTINGS_SURVIVAL_STEPS = "settings.survival.steps"
+    const val SETTINGS_SURVIVAL_OPEN = "settings.survival.open"
+    const val SETTINGS_SURVIVAL_FALLBACK = "settings.survival.fallback"
+
     // --- Shared values (overridable) ---
     const val VALUE_ON = "value.on"
     const val VALUE_OFF = "value.off"
@@ -402,6 +420,11 @@ object CopyKeys {
             SYSTEM_RECOVERY_TITLE, SYSTEM_RECOVERY_BANNER_TEXT, SYSTEM_RECOVERY_HEADING, SYSTEM_RECOVERY_BODY,
             SYSTEM_RECOVERY_CTA, SYSTEM_RECOVERY_WHY, SYSTEM_CRASH_TITLE, SYSTEM_CRASH_BODY,
             SYSTEM_CRASH_BANNER, SYSTEM_CRASH_ALWAYS, SYSTEM_CRASH_SEND, SYSTEM_CRASH_DONT_SEND,
+            RELIABILITY_BOOT_CHANNEL, RELIABILITY_BOOT_TITLE, RELIABILITY_BOOT_TEXT,
+            INJECT_FAILED_TITLE, INJECT_FAILED_TEXT, INJECT_REVOKED_TITLE, INJECT_REVOKED_TEXT,
+            INJECT_REENABLE_ACTION, HOME_BATTERY_TITLE, HOME_BATTERY_TEXT,
+            SETTINGS_SURVIVAL_ROW, SETTINGS_SURVIVAL_TITLE, SETTINGS_SURVIVAL_BODY,
+            SETTINGS_SURVIVAL_STEPS, SETTINGS_SURVIVAL_OPEN, SETTINGS_SURVIVAL_FALLBACK,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,

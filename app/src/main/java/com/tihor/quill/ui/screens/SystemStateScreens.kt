@@ -20,6 +20,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,7 +34,10 @@ import androidx.compose.ui.unit.dp
 import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.copy.copy
+import com.tihor.quill.crash.CrashReporter
+import com.tihor.quill.reliability.OemAutoStart
 import com.tihor.quill.ui.app.QuillNav
+import com.tihor.quill.ui.app.Screen
 import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.IllustrationVariant
 import com.tihor.quill.ui.components.PermissionIllustration
@@ -76,8 +83,46 @@ fun PermissionRevokedScreen(nav: QuillNav) {
                 context.startActivity(AccessibilityUtil.settingsIntent())
             })
             Spacer(Modifier.height(10.dp))
-            // The OEM battery-manager explainer isn't written yet — disabled rather than a dead button.
-            QuillGhostButton(copy(K.SYSTEM_RECOVERY_WHY), onClick = {}, enabled = false)
+            // M11: the "why" path now leads to the OEM auto-start survival guide.
+            QuillGhostButton(copy(K.SYSTEM_RECOVERY_WHY), onClick = { nav.navigate(Screen.OemSurvival) })
+        }
+    }
+}
+
+/** "Help Quill survive" — OEM auto-start / protected-apps guidance with a best-effort deep-link (M11). */
+@Composable
+fun OemSurvivalScreen(nav: QuillNav) {
+    val context = LocalContext.current
+    var showFallback by remember { mutableStateOf(false) }
+    Scaffold(
+        topBar = { QuillTopBar(title = { QuillTopBarTitle(copy(K.SETTINGS_SURVIVAL_TITLE)) }, onBack = nav::back) },
+        modifier = Modifier.fillMaxSize(),
+    ) { padding ->
+        Column(
+            Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        ) {
+            Text(
+                copy(K.SETTINGS_SURVIVAL_BODY),
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted,
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(copy(K.SETTINGS_SURVIVAL_STEPS), style = MaterialTheme.typography.bodyMedium)
+            Spacer(Modifier.height(24.dp))
+            QuillPrimaryButton(copy(K.SETTINGS_SURVIVAL_OPEN), onClick = {
+                val intent = OemAutoStart.bestEffortIntent(context)
+                if (intent != null) {
+                    runCatching { context.startActivity(intent) }.onFailure { showFallback = true }
+                } else {
+                    showFallback = true
+                }
+            }, leadingIcon = Icons.Rounded.Shield)
+            if (showFallback) {
+                Spacer(Modifier.height(12.dp))
+                Banner(
+                    text = copy(K.SETTINGS_SURVIVAL_FALLBACK),
+                    icon = Icons.Rounded.WarningAmber, kind = PillKind.INFO,
+                )
+            }
         }
     }
 }
@@ -122,9 +167,11 @@ fun CrashReportScreen(nav: QuillNav) {
             }
             Spacer(Modifier.height(20.dp))
             QuillPrimaryButton(copy(K.SYSTEM_CRASH_SEND), onClick = {
+                // M11: share the real stored report through the user's own share sheet (nothing auto-uploads).
+                val report = CrashReporter.latest() ?: "Quill crash report (no stored crash)" // copy-exempt: share payload
                 val send = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "Quill crash report\nerror: IllegalStateException\nscreen: OverlayService.onStart")
+                    putExtra(Intent.EXTRA_TEXT, report)
                 }
                 context.startActivity(Intent.createChooser(send, null))
             }, leadingIcon = Icons.Rounded.Share)

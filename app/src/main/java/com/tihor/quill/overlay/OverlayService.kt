@@ -26,8 +26,11 @@ import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.tihor.quill.BuildConfig
+import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.accessibility.InsertResult
 import com.tihor.quill.accessibility.QuillAccessibilityService
+import com.tihor.quill.copy.Copy
+import com.tihor.quill.copy.CopyKeys
 import com.tihor.quill.audio.AudioRecorder
 import com.tihor.quill.audio.StopReason
 import com.tihor.quill.history.HistoryRepository
@@ -81,6 +84,17 @@ class OverlayService : Service() {
     /** Auto-clears the "Copied to clipboard" confirmation back to idle after a moment. */
     private val idleReset = Runnable { applyState(BubbleState.IDLE) }
 
+    /**
+     * Sensitive-clip auto-expiry (M11): wipe a failed-injection transcript off the clipboard ~60 s
+     * later, but only if it's still Quill's clip (never clobber something the user copied since).
+     */
+    private val clearSensitiveClip = Runnable {
+        val cb = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager ?: return@Runnable
+        if (ClipboardHygiene.shouldClear(cb.primaryClipDescription?.label)) {
+            runCatching { cb.clearPrimaryClip() }
+        }
+    }
+
     private val density by lazy { resources.displayMetrics.density }
     private fun dpx(v: Float) = (v * density).toInt()
 
@@ -113,6 +127,7 @@ class OverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        isRunning = true
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
         setForeground(microphone = false)
@@ -570,7 +585,8 @@ class OverlayService : Service() {
         // Long-press path: the transcript belongs on the clipboard, not in a field. Skip injection
         // entirely (no focused field required) and show the "Copied to clipboard" confirmation.
         if (clipboardMode) {
-            copyTranscriptToClipboard(text)
+            // User explicitly asked for this on the clipboard to paste — do NOT auto-expire it.
+            copyTranscriptToClipboard(text, autoExpire = false)
             bubble?.state = BubbleState.PASTE
             updateCancelButton(BubbleState.PASTE)
             caption?.let {
@@ -587,13 +603,14 @@ class OverlayService : Service() {
         }
         val a11y = QuillAccessibilityService.instance
         if (a11y == null) {
-            // We have a transcript but no way to inject it — never lose it: copy + notify.
+            // We have a transcript but no way to inject it — never lose it: copy + notify. A null
+            // service means it was revoked (M11): the notification offers a one-tap re-enable.
             Log.w(TAG, "Accessibility service not connected; copying transcript to clipboard.")
-            injectionFailed(text)
+            injectionFailed(text, InjectionFailure.ServiceRevoked)
             wav.delete()
             return
         }
-        when (a11y.injectText(text)) {
+        when (val result = a11y.injectText(text)) {
             InsertResult.Success -> {
                 applyState(BubbleState.IDLE)
                 wav.delete()
@@ -605,44 +622,59 @@ class OverlayService : Service() {
             InsertResult.RefusedSensitive, InsertResult.NoEditableField -> {
                 // Injection failed (sensitive field / nothing focused). Per the "never fail to
                 // transcribe — fail to inject" rule: keep the transcript on the clipboard and tell
-                // the user, instead of silently dropping it.
-                injectionFailed(text)
+                // the user, instead of silently dropping it. Distinguish the cause so the message +
+                // action are correct (no "re-enable" prompt when the service is healthy).
+                injectionFailed(text, InjectionFailure.classify(serviceConnected = true, result = result))
                 wav.delete()
             }
         }
     }
 
-    /** Couldn't insert: stash the transcript on the clipboard and post a heads-up notification. */
-    private fun injectionFailed(text: String) {
-        copyTranscriptToClipboard(text)
-        notifyInjectionFailed(text)
+    /** Couldn't insert: stash the transcript on the clipboard (auto-expiring) and post a heads-up. */
+    private fun injectionFailed(text: String, failure: InjectionFailure) {
+        copyTranscriptToClipboard(text, autoExpire = true)
+        notifyInjectionFailed(text, failure)
         applyState(BubbleState.ERROR)
     }
 
-    private fun copyTranscriptToClipboard(text: String) {
+    /**
+     * Put [text] on the clipboard marked sensitive. When [autoExpire], schedule a guarded ~60 s clear
+     * (M11) so an involuntary failed-injection copy doesn't linger; user-initiated copies don't expire.
+     */
+    private fun copyTranscriptToClipboard(text: String, autoExpire: Boolean) {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Quill dictation", text)
+        val clip = ClipData.newPlainText(ClipboardHygiene.QUILL_CLIP_LABEL, text)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             clip.description.extras = PersistableBundle().apply {
                 putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
             }
         }
         runCatching { clipboard.setPrimaryClip(clip) }
+        mainHandler.removeCallbacks(clearSensitiveClip)
+        if (autoExpire) mainHandler.postDelayed(clearSensitiveClip, ClipboardHygiene.SENSITIVE_CLEAR_DELAY_MS)
     }
 
-    private fun notifyInjectionFailed(text: String) {
+    private fun notifyInjectionFailed(text: String, failure: InjectionFailure) {
         val preview = text.trim().take(120)
-        val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+        val copy = Copy.repository(this)
+        val revoked = failure.offersReEnable
+        val builder = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_edit)
-            .setContentTitle("Copied to clipboard")
-            .setContentText("Couldn't insert here — paste your dictation manually.")
+            .setContentTitle(if (revoked) copy.get(CopyKeys.INJECT_REVOKED_TITLE) else copy.get(CopyKeys.INJECT_FAILED_TITLE))
+            .setContentText(if (revoked) copy.get(CopyKeys.INJECT_REVOKED_TEXT) else copy.get(CopyKeys.INJECT_FAILED_TEXT))
             .setStyle(NotificationCompat.BigTextStyle().bigText(preview))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setAutoCancel(true)
-            .build()
+        if (revoked) {
+            // One-tap deep-link back to Accessibility settings to re-enable the service.
+            val reenable = PendingIntent.getActivity(
+                this, 1, AccessibilityUtil.settingsIntent(), PendingIntent.FLAG_IMMUTABLE,
+            )
+            builder.addAction(0, copy.get(CopyKeys.INJECT_REENABLE_ACTION), reenable)
+        }
         runCatching {
-            getSystemService(NotificationManager::class.java).notify(ALERT_NOTIFICATION_ID, notification)
+            getSystemService(NotificationManager::class.java).notify(ALERT_NOTIFICATION_ID, builder.build())
         }
     }
 
@@ -686,10 +718,12 @@ class OverlayService : Service() {
     }
 
     override fun onDestroy() {
+        isRunning = false
         runCatching { scope.cancel() }
         QuillAccessibilityService.sensitiveListener = null
         stopTimer()
         mainHandler.removeCallbacks(idleReset)
+        mainHandler.removeCallbacks(clearSensitiveClip)
         debugReceiver?.let { runCatching { unregisterReceiver(it) } }
         debugReceiver = null
         runCatching { audioRecorder.stop() }
@@ -703,6 +737,15 @@ class OverlayService : Service() {
     }
 
     companion object {
+        /**
+         * Liveness signal for foreground process-kill recovery (M11): true between [onCreate] and
+         * [onDestroy]. Read by [com.tihor.quill.reliability.ForegroundRecovery] to tell an incidental
+         * kill from a running service.
+         */
+        @Volatile
+        var isRunning = false
+            private set
+
         private const val TAG = "Quill.Overlay"
         private const val CHANNEL_ID = "quill_overlay"
         private const val ALERT_CHANNEL_ID = "quill_alerts"

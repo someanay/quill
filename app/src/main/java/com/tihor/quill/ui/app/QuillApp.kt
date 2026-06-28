@@ -13,6 +13,7 @@ import com.tihor.quill.ui.screens.CustomWordsScreen
 import com.tihor.quill.ui.screens.HistoryScreen
 import com.tihor.quill.ui.screens.HomeScreen
 import com.tihor.quill.ui.screens.CrashReportScreen
+import com.tihor.quill.ui.screens.OemSurvivalScreen
 import com.tihor.quill.ui.screens.PermissionRevokedScreen
 import com.tihor.quill.ui.screens.PrivacyScreen
 import com.tihor.quill.ui.screens.SettingsScreen
@@ -39,5 +40,6 @@ fun QuillApp() {
         Screen.About -> AboutScreen(nav)
         Screen.Recovery -> PermissionRevokedScreen(nav)
         Screen.CrashReport -> CrashReportScreen(nav)
+        Screen.OemSurvival -> OemSurvivalScreen(nav)
     }
 }

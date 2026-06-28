@@ -39,11 +39,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.material.icons.rounded.BatteryAlert
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.copy.copy
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
+import com.tihor.quill.reliability.BatteryOptimization
+import com.tihor.quill.reliability.ReliabilityPolicy
+import com.tihor.quill.settings.QuillSettings
+import com.tihor.quill.settings.SettingsRepository
+import kotlinx.coroutines.launch
 import com.tihor.quill.ui.app.QuillBottomNav
 import com.tihor.quill.ui.app.QuillNav
 import com.tihor.quill.ui.app.Screen
@@ -66,18 +74,23 @@ import com.tihor.quill.ui.theme.quill
 @Composable
 fun HomeScreen(nav: QuillNav) {
     val context = LocalContext.current
+    val repo = remember { SettingsRepository(context) }
+    val scope = rememberCoroutineScope()
+    val settings by repo.settings.collectAsState(initial = QuillSettings())
 
     var hasOverlay by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
     var bubbleOn by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
     var a11yOn by remember { mutableStateOf(AccessibilityUtil.isServiceEnabled(context)) }
+    var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
 
-    // Re-check grants whenever we resume (the OS may revoke accessibility to save battery).
+    // Re-check grants whenever we resume (the OS may revoke accessibility / battery state may change).
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 hasOverlay = OverlayPermission.isGranted(context)
                 a11yOn = AccessibilityUtil.isServiceEnabled(context)
+                batteryExempt = BatteryOptimization.isExempt(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -88,17 +101,26 @@ fun HomeScreen(nav: QuillNav) {
         ActivityResultContracts.StartActivityForResult(),
     ) {
         hasOverlay = OverlayPermission.isGranted(context)
-        if (hasOverlay) { OverlayService.start(context); bubbleOn = true }
+        if (hasOverlay) { OverlayService.start(context); bubbleOn = true; scope.launch { repo.setBubbleActive(true) } }
     }
 
+    // M11: persist the user's intent so boot + foreground recovery know whether to restore the bubble.
     fun setBubble(on: Boolean) {
         if (on) {
             if (!hasOverlay) { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) } else {
-                OverlayService.start(context); bubbleOn = true
+                OverlayService.start(context); bubbleOn = true; scope.launch { repo.setBubbleActive(true) }
             }
         } else {
-            OverlayService.stop(context); bubbleOn = false
+            OverlayService.stop(context); bubbleOn = false; scope.launch { repo.setBubbleActive(false) }
         }
+    }
+
+    // M11: bounded battery re-prompt — only when ungranted AND the bubble was killed at least once.
+    // One tap opens the exemption request; consuming the flag stops it nagging on every launch.
+    fun promptBattery() {
+        runCatching { context.startActivity(BatteryOptimization.requestIntent(context)) }
+            .onFailure { runCatching { context.startActivity(BatteryOptimization.settingsIntent()) } }
+        scope.launch { repo.setBubbleWasKilled(false) }
     }
 
     Scaffold(
@@ -122,7 +144,8 @@ fun HomeScreen(nav: QuillNav) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            if (!a11yOn) {
+            // Revocation recovery: only nag if the user previously enabled the service (it's now off).
+            if (ReliabilityPolicy.shouldPromptRevocation(settings.onboardingComplete, a11yOn)) {
                 Banner(
                     title = copy(K.SYSTEM_RECOVERY_TITLE),
                     text = copy(K.HOME_BANNER_A11Y_OFF_TEXT),
@@ -131,6 +154,19 @@ fun HomeScreen(nav: QuillNav) {
                     modifier = Modifier
                         .padding(top = 8.dp)
                         .clickable { nav.navigate(Screen.Recovery) },
+                )
+                Spacer(Modifier.padding(top = 6.dp))
+            }
+            // Battery re-prompt: bounded — only after an actual kill while still unexempted (M11).
+            if (ReliabilityPolicy.shouldRepromptBattery(batteryExempt, settings.bubbleWasKilled)) {
+                Banner(
+                    title = copy(K.HOME_BATTERY_TITLE),
+                    text = copy(K.HOME_BATTERY_TEXT),
+                    icon = Icons.Rounded.BatteryAlert,
+                    kind = PillKind.ERROR,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .clickable { promptBattery() },
                 )
                 Spacer(Modifier.padding(top = 6.dp))
             }
