@@ -36,6 +36,8 @@ class SettingsRepositoryTest {
             r.setOnboardingComplete(false)
             r.setBubbleSize(QuillSettings.BUBBLE_SIZE_MEDIUM)
             r.setAppTheme(QuillSettings.APP_THEME_SYSTEM)
+            r.setBubbleActive(false)
+            r.setBubbleVisible(true)
         }
     }
 
@@ -130,6 +132,54 @@ class SettingsRepositoryTest {
         val s = r.settings.first()
         assertEquals(QuillSettings.BUBBLE_SIZE_LARGE, s.bubbleSize)
         assertEquals(QuillSettings.APP_THEME_DARK, s.appTheme)
+    }
+
+    @Test
+    fun bubbleVisible_defaultsToShown() {
+        // The unified visibility state defaults to shown (the bubble appears once the service starts).
+        assertTrue(QuillSettings().bubbleVisible)
+    }
+
+    @Test
+    fun bubbleVisible_roundTrips_throughFlowAndSynchronousMirror() = runTest {
+        val app = RuntimeEnvironment.getApplication()
+        val r = SettingsRepository(app)
+        // The single writer updates both the observable Flow (what Home + the service collect) and the
+        // synchronous mirror (what addBubble reads inline) — they must never diverge.
+        r.setBubbleVisible(false)
+        assertFalse("Flow reflects hidden", r.settings.first().bubbleVisible)
+        assertFalse("mirror is in lockstep with the Flow", BubbleVisibilityStore(app).visible)
+
+        r.setBubbleVisible(true)
+        assertTrue("Flow reflects shown", r.settings.first().bubbleVisible)
+        assertTrue("mirror is in lockstep with the Flow", BubbleVisibilityStore(app).visible)
+    }
+
+    @Test
+    fun bubbleVisible_andBubbleActive_areIndependent() = runTest {
+        // Hiding (toggle-off / drag-dismiss) must not clear "service desired": the FGS stays alive for
+        // summon, and M11 recovery still restores it (then re-hides). Distinct flags, distinct meaning.
+        val r = repo()
+        r.setBubbleActive(true)
+        r.setBubbleVisible(false)
+        var s = r.settings.first()
+        assertTrue("hiding the bubble keeps the service desired", s.bubbleActive)
+        assertFalse(s.bubbleVisible)
+
+        // And the full-stop path clears the service-desired flag.
+        r.setBubbleActive(false)
+        s = r.settings.first()
+        assertFalse(s.bubbleActive)
+    }
+
+    @Test
+    fun clear_resetsVisibilityMirrorToShown() = runTest {
+        val app = RuntimeEnvironment.getApplication()
+        val r = SettingsRepository(app)
+        r.setBubbleVisible(false)
+        r.clear()
+        assertTrue("a full wipe restores the mirror to its default", BubbleVisibilityStore(app).visible)
+        assertTrue(r.settings.first().bubbleVisible)
     }
 
     @Test

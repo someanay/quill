@@ -36,6 +36,7 @@ import com.tihor.quill.audio.StopReason
 import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.settings.BubbleVisibilityStore
 import com.tihor.quill.settings.CustomWordsStore
 import com.tihor.quill.settings.QuillSettings
 import com.tihor.quill.settings.SettingsRepository
@@ -54,6 +55,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 /**
@@ -117,6 +119,10 @@ class OverlayService : Service() {
     private val historyRepository by lazy { HistoryRepository(this) }
     private val visibilityStore by lazy { BubbleVisibilityStore(this) }
 
+    /** Last-applied notification state, so [refreshNotification] re-posts the correct title/text. */
+    private var micActive = false
+    private var currentVisible = true
+
     // Last bubble appearance from Visual preferences; re-applied whenever the bubble is (re)created.
     private var bubbleSize = QuillSettings.BUBBLE_SIZE_MEDIUM
     private var appTheme = QuillSettings.APP_THEME_SYSTEM
@@ -131,12 +137,16 @@ class OverlayService : Service() {
         isRunning = true
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         createNotificationChannel()
+        // Seed from the synchronous mirror so the first notification + bubble paint match the persisted
+        // shown/hidden state (no flash) before the visibility Flow delivers its first value.
+        currentVisible = visibilityStore.visible
         setForeground(microphone = false)
         addBubble()
         // Board F4: dim the bubble while a password/banking field is focused.
         QuillAccessibilityService.sensitiveListener = { s -> mainHandler.post { onSensitiveField(s) } }
         onSensitiveField(QuillAccessibilityService.sensitiveFieldFocused)
         observeAppearance()
+        observeVisibility()
         registerDebugReceiverIfDebug()
     }
 
@@ -152,6 +162,44 @@ class OverlayService : Service() {
                     applyAppearance()
                 }
         }
+    }
+
+    /**
+     * Observe the unified visibility state (the single source of truth, [QuillSettings.bubbleVisible]).
+     * The Home toggle, drag-dismiss, and the notification "Show Quill" action all write this Flow via
+     * [SettingsRepository.setBubbleVisible]; the service is the **one** place that applies it to the
+     * actual bubble window — so all three entry points stay in sync without anyone poking the view directly.
+     */
+    private fun observeVisibility() {
+        scope.launch {
+            settingsRepository.settings
+                .map { it.bubbleVisible }
+                .distinctUntilChanged()
+                .collect { applyVisibility(it) }
+        }
+    }
+
+    /**
+     * Apply the unified visibility state to the bubble window. Hiding is **not** stopping: the FGS and
+     * its notification stay up (the notification's "Show Quill" action is the way back). Re-posts the
+     * notification so its title/text reflect shown vs hidden.
+     */
+    private fun applyVisibility(visible: Boolean) {
+        currentVisible = visible
+        bubble?.let { view ->
+            if (visible) {
+                view.visibility = View.VISIBLE
+                applyAppearance()
+                applyState(BubbleState.IDLE) // summon/show returns to the idle baseline
+            } else {
+                mainHandler.removeCallbacks(idleReset)
+                applyState(BubbleState.IDLE)
+                view.visibility = View.GONE
+                caption?.visibility = View.GONE
+                cancelButton?.visibility = View.GONE
+            }
+        }
+        refreshNotification()
     }
 
     private fun applyAppearance() {
@@ -246,28 +294,8 @@ class OverlayService : Service() {
      * the mic-in-use indicator and capture don't linger.
      */
     private fun setForeground(microphone: Boolean) {
-        // Long-press now dictates to the clipboard, so the bubble is dismissed from here instead.
-        val stopIntent = Intent(this, OverlayService::class.java).setAction(ACTION_STOP)
-        val stopPending = PendingIntent.getService(
-            this, 0, stopIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-        // "Show Quill" summons a dragged-to-dismiss bubble back. Always present (a no-op when the
-        // bubble is already visible) so the notification is the single, reliable way back — no timer
-        // or sensor (auto-return / shake-to-summon are deferred to v1.1, see todo.md).
-        val showIntent = Intent(this, OverlayService::class.java).setAction(ACTION_SHOW)
-        val showPending = PendingIntent.getService(
-            this, 2, showIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(if (microphone) "Quill is listening" else "Quill bubble active")
-            .setContentText(if (microphone) "Recording… tap the bubble to stop." else "Tap the bubble to dictate.")
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-            .setOngoing(true)
-            .addAction(0, Copy.repository(this).get(CopyKeys.NOTIFICATION_ACTION_SHOW), showPending)
-            .addAction(0, "Dismiss bubble", stopPending)
-            .build()
+        micActive = microphone
+        val notification = buildNotification(microphone, currentVisible)
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
                 var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
@@ -280,15 +308,66 @@ class OverlayService : Service() {
         }
     }
 
+    /**
+     * Re-post the FGS notification to reflect the current shown/hidden (and recording) state — keeps the
+     * "Show Quill" action present and the title/text accurate when hidden, **without** touching the
+     * foreground-service type (so a refresh on hide/show never drops the mic FGS).
+     */
+    private fun refreshNotification() {
+        runCatching {
+            getSystemService(NotificationManager::class.java)
+                .notify(NOTIFICATION_ID, buildNotification(micActive, currentVisible))
+        }
+    }
+
+    /**
+     * Build the single FGS notification. Content reflects state (recording / hidden / active). Both
+     * actions are always present: "Show Quill" ([ACTION_SHOW]) summons a hidden bubble back (no-op when
+     * shown) — the reliable way back, no timer/sensor; "Dismiss bubble" ([ACTION_STOP]) is the explicit
+     * full-stop (distinct from hide). All strings soft-coded (OVERRIDABLE).
+     */
+    private fun buildNotification(microphone: Boolean, visible: Boolean): android.app.Notification {
+        val copy = Copy.repository(this)
+        val (titleKey, textKey) = when {
+            microphone -> CopyKeys.NOTIFICATION_TITLE_RECORDING to CopyKeys.NOTIFICATION_TEXT_RECORDING
+            !visible -> CopyKeys.NOTIFICATION_TITLE_HIDDEN to CopyKeys.NOTIFICATION_TEXT_HIDDEN
+            else -> CopyKeys.NOTIFICATION_TITLE_ACTIVE to CopyKeys.NOTIFICATION_TEXT_ACTIVE
+        }
+        val showPending = PendingIntent.getService(
+            this, 2, Intent(this, OverlayService::class.java).setAction(ACTION_SHOW),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val stopPending = PendingIntent.getService(
+            this, 0, Intent(this, OverlayService::class.java).setAction(ACTION_STOP),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(copy.get(titleKey))
+            .setContentText(copy.get(textKey))
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setOngoing(true)
+            .addAction(0, copy.get(CopyKeys.NOTIFICATION_ACTION_SHOW), showPending)
+            .addAction(0, copy.get(CopyKeys.NOTIFICATION_ACTION_STOP), stopPending)
+            .build()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            // Explicit full-stop ("Dismiss bubble"): clear both desired-state flags so neither boot nor
+            // foreground recovery resurrects the service and the Home toggle reads "off", then tear down.
+            // A deliberate teardown, so a brief blocking write is acceptable (mirrors BootReceiver).
+            runBlocking {
+                settingsRepository.setBubbleActive(false)
+                settingsRepository.setBubbleVisible(false)
+            }
             stopSelf()
             return START_NOT_STICKY
         }
         // Recreate the window if a re-start arrives after the system trimmed us.
         if (bubble == null) addBubble()
-        // Notification "Show Quill" action: summon a dismissed bubble back (harmless no-op if visible).
-        if (intent?.action == ACTION_SHOW) showBubble()
+        // Notification "Show Quill": summon a hidden bubble back by writing the unified visibility state
+        // (the observer re-shows it and the Home toggle reflects "on" live). No-op if already shown.
+        if (intent?.action == ACTION_SHOW) scope.launch { settingsRepository.setBubbleVisible(true) }
         return START_STICKY
     }
 
@@ -347,11 +426,13 @@ class OverlayService : Service() {
         windowManager.addView(cancel, cancelParams)
         cancelButton = cancel
 
-        // Honour a persisted dismiss across a service restart (START_STICKY / foreground recovery):
-        // a deliberately-hidden bubble stays hidden until summoned from the notification.
-        if (visibilityStore.hidden) view.visibility = View.GONE
+        // Honour the persisted visibility across a service restart (START_STICKY / boot / foreground
+        // recovery): a bubble the user hid stays hidden until summoned. Read synchronously from the
+        // mirror so there's no flash before the visibility Flow delivers its first value.
+        currentVisible = visibilityStore.visible
+        if (!currentVisible) view.visibility = View.GONE
 
-        Log.i(TAG, "Bubble added at x=${params.x} y=${params.y} hidden=${visibilityStore.hidden}")
+        Log.i(TAG, "Bubble added at x=${params.x} y=${params.y} visible=$currentVisible")
     }
 
     /**
@@ -363,41 +444,14 @@ class OverlayService : Service() {
         val (_, sh) = screenSize()
         val bubbleBottomY = params.y + view.viewSize - view.contentInset
         if (BubbleGeometry.isInDismissZone(bubbleBottomY, sh, dpx(DISMISS_ZONE_DP))) {
-            hideBubble()
+            // Hide, don't stop: write the unified visibility state. The observer hides the view, the
+            // Home toggle reflects "off" live, and the FGS + notification stay up for summon. No timer /
+            // sensor (auto-return + shake-to-summon are deferred to v1.1, see todo.md).
+            toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
+            scope.launch { settingsRepository.setBubbleVisible(false) }
         } else {
             snapToEdge()
         }
-    }
-
-    /**
-     * Hide the bubble (user dragged it into the bottom dismiss zone). The FGS keeps running and the
-     * notification stays — its "Show Quill" action is the only way back (no timer / no sensor; the
-     * auto-return + shake-to-summon paths are deferred to v1.1, see todo.md). The hidden state is
-     * persisted so a service restart doesn't pop the bubble back.
-     */
-    private fun hideBubble() {
-        visibilityStore.hidden = true
-        mainHandler.removeCallbacks(idleReset)
-        applyState(BubbleState.IDLE) // reset caption/cancel to the idle baseline before hiding
-        bubble?.visibility = View.GONE
-        caption?.visibility = View.GONE
-        cancelButton?.visibility = View.GONE
-        toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
-    }
-
-    /**
-     * Summon the bubble back (notification "Show Quill" action). Re-shows the bubble and clears the
-     * hidden flag; a no-op when the bubble is already visible.
-     */
-    private fun showBubble() {
-        visibilityStore.hidden = false
-        if (bubble == null) {
-            addBubble()
-            return
-        }
-        bubble?.visibility = View.VISIBLE
-        applyAppearance()
-        applyState(BubbleState.IDLE)
     }
 
     /** Drive the bubble state, its caption, and the Cancel button together (board E). */

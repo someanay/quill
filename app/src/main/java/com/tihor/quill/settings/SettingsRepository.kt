@@ -45,10 +45,20 @@ data class QuillSettings(
      */
     val bootRestore: Boolean = true,
     /**
-     * Whether the user currently wants the bubble running (the Home master toggle). Persisted so boot
-     * + foreground recovery know there is something to restore; cleared when the user turns it off.
+     * Whether Quill's overlay **service is desired** (alive). Set true when the bubble is first started
+     * (Home toggle-on / onboarding); set false **only** by the explicit full-stop ("Dismiss bubble").
+     * Gates M11 boot + foreground recovery — distinct from [bubbleVisible], so a service the user hid
+     * (but didn't fully stop) is still restored after an OEM kill, then re-hidden.
      */
     val bubbleActive: Boolean = false,
+    /**
+     * The single source of truth for "is the bubble **shown vs hidden**" — the unified state the Home
+     * master toggle, drag-to-dismiss, and the notification "Show Quill" action all read and write. true =
+     * shown, false = hidden. Hiding (toggle-off or drag-dismiss) keeps the FGS + notification alive (≠
+     * stop); only [bubbleActive]=false fully stops. Mirrored synchronously by [BubbleVisibilityStore] so
+     * `addBubble` can read it inline on a cold-start/recovery restart (see [setBubbleVisible]).
+     */
+    val bubbleVisible: Boolean = true,
     /**
      * Opt-in local-first crash reporting (M11). Default OFF (privacy posture): nothing is collected or
      * shared unless the user turns this on and explicitly shares a report.
@@ -82,6 +92,9 @@ data class QuillSettings(
 
 class SettingsRepository(private val context: Context) {
 
+    /** Synchronous on-disk mirror of [QuillSettings.bubbleVisible], kept in lockstep by [setBubbleVisible]. */
+    private val visibilityMirror by lazy { BubbleVisibilityStore(context) }
+
     val settings: Flow<QuillSettings> = context.settingsDataStore.data.map { p ->
         val provider = SttProvider.fromId(p[Keys.PROVIDER])
         QuillSettings(
@@ -98,6 +111,7 @@ class SettingsRepository(private val context: Context) {
             appTheme = p[Keys.APP_THEME] ?: QuillSettings.APP_THEME_SYSTEM,
             bootRestore = p[Keys.BOOT_RESTORE] ?: true,
             bubbleActive = p[Keys.BUBBLE_ACTIVE] ?: false,
+            bubbleVisible = p[Keys.BUBBLE_VISIBLE] ?: true,
             crashReportingEnabled = p[Keys.CRASH_REPORTING] ?: false,
             bubbleWasKilled = p[Keys.BUBBLE_WAS_KILLED] ?: false,
         )
@@ -146,6 +160,18 @@ class SettingsRepository(private val context: Context) {
     suspend fun setBubbleActive(active: Boolean) =
         context.settingsDataStore.edit { it[Keys.BUBBLE_ACTIVE] = active }
 
+    /**
+     * Set the unified bubble-visibility state. Writes the synchronous mirror **first**, then DataStore,
+     * keeping the two in lockstep — this is the single writer of [QuillSettings.bubbleVisible]. The Home
+     * toggle, drag-dismiss, and notification-summon all funnel through here; the
+     * [com.tihor.quill.overlay.OverlayService] observes the Flow and the Home screen reflects it, so all
+     * three entry points stay in sync live.
+     */
+    suspend fun setBubbleVisible(visible: Boolean) {
+        visibilityMirror.visible = visible
+        context.settingsDataStore.edit { it[Keys.BUBBLE_VISIBLE] = visible }
+    }
+
     suspend fun setCrashReportingEnabled(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.CRASH_REPORTING] = enabled }
 
@@ -153,16 +179,22 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { it[Keys.BUBBLE_WAS_KILLED] = killed }
 
     /** Full wipe: every preference reverts to its default (incl. onboarding). For "clear all data". */
-    suspend fun clear() = context.settingsDataStore.edit { it.clear() }
+    suspend fun clear() {
+        visibilityMirror.visible = true // keep the mirror in lockstep with the DataStore default
+        context.settingsDataStore.edit { it.clear() }
+    }
 
     /**
      * Reset preferences to defaults but **keep** onboarding status, so resetting settings doesn't
      * bounce the user back through onboarding. For the "Reset settings to default" action.
      */
-    suspend fun resetToDefaults() = context.settingsDataStore.edit { prefs ->
-        val onboarded = prefs[Keys.ONBOARDING_COMPLETE]
-        prefs.clear()
-        if (onboarded != null) prefs[Keys.ONBOARDING_COMPLETE] = onboarded
+    suspend fun resetToDefaults() {
+        visibilityMirror.visible = true // keep the mirror in lockstep with the DataStore default
+        context.settingsDataStore.edit { prefs ->
+            val onboarded = prefs[Keys.ONBOARDING_COMPLETE]
+            prefs.clear()
+            if (onboarded != null) prefs[Keys.ONBOARDING_COMPLETE] = onboarded
+        }
     }
 
     private object Keys {
@@ -179,6 +211,7 @@ class SettingsRepository(private val context: Context) {
         val APP_THEME = stringPreferencesKey("app_theme")
         val BOOT_RESTORE = booleanPreferencesKey("boot_restore")
         val BUBBLE_ACTIVE = booleanPreferencesKey("bubble_active")
+        val BUBBLE_VISIBLE = booleanPreferencesKey("bubble_visible")
         val CRASH_REPORTING = booleanPreferencesKey("crash_reporting")
         val BUBBLE_WAS_KILLED = booleanPreferencesKey("bubble_was_killed")
     }

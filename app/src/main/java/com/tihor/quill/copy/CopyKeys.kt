@@ -307,8 +307,15 @@ object CopyKeys {
     const val SETTINGS_SURVIVAL_OPEN = "settings.survival.open"
     const val SETTINGS_SURVIVAL_FALLBACK = "settings.survival.fallback"
 
-    // --- Overlay bubble (overridable) ---
+    // --- Overlay bubble + FGS notification (overridable) ---
     const val NOTIFICATION_ACTION_SHOW = "notification.action.show"
+    const val NOTIFICATION_ACTION_STOP = "notification.action.stop"
+    const val NOTIFICATION_TITLE_ACTIVE = "notification.title.active"
+    const val NOTIFICATION_TEXT_ACTIVE = "notification.text.active"
+    const val NOTIFICATION_TITLE_HIDDEN = "notification.title.hidden"
+    const val NOTIFICATION_TEXT_HIDDEN = "notification.text.hidden"
+    const val NOTIFICATION_TITLE_RECORDING = "notification.title.recording"
+    const val NOTIFICATION_TEXT_RECORDING = "notification.text.recording"
     const val BUBBLE_DISMISS_TOAST = "bubble.dismiss.toast"
 
     // --- Shared values (overridable) ---
@@ -430,7 +437,10 @@ object CopyKeys {
             INJECT_REENABLE_ACTION, HOME_BATTERY_TITLE, HOME_BATTERY_TEXT,
             SETTINGS_SURVIVAL_ROW, SETTINGS_SURVIVAL_TITLE, SETTINGS_SURVIVAL_BODY,
             SETTINGS_SURVIVAL_STEPS, SETTINGS_SURVIVAL_OPEN, SETTINGS_SURVIVAL_FALLBACK,
-            NOTIFICATION_ACTION_SHOW, BUBBLE_DISMISS_TOAST,
+            NOTIFICATION_ACTION_SHOW, NOTIFICATION_ACTION_STOP,
+            NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
+            NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,
+            NOTIFICATION_TITLE_RECORDING, NOTIFICATION_TEXT_RECORDING, BUBBLE_DISMISS_TOAST,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,

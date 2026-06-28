@@ -112,11 +112,17 @@ class CopyRepositoryTest {
         assertEquals(baked, r.get(key))
     }
 
-    /** The bubble dismiss/summon copy keys exist, resolve non-blank, and stay overridable (OTA-able). */
+    /** The bubble dismiss/summon + FGS-notification copy keys exist, resolve non-blank, and stay OTA-able. */
     @Test
     fun bubbleDismissSummonKeys_arePresentAndOverridable() {
         val r = repo()
-        listOf(CopyKeys.NOTIFICATION_ACTION_SHOW, CopyKeys.BUBBLE_DISMISS_TOAST).forEach { key ->
+        listOf(
+            CopyKeys.NOTIFICATION_ACTION_SHOW, CopyKeys.NOTIFICATION_ACTION_STOP,
+            CopyKeys.NOTIFICATION_TITLE_ACTIVE, CopyKeys.NOTIFICATION_TEXT_ACTIVE,
+            CopyKeys.NOTIFICATION_TITLE_HIDDEN, CopyKeys.NOTIFICATION_TEXT_HIDDEN,
+            CopyKeys.NOTIFICATION_TITLE_RECORDING, CopyKeys.NOTIFICATION_TEXT_RECORDING,
+            CopyKeys.BUBBLE_DISMISS_TOAST,
+        ).forEach { key ->
             assertTrue("$key must be referenced in CopyKeys.ALL", key in CopyKeys.ALL)
             assertFalse("$key must resolve to a non-blank baked-in default", r.get(key).isBlank())
             assertTrue("$key must be OTA-overridable (not compliance-locked)", key in CopyKeys.OVERRIDABLE)

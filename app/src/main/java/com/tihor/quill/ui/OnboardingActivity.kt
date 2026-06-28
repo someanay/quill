@@ -2,6 +2,7 @@ package com.tihor.quill.ui
 
 import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -152,8 +153,11 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         }
     }
 
-    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) step = Step.MIC_TEST
+    // Request the mic and (Android 13+) POST_NOTIFICATIONS together: the latter is needed for the FGS
+    // notification + its "Show Quill" summon action. Advance on the mic grant; notifications are
+    // best-effort (the Home toggle is the synced fallback if denied).
+    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        if (result[Manifest.permission.RECORD_AUDIO] == true) step = Step.MIC_TEST
     }
     val overlayLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (OverlayPermission.isGranted(context)) step = Step.ACC_DISCLOSURE
@@ -181,7 +185,12 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
 
     fun finishOnboarding() {
         scope.launch { settings.setOnboardingComplete(true) }
-        if (OverlayPermission.isGranted(context)) OverlayService.start(context)
+        if (OverlayPermission.isGranted(context)) {
+            OverlayService.start(context)
+            // Mark the service desired (gates M11 recovery) and the bubble shown — the unified state the
+            // Home toggle, drag-dismiss, and notification-summon all share.
+            scope.launch { settings.setBubbleActive(true); settings.setBubbleVisible(true) }
+        }
         onFinish()
     }
 
@@ -196,7 +205,14 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.HOW_IT_WORKS })
         Step.HOW_IT_WORKS -> HowItWorksStep(::back, onNext = { step = Step.CHECKLIST })
         Step.CHECKLIST -> ChecklistStep(::back, context, onNext = { step = Step.MIC })
-        Step.MIC -> MicStep(::back, onAllow = { micLauncher.launch(Manifest.permission.RECORD_AUDIO) })
+        Step.MIC -> MicStep(::back, onAllow = {
+            val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                arrayOf(Manifest.permission.RECORD_AUDIO)
+            }
+            micLauncher.launch(perms)
+        })
         Step.MIC_TEST -> MicTestStep(::back, onNext = { step = Step.OVERLAY })
         Step.OVERLAY -> OverlayStep(::back, onAllow = { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) })
         Step.ACC_DISCLOSURE -> AccessibilityDisclosureStep(

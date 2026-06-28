@@ -1,7 +1,10 @@
 package com.tihor.quill.ui.screens
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -79,7 +82,10 @@ fun HomeScreen(nav: QuillNav) {
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
     var hasOverlay by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
-    var bubbleOn by remember { mutableStateOf(OverlayPermission.isGranted(context)) }
+    // The master toggle reflects the unified visibility state (single source of truth): "on" = bubble
+    // shown. Hiding (toggle-off or drag-dismiss) keeps the service + notification alive; only the
+    // notification's "Dismiss bubble" fully stops it. Gated by the overlay grant (no bubble without it).
+    val bubbleOn = settings.bubbleVisible && hasOverlay
     var a11yOn by remember { mutableStateOf(AccessibilityUtil.isServiceEnabled(context)) }
     var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
 
@@ -97,21 +103,41 @@ fun HomeScreen(nav: QuillNav) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    // POST_NOTIFICATIONS (Android 13+) gates the FGS notification + its "Show Quill" action — the
+    // notification summon path. Requested at first bubble-start; if denied, the synced Home toggle is
+    // the alternate way back, so denial isn't a dead end. Proceed regardless of the result.
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    fun requestNotifPermIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !NotificationManagerCompat.from(context).areNotificationsEnabled()
+        ) {
+            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    // Toggle-on starts the service (if needed) and marks it desired + visible.
+    fun startAndShow() {
+        requestNotifPermIfNeeded()
+        OverlayService.start(context)
+        scope.launch { repo.setBubbleActive(true); repo.setBubbleVisible(true) }
+    }
+
     val overlayLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) {
         hasOverlay = OverlayPermission.isGranted(context)
-        if (hasOverlay) { OverlayService.start(context); bubbleOn = true; scope.launch { repo.setBubbleActive(true) } }
+        if (hasOverlay) startAndShow()
     }
 
-    // M11: persist the user's intent so boot + foreground recovery know whether to restore the bubble.
+    // The toggle means "bubble shown vs hidden", NOT "service alive vs dead". Toggle-off HIDES (writes
+    // the unified visibility state) but keeps the FGS + notification running, so the summon paths work
+    // identically whether the user hid via the toggle, a drag, or returns via the notification. Only the
+    // notification's "Dismiss bubble" fully stops the service (clearing bubbleActive).
     fun setBubble(on: Boolean) {
         if (on) {
-            if (!hasOverlay) { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) } else {
-                OverlayService.start(context); bubbleOn = true; scope.launch { repo.setBubbleActive(true) }
-            }
+            if (!hasOverlay) overlayLauncher.launch(OverlayPermission.settingsIntent(context)) else startAndShow()
         } else {
-            OverlayService.stop(context); bubbleOn = false; scope.launch { repo.setBubbleActive(false) }
+            scope.launch { repo.setBubbleVisible(false) }
         }
     }
 
