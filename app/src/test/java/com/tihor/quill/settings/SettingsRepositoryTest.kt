@@ -1,10 +1,12 @@
 package com.tihor.quill.settings
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -18,6 +20,25 @@ class SettingsRepositoryTest {
 
     private fun repo() = SettingsRepository(RuntimeEnvironment.getApplication())
 
+    // Robolectric caches the DataStore singleton across methods in a class, so reset to a known clean
+    // baseline before each test (the suite previously passed only by lucky method ordering).
+    @Before
+    fun reset() {
+        runBlocking {
+            val r = repo()
+            r.setProvider(SttProvider.GROQ) // also resets sttModel to the provider default
+            r.setLanguageHint("en")
+            r.setCleanupEnabled(false) // M10: cleanup is opt-in; baseline mirrors the default-off
+            r.setPrivateMode(false)
+            r.setHistoryEnabled(true)
+            r.setHistoryRetentionMinutes(QuillSettings.RETENTION_DEFAULT_MINUTES)
+            r.setSessionCapSeconds(300)
+            r.setOnboardingComplete(false)
+            r.setBubbleSize(QuillSettings.BUBBLE_SIZE_MEDIUM)
+            r.setAppTheme(QuillSettings.APP_THEME_SYSTEM)
+        }
+    }
+
     @Test
     fun defaults_areGroqAndSensible() = runTest {
         val s = repo().settings.first()
@@ -26,7 +47,8 @@ class SettingsRepositoryTest {
         // Default is English so mixed-language (Hinglish) dictation comes out in Roman script.
         assertEquals("en", s.languageHint)
         assertFalse(s.privateMode)
-        assertTrue(s.cleanupEnabled)
+        // M10: LLM cleanup is opt-in — default OFF (extra latency + a second BYOK call).
+        assertFalse(s.cleanupEnabled)
         assertEquals(300, s.sessionCapSeconds)
         assertFalse(s.onboardingComplete)
     }
@@ -59,5 +81,92 @@ class SettingsRepositoryTest {
         // Clearing falls back to the English default.
         r.setLanguageHint("")
         assertEquals("en", r.settings.first().languageHint)
+    }
+
+    @Test
+    fun quillSettings_dataClassDefaults_matchSpec() {
+        // Leak-immune: assert the documented defaults on the data class itself (spec §4.1 / prd / M9).
+        val d = QuillSettings()
+        assertEquals(SttProvider.DEFAULT, d.provider)
+        assertEquals("en", d.languageHint)
+        // M10: cleanup is opt-in, so the documented default is OFF (asserted, not incidental).
+        assertFalse(d.cleanupEnabled)
+        assertFalse(d.privateMode)
+        assertEquals(300, d.sessionCapSeconds)
+        assertFalse(d.onboardingComplete)
+        // M9: history ON by default, kept 1 hour.
+        assertTrue(d.historyEnabled)
+        assertEquals(60, d.historyRetentionMinutes)
+        assertEquals(QuillSettings.RETENTION_DEFAULT_MINUTES, d.historyRetentionMinutes)
+        assertEquals(QuillSettings.BUBBLE_SIZE_MEDIUM, d.bubbleSize)
+        assertEquals(QuillSettings.APP_THEME_SYSTEM, d.appTheme)
+    }
+
+    @Test
+    fun history_enabledAndRetention_roundTrip() = runTest {
+        val r = repo()
+        r.setHistoryEnabled(false)
+        r.setHistoryRetentionMinutes(QuillSettings.RETENTION_FOREVER)
+        var s = r.settings.first()
+        assertFalse(s.historyEnabled)
+        assertEquals(QuillSettings.RETENTION_FOREVER, s.historyRetentionMinutes)
+
+        r.setHistoryEnabled(true)
+        r.setHistoryRetentionMinutes(1_440)
+        s = r.settings.first()
+        assertTrue(s.historyEnabled)
+        assertEquals(1_440, s.historyRetentionMinutes)
+    }
+
+    @Test
+    fun bubbleSizeAndTheme_defaultsAndRoundTrip() = runTest {
+        val r = repo()
+        val d = r.settings.first()
+        assertEquals(QuillSettings.BUBBLE_SIZE_MEDIUM, d.bubbleSize)
+        assertEquals(QuillSettings.APP_THEME_SYSTEM, d.appTheme)
+
+        r.setBubbleSize(QuillSettings.BUBBLE_SIZE_LARGE)
+        r.setAppTheme(QuillSettings.APP_THEME_DARK)
+        val s = r.settings.first()
+        assertEquals(QuillSettings.BUBBLE_SIZE_LARGE, s.bubbleSize)
+        assertEquals(QuillSettings.APP_THEME_DARK, s.appTheme)
+    }
+
+    @Test
+    fun setProvider_switchesProviderAndResetsModelToProviderDefault() = runTest {
+        val r = repo()
+        // Pick a non-default model first, then switching provider must reset the model.
+        r.setSttModel("custom-model")
+        r.setProvider(SttProvider.OPENAI)
+        val s = r.settings.first()
+        assertEquals(SttProvider.OPENAI, s.provider)
+        assertEquals(SttProvider.OPENAI.defaultModel, s.sttModel)
+    }
+
+    @Test
+    fun clear_resetsEverythingToDefaultsInclOnboarding() = runTest {
+        val r = repo()
+        r.setPrivateMode(true)
+        r.setOnboardingComplete(true)
+        r.setHistoryRetentionMinutes(QuillSettings.RETENTION_FOREVER)
+        r.clear()
+        val s = r.settings.first()
+        assertFalse(s.privateMode)
+        assertFalse("full wipe resets onboarding", s.onboardingComplete)
+        assertEquals(60, s.historyRetentionMinutes)
+        assertEquals(SttProvider.GROQ, s.provider)
+    }
+
+    @Test
+    fun resetToDefaults_resetsPrefsButKeepsOnboarding() = runTest {
+        val r = repo()
+        r.setOnboardingComplete(true)
+        r.setPrivateMode(true)
+        r.setHistoryRetentionMinutes(QuillSettings.RETENTION_FOREVER)
+        r.resetToDefaults()
+        val s = r.settings.first()
+        assertTrue("onboarding is preserved across a settings reset", s.onboardingComplete)
+        assertFalse(s.privateMode)
+        assertEquals(60, s.historyRetentionMinutes)
     }
 }

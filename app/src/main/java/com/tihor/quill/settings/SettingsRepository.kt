@@ -22,16 +22,40 @@ data class QuillSettings(
     val provider: SttProvider = SttProvider.DEFAULT,
     val sttModel: String = SttProvider.DEFAULT.defaultModel,
     val languageHint: String = DEFAULT_LANGUAGE, // ISO code, or LANGUAGE_AUTO for auto-detect
-    val cleanupEnabled: Boolean = true,
+    /** LLM cleanup pass before insertion (M10). Opt-in: default OFF (extra latency + a second BYOK call). */
+    val cleanupEnabled: Boolean = false,
     val privateMode: Boolean = false,
-    /** Save dictation history on device (M9). Opt-in: default OFF; [privateMode] hard-overrides it. */
-    val historyEnabled: Boolean = false,
+    /** Save dictation history on device (M9). Default ON; [privateMode] hard-overrides it. */
+    val historyEnabled: Boolean = true,
+    /**
+     * How long saved dictations are kept, in minutes (M9). Default 1 hour; older entries auto-delete.
+     * [RETENTION_FOREVER] (0) disables time-based pruning (a count cap still backstops storage).
+     */
+    val historyRetentionMinutes: Int = RETENTION_DEFAULT_MINUTES,
     val sessionCapSeconds: Int = 300,
     val onboardingComplete: Boolean = false,
+    /** Floating-bubble size: [BUBBLE_SIZE_SMALL] / [BUBBLE_SIZE_MEDIUM] / [BUBBLE_SIZE_LARGE]. */
+    val bubbleSize: String = BUBBLE_SIZE_MEDIUM,
+    /** App theme: [APP_THEME_SYSTEM] / [APP_THEME_LIGHT] / [APP_THEME_DARK] — drives the whole UI. */
+    val appTheme: String = APP_THEME_SYSTEM,
 ) {
     companion object {
         const val DEFAULT_LANGUAGE = "en"
         const val LANGUAGE_AUTO = "auto"
+
+        const val BUBBLE_SIZE_SMALL = "Small"
+        const val BUBBLE_SIZE_MEDIUM = "Medium"
+        const val BUBBLE_SIZE_LARGE = "Large"
+
+        const val APP_THEME_SYSTEM = "Match system"
+        const val APP_THEME_LIGHT = "Light"
+        const val APP_THEME_DARK = "Dark"
+
+        /** History retention sentinel: keep forever (no time-based pruning). */
+        const val RETENTION_FOREVER = 0
+        const val RETENTION_DEFAULT_MINUTES = 60 // 1 hour
+        /** Selectable retention windows, in minutes (1h / 1d / 1w / 30d / forever). */
+        val RETENTION_OPTIONS = listOf(60, 1_440, 10_080, 43_200, RETENTION_FOREVER)
     }
 }
 
@@ -43,11 +67,14 @@ class SettingsRepository(private val context: Context) {
             provider = provider,
             sttModel = p[Keys.STT_MODEL] ?: provider.defaultModel,
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
-            cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: true,
+            cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: false,
             privateMode = p[Keys.PRIVATE_MODE] ?: false,
-            historyEnabled = p[Keys.HISTORY_ENABLED] ?: false,
+            historyEnabled = p[Keys.HISTORY_ENABLED] ?: true,
+            historyRetentionMinutes = p[Keys.HISTORY_RETENTION_MINUTES] ?: QuillSettings.RETENTION_DEFAULT_MINUTES,
             sessionCapSeconds = p[Keys.SESSION_CAP_SECONDS] ?: 300,
             onboardingComplete = p[Keys.ONBOARDING_COMPLETE] ?: false,
+            bubbleSize = p[Keys.BUBBLE_SIZE] ?: QuillSettings.BUBBLE_SIZE_MEDIUM,
+            appTheme = p[Keys.APP_THEME] ?: QuillSettings.APP_THEME_SYSTEM,
         )
     }
 
@@ -73,11 +100,33 @@ class SettingsRepository(private val context: Context) {
     suspend fun setHistoryEnabled(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.HISTORY_ENABLED] = enabled }
 
+    suspend fun setHistoryRetentionMinutes(minutes: Int) =
+        context.settingsDataStore.edit { it[Keys.HISTORY_RETENTION_MINUTES] = minutes }
+
     suspend fun setSessionCapSeconds(seconds: Int) =
         context.settingsDataStore.edit { it[Keys.SESSION_CAP_SECONDS] = seconds }
 
     suspend fun setOnboardingComplete(complete: Boolean) =
         context.settingsDataStore.edit { it[Keys.ONBOARDING_COMPLETE] = complete }
+
+    suspend fun setBubbleSize(size: String) =
+        context.settingsDataStore.edit { it[Keys.BUBBLE_SIZE] = size }
+
+    suspend fun setAppTheme(theme: String) =
+        context.settingsDataStore.edit { it[Keys.APP_THEME] = theme }
+
+    /** Full wipe: every preference reverts to its default (incl. onboarding). For "clear all data". */
+    suspend fun clear() = context.settingsDataStore.edit { it.clear() }
+
+    /**
+     * Reset preferences to defaults but **keep** onboarding status, so resetting settings doesn't
+     * bounce the user back through onboarding. For the "Reset settings to default" action.
+     */
+    suspend fun resetToDefaults() = context.settingsDataStore.edit { prefs ->
+        val onboarded = prefs[Keys.ONBOARDING_COMPLETE]
+        prefs.clear()
+        if (onboarded != null) prefs[Keys.ONBOARDING_COMPLETE] = onboarded
+    }
 
     private object Keys {
         val PROVIDER = stringPreferencesKey("provider")
@@ -86,7 +135,10 @@ class SettingsRepository(private val context: Context) {
         val CLEANUP_ENABLED = booleanPreferencesKey("cleanup_enabled")
         val PRIVATE_MODE = booleanPreferencesKey("private_mode")
         val HISTORY_ENABLED = booleanPreferencesKey("history_enabled")
+        val HISTORY_RETENTION_MINUTES = intPreferencesKey("history_retention_minutes")
         val SESSION_CAP_SECONDS = intPreferencesKey("session_cap_seconds")
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
+        val BUBBLE_SIZE = stringPreferencesKey("bubble_size")
+        val APP_THEME = stringPreferencesKey("app_theme")
     }
 }
