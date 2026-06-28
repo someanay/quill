@@ -28,6 +28,14 @@ class CaptionView(context: Context) : View(context) {
     private var level: Float = 0f
     private var timer: String = "0:00"
 
+    /** When set, this dictation targets the clipboard (long-press), so the copy re-labels accordingly. */
+    var clipboardTarget: Boolean = false
+        set(value) {
+            field = value
+            requestLayout()
+            invalidate()
+        }
+
     private val padH = dp(12f)
     private val padV = dp(9f)
     private val shadowPad = dp(10f)
@@ -68,8 +76,8 @@ class CaptionView(context: Context) : View(context) {
     /** Content text for the single/lead line and optional sub-line per mode. */
     private fun lines(): Pair<String, String?> = when (mode) {
         Mode.RECORDING -> "" to null
-        Mode.TRANSCRIBING -> "Transcribing…" to null
-        Mode.PASTE -> "Tap to paste" to null
+        Mode.TRANSCRIBING -> (if (clipboardTarget) "Transcribing → clipboard" else "Transcribing…") to null
+        Mode.PASTE -> if (clipboardTarget) "Copied to clipboard" to "Paste anywhere" else "Tap to paste" to null
         Mode.ERROR -> "Couldn't transcribe" to "Saved · Tap to retry"
         Mode.OFFLINE -> "No connection" to "Saved · Tap to retry"
     }

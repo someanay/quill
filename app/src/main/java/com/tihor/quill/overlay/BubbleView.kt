@@ -49,13 +49,32 @@ class BubbleView(
             if (state == BubbleState.RECORDING) invalidate()
         }
 
+    /** Bubble size multiplier from Visual preferences (Small ≈ 0.82, Medium = 1, Large ≈ 1.22). */
+    var sizeScale: Float = 1f
+        set(value) {
+            field = value.coerceIn(0.6f, 1.6f)
+            requestLayout()
+            invalidate()
+        }
+
+    /** When true the resting bubble uses a dark charcoal fill instead of the brand gradient. */
+    var darkTheme: Boolean = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val diameter = dp(56f)            // §9 base geometry
+    private val baseDiameter = dp(56f)        // §9 base geometry
+    private val diameter get() = baseDiameter * sizeScale
     private val haloMax = dp(13f)             // gold halo reaches ~13 dp out
     private val shadowPad = dp(12f)
-    val viewSize = (diameter + (haloMax + shadowPad) * 2).toInt()
+    val viewSize get() = (diameter + (haloMax + shadowPad) * 2).toInt()
+
+    /** Transparent padding around the visible circle (halo + shadow) — used to tuck siblings flush. */
+    val contentInset get() = (haloMax + shadowPad).toInt()
 
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -103,14 +122,17 @@ class BubbleView(
         setLayerType(LAYER_TYPE_SOFTWARE, null)
     }
 
-    /** §2.4 gradient stops per state (150° linear). */
+    /** §2.4 gradient stops per state (150° linear). The resting states honour [darkTheme]. */
     private fun gradientFor(state: BubbleState): IntArray = when (state) {
-        BubbleState.IDLE -> intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())       // Brand
+        BubbleState.IDLE, BubbleState.PASTE -> restingGradient()
         BubbleState.RECORDING -> intArrayOf(0xFFE0A03A.toInt(), 0xFFEFC069.toInt())  // Gold (live)
         BubbleState.TRANSCRIBING -> intArrayOf(0xFF5B5BD6.toInt(), 0xFF7E78E8.toInt()) // Busy
-        BubbleState.PASTE -> intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())      // Brand
         BubbleState.ERROR -> intArrayOf(0xFFD6453D.toInt(), 0xFFE8635B.toInt())      // Error
     }
+
+    private fun restingGradient(): IntArray =
+        if (darkTheme) intArrayOf(0xFF2A2A33.toInt(), 0xFF3C3C49.toInt())            // Charcoal
+        else intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())                      // Brand
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(viewSize, viewSize)
