@@ -33,9 +33,13 @@ import com.tihor.quill.audio.StopReason
 import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.settings.CustomWordsStore
 import com.tihor.quill.settings.QuillSettings
 import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.settings.TranscriptionClientFactory
+import com.tihor.quill.cleanup.CleanupClient
+import com.tihor.quill.cleanup.CleanupPipeline
+import com.tihor.quill.stt.OpenAiCompatibleTranscriptionClient
 import com.tihor.quill.stt.RomanizePrompt
 import com.tihor.quill.stt.TranscriptionOptions
 import kotlinx.coroutines.CoroutineScope
@@ -95,6 +99,7 @@ class OverlayService : Service() {
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private val secretStore: SecretStore by lazy { KeystoreSecretStore(this) }
     private val settingsRepository by lazy { SettingsRepository(this) }
+    private val customWordsStore by lazy { CustomWordsStore(this) }
     private val historyRepository by lazy { HistoryRepository(this) }
 
     // Last bubble appearance from Visual preferences; re-applied whenever the bubble is (re)created.
@@ -504,6 +509,7 @@ class OverlayService : Service() {
                 return@launch
             }
             val settings = settingsRepository.settings.first()
+            val customWords = customWordsStore.words.first()
             val client = TranscriptionClientFactory.create(settings.provider, apiKey = { key })
             // "auto" → null (let the provider detect). English seeds the Hinglish romanization prompt.
             val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
@@ -517,6 +523,22 @@ class OverlayService : Service() {
             )
             result.fold(
                 onSuccess = {
+                    // M10: tidy the raw transcript with the LLM (gated by cleanupEnabled, fail-soft —
+                    // any error/timeout/empty falls back to raw), THEN apply custom-word substitution
+                    // so the deterministic vocabulary wins last (decision 3). The single result is what
+                    // both history and the injector receive (decision 4), all within the existing
+                    // TRANSCRIBING state — no new bubble state, no recorder/FGS changes.
+                    val corrected = CleanupPipeline.process(
+                        raw = it.text,
+                        cleanupEnabled = settings.cleanupEnabled,
+                        words = customWords,
+                        clean = { text ->
+                            CleanupClient(
+                                baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
+                                apiKey = { key },
+                            ).clean(text)
+                        },
+                    )
                     // Save on a successful transcription (gated), BEFORE insertion — a transcript that
                     // fails to land is exactly when a saved copy is the safety net (M9).
                     val pkg = recordingPackage
@@ -524,12 +546,12 @@ class OverlayService : Service() {
                         historyEnabled = settings.historyEnabled,
                         privateMode = settings.privateMode,
                         retentionMinutes = settings.historyRetentionMinutes,
-                        text = it.text,
+                        text = corrected,
                         packageName = pkg,
                         appLabel = appLabelFor(pkg),
                         timestamp = System.currentTimeMillis(),
                     )
-                    onTranscript(wav, it.text)
+                    onTranscript(wav, corrected)
                 },
                 onFailure = { err ->
                     Log.w(TAG, "Transcription failed: ${err.message}") // keep WAV for retry
