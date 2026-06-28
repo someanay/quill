@@ -20,7 +20,8 @@ injection matrix**, which is where dictation apps actually live or die.
 - [ ] `CleanupClient` returns raw text unchanged when cleanup is disabled *(P1)*
 - [ ] Vocabulary substitution replaces configured phrases, case-handling defined *(P1.5)*
 - [ ] Crash-report **scrubber**: a report contains stack / app version / device only — **never** transcript, audio, clipboard, or API key
-- [ ] History **retention**: inserting past the cap prunes the oldest and keeps the newest ~1,000
+- [ ] History **retention**: entries past the time window auto-delete (default 1 h) on insert and on
+  opening History; the ~1,000-row backstop cap still prunes oldest when retention is set to Forever
 - [ ] **Copy Catalog — resolution:** a key missing from the remote override falls back to the baked-in default (no blank); the resolved map contains *every* referenced key
 - [ ] **Copy Catalog — signature:** a bundle with an invalid / absent Ed25519 signature is **rejected**, leaving the current catalog intact
 - [ ] **Copy Catalog — rollback guard:** a bundle whose `revision` ≤ the applied revision is ignored

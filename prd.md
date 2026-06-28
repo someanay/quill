@@ -213,7 +213,7 @@ quality, higher latency, and OEM-fragmented — not worth it for a phone-in-hand
 
 * **LLM cleanup pass** (optional, toggle): remove filler, fix capitalisation/punctuation, light
 formatting. BYOK LLM key (may reuse the STT key if same provider).
-* **Dictation history** (opt-in, local-only): transcript, timestamp, destination app, char count,
+* **Dictation history** (on by default, local-only): transcript, timestamp, destination app, char count,
 success/fail; deletable; gated by private mode.
 * **Settings**: provider, model, language hint, cleanup on/off, private mode, battery-optimisation
 prompt.
@@ -278,7 +278,7 @@ All build-blocking questions are answered; this is the quick-reference log.
 |Session cap|**300 s**.|
 |Cleanup pass (P1)|**Default on**, conservative (filler + punctuation only), with a toggle.|
 |Serializer|**kotlinx.serialization** (compile-time → minimal R8 keep-rules).|
-|History retention|Bounded — keep the most recent \~1,000 entries (prune oldest); per-item + clear-all delete; gated by private mode.|
+|History retention|**On by default**, time-bounded — keep entries within a window (default 1 h; user picks 1 h / 1 d / 1 w / 30 d / Forever or turns it off). Auto-deletes past the window; ~1,000-row backstop cap; per-item + clear-all delete; gated by private mode.|
 
 \---
 

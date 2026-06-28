@@ -197,12 +197,16 @@ not proceed until build + tests + the manual script all pass, then commit.
 > - **Migrate M7 screens (Home/ApiKey/Settings) to the Copy Catalog** + extend the literal guard repo-wide → follow-up (they currently use literals; the onboarding is the first fully-keyed flow).
 > - The standalone `AccessibilityDisclosureActivity` (M2) still reads compliance copy from `strings.xml`; both are binary/locked — consolidate onto the catalog in the follow-up.
 
-## M9 — Dictation history (P1, opt-in)
-- [ ] Room `transcripts` table + DAO; list screen (Compose)
-- [ ] Gate all writes behind private mode; delete-all + per-item delete
-- [ ] **Retention cap:** keep most recent ~1,000 entries, prune oldest (`historyCap`)
-- [ ] **Test (write first):** Room DAO insert/query/delete; **no rows written when private mode on**; retention prunes oldest beyond the cap
-- [ ] **Verify:** entries logged when on, none when private mode on, deletion + pruning work.
+## M9 — Dictation history (P1, on by default)
+- [x] Hand-rolled SQLite `history` table + store; list screen (Compose)
+- [x] Gate all writes behind private mode; delete-all + per-item delete
+- [x] **On by default; time-based retention:** keep entries within a window (`historyRetentionMinutes`,
+  default 60 = 1 h); user picks 1 h / 1 d / 1 w / 30 d / Forever or turns history off in Settings →
+  Privacy. Expired entries auto-delete on insert and on opening History. A 1,000-row cap backstops
+  storage (matters only for Forever).
+- [x] **Test (write first):** store insert/query/delete; **no rows written when private mode on**;
+  retention prunes entries past the window and beyond the backstop cap
+- [ ] **Verify:** entries logged when on, none when private mode on, deletion + window/backstop pruning work.
 
 ## M10 — LLM cleanup pass (P1)
 - [ ] `CleanupClient` (chat-completions) + toggle + optional separate LLM key

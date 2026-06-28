@@ -298,7 +298,8 @@ No server database. Three local stores:
 ### 4.1 Settings — DataStore (Preferences)
 `provider` (enum: OPENAI, GROQ, …; **default GROQ**), `sttModel`, `cleanupEnabled` (bool, **default
 true**), `cleanupModel`, `languageHint` (nullable; auto-detect), `privateMode` (bool, **default
-false**), `bubbleEnabled` (bool), `sessionCapSeconds` (default 300), `historyCap` (default 1000),
+false**), `bubbleEnabled` (bool), `sessionCapSeconds` (default 300), `historyEnabled` (bool,
+**default true**), `historyRetentionMinutes` (default 60 = 1 h; 0 = keep forever, count-cap only),
 `pendingCrashReport` (bool; drives the next-launch prompt), `onboardingComplete` (bool).
 
 ### 4.2 Secrets — Android Keystore + encrypted blob
@@ -306,7 +307,7 @@ Not a "table." An AES-256-GCM key lives in the Keystore (non-exportable); the AP
 IV are stored locally (DataStore or an encrypted file). Aliases: `stt_api_key`, `llm_api_key`
 (P1). **Excluded from Auto Backup** (see §6).
 
-### 4.3 History — Room (P1, opt-in)
+### 4.3 History — local SQLite (P1, on by default; time-based retention, default 1 h)
 
 `transcripts`:
 

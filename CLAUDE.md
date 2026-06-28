@@ -113,7 +113,8 @@ point.** Do **one milestone (often one sub-task) at a time**; never "build the w
 - **M6** — 🎯 End-to-end happy path (capture → STT → injection). The v1 proof point.
 - **M7** — Secrets & settings (Keystore AES-256-GCM; **not** the deprecated EncryptedSharedPreferences).
 - **M8** — Onboarding + the **Copy Catalog** foundation (soft-coded copy, baked-in defaults).
-- **M9** — Dictation history (Room, P1, opt-in, gated by private mode).
+- **M9** — Dictation history (local SQLite, P1, **on by default** with time-based retention —
+  default 1 h, user-configurable or off; gated by private mode).
 - **M10** — LLM cleanup pass (P1).
 - **M11** — OEM/reliability hardening + opt-in crash reporting.
 - **M12** — Play release readiness (declaration, demo video, data-safety, R8).
