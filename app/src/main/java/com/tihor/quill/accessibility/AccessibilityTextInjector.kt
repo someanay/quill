@@ -56,15 +56,22 @@ class AccessibilityTextInjector(private val context: Context) : TextInjector {
     }
 
     private fun trySetText(target: AccessibilityNodeInfo, text: String): InsertResult {
-        // v1 REPLACE: SET_TEXT writes exactly the transcript so any prior content (incl. a
-        // placeholder surfaced as text, e.g. WhatsApp "Message") is overwritten — never appended.
+        // Insert at the caret, preserving existing field content (InsertionComposer). SET_TEXT
+        // replaces the whole field, so we re-send existing text + the spliced-in transcript.
         // Log only hint + flags + selection, never the field content (privacy, spec §6).
         Log.d(
             TAG,
             "field hint='${target.hintText}' showingHint=${target.isShowingHintText} " +
                 "textLen=${target.text?.length ?: 0} sel=${target.textSelectionStart}/${target.textSelectionEnd}",
         )
-        val comp = InsertionComposer.composeForInjection(existingText = target.text, transcript = text)
+        val comp = InsertionComposer.composeForInjection(
+            existingText = target.text,
+            transcript = text,
+            selectionStart = target.textSelectionStart,
+            selectionEnd = target.textSelectionEnd,
+            isShowingHintText = target.isShowingHintText,
+            hintText = target.hintText,
+        )
         val setArgs = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, comp.newText)
         }

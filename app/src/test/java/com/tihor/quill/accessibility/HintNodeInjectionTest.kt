@@ -11,31 +11,45 @@ import org.robolectric.annotation.Config
 
 /**
  * Node-level regression for the WhatsApp "Message" prefix bug, matching the **real** node observed
- * on-device: `text="Message"`, `hintText=null`, `isShowingHintText=false` (no placeholder metadata
- * at all). The SET_TEXT payload must be exactly the dictated string — the whole field is replaced.
+ * on-device: `text="Message"`, `hintText=null`, `isShowingHintText=false` (no placeholder metadata).
+ * Because a placeholder only shows while the editable is empty, its caret is at 0 — so Quill replaces
+ * rather than prepends. A field with real content (caret past 0) is preserved and inserted into.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class HintNodeInjectionTest {
 
     private fun payloadFor(node: AccessibilityNodeInfo, transcript: String): String =
-        InsertionComposer.composeForInjection(existingText = node.text, transcript = transcript).newText
+        InsertionComposer.composeForInjection(
+            existingText = node.text,
+            transcript = transcript,
+            selectionStart = node.textSelectionStart,
+            selectionEnd = node.textSelectionEnd,
+            isShowingHintText = node.isShowingHintText,
+            hintText = node.hintText,
+        ).newText
 
     @Test
-    fun whatsAppLikeNode_textIsPlaceholder_noHintMetadata_replacesWithTranscript() {
-        val node = AccessibilityNodeInfo().apply { text = "Message" } // hintText null, flag false
+    fun whatsAppLikeNode_placeholderCaretAtStart_replacesWithTranscript() {
+        val node = AccessibilityNodeInfo().apply {
+            text = "Message" // hintText null, flag false
+            setTextSelection(0, 0) // empty editable ⇒ caret at 0
+        }
 
-        // Guard the assumptions this test is built on (don't assume hint metadata exists).
+        // Guard the assumptions this test is built on (no hint metadata).
         assertEquals("Message", node.text)
         assertNull(node.hintText)
         assertFalse(node.isShowingHintText)
 
-        assertEquals("hello world", payloadFor(node, "hello world"))
+        assertEquals("hello world", payloadFor(node, "hello world")) // not "Message hello world"
     }
 
     @Test
-    fun nodeWithRealContent_isAlsoReplaced_v1ReplaceSemantics() {
-        val node = AccessibilityNodeInfo().apply { text = "half typed" }
-        assertEquals("dictated text", payloadFor(node, "dictated text"))
+    fun nodeWithRealContent_caretAtEnd_isPreservedAndAppended() {
+        val node = AccessibilityNodeInfo().apply {
+            text = "half typed"
+            setTextSelection(10, 10)
+        }
+        assertEquals("half typed dictated", payloadFor(node, "dictated"))
     }
 }
