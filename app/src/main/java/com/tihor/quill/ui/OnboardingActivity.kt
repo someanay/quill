@@ -127,7 +127,7 @@ private enum class Step {
 }
 
 @Composable
-private fun OnboardingFlow(onFinish: () -> Unit) {
+internal fun OnboardingFlow(onFinish: () -> Unit) {
     val context = LocalContext.current
     val secretStore = remember { KeystoreSecretStore(context) }
     val settings = remember { SettingsRepository(context) }
@@ -329,6 +329,7 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) { progress.animateTo(1f, tween(3000)) }
     val ready = progress.value >= 1f
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
         QuillCard {
@@ -365,7 +366,16 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
-                    TextButton(onClick = onAccept, modifier = Modifier.fillMaxWidth()) {
+                    // Match the label: open the provider's key page (like AddKeyStep's sibling link),
+                    // rather than just advancing the flow. "Accept" below is what proceeds.
+                    TextButton(
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://console.groq.com/keys")),
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
                     }
                     QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept, leadingIcon = Icons.Rounded.Check)

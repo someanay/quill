@@ -77,7 +77,12 @@ fun HistoryScreen(nav: QuillNav) {
     var selected by remember { mutableStateOf<HistoryEntry?>(null) }
     var showClearAll by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { entries = historyRepo.all() }
+    // Drop anything past the retention window first, so the list reflects the cutoff even when no
+    // new dictation has happened since (M9). Re-runs if the user changes the window in Settings.
+    LaunchedEffect(settings.historyRetentionMinutes) {
+        historyRepo.prune(settings.historyRetentionMinutes, System.currentTimeMillis())
+        entries = historyRepo.all()
+    }
 
     Scaffold(
         topBar = {

@@ -18,13 +18,8 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +35,7 @@ import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.IllustrationVariant
 import com.tihor.quill.ui.components.PermissionIllustration
 import com.tihor.quill.ui.components.PillKind
+import com.tihor.quill.ui.components.QuillChip
 import com.tihor.quill.ui.components.QuillGhostButton
 import com.tihor.quill.ui.components.QuillListContainer
 import com.tihor.quill.ui.components.QuillPrimaryButton
@@ -80,7 +76,8 @@ fun PermissionRevokedScreen(nav: QuillNav) {
                 context.startActivity(AccessibilityUtil.settingsIntent())
             })
             Spacer(Modifier.height(10.dp))
-            QuillGhostButton(copy(K.SYSTEM_RECOVERY_WHY), onClick = { /* OEM battery-manager explainer */ })
+            // The OEM battery-manager explainer isn't written yet — disabled rather than a dead button.
+            QuillGhostButton(copy(K.SYSTEM_RECOVERY_WHY), onClick = {}, enabled = false)
         }
     }
 }
@@ -89,7 +86,6 @@ fun PermissionRevokedScreen(nav: QuillNav) {
 @Composable
 fun CrashReportScreen(nav: QuillNav) {
     val context = LocalContext.current
-    var alwaysSend by rememberSaveable { mutableStateOf(false) } // TODO(M11): persist opt-in
 
     Scaffold(
         topBar = { QuillTopBar(title = { QuillTopBarTitle(copy(K.SYSTEM_CRASH_TITLE)) }, onBack = nav::back) },
@@ -119,8 +115,9 @@ fun CrashReportScreen(nav: QuillNav) {
             )
             Spacer(Modifier.height(12.dp))
             QuillListContainer {
-                QuillRow(title = copy(K.SYSTEM_CRASH_ALWAYS), trailing = {
-                    Switch(checked = alwaysSend, onCheckedChange = { alwaysSend = it })
+                // "Always send" persists in M11 (with the crash reporter); honest placeholder until then.
+                QuillRow(title = copy(K.SYSTEM_CRASH_ALWAYS), titleColor = MaterialTheme.quill.muted, trailing = {
+                    QuillChip(copy(K.COMMON_COMING_SOON), selected = false, onClick = {}, enabled = false)
                 })
             }
             Spacer(Modifier.height(20.dp))
