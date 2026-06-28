@@ -59,13 +59,6 @@ data class QuillSettings(
      * battery-exemption re-prompt (only re-ask once a kill has actually happened); cleared on grant.
      */
     val bubbleWasKilled: Boolean = false,
-    /**
-     * "Check for updated text" (M13a, spec §2.3). Default ON. When on, Quill fetches a signed copy
-     * bundle from the static host in the background at launch (off the critical path). Off → no fetch;
-     * cached/baked-in copy only. This is the one extra outbound call beyond the provider calls, and it
-     * sends no user data or device identifier (spec §2.3 privacy delta).
-     */
-    val copyUpdatesEnabled: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_LANGUAGE = "en"
@@ -107,7 +100,6 @@ class SettingsRepository(private val context: Context) {
             bubbleActive = p[Keys.BUBBLE_ACTIVE] ?: false,
             crashReportingEnabled = p[Keys.CRASH_REPORTING] ?: false,
             bubbleWasKilled = p[Keys.BUBBLE_WAS_KILLED] ?: false,
-            copyUpdatesEnabled = p[Keys.COPY_UPDATES_ENABLED] ?: true,
         )
     }
 
@@ -160,9 +152,6 @@ class SettingsRepository(private val context: Context) {
     suspend fun setBubbleWasKilled(killed: Boolean) =
         context.settingsDataStore.edit { it[Keys.BUBBLE_WAS_KILLED] = killed }
 
-    suspend fun setCopyUpdatesEnabled(enabled: Boolean) =
-        context.settingsDataStore.edit { it[Keys.COPY_UPDATES_ENABLED] = enabled }
-
     /** Full wipe: every preference reverts to its default (incl. onboarding). For "clear all data". */
     suspend fun clear() = context.settingsDataStore.edit { it.clear() }
 
@@ -192,6 +181,5 @@ class SettingsRepository(private val context: Context) {
         val BUBBLE_ACTIVE = booleanPreferencesKey("bubble_active")
         val CRASH_REPORTING = booleanPreferencesKey("crash_reporting")
         val BUBBLE_WAS_KILLED = booleanPreferencesKey("bubble_was_killed")
-        val COPY_UPDATES_ENABLED = booleanPreferencesKey("copy_updates_enabled")
     }
 }

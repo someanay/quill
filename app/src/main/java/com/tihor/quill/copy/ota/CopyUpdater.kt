@@ -10,9 +10,10 @@ import java.util.concurrent.TimeUnit
 /**
  * Fetches and accepts OTA copy bundles, **off the critical path** (M13a, spec §2.3).
  *
- * Lifecycle: called once on app start (gated by the "Check for updated text" setting). It runs on
- * [Dispatchers.IO] and **never** blocks app start or the bubble. Offline / fetch failure / a rejected
- * bundle is silent — no user-facing error — and leaves the resolved copy at cached-or-baked-in.
+ * Lifecycle: called once unconditionally on app start (the OTA fetch is part of how the app works, not
+ * a user setting). It runs on [Dispatchers.IO] and **never** blocks app start or the bubble. Offline /
+ * fetch failure / a rejected bundle is silent — no user-facing error — and leaves the resolved copy at
+ * cached-or-baked-in.
  *
  * Cheap-when-unchanged: the request sends `If-None-Match: <last ETag>`, so an unchanged bundle returns
  * `304 Not Modified` and downloads nothing. A `200` body is run through the full [CopyBundleVerifier]
@@ -44,7 +45,7 @@ class CopyUpdater(
 
             val applied = store.appliedRevision()
             val etag = store.etag()
-            val url = "${baseUrl.trimEnd('/')}/copy/$LOCALE.json"
+            val url = "${baseUrl.trimEnd('/')}/strings.signed.json"
             val request = Request.Builder().url(url).get().apply {
                 if (!etag.isNullOrBlank()) header("If-None-Match", etag)
             }.build()
@@ -96,13 +97,13 @@ class CopyUpdater(
 
     companion object {
         private const val TAG = "QuillCopyUpdate"
-        private const val LOCALE = "en" // v1 ships en only; the {locale} path keeps i18n a drop-in.
 
         /**
-         * Static host for the signed copy bundle (spec §2.3). **Placeholder** — point this at the real
-         * CDN before shipping OTA copy. Served as `…/copy/en.json` over HTTPS.
+         * Static host for the signed copy bundle (spec §2.3). The bundle is a single flat file served at
+         * `…/strings.signed.json` over HTTPS from the Supabase storage bucket (v1 ships `en` only).
          */
-        const val BASE_URL = "https://copy.tihor.com" // TODO(M13b): set to the production CDN origin.
+        const val BASE_URL =
+            "https://tznxppfwlgdhbvsplewl.supabase.co/storage/v1/object/public/copy-bundles"
 
         private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(5, TimeUnit.SECONDS)

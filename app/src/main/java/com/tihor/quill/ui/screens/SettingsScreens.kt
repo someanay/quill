@@ -1121,12 +1121,6 @@ fun AdvancedScreen(nav: QuillNav) {
                 { scope.launch { repo.setBootRestore(it) } }, copy(K.SETTINGS_ADVANCED_KEEPALIVE_SUB),
             )
             RowDivider()
-            // M13a: gate the background OTA copy fetch. Default ON; off → cached/baked-in copy only.
-            SwitchRow(
-                copy(K.SETTINGS_ADVANCED_COPY_UPDATES), settings.copyUpdatesEnabled,
-                { scope.launch { repo.setCopyUpdatesEnabled(it) } }, copy(K.SETTINGS_ADVANCED_COPY_UPDATES_SUB),
-            )
-            RowDivider()
             QuillRow(
                 title = copy(K.SETTINGS_ADVANCED_BATTERY), subtitle = copy(K.SETTINGS_ADVANCED_BATTERY_SUB),
                 trailing = {

@@ -121,6 +121,8 @@ class CopyOtaPipelineTest {
         )
         val outcome = updater.checkForUpdate()
 
+        // The bundle is fetched as a flat file at /strings.signed.json (no /copy/{locale}.json path).
+        assertEquals("/strings.signed.json", server.takeRequest().path)
         assertTrue("expected acceptance, got $outcome", outcome is CopyUpdater.Outcome.Accepted)
         assertEquals(2, store.appliedRevision())
         // The accepted bundle is now cached and would apply on next launch.

@@ -33,6 +33,23 @@ class CopyRepositoryTest {
         assertEquals("nonexistent.key", repo().get("nonexistent.key"))
     }
 
+    /**
+     * The "Check for updated text" toggle was removed: the OTA copy fetch is now unconditional, so its
+     * two copy keys no longer exist. Guards against re-introducing a vestigial setting key (and the
+     * baked-in catalog must not carry orphaned strings for them either).
+     */
+    @Test
+    fun copyUpdatesToggleKeys_areGone() {
+        val removed = setOf("settings.advanced.copy_updates", "settings.advanced.copy_updates_sub")
+        removed.forEach { key ->
+            assertFalse("removed key $key must not be referenced in CopyKeys.ALL", key in CopyKeys.ALL)
+        }
+        val r = repo()
+        removed.forEach { key ->
+            assertEquals("removed key $key must not be in the baked-in catalog", null, r.bakedInValue(key))
+        }
+    }
+
     @Test
     fun complianceKeys_areNotInOverridableAllowlist() {
         CopyKeys.COMPLIANCE.forEach { key ->

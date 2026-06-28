@@ -33,13 +33,11 @@ class MainActivity : ComponentActivity() {
         CrashReporter.install(this, settings.crashReportingEnabled)
         if (!settings.onboardingComplete) startActivity(Intent(this, OnboardingActivity::class.java))
 
-        // M13a: layer-3 OTA copy fetch — off the critical path, gated by the "Check for updated text"
-        // setting (default ON). Never blocks UI; an accepted bundle is cached and applied next launch.
+        // M13a: layer-3 OTA copy fetch — always runs (part of how the app works, not a preference).
+        // Off the critical path: never blocks UI; an accepted bundle is cached and applied next launch.
         // Failure/offline/bad bundle is silent (cached-or-baked-in stands).
-        if (settings.copyUpdatesEnabled) {
-            lifecycleScope.launch {
-                runCatching { Copy.repository(applicationContext).newUpdater(applicationContext).checkForUpdate() }
-            }
+        lifecycleScope.launch {
+            runCatching { Copy.repository(applicationContext).newUpdater(applicationContext).checkForUpdate() }
         }
 
         setContent { QuillRoot { QuillApp() } }
