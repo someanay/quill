@@ -260,6 +260,31 @@ as the cross-spec check; (2) `CopyUpdater.BASE_URL` stays a placeholder until th
 
 ## Tracked refinements (P1 — designed-for, not built now)
 
+- **Bubble dismiss-to-edge + auto-return + shake-to-summon (v1.1, Wispr-Flow-style).** Drag the bubble
+  very close to the bottom (charging-port) edge → it dismisses into a hide zone; it auto-returns on a
+  ~10-minute timer, OR the user shakes the phone to summon it back immediately. Three sub-features,
+  two of which live in the exact area M11 proved hostile on MagicOS:
+  - [x] (1) **drag-to-edge dismiss + notification-summon** — **SHIPPED (2026-06-28).** Bottom dismiss
+    zone (`BubbleGeometry.isInDismissZone`, threshold dp(72) off the visible bottom edge) hides the
+    bubble on drag-release; the FGS + notification stay up and a "Show Quill" notification action
+    summons it back (`ACTION_SHOW` → `OverlayService.showBubble`). Hidden state persists
+    (`BubbleVisibilityStore`, plain SharedPreferences — synchronous read so `addBubble` restores it on
+    a START_STICKY/recovery restart). New copy keys `notification.action.show` + `bubble.dismiss.toast`
+    (OVERRIDABLE). Skipped the optional drag-dim hint (would fight the sensitive-field alpha); shows a
+    recovery toast instead. No timer/sensor/AlarmManager/SensorManager added — the notification is the
+    only way back.
+  - [ ] (2) **~10-min auto-return**: a SCHEDULED re-show — needs AlarmManager/WorkManager and must
+    survive doze/background-kill on the Honor (the same battle as M11; a naive postDelayed won't fire
+    after a doze-kill). **Still deferred.**
+  - [ ] (3) **shake-to-summon**: a SensorManager accelerometer listener that must run while the bubble
+    is hidden (battery cost in the FGS) + shake-detection tuning (pocket false-positives, sensitivity
+    threshold — an on-device tuning exercise like the silence detector). **Still deferred.**
+
+  Build (2)/(3) AFTER the M11 device matrix, because that run tells you exactly how background timers
+  behave on the target device — knowledge those sub-features need. **All new copy soft-coded** via
+  CopyKeys as OVERRIDABLE, same as everything else; the shipped keys flow through the OTA bundle.
+  (Origin: user request, 2026-06-28.)
+
 - **Insert-at-cursor when a field has genuine content.** v1 *replaces* the whole field on inject
   (M3 decision — the only safe behaviour when placeholders are indistinguishable from content, e.g.
   WhatsApp `text="Message"`, no hint metadata). This wipes a real half-typed draft. The refinement:

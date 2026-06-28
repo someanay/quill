@@ -307,6 +307,10 @@ object CopyKeys {
     const val SETTINGS_SURVIVAL_OPEN = "settings.survival.open"
     const val SETTINGS_SURVIVAL_FALLBACK = "settings.survival.fallback"
 
+    // --- Overlay bubble (overridable) ---
+    const val NOTIFICATION_ACTION_SHOW = "notification.action.show"
+    const val BUBBLE_DISMISS_TOAST = "bubble.dismiss.toast"
+
     // --- Shared values (overridable) ---
     const val VALUE_ON = "value.on"
     const val VALUE_OFF = "value.off"
@@ -426,6 +430,7 @@ object CopyKeys {
             INJECT_REENABLE_ACTION, HOME_BATTERY_TITLE, HOME_BATTERY_TEXT,
             SETTINGS_SURVIVAL_ROW, SETTINGS_SURVIVAL_TITLE, SETTINGS_SURVIVAL_BODY,
             SETTINGS_SURVIVAL_STEPS, SETTINGS_SURVIVAL_OPEN, SETTINGS_SURVIVAL_FALLBACK,
+            NOTIFICATION_ACTION_SHOW, BUBBLE_DISMISS_TOAST,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,

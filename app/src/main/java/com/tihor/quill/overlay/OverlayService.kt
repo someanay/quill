@@ -115,6 +115,7 @@ class OverlayService : Service() {
     private val settingsRepository by lazy { SettingsRepository(this) }
     private val customWordsStore by lazy { CustomWordsStore(this) }
     private val historyRepository by lazy { HistoryRepository(this) }
+    private val visibilityStore by lazy { BubbleVisibilityStore(this) }
 
     // Last bubble appearance from Visual preferences; re-applied whenever the bubble is (re)created.
     private var bubbleSize = QuillSettings.BUBBLE_SIZE_MEDIUM
@@ -251,11 +252,20 @@ class OverlayService : Service() {
             this, 0, stopIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        // "Show Quill" summons a dragged-to-dismiss bubble back. Always present (a no-op when the
+        // bubble is already visible) so the notification is the single, reliable way back — no timer
+        // or sensor (auto-return / shake-to-summon are deferred to v1.1, see todo.md).
+        val showIntent = Intent(this, OverlayService::class.java).setAction(ACTION_SHOW)
+        val showPending = PendingIntent.getService(
+            this, 2, showIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(if (microphone) "Quill is listening" else "Quill bubble active")
             .setContentText(if (microphone) "Recording… tap the bubble to stop." else "Tap the bubble to dictate.")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
+            .addAction(0, Copy.repository(this).get(CopyKeys.NOTIFICATION_ACTION_SHOW), showPending)
             .addAction(0, "Dismiss bubble", stopPending)
             .build()
         when {
@@ -277,6 +287,8 @@ class OverlayService : Service() {
         }
         // Recreate the window if a re-start arrives after the system trimmed us.
         if (bubble == null) addBubble()
+        // Notification "Show Quill" action: summon a dismissed bubble back (harmless no-op if visible).
+        if (intent?.action == ACTION_SHOW) showBubble()
         return START_STICKY
     }
 
@@ -291,7 +303,7 @@ class OverlayService : Service() {
         view.onLongPress = { onBubbleLongPress(view) }  // long-press dictates to the clipboard
         view.onDragStart = {}
         view.onDrag = { dx, dy -> moveBy(dx, dy) }
-        view.onDragEnd = { snapToEdge() }
+        view.onDragEnd = { onBubbleDragEnd() }
 
         val (sw, sh) = screenSize()
         params = WindowManager.LayoutParams(
@@ -335,7 +347,57 @@ class OverlayService : Service() {
         windowManager.addView(cancel, cancelParams)
         cancelButton = cancel
 
-        Log.i(TAG, "Bubble added at x=${params.x} y=${params.y}")
+        // Honour a persisted dismiss across a service restart (START_STICKY / foreground recovery):
+        // a deliberately-hidden bubble stays hidden until summoned from the notification.
+        if (visibilityStore.hidden) view.visibility = View.GONE
+
+        Log.i(TAG, "Bubble added at x=${params.x} y=${params.y} hidden=${visibilityStore.hidden}")
+    }
+
+    /**
+     * Drag-release decision (this service owns the window position): if the bubble's visible bottom
+     * edge landed in the bottom dismiss zone, hide it (Wispr-Flow-style); otherwise edge-snap as usual.
+     */
+    private fun onBubbleDragEnd() {
+        val view = bubble ?: return
+        val (_, sh) = screenSize()
+        val bubbleBottomY = params.y + view.viewSize - view.contentInset
+        if (BubbleGeometry.isInDismissZone(bubbleBottomY, sh, dpx(DISMISS_ZONE_DP))) {
+            hideBubble()
+        } else {
+            snapToEdge()
+        }
+    }
+
+    /**
+     * Hide the bubble (user dragged it into the bottom dismiss zone). The FGS keeps running and the
+     * notification stays — its "Show Quill" action is the only way back (no timer / no sensor; the
+     * auto-return + shake-to-summon paths are deferred to v1.1, see todo.md). The hidden state is
+     * persisted so a service restart doesn't pop the bubble back.
+     */
+    private fun hideBubble() {
+        visibilityStore.hidden = true
+        mainHandler.removeCallbacks(idleReset)
+        applyState(BubbleState.IDLE) // reset caption/cancel to the idle baseline before hiding
+        bubble?.visibility = View.GONE
+        caption?.visibility = View.GONE
+        cancelButton?.visibility = View.GONE
+        toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
+    }
+
+    /**
+     * Summon the bubble back (notification "Show Quill" action). Re-shows the bubble and clears the
+     * hidden flag; a no-op when the bubble is already visible.
+     */
+    private fun showBubble() {
+        visibilityStore.hidden = false
+        if (bubble == null) {
+            addBubble()
+            return
+        }
+        bubble?.visibility = View.VISIBLE
+        applyAppearance()
+        applyState(BubbleState.IDLE)
     }
 
     /** Drive the bubble state, its caption, and the Cancel button together (board E). */
@@ -752,6 +814,10 @@ class OverlayService : Service() {
         private const val NOTIFICATION_ID = 1
         private const val ALERT_NOTIFICATION_ID = 2
         const val ACTION_STOP = "com.tihor.quill.overlay.STOP"
+        const val ACTION_SHOW = "com.tihor.quill.overlay.SHOW"
+
+        /** Drag-release within this many dp of the screen's bottom edge dismisses (hides) the bubble. */
+        private const val DISMISS_ZONE_DP = 72f
         const val ACTION_DEBUG_RECORD_START = "com.tihor.quill.DEBUG_RECORD_START"
         const val ACTION_DEBUG_RECORD_STOP = "com.tihor.quill.DEBUG_RECORD_STOP"
         const val ACTION_DEBUG_SET_KEY = "com.tihor.quill.DEBUG_SET_KEY"

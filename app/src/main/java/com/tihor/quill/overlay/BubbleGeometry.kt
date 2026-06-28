@@ -35,4 +35,14 @@ object BubbleGeometry {
     /** Keep the whole bubble on screen vertically. */
     fun clampY(y: Int, bubbleHeight: Int, screenHeight: Int): Int =
         clamp(y, 0, (screenHeight - bubbleHeight).coerceAtLeast(0))
+
+    /**
+     * True when the bubble has been dragged into the bottom "dismiss zone": its visible bottom edge
+     * ([bubbleBottomY], in window coordinates) sits within [thresholdPx] of the screen's bottom edge
+     * (the charging-port side). Releasing a drag here hides the bubble instead of edge-snapping it
+     * (Wispr-Flow-style). Pass the *visible* bottom (excluding the bubble's transparent halo/shadow
+     * padding) so the threshold matches what the user sees.
+     */
+    fun isInDismissZone(bubbleBottomY: Int, screenHeight: Int, thresholdPx: Int): Boolean =
+        bubbleBottomY >= screenHeight - thresholdPx
 }

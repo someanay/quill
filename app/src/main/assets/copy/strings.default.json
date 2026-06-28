@@ -293,6 +293,9 @@
     "settings.survival.open": "Open device settings",
     "settings.survival.fallback": "Couldn't open it automatically on this device — open Settings ▸ Battery / App management and find Quill manually.",
 
+    "notification.action.show": "Show Quill",
+    "bubble.dismiss.toast": "Bubble hidden — tap the notification to bring it back.",
+
     "value.on": "On",
     "value.off": "Off",
     "value.none": "None",

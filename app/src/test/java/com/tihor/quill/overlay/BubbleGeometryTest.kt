@@ -59,4 +59,32 @@ class BubbleGeometryTest {
         assertTrue(BubbleGeometry.isTap(100f, 100f, 104f, 103f, touchSlopPx = 16f))
         assertFalse(BubbleGeometry.isTap(100f, 100f, 200f, 100f, touchSlopPx = 16f))
     }
+
+    private val screenHeight = 1920
+    private val dismissThreshold = 200 // ~dp(72) at 2.75x density, in px for the test
+
+    @Test
+    fun dismissZone_releaseNearBottom_dismisses() {
+        // Visible bottom at 1800 → within 200 of 1920 → dismiss.
+        assertTrue(BubbleGeometry.isInDismissZone(1800, screenHeight, dismissThreshold))
+    }
+
+    @Test
+    fun dismissZone_releaseUpScreen_doesNotDismiss() {
+        // Visible bottom at 600 → far from the bottom → normal snap.
+        assertFalse(BubbleGeometry.isInDismissZone(600, screenHeight, dismissThreshold))
+    }
+
+    @Test
+    fun dismissZone_exactlyAtZoneEdge_dismisses() {
+        // Boundary: bottom == screenHeight - threshold → inclusive → dismiss.
+        assertTrue(BubbleGeometry.isInDismissZone(screenHeight - dismissThreshold, screenHeight, dismissThreshold))
+        // One pixel above the zone → not dismissed.
+        assertFalse(BubbleGeometry.isInDismissZone(screenHeight - dismissThreshold - 1, screenHeight, dismissThreshold))
+    }
+
+    @Test
+    fun dismissZone_atVeryBottom_dismisses() {
+        assertTrue(BubbleGeometry.isInDismissZone(screenHeight, screenHeight, dismissThreshold))
+    }
 }
