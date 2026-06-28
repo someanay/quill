@@ -47,4 +47,21 @@ class HistoryStoreTest {
         assertEquals(3L, all.last().createdAt)  // oldest kept
         assertTrue("oldest two pruned", all.none { it.createdAt <= 2L })
     }
+
+    @Test
+    fun pruneOlderThan_deletesStrictlyBeforeCutoff() {
+        val s = store()
+        s.insert("old", 1_000, null, null)
+        s.insert("edge", 5_000, null, null) // exactly at cutoff — must be KEPT
+        s.insert("new", 9_000, null, null)
+
+        val deleted = s.pruneOlderThan(5_000)
+        assertEquals(1, deleted)
+
+        val all = s.queryAll()
+        assertEquals(2, all.size)
+        assertTrue("nothing older than the cutoff remains", all.none { it.createdAt < 5_000 })
+        assertEquals(9_000L, all.first().createdAt)
+        assertEquals(5_000L, all.last().createdAt)
+    }
 }

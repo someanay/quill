@@ -52,6 +52,10 @@ class HistoryStore(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, 
         return writableDatabase.insert(TABLE, null, values)
     }
 
+    /** Delete entries created strictly before [cutoff] (epoch ms). Returns the number deleted. */
+    fun pruneOlderThan(cutoff: Long): Int =
+        writableDatabase.delete(TABLE, "$COL_CREATED_AT < ?", arrayOf(cutoff.toString()))
+
     /** Prune to the newest [cap] rows. Returns the number deleted. */
     fun pruneTo(cap: Int): Int {
         // Keep the newest `cap` rows (by time, ties broken by id); delete the rest.

@@ -1,6 +1,7 @@
 package com.tihor.quill.history
 
 import android.content.Context
+import com.tihor.quill.settings.QuillSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -15,11 +16,13 @@ class HistoryRepository(context: Context) {
 
     /**
      * Save a transcript on a successful transcription, gated by the flags. Returns true if written.
-     * Prunes to [CAP] newest rows after insert. Blank text is never saved.
+     * After insert, prunes entries past the [retentionMinutes] window (relative to [timestamp]) and
+     * past the [CAP] backstop. Blank text is never saved.
      */
     suspend fun maybeSave(
         historyEnabled: Boolean,
         privateMode: Boolean,
+        retentionMinutes: Int,
         text: String,
         packageName: String?,
         appLabel: String?,
@@ -27,8 +30,24 @@ class HistoryRepository(context: Context) {
     ): Boolean = withContext(Dispatchers.IO) {
         if (!historyEnabled || privateMode || text.isBlank()) return@withContext false
         store.insert(text, timestamp, packageName, appLabel)
-        store.pruneTo(CAP)
+        pruneLocked(retentionMinutes, timestamp)
         true
+    }
+
+    /**
+     * Drop entries older than the [retentionMinutes] window (relative to [now]) and past the [CAP]
+     * backstop. Call this before reading so the screen reflects the window even with no new writes.
+     * [QuillSettings.RETENTION_FOREVER] skips the time window (only the count cap applies).
+     */
+    suspend fun prune(retentionMinutes: Int, now: Long) = withContext(Dispatchers.IO) {
+        pruneLocked(retentionMinutes, now)
+    }
+
+    private fun pruneLocked(retentionMinutes: Int, now: Long) {
+        if (retentionMinutes > QuillSettings.RETENTION_FOREVER) {
+            store.pruneOlderThan(now - retentionMinutes * 60_000L)
+        }
+        store.pruneTo(CAP)
     }
 
     suspend fun all(): List<HistoryEntry> = withContext(Dispatchers.IO) { store.queryAll() }
@@ -38,7 +57,7 @@ class HistoryRepository(context: Context) {
     suspend fun clearAll() = withContext(Dispatchers.IO) { store.clearAll() }
 
     companion object {
-        /** Retention cap; oldest are pruned on insert (spec §4 / M9). */
+        /** Storage backstop; bounds the DB even when retention is set to forever (spec §4 / M9). */
         const val CAP = 1000
     }
 }

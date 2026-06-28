@@ -353,6 +353,7 @@ class OverlayService : Service() {
                     historyRepository.maybeSave(
                         historyEnabled = settings.historyEnabled,
                         privateMode = settings.privateMode,
+                        retentionMinutes = settings.historyRetentionMinutes,
                         text = it.text,
                         packageName = pkg,
                         appLabel = appLabelFor(pkg),
