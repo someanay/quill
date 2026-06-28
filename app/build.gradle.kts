@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// Release-signing secrets live in local.properties (git-ignored) or env vars — NEVER in VCS.
+// We only ever READ them; values are never logged. If any are absent the release signingConfig is
+// omitted gracefully so debug + CI-without-secrets still build (see buildTypes.release below).
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun secret(key: String): String? =
+    (localProps.getProperty(key) ?: System.getenv(key))?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.tihor.quill"
@@ -18,12 +30,36 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing — only created when every secret is present AND the keystore file exists, so a
+    // machine without the secrets (CI, a fresh clone) still builds (it just produces an unsigned
+    // release). No credential value is ever hardcoded or printed.
+    signingConfigs {
+        val ksPath = secret("QUILL_KEYSTORE_PATH")
+        val ksPass = secret("QUILL_KEYSTORE_PASSWORD")
+        val kAlias = secret("QUILL_KEY_ALIAS")
+        val kPass = secret("QUILL_KEY_PASSWORD")
+        if (ksPath != null && ksPass != null && kAlias != null && kPass != null && file(ksPath).exists()) {
+            create("release") {
+                storeFile = file(ksPath)
+                storePassword = ksPass
+                keyAlias = kAlias
+                keyPassword = kPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             // R8 on from M5 (shift-left): catch serialization/reflection stripping early, not at M12.
             optimization {
                 enable = true
             }
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // Use the release signingConfig when it was created (secrets present); else leave unsigned.
+            signingConfigs.findByName("release")?.let { signingConfig = it }
         }
     }
     compileOptions {
