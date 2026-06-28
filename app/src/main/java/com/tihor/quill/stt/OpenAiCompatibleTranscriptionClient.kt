@@ -65,7 +65,10 @@ class OpenAiCompatibleTranscriptionClient(
 
     private fun parse(payload: String): Result<Transcript> =
         try {
-            Result.success(Transcript(json.decodeFromString<TranscriptionResponse>(payload).text))
+            // Whisper/OpenAI-compatible endpoints return the transcript with a leading space (and
+            // sometimes trailing whitespace). Trim it so inserted/clipboard text never starts with a
+            // stray gap. Interior spacing is untouched.
+            Result.success(Transcript(json.decodeFromString<TranscriptionResponse>(payload).text.trim()))
         } catch (e: Exception) {
             Result.failure(TranscriptionError.Parse(e))
         }
@@ -79,7 +82,7 @@ class OpenAiCompatibleTranscriptionClient(
         val DEFAULT_JSON = Json { ignoreUnknownKeys = true }
 
         const val GROQ_BASE_URL = "https://api.groq.com/openai/v1"
-        const val GROQ_DEFAULT_MODEL = "whisper-large-v3-turbo"
+        const val GROQ_DEFAULT_MODEL = "whisper-large-v3"
         const val OPENAI_BASE_URL = "https://api.openai.com/v1"
     }
 }

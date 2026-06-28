@@ -19,4 +19,12 @@ class RomanizePromptTest {
         assertNull(RomanizePrompt.promptFor("fr"))
         assertNull(RomanizePrompt.promptFor(null)) // auto-detect maps to null upstream
     }
+
+    @Test
+    fun blankOrRegionalVariant_getNoPrompt() {
+        // Only the exact "en" romanize default triggers the seed; blank and regional tags do not.
+        assertNull(RomanizePrompt.promptFor(""))
+        assertNull(RomanizePrompt.promptFor("  "))
+        assertNull(RomanizePrompt.promptFor("en-US"))
+    }
 }
