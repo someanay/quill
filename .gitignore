@@ -10,6 +10,7 @@
 *.apk
 *.aab
 *.keystore
+*.jks
 keystore.properties
 /app/release/
 

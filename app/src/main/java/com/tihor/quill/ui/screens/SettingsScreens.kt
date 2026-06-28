@@ -1130,8 +1130,8 @@ fun AdvancedScreen(nav: QuillNav) {
                     )
                 },
                 onClick = {
-                    runCatching { context.startActivity(BatteryOptimization.requestIntent(context)) }
-                        .onFailure { runCatching { context.startActivity(BatteryOptimization.settingsIntent()) } }
+                    // M12: deep-link to the battery-optimisation settings list (user allows Quill there).
+                    runCatching { context.startActivity(BatteryOptimization.settingsIntent()) }
                 },
             )
             RowDivider()

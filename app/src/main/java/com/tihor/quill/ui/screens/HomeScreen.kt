@@ -115,11 +115,11 @@ fun HomeScreen(nav: QuillNav) {
         }
     }
 
-    // M11: bounded battery re-prompt — only when ungranted AND the bubble was killed at least once.
-    // One tap opens the exemption request; consuming the flag stops it nagging on every launch.
+    // M11/M12: bounded battery re-prompt — only when ungranted AND the bubble was killed at least once.
+    // Deep-links to the battery-optimisation settings list (the user allows Quill there — no restricted
+    // one-tap dialog). Consuming the flag stops it nagging on every launch.
     fun promptBattery() {
-        runCatching { context.startActivity(BatteryOptimization.requestIntent(context)) }
-            .onFailure { runCatching { context.startActivity(BatteryOptimization.settingsIntent()) } }
+        runCatching { context.startActivity(BatteryOptimization.settingsIntent()) }
         scope.launch { repo.setBubbleWasKilled(false) }
     }
 

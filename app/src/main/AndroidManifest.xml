@@ -14,8 +14,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- Deliberately NOT requested: QUERY_ALL_PACKAGES (spec.md §5). -->
+    <!-- Deliberately NOT requested: QUERY_ALL_PACKAGES (spec.md §5); and
+         REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (M12) — Play restricts the one-tap exemption request to an
+         allowlist a BYOK dictation app doesn't qualify for, so we only deep-link to the battery
+         settings list and let the user allow Quill there. -->
+
 
     <application
         android:allowBackup="true"
