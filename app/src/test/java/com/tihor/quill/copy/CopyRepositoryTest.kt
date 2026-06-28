@@ -63,4 +63,43 @@ class CopyRepositoryTest {
         // A key with a placeholder formats; none of ours need args yet, so just verify the path.
         assertEquals("hi bob", "hi %s".format("bob"))
     }
+
+    @Test
+    fun get_appliesFormatArgsToRealCatalogKeys() {
+        val r = repo()
+        // settings.keys.set == "%1$d set"; history.clear.body embeds a %1$d count.
+        assertEquals("3 set", r.get(CopyKeys.SETTINGS_KEYS_SET, 3))
+        assertTrue(r.get(CopyKeys.HISTORY_CLEAR_BODY, 5).contains("5"))
+    }
+
+    @Test
+    fun applyOverride_cannotChangeAnyComplianceKey() {
+        val r = repo()
+        // The whole locked set at once: an attacker-controlled bundle targeting every compliance key.
+        val baked = CopyKeys.COMPLIANCE.associateWith { r.get(it) }
+        r.applyOverride(CopyKeys.COMPLIANCE.associateWith { "TAMPERED" })
+        CopyKeys.COMPLIANCE.forEach { key ->
+            assertEquals("compliance key $key must stay binary-only", baked[key], r.get(key))
+        }
+    }
+
+    @Test
+    fun applyOverride_overridableKey_appliesThenRevertsWhenAbsentFromNextBundle() {
+        val r = repo()
+        val key = CopyKeys.WELCOME_TITLE
+        val baked = r.get(key)
+        r.applyOverride(mapOf(key to "Bienvenue"))
+        assertEquals("Bienvenue", r.get(key))
+        // applyOverride rebuilds from baked-in each call, so a later bundle without the key reverts it.
+        r.applyOverride(emptyMap())
+        assertEquals(baked, r.get(key))
+    }
+
+    @Test
+    fun applyOverride_unknownKey_isIgnoredNotAdded() {
+        val r = repo()
+        r.applyOverride(mapOf("totally.unknown.key" to "x"))
+        // Unknown keys never become resolvable; a missing key falls back to the key string itself.
+        assertEquals("totally.unknown.key", r.get("totally.unknown.key"))
+    }
 }

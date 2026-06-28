@@ -1,11 +1,17 @@
 package com.tihor.quill.copy
 
 import android.content.Context
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+import com.tihor.quill.settings.QuillSettings
+import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.ui.theme.QuillTheme
 
 /** Process-wide [CopyRepository] (parses the baked-in catalog once). */
@@ -34,7 +40,15 @@ fun copy(key: String, vararg args: Any?): String = LocalCopy.current.get(key, *a
 @Composable
 fun QuillRoot(content: @Composable () -> Unit) {
     val context = LocalContext.current
+    val settingsRepository = remember { SettingsRepository(context) }
+    val settings by settingsRepository.settings.collectAsState(initial = QuillSettings())
+    // The "Theme" choice in Visual preferences drives the whole UI; "Match system" defers to the OS.
+    val dark = when (settings.appTheme) {
+        QuillSettings.APP_THEME_LIGHT -> false
+        QuillSettings.APP_THEME_DARK -> true
+        else -> isSystemInDarkTheme()
+    }
     CompositionLocalProvider(LocalCopy provides Copy.repository(context)) {
-        QuillTheme { content() }
+        QuillTheme(dark = dark) { content() }
     }
 }
