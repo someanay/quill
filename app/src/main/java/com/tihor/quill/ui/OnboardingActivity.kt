@@ -82,6 +82,7 @@ import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.settings.SttProvider
 import com.tihor.quill.stt.KeyValidation
@@ -417,9 +418,13 @@ private enum class AddKeyState { IDLE, CHECKING, VALID, REJECTED, UNVERIFIED }
 @Composable
 private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified: () -> Unit) {
     val context = LocalContext.current
+    val sttKeys = remember { SttKeyStore(secretStore) }
+    val settingsRepo = remember { SettingsRepository(context) }
     val validator = remember { KeyValidator(context.cacheDir) }
     val scope = rememberCoroutineScope()
-    var key by remember { mutableStateOf(secretStore.get(SecretStore.ALIAS_STT_KEY).orEmpty()) }
+    var providerId by remember { mutableStateOf(SttProvider.DEFAULT.id) }
+    val provider = SttProvider.fromId(providerId)
+    var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
     var reveal by remember { mutableStateOf(false) }
     var state by remember { mutableStateOf(AddKeyState.IDLE) }
 
@@ -428,14 +433,26 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
         primaryLabel = if (state == AddKeyState.CHECKING) copy(K.KEY_VERIFYING) else copy(K.KEY_CTA),
         primaryEnabled = key.isNotBlank() && state != AddKeyState.CHECKING,
         onPrimary = {
-            secretStore.put(SecretStore.ALIAS_STT_KEY, key.trim())
+            // Per-provider slot (decision 3), validated against the provider the key is FOR.
+            sttKeys.put(provider, key.trim())
             state = AddKeyState.CHECKING
             scope.launch {
-                val result = withContext(Dispatchers.IO) { validator.validate(SttProvider.GROQ, key.trim()) }
+                val result = withContext(Dispatchers.IO) { validator.validate(provider, key.trim()) }
                 when (result) {
-                    KeyValidation.Valid -> { state = AddKeyState.VALID; onVerified() }
-                    KeyValidation.Rejected -> state = AddKeyState.REJECTED
-                    is KeyValidation.Unverified -> { state = AddKeyState.UNVERIFIED; onVerified() }
+                    KeyValidation.Valid -> {
+                        settingsRepo.setProvider(provider) // the onboarded key's provider becomes active
+                        state = AddKeyState.VALID
+                        onVerified()
+                    }
+                    KeyValidation.Rejected -> {
+                        sttKeys.clear(provider)
+                        state = AddKeyState.REJECTED
+                    }
+                    is KeyValidation.Unverified -> {
+                        settingsRepo.setProvider(provider)
+                        state = AddKeyState.UNVERIFIED
+                        onVerified()
+                    }
                 }
             }
         },
@@ -451,10 +468,18 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            QuillChip("Groq", selected = true, onClick = {}) // copy-exempt
-            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false) // copy-exempt
-            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false) // copy-exempt
-            QuillChip(copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM), selected = false, onClick = {}, enabled = false)
+            // Custom is settings-only (it needs a base URL + model configured first).
+            SttProvider.selectable().filter { it != SttProvider.CUSTOM }.forEach { p ->
+                QuillChip(
+                    p.displayName, // copy-exempt (proper nouns)
+                    selected = provider == p,
+                    onClick = { providerId = p.id; state = AddKeyState.IDLE },
+                )
+            }
+        }
+        if (provider == SttProvider.GEMINI) {
+            // Decision 4d: honest expectations — Gemini may paraphrase spoken commands.
+            HelpText(copy(K.SETTINGS_SPEECH_GEMINI_CAVEAT))
         }
         Spacer(Modifier.height(16.dp))
 
@@ -497,10 +522,13 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
                 Banner(text = copy(K.PRIVACY_PROMISE), icon = Icons.Rounded.Info, kind = PillKind.INFO)
             }
             else -> {
-                Spacer(Modifier.height(6.dp))
-                TextButton(onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://console.groq.com/keys")))
-                }) { Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk) }
+                val consoleUrl = provider.keyConsoleUrl
+                if (consoleUrl != null) {
+                    Spacer(Modifier.height(6.dp))
+                    TextButton(onClick = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(consoleUrl)))
+                    }) { Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk) }
+                }
             }
         }
     }

@@ -258,6 +258,28 @@ as the cross-spec check; (2) `CopyUpdater.BASE_URL` stays a placeholder until th
 
 ---
 
+## Post-M13 — Multi-provider STT picker ✅ code/build/tests (2026-07-02); on-device pass pending
+Groq / OpenAI / OpenRouter / Gemini / Custom all selectable (Deepgram chip removed — no adapter).
+- **Per-provider keys:** `SttKeyStore` — one Keystore alias per provider (`stt_key_<id>`); the legacy
+  single `stt_api_key` slot migrates to the Groq alias exactly once. Switching provider swaps the key
+  used; a key for provider A is never sent to provider B.
+- **Clients:** OpenAI-compatible (Groq/OpenAI/Custom, unchanged) · `OpenRouterTranscriptionClient`
+  (JSON + base64 `input_audio` — its STT endpoint is NOT multipart; enum's stale `openAiCompatible`
+  fixed) · `GeminiTranscriptionClient` (native `generateContent`, `x-goog-api-key`, hardened
+  transcribe-verbatim prompt + fence/label stripping; 400 `API_KEY_INVALID` → BadKey; empty → Parse).
+  Language hint: multipart param (Whisper-style) / JSON field (OpenRouter, ISO-639-1) / folded into
+  the prompt (Gemini). RomanizePrompt behaviour for Groq unchanged.
+- **Cleanup stays Groq-only (decision 5):** non-Groq provider → uses the stored Groq key, else skipped
+  silently (raw transcript). Status line in cleanup settings.
+- **Custom provider:** base URL (https-validated) + model, both required, new DataStore keys; model
+  survives switching away and back. Key-console links per provider; hidden for Custom.
+- Deviations: onboarding key step is now provider-selectable too (Custom excluded there — needs the
+  settings-only endpoint config; picking a provider in onboarding makes it active); `DEBUG_SET_KEY`
+  gained optional `--es provider <id>`; Gemini models verified 2026-07 (`gemini-3.1-flash-lite`
+  default, `gemini-3.5-flash`).
+- [ ] **Verify (yours, on the Honor):** per-provider key entry/validation + dictation; Gemini
+  "type my email" fidelity check; key retention across provider switches (script in the session notes).
+
 ## Tracked refinements (P1 — designed-for, not built now)
 
 - **Bubble dismiss-to-edge + auto-return + shake-to-summon (v1.1, Wispr-Flow-style).** Drag the bubble

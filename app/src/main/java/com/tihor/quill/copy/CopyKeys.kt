@@ -158,6 +158,21 @@ object CopyKeys {
     const val SETTINGS_LANG_AUTO = "settings.speech.lang_auto"
     const val SETTINGS_LANG_HI = "settings.speech.lang_hi"
     const val SETTINGS_LANGUAGE_HELP = "settings.speech.language_help"
+    // Multi-provider picker (decision 1/4d/6)
+    const val SETTINGS_MODEL_OPENAI_WHISPER_SUB = "settings.speech.model_openai_whisper_sub"
+    const val SETTINGS_MODEL_OPENAI_MINI_SUB = "settings.speech.model_openai_mini_sub"
+    const val SETTINGS_MODEL_OPENROUTER_DEFAULT_SUB = "settings.speech.model_openrouter_default_sub"
+    const val SETTINGS_MODEL_GEMINI_LITE_SUB = "settings.speech.model_gemini_lite_sub"
+    const val SETTINGS_MODEL_GEMINI_FLASH_SUB = "settings.speech.model_gemini_flash_sub"
+    const val SETTINGS_SPEECH_GEMINI_CAVEAT = "settings.speech.gemini_caveat"
+    const val SETTINGS_SPEECH_KEY_REQUIRED = "settings.speech.key_required"
+    const val SETTINGS_SPEECH_KEY_REQUIRED_CTA = "settings.speech.key_required_cta"
+    const val SETTINGS_SPEECH_MODEL_FIELD_LABEL = "settings.speech.model_field_label"
+    const val SETTINGS_SPEECH_MODEL_FIELD_HINT = "settings.speech.model_field_hint"
+    const val SETTINGS_SPEECH_CUSTOM_URL_LABEL = "settings.speech.custom_url_label"
+    const val SETTINGS_SPEECH_CUSTOM_URL_HINT = "settings.speech.custom_url_hint"
+    const val SETTINGS_SPEECH_CUSTOM_URL_ERROR = "settings.speech.custom_url_error"
+    const val SETTINGS_SPEECH_CUSTOM_URL_HELP = "settings.speech.custom_url_help"
 
     const val SETTINGS_KEYS_TITLE = "settings.keys.title"
     const val SETTINGS_KEYS_EMPTY_TITLE = "settings.keys.empty_title"
@@ -179,6 +194,9 @@ object CopyKeys {
     const val SETTINGS_CLEANUP_AFTER = "settings.cleanup.after"
     const val SETTINGS_CLEANUP_MODEL = "settings.cleanup.model"
     const val SETTINGS_CLEANUP_HELP = "settings.cleanup.help"
+    // Decision 5: cleanup is Groq-only — status lines when a non-Groq STT provider is active.
+    const val SETTINGS_CLEANUP_GROQ_KEY = "settings.cleanup.groq_key"
+    const val SETTINGS_CLEANUP_GROQ_MISSING = "settings.cleanup.groq_missing"
 
     const val SETTINGS_WORDS_TITLE = "settings.words.title"
     const val SETTINGS_WORDS_BODY = "settings.words.body"
@@ -389,12 +407,19 @@ object CopyKeys {
             SETTINGS_SPEECH_MODEL, SETTINGS_MODEL_TURBO_SUB, SETTINGS_MODEL_ACCURATE_SUB,
             SETTINGS_SPEECH_LANGUAGE, SETTINGS_LANG_EN, SETTINGS_LANG_AUTO, SETTINGS_LANG_HI,
             SETTINGS_LANGUAGE_HELP,
+            SETTINGS_MODEL_OPENAI_WHISPER_SUB, SETTINGS_MODEL_OPENAI_MINI_SUB,
+            SETTINGS_MODEL_OPENROUTER_DEFAULT_SUB, SETTINGS_MODEL_GEMINI_LITE_SUB, SETTINGS_MODEL_GEMINI_FLASH_SUB,
+            SETTINGS_SPEECH_GEMINI_CAVEAT, SETTINGS_SPEECH_KEY_REQUIRED, SETTINGS_SPEECH_KEY_REQUIRED_CTA,
+            SETTINGS_SPEECH_MODEL_FIELD_LABEL, SETTINGS_SPEECH_MODEL_FIELD_HINT,
+            SETTINGS_SPEECH_CUSTOM_URL_LABEL, SETTINGS_SPEECH_CUSTOM_URL_HINT,
+            SETTINGS_SPEECH_CUSTOM_URL_ERROR, SETTINGS_SPEECH_CUSTOM_URL_HELP,
             SETTINGS_KEYS_TITLE, SETTINGS_KEYS_EMPTY_TITLE, SETTINGS_KEYS_EMPTY_BODY, SETTINGS_KEYS_ADD,
             SETTINGS_KEYS_BANNER, SETTINGS_KEYS_SECTION, SETTINGS_KEYS_ROLE_STT, SETTINGS_KEYS_HELP,
             SETTINGS_KEYS_REPLACE, SETTINGS_KEYS_TEST, SETTINGS_KEYS_REMOVE,
             SETTINGS_CLEANUP_TITLE, SETTINGS_CLEANUP_TIDY_TITLE, SETTINGS_CLEANUP_TIDY_SUB,
             SETTINGS_CLEANUP_WHAT, SETTINGS_CLEANUP_BEFORE, SETTINGS_CLEANUP_AFTER,
             SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP,
+            SETTINGS_CLEANUP_GROQ_KEY, SETTINGS_CLEANUP_GROQ_MISSING,
             SETTINGS_WORDS_TITLE, SETTINGS_WORDS_BODY, SETTINGS_WORDS_EMPTY_TITLE, SETTINGS_WORDS_EMPTY_SUB,
             SETTINGS_WORDS_ADD, SETTINGS_WORDS_ADD_TITLE, SETTINGS_WORDS_HEARD_LABEL, SETTINGS_WORDS_HEARD_HINT,
             SETTINGS_WORDS_REPLACEMENT_LABEL, SETTINGS_WORDS_REPLACEMENT_HINT, SETTINGS_WORDS_SAVE,

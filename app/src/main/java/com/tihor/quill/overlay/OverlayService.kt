@@ -36,12 +36,15 @@ import com.tihor.quill.audio.StopReason
 import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.settings.BubbleVisibilityStore
 import com.tihor.quill.settings.CustomWordsStore
 import com.tihor.quill.settings.QuillSettings
 import com.tihor.quill.settings.SettingsRepository
+import com.tihor.quill.settings.SttProvider
 import com.tihor.quill.settings.TranscriptionClientFactory
 import com.tihor.quill.cleanup.CleanupClient
+import com.tihor.quill.cleanup.CleanupKeyPolicy
 import com.tihor.quill.cleanup.CleanupPipeline
 import com.tihor.quill.stt.OpenAiCompatibleTranscriptionClient
 import com.tihor.quill.stt.RomanizePrompt
@@ -114,6 +117,7 @@ class OverlayService : Service() {
     private var debugReceiver: BroadcastReceiver? = null
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private val secretStore: SecretStore by lazy { KeystoreSecretStore(this) }
+    private val sttKeyStore: SttKeyStore by lazy { SttKeyStore(secretStore) }
     private val settingsRepository by lazy { SettingsRepository(this) }
     private val customWordsStore by lazy { CustomWordsStore(this) }
     private val historyRepository by lazy { HistoryRepository(this) }
@@ -253,8 +257,12 @@ class OverlayService : Service() {
                 when (intent?.action) {
                     ACTION_DEBUG_RECORD_START -> bubble?.let { startRecording(it) }
                     ACTION_DEBUG_RECORD_STOP -> audioRecorder.requestStop()
+                    // Per-provider aliases (decision 3): optional --es provider <id> targets a
+                    // specific provider's slot; default Groq (the historical single-key behaviour).
                     ACTION_DEBUG_SET_KEY ->
-                        intent.getStringExtra("key")?.let { secretStore.put(SecretStore.ALIAS_STT_KEY, it) }
+                        intent.getStringExtra("key")?.let {
+                            sttKeyStore.put(SttProvider.fromId(intent.getStringExtra("provider") ?: SttProvider.GROQ.id), it)
+                        }
                     // Drive the real injection path (incl. the failure → clipboard + notification
                     // fallback) with a fake transcript — no mic/STT needed. Run it with no text field
                     // focused (e.g. on the home screen) to exercise the failure branch.
@@ -633,15 +641,20 @@ class OverlayService : Service() {
     private fun transcribeAndInject(wav: File) {
         applyState(BubbleState.TRANSCRIBING)
         transcriptionJob = scope.launch {
-            val key = secretStore.get(SecretStore.ALIAS_STT_KEY)
+            val settings = settingsRepository.settings.first()
+            // Per-provider key (decision 3): the ACTIVE provider's own slot, never another provider's.
+            val key = sttKeyStore.get(settings.provider)
             if (key.isNullOrBlank()) {
-                Log.w(TAG, "No API key set — add one in Quill settings.")
+                Log.w(TAG, "No API key set for the active provider — add one in Quill settings.")
                 applyState(BubbleState.ERROR)
                 return@launch
             }
-            val settings = settingsRepository.settings.first()
             val customWords = customWordsStore.words.first()
-            val client = TranscriptionClientFactory.create(settings.provider, apiKey = { key })
+            val client = TranscriptionClientFactory.create(
+                settings.provider,
+                apiKey = { key },
+                customBaseUrl = settings.customBaseUrl,
+            )
             // "auto" → null (let the provider detect). English seeds the Hinglish romanization prompt.
             val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
             val result = client.transcribe(
@@ -664,10 +677,22 @@ class OverlayService : Service() {
                         cleanupEnabled = settings.cleanupEnabled,
                         words = customWords,
                         clean = { text ->
-                            CleanupClient(
-                                baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
-                                apiKey = { key },
-                            ).clean(text)
+                            // Decision 5: cleanup is Groq-only. On a non-Groq provider it uses the
+                            // stored GROQ key; without one it's skipped silently (null → raw text).
+                            // Never sends the active provider's key to Groq (decision 3).
+                            val groqKey = CleanupKeyPolicy.resolve(
+                                provider = settings.provider,
+                                activeKey = key,
+                                groqKey = sttKeyStore.get(SttProvider.GROQ),
+                            )
+                            if (groqKey == null) {
+                                null
+                            } else {
+                                CleanupClient(
+                                    baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
+                                    apiKey = { groqKey },
+                                ).clean(text)
+                            }
                         },
                     )
                     // Save on a successful transcription (gated), BEFORE insertion — a transcript that

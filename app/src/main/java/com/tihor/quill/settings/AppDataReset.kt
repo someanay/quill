@@ -2,6 +2,7 @@ package com.tihor.quill.settings
 
 import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.secrets.SttKeyStore
 
 /**
  * Full data-and-keys wipe for the Advanced "Clear all data & keys" action. Clears every on-device
@@ -18,7 +19,8 @@ object AppDataReset {
         history: HistoryRepository,
         words: CustomWordsStore,
     ) {
-        secretStore.clear(SecretStore.ALIAS_STT_KEY)
+        SttProvider.entries.forEach { secretStore.clear(SttKeyStore.alias(it)) } // per-provider STT keys
+        secretStore.clear(SecretStore.ALIAS_STT_KEY) // legacy single-slot key (pre-migration installs)
         secretStore.clear(SecretStore.ALIAS_LLM_KEY)
         settings.clear()
         history.clearAll()

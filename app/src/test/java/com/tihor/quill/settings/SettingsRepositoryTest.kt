@@ -38,6 +38,8 @@ class SettingsRepositoryTest {
             r.setAppTheme(QuillSettings.APP_THEME_SYSTEM)
             r.setBubbleActive(false)
             r.setBubbleVisible(true)
+            r.setCustomBaseUrl("")
+            r.setCustomModel("")
         }
     }
 
@@ -191,6 +193,46 @@ class SettingsRepositoryTest {
         val s = r.settings.first()
         assertEquals(SttProvider.OPENAI, s.provider)
         assertEquals(SttProvider.OPENAI.defaultModel, s.sttModel)
+    }
+
+    @Test
+    fun customEndpoint_roundTrips() = runTest {
+        val r = repo()
+        r.setCustomBaseUrl("https://api.example.com/v1")
+        r.setCustomModel("my-whisper")
+        val s = r.settings.first()
+        assertEquals("https://api.example.com/v1", s.customBaseUrl)
+        assertEquals("my-whisper", s.customModel)
+    }
+
+    @Test
+    fun switchingToCustom_usesTheSavedCustomModel_andItSurvivesRoundTrips() = runTest {
+        val r = repo()
+        r.setCustomModel("my-whisper")
+        r.setProvider(SttProvider.CUSTOM)
+        var s = r.settings.first()
+        assertEquals(SttProvider.CUSTOM, s.provider)
+        assertEquals("the active model is the saved custom model, not a blank", "my-whisper", s.sttModel)
+
+        // Leaving CUSTOM resets the active model to the new provider's default…
+        r.setProvider(SttProvider.GROQ)
+        s = r.settings.first()
+        assertEquals(SttProvider.GROQ.defaultModel, s.sttModel)
+
+        // …but the custom model isn't lost: coming back restores it.
+        r.setProvider(SttProvider.CUSTOM)
+        s = r.settings.first()
+        assertEquals("my-whisper", s.sttModel)
+    }
+
+    @Test
+    fun setCustomModel_whileOnCustom_alsoUpdatesTheActiveModel() = runTest {
+        val r = repo()
+        r.setProvider(SttProvider.CUSTOM)
+        r.setCustomModel("model-v2")
+        val s = r.settings.first()
+        assertEquals("model-v2", s.customModel)
+        assertEquals("model-v2", s.sttModel)
     }
 
     @Test

@@ -21,6 +21,10 @@ private val Context.settingsDataStore by preferencesDataStore(name = "quill_sett
 data class QuillSettings(
     val provider: SttProvider = SttProvider.DEFAULT,
     val sttModel: String = SttProvider.DEFAULT.defaultModel,
+    /** Custom provider only: user-supplied OpenAI-compatible base URL (https, validated by [CustomEndpoint]). */
+    val customBaseUrl: String = "",
+    /** Custom provider only: user-supplied model id. Mirrored into [sttModel] while CUSTOM is active. */
+    val customModel: String = "",
     val languageHint: String = DEFAULT_LANGUAGE, // ISO code, or LANGUAGE_AUTO for auto-detect
     /** LLM cleanup pass before insertion (M10). Opt-in: default OFF (extra latency + a second BYOK call). */
     val cleanupEnabled: Boolean = false,
@@ -100,6 +104,8 @@ class SettingsRepository(private val context: Context) {
         QuillSettings(
             provider = provider,
             sttModel = p[Keys.STT_MODEL] ?: provider.defaultModel,
+            customBaseUrl = p[Keys.CUSTOM_BASE_URL].orEmpty(),
+            customModel = p[Keys.CUSTOM_MODEL].orEmpty(),
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
             cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: false,
             privateMode = p[Keys.PRIVATE_MODE] ?: false,
@@ -119,11 +125,22 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setProvider(provider: SttProvider) = context.settingsDataStore.edit {
         it[Keys.PROVIDER] = provider.id
-        // Reset the model to the new provider's default unless the user set one explicitly.
-        it[Keys.STT_MODEL] = provider.defaultModel
+        // Reset the model to the new provider's default. CUSTOM's "default" is whatever the user
+        // configured last (customModel), so switching away and back never loses it.
+        it[Keys.STT_MODEL] =
+            if (provider == SttProvider.CUSTOM) it[Keys.CUSTOM_MODEL].orEmpty() else provider.defaultModel
     }
 
     suspend fun setSttModel(model: String) = context.settingsDataStore.edit { it[Keys.STT_MODEL] = model }
+
+    suspend fun setCustomBaseUrl(url: String) =
+        context.settingsDataStore.edit { it[Keys.CUSTOM_BASE_URL] = url.trim() }
+
+    /** Persist the Custom provider's model; keeps the active [QuillSettings.sttModel] in sync while on CUSTOM. */
+    suspend fun setCustomModel(model: String) = context.settingsDataStore.edit {
+        it[Keys.CUSTOM_MODEL] = model.trim()
+        if (SttProvider.fromId(it[Keys.PROVIDER]) == SttProvider.CUSTOM) it[Keys.STT_MODEL] = model.trim()
+    }
 
     /** Persist the spoken-language choice: an ISO code ("en", "hi") or [QuillSettings.LANGUAGE_AUTO]. */
     suspend fun setLanguageHint(code: String) = context.settingsDataStore.edit {
@@ -200,6 +217,8 @@ class SettingsRepository(private val context: Context) {
     private object Keys {
         val PROVIDER = stringPreferencesKey("provider")
         val STT_MODEL = stringPreferencesKey("stt_model")
+        val CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
+        val CUSTOM_MODEL = stringPreferencesKey("custom_model")
         val LANGUAGE_HINT = stringPreferencesKey("language_hint")
         val CLEANUP_ENABLED = booleanPreferencesKey("cleanup_enabled")
         val PRIVATE_MODE = booleanPreferencesKey("private_mode")

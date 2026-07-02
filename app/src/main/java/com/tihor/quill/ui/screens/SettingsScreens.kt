@@ -76,10 +76,12 @@ import com.tihor.quill.copy.copy
 import com.tihor.quill.audio.StopReason
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.crash.CrashReporter
 import com.tihor.quill.reliability.BatteryOptimization
 import com.tihor.quill.settings.AppDataReset
+import com.tihor.quill.settings.CustomEndpoint
 import com.tihor.quill.settings.CustomWord
 import com.tihor.quill.settings.CustomWordsStore
 import com.tihor.quill.settings.QuillSettings
@@ -200,8 +202,9 @@ fun SettingsScreen(nav: QuillNav) {
     val settings by repo.settings.collectAsState(initial = QuillSettings())
     val customWords by wordsStore.words.collectAsState(initial = emptyList())
 
-    val keyCount = listOf(SecretStore.ALIAS_STT_KEY, SecretStore.ALIAS_LLM_KEY)
-        .count { secretStore.contains(it) }
+    val sttKeys = remember { SttKeyStore(secretStore) }
+    val keyCount = SttProvider.selectable().count { sttKeys.has(it) } +
+        (if (secretStore.contains(SecretStore.ALIAS_LLM_KEY)) 1 else 0)
 
     Scaffold(
         topBar = { QuillTopBar(title = { QuillTopBarTitle(copy(K.SETTINGS_TITLE)) }) },
@@ -300,6 +303,7 @@ private fun shortModel(model: String): String = when {
 fun SpeechModelScreen(nav: QuillNav) {
     val context = LocalContext.current
     val repo = remember { SettingsRepository(context) }
+    val sttKeys = remember { SttKeyStore(KeystoreSecretStore(context)) }
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
@@ -309,25 +313,54 @@ fun SpeechModelScreen(nav: QuillNav) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Only Groq ships in v1; the rest are shown disabled so the roadmap is legible.
-            QuillChip("Groq", selected = true, onClick = {}) // copy-exempt
-            QuillChip("OpenAI", selected = false, onClick = {}, enabled = false) // copy-exempt
-            QuillChip("Deepgram", selected = false, onClick = {}, enabled = false) // copy-exempt
-            QuillChip(copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM), selected = false, onClick = {}, enabled = false)
+            SttProvider.selectable().forEach { p ->
+                QuillChip(
+                    providerLabel(p),
+                    selected = settings.provider == p,
+                    onClick = { scope.launch { repo.setProvider(p) } },
+                )
+            }
+        }
+        if (settings.provider == SttProvider.GEMINI) {
+            // Decision 4d: honest expectations — Gemini is a chat model prompted to transcribe.
+            HelpText(copy(K.SETTINGS_SPEECH_GEMINI_CAVEAT))
+        }
+
+        // No stored key for the selected provider → clear "key required" state routing to key entry.
+        if (!sttKeys.has(settings.provider)) {
+            Spacer(Modifier.height(10.dp))
+            Banner(
+                text = copy(K.SETTINGS_SPEECH_KEY_REQUIRED, providerLabel(settings.provider)),
+                icon = Icons.Rounded.Key, kind = PillKind.ERROR,
+            )
+            Spacer(Modifier.height(8.dp))
+            com.tihor.quill.ui.components.QuillTonalButton(
+                copy(K.SETTINGS_SPEECH_KEY_REQUIRED_CTA),
+                onClick = { nav.navigate(Screen.ApiKeys) },
+                leadingIcon = Icons.Rounded.Key,
+            )
         }
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
-        QuillListContainer {
-            ModelRow(
-                "whisper-large-v3-turbo", copy(K.SETTINGS_MODEL_TURBO_SUB), // copy-exempt
-                selected = settings.sttModel.contains("turbo"),
-                onClick = { scope.launch { repo.setSttModel("whisper-large-v3-turbo") } },
-            )
-            RowDivider()
-            ModelRow(
-                "whisper-large-v3", copy(K.SETTINGS_MODEL_ACCURATE_SUB), // copy-exempt
-                selected = settings.sttModel == "whisper-large-v3",
-                onClick = { scope.launch { repo.setSttModel("whisper-large-v3") } },
+        if (settings.provider.models.isNotEmpty()) {
+            QuillListContainer {
+                settings.provider.models.forEachIndexed { i, model ->
+                    if (i > 0) RowDivider()
+                    ModelRow(
+                        model.id, copy(model.subtitleKey), // model ids are copy-exempt
+                        selected = settings.sttModel == model.id,
+                        onClick = { scope.launch { repo.setSttModel(model.id) } },
+                    )
+                }
+            }
+        }
+        if (settings.provider == SttProvider.CUSTOM) {
+            CustomEndpointFields(settings, repo)
+        } else if (settings.provider.freeTextModel) {
+            // OpenRouter: its catalog is huge — a free-text model id beside the recommended default.
+            FreeTextModelField(
+                value = settings.sttModel,
+                onValue = { scope.launch { repo.setSttModel(it.trim()) } },
             )
         }
 
@@ -365,6 +398,67 @@ private fun ModelRow(title: String, subtitle: String, selected: Boolean, onClick
     })
 }
 
+/** Provider chip label: proper nouns stay copy-exempt; only "Custom" is a translatable word. */
+@Composable
+private fun providerLabel(provider: SttProvider): String =
+    if (provider == SttProvider.CUSTOM) copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM) else provider.displayName
+
+/**
+ * Free-text model id (OpenRouter's catalog is huge; Custom is user-defined). Local typing state wins
+ * while editing; until then the field tracks the persisted value (which loads async from DataStore).
+ */
+@Composable
+private fun FreeTextModelField(value: String, onValue: (String) -> Unit) {
+    var typed by remember { mutableStateOf<String?>(null) }
+    FieldLabel(copy(K.SETTINGS_SPEECH_MODEL_FIELD_LABEL), Modifier.padding(top = 10.dp))
+    OutlinedTextField(
+        value = typed ?: value,
+        onValueChange = { typed = it; onValue(it) },
+        singleLine = true,
+        placeholder = { Text(copy(K.SETTINGS_SPEECH_MODEL_FIELD_HINT)) },
+        textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * Custom provider config (decision 1): OpenAI-compatible base URL (required, https-only) + model id
+ * (required, free text). An invalid URL shows the error and is never persisted.
+ */
+@Composable
+private fun CustomEndpointFields(settings: QuillSettings, repo: SettingsRepository) {
+    val scope = rememberCoroutineScope()
+    var typedUrl by remember { mutableStateOf<String?>(null) }
+    val url = typedUrl ?: settings.customBaseUrl
+    val urlInvalid = url.isNotBlank() && !CustomEndpoint.isValidBaseUrl(url)
+
+    FieldLabel(copy(K.SETTINGS_SPEECH_CUSTOM_URL_LABEL), Modifier.padding(top = 10.dp))
+    OutlinedTextField(
+        value = url,
+        onValueChange = {
+            typedUrl = it
+            if (CustomEndpoint.isValidBaseUrl(it)) scope.launch { repo.setCustomBaseUrl(it) }
+        },
+        singleLine = true,
+        isError = urlInvalid,
+        placeholder = { Text(copy(K.SETTINGS_SPEECH_CUSTOM_URL_HINT)) },
+        textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+        shape = MaterialTheme.shapes.small,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (urlInvalid) {
+        HelpText(copy(K.SETTINGS_SPEECH_CUSTOM_URL_ERROR), bad = true)
+    } else {
+        HelpText(copy(K.SETTINGS_SPEECH_CUSTOM_URL_HELP))
+    }
+
+    FreeTextModelField(
+        value = settings.customModel,
+        onValue = { scope.launch { repo.setCustomModel(it) } },
+    )
+}
+
 // ============================================================================
 // C3 — API keys
 // ============================================================================
@@ -376,13 +470,24 @@ private enum class KeyEntryState { IDLE, CHECKING, REJECTED }
 @Composable
 fun ApiKeysScreen(nav: QuillNav) {
     val context = LocalContext.current
-    val secretStore = remember { KeystoreSecretStore(context) }
-    var sttKey by rememberSaveable { mutableStateOf(secretStore.get(SecretStore.ALIAS_STT_KEY).orEmpty()) }
-    // Whether the inline entry form is open (empty state, or "Add a key" tapped while populated).
-    var adding by rememberSaveable { mutableStateOf(false) }
+    val sttKeys = remember { SttKeyStore(KeystoreSecretStore(context)) }
+    val repo = remember { SettingsRepository(context) }
+    val settings by repo.settings.collectAsState(initial = QuillSettings())
+    // Bumped after every store mutation so the per-provider card list re-reads the Keystore.
+    var revision by remember { mutableStateOf(0) }
+    val stored = remember(revision) { SttProvider.selectable().filter { sttKeys.has(it) } }
+    // The provider the inline entry form is open for (null = closed).
+    var addingFor by rememberSaveable { mutableStateOf<String?>(null) }
 
     DetailScaffold(copy(K.SETTINGS_KEYS_TITLE), nav) {
-        if (sttKey.isBlank() && !adding) {
+        val adding = addingFor
+        if (adding != null) {
+            ApiKeyEntry(
+                initialProvider = SttProvider.fromId(adding),
+                onSaved = { revision++; addingFor = null },
+                onCancel = { addingFor = null },
+            )
+        } else if (stored.isEmpty()) {
             // Empty state (C3c) — zero keys, just the invitation to add one.
             Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -398,17 +503,12 @@ fun ApiKeysScreen(nav: QuillNav) {
                     )
                     Spacer(Modifier.height(24.dp))
                     com.tihor.quill.ui.components.QuillPrimaryButton(
-                        copy(K.SETTINGS_KEYS_ADD), onClick = { adding = true },
+                        copy(K.SETTINGS_KEYS_ADD), onClick = { addingFor = settings.provider.id },
                         leadingIcon = Icons.Rounded.Key,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-        } else if (adding) {
-            ApiKeyEntry(
-                onSaved = { saved -> sttKey = saved; adding = false },
-                onCancel = { adding = false },
-            )
         } else {
             Spacer(Modifier.height(8.dp))
             Banner(
@@ -416,15 +516,18 @@ fun ApiKeysScreen(nav: QuillNav) {
                 icon = Icons.Rounded.Lock, kind = PillKind.OK,
             )
             SectionHeader(copy(K.SETTINGS_KEYS_SECTION))
-            KeyCard(
-                role = copy(K.SETTINGS_KEYS_ROLE_STT), provider = "Groq", // copy-exempt
-                masked = mask(sttKey), roleIcon = Icons.Rounded.GraphicEq,
-                onRemove = { secretStore.clear(SecretStore.ALIAS_STT_KEY); sttKey = "" },
-                onReplace = { adding = true },
-            )
+            stored.forEachIndexed { i, provider ->
+                if (i > 0) Spacer(Modifier.height(10.dp))
+                KeyCard(
+                    role = copy(K.SETTINGS_KEYS_ROLE_STT), provider = providerLabel(provider),
+                    masked = mask(sttKeys.get(provider).orEmpty()), roleIcon = Icons.Rounded.GraphicEq,
+                    onRemove = { sttKeys.clear(provider); revision++ },
+                    onReplace = { addingFor = provider.id },
+                )
+            }
             Spacer(Modifier.height(14.dp))
             com.tihor.quill.ui.components.QuillTonalButton(
-                copy(K.SETTINGS_KEYS_ADD), onClick = { adding = true },
+                copy(K.SETTINGS_KEYS_ADD), onClick = { addingFor = settings.provider.id },
                 leadingIcon = Icons.Rounded.Key,
             )
             HelpText(copy(K.SETTINGS_KEYS_HELP))
@@ -433,17 +536,27 @@ fun ApiKeysScreen(nav: QuillNav) {
 }
 
 /**
- * Inline BYOK key entry, mirroring onboarding's AddKeyStep: type the key, verify it against the
- * provider with a tiny silent clip, and persist it to the Keystore. A bad key (401/403) blocks;
- * a network/other failure saves anyway as "unverified" so the user isn't stuck offline.
+ * Inline BYOK key entry, mirroring onboarding's AddKeyStep: pick the provider the key is for, type
+ * the key, verify it against **that provider** with a tiny silent clip, and persist it to that
+ * provider's own Keystore alias (decision 3). A bad key blocks; a network/other failure saves anyway
+ * as "unverified" so the user isn't stuck offline.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ColumnScope.ApiKeyEntry(onSaved: (String) -> Unit, onCancel: () -> Unit) {
+private fun ColumnScope.ApiKeyEntry(
+    initialProvider: SttProvider,
+    onSaved: () -> Unit,
+    onCancel: () -> Unit,
+) {
     val context = LocalContext.current
-    val secretStore = remember { KeystoreSecretStore(context) }
+    val sttKeys = remember { SttKeyStore(KeystoreSecretStore(context)) }
+    val settingsRepo = remember { SettingsRepository(context) }
+    val settings by settingsRepo.settings.collectAsState(initial = QuillSettings())
     val validator = remember { KeyValidator(context.cacheDir) }
     val scope = rememberCoroutineScope()
-    var key by rememberSaveable { mutableStateOf(secretStore.get(SecretStore.ALIAS_STT_KEY).orEmpty()) }
+    var providerId by rememberSaveable { mutableStateOf(initialProvider.id) }
+    val provider = SttProvider.fromId(providerId)
+    var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
     var reveal by rememberSaveable { mutableStateOf(false) }
     var state by remember { mutableStateOf(KeyEntryState.IDLE) }
 
@@ -453,10 +566,13 @@ private fun ColumnScope.ApiKeyEntry(onSaved: (String) -> Unit, onCancel: () -> U
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        QuillChip("Groq", selected = true, onClick = {}) // copy-exempt
-        QuillChip("OpenAI", selected = false, onClick = {}, enabled = false) // copy-exempt
-        QuillChip("Deepgram", selected = false, onClick = {}, enabled = false) // copy-exempt
-        QuillChip(copy(K.SETTINGS_SPEECH_PROVIDER_CUSTOM), selected = false, onClick = {}, enabled = false)
+        SttProvider.selectable().forEach { p ->
+            QuillChip(
+                providerLabel(p),
+                selected = provider == p,
+                onClick = { providerId = p.id; state = KeyEntryState.IDLE },
+            )
+        }
     }
     Spacer(Modifier.height(16.dp))
 
@@ -483,12 +599,13 @@ private fun ColumnScope.ApiKeyEntry(onSaved: (String) -> Unit, onCancel: () -> U
         modifier = Modifier.fillMaxWidth(),
     )
 
+    val consoleUrl = provider.keyConsoleUrl
     if (state == KeyEntryState.REJECTED) {
         HelpText(copy(K.KEY_ERROR_INVALID), bad = true)
-    } else {
+    } else if (consoleUrl != null) { // hidden for Custom — the endpoint is the user's own
         Spacer(Modifier.height(6.dp))
         TextButton(onClick = {
-            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://console.groq.com/keys")))
+            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(consoleUrl)))
         }) { Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk) }
     }
 
@@ -499,15 +616,21 @@ private fun ColumnScope.ApiKeyEntry(onSaved: (String) -> Unit, onCancel: () -> U
         leadingIcon = if (state == KeyEntryState.CHECKING) null else Icons.Rounded.Key,
         onClick = {
             val trimmed = key.trim()
-            secretStore.put(SecretStore.ALIAS_STT_KEY, trimmed)
+            sttKeys.put(provider, trimmed)
             state = KeyEntryState.CHECKING
             scope.launch {
-                val result = withContext(Dispatchers.IO) { validator.validate(SttProvider.GROQ, trimmed) }
+                val result = withContext(Dispatchers.IO) {
+                    validator.validate(
+                        provider, trimmed,
+                        model = if (provider == SttProvider.CUSTOM) settings.customModel else provider.defaultModel,
+                        customBaseUrl = settings.customBaseUrl.takeIf { provider == SttProvider.CUSTOM },
+                    )
+                }
                 when (result) {
                     // Valid or unverified (network/other) both persist; only a hard reject blocks.
-                    KeyValidation.Valid, is KeyValidation.Unverified -> onSaved(trimmed)
+                    KeyValidation.Valid, is KeyValidation.Unverified -> onSaved()
                     KeyValidation.Rejected -> {
-                        secretStore.clear(SecretStore.ALIAS_STT_KEY)
+                        sttKeys.clear(provider)
                         state = KeyEntryState.REJECTED
                     }
                 }
@@ -640,6 +763,12 @@ fun AiCleanupScreen(nav: QuillNav) {
                     onCheckedChange = { scope.launch { repo.setCleanupEnabled(it) } },
                 )
             }
+        }
+        if (settings.provider != SttProvider.GROQ) {
+            // Decision 5: cleanup is Groq-only. With another STT provider active it uses the stored
+            // Groq key, or is silently skipped (raw transcript) when there isn't one.
+            val groqKeySaved = SttKeyStore(KeystoreSecretStore(context)).has(SttProvider.GROQ)
+            HelpText(copy(if (groqKeySaved) K.SETTINGS_CLEANUP_GROQ_KEY else K.SETTINGS_CLEANUP_GROQ_MISSING))
         }
 
         SectionHeader(copy(K.SETTINGS_CLEANUP_WHAT))

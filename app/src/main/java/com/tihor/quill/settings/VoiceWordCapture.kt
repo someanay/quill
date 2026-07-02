@@ -4,7 +4,7 @@ import android.content.Context
 import com.tihor.quill.audio.AudioRecorder
 import com.tihor.quill.audio.StopReason
 import com.tihor.quill.secrets.KeystoreSecretStore
-import com.tihor.quill.secrets.SecretStore
+import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.stt.RomanizePrompt
 import com.tihor.quill.stt.TranscriptionOptions
 import kotlinx.coroutines.flow.first
@@ -28,7 +28,7 @@ class VoiceWordCapture(private val context: Context) {
     }
 
     private val recorder = AudioRecorder(context)
-    private val secretStore: SecretStore = KeystoreSecretStore(context)
+    private val sttKeyStore = SttKeyStore(KeystoreSecretStore(context))
     private val settingsRepo = SettingsRepository(context)
 
     fun hasMicPermission(): Boolean = recorder.hasMicPermission()
@@ -45,10 +45,15 @@ class VoiceWordCapture(private val context: Context) {
 
     /** Transcribe [wav] against the user's STT provider; returns the trimmed text or a [Failure]. */
     suspend fun transcribe(wav: File): Result<String> {
-        val key = secretStore.get(SecretStore.ALIAS_STT_KEY)
-        if (key.isNullOrBlank()) return Result.failure(FailureException(Failure.NoKey))
         val settings = settingsRepo.settings.first()
-        val client = TranscriptionClientFactory.create(settings.provider, apiKey = { key })
+        // Per-provider key (decision 3): the active provider's own slot.
+        val key = sttKeyStore.get(settings.provider)
+        if (key.isNullOrBlank()) return Result.failure(FailureException(Failure.NoKey))
+        val client = TranscriptionClientFactory.create(
+            settings.provider,
+            apiKey = { key },
+            customBaseUrl = settings.customBaseUrl,
+        )
         val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
         return client.transcribe(
             audio = wav,
