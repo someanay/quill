@@ -58,8 +58,10 @@ import kotlinx.coroutines.launch
 import com.tihor.quill.ui.app.QuillBottomNav
 import com.tihor.quill.ui.app.QuillNav
 import com.tihor.quill.ui.app.Screen
+import com.tihor.quill.carousel.CarouselSurface
 import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.BubbleState
+import com.tihor.quill.ui.components.DemoCarousel
 import com.tihor.quill.ui.components.LeadIconVariant
 import com.tihor.quill.ui.components.PillKind
 import com.tihor.quill.ui.components.QuillBubble
@@ -243,6 +245,9 @@ fun HomeScreen(nav: QuillNav) {
                     )
                 }
             }
+            // Demo-video carousel section (below the existing content). Ships with an empty asset
+            // folder → renders nothing and reserves no space until real clips are dropped in.
+            DemoCarousel(CarouselSurface.HOME, modifier = Modifier.padding(top = 4.dp))
             Spacer(Modifier.padding(bottom = 16.dp))
         }
     }

@@ -111,6 +111,11 @@ dependencies {
     // "Ed25519" provider (which would NoSuchAlgorithmException on API 29–32).
     implementation(libs.eddsa)
 
+    // Demo-video carousel (Home + onboarding steps): muted looping MP4s, one ExoPlayer per carousel,
+    // rendered in Compose via media3-ui-compose's PlayerSurface.
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui.compose)
+
     // Unit tests
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

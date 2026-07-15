@@ -87,8 +87,10 @@ import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.settings.SttProvider
 import com.tihor.quill.stt.KeyValidation
 import com.tihor.quill.stt.KeyValidator
+import com.tihor.quill.carousel.CarouselSurface
 import com.tihor.quill.ui.components.Banner
 import com.tihor.quill.ui.components.BubbleState
+import com.tihor.quill.ui.components.DemoCarousel
 import com.tihor.quill.ui.components.FieldLabel
 import com.tihor.quill.ui.components.HelpText
 import com.tihor.quill.ui.components.IllustrationVariant
@@ -531,6 +533,9 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
                 }
             }
         }
+        // Optional demo clips for the key step (e.g. copying a key from a provider console). Empty
+        // asset folder → renders nothing; FormStep keeps the Save & verify CTA pinned below.
+        DemoCarousel(CarouselSurface.ONBOARDING_KEY, modifier = Modifier.padding(top = 20.dp))
     }
 }
 
@@ -701,6 +706,9 @@ private fun AccessibilityDisclosureStep(onBack: () -> Unit, onAccept: () -> Unit
         }
         Spacer(Modifier.height(10.dp))
         QuillGhostButton(copy(K.DISCLOSURE_DECLINE), onClick = onDecline)
+        // Optional demo clips illustrating the accessibility flow. Empty asset folder → renders nothing.
+        // The FormStep pins the CTA below this scrollable body, so it never pushes the CTA off-screen.
+        DemoCarousel(CarouselSurface.ONBOARDING_ACCESSIBILITY, modifier = Modifier.padding(top = 16.dp))
     }
 }
 

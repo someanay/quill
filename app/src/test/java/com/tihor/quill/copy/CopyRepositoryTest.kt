@@ -23,8 +23,27 @@ class CopyRepositoryTest {
     fun bakedIn_containsEveryReferencedKey() {
         val r = repo()
         assertTrue("strings.default.json is missing keys referenced in code", r.isComplete())
-        CopyKeys.ALL.forEach { key ->
+        // Every referenced key has a non-blank baked-in default — except the intentionally-blank ones
+        // (carousel captions), which are still *present* (isComplete covers that) but render nothing.
+        CopyKeys.ALL.filterNot { it in CopyKeys.OPTIONAL_BLANK }.forEach { key ->
             assertFalse("blank value for $key", r.get(key).isBlank())
+        }
+    }
+
+    /**
+     * Carousel copy: the Home header has a non-blank default and is OTA-overridable; the 18 caption
+     * keys are present (so OTA can set them) yet blank by default (no caption row) and overridable.
+     */
+    @Test
+    fun carouselKeys_headerNonBlank_captionsPresentBlankAndOverridable() {
+        val r = repo()
+        assertFalse("carousel home header must have a default", r.get(CopyKeys.CAROUSEL_HOME_HEADER).isBlank())
+        assertTrue(CopyKeys.CAROUSEL_HOME_HEADER in CopyKeys.OVERRIDABLE)
+        assertEquals("See Quill in action", r.get(CopyKeys.CAROUSEL_HOME_HEADER))
+        CopyKeys.CAROUSEL_CAPTIONS.forEach { key ->
+            assertTrue("$key must be a referenced key", key in CopyKeys.ALL)
+            assertEquals("$key must exist in the catalog (blank default)", "", r.bakedInValue(key))
+            assertTrue("$key must be OTA-overridable", key in CopyKeys.OVERRIDABLE)
         }
     }
 

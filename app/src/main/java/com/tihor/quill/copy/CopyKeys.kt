@@ -336,6 +336,24 @@ object CopyKeys {
     const val NOTIFICATION_TEXT_RECORDING = "notification.text.recording"
     const val BUBBLE_DISMISS_TOAST = "bubble.dismiss.toast"
 
+    // --- Demo-video carousel (overridable) ---
+    // Home section header (baked default "See Quill in action"). Onboarding surfaces carry no header.
+    const val CAROUSEL_HOME_HEADER = "carousel.home.header"
+    // Generic accessibility fallbacks when a clip has no caption.
+    const val CAROUSEL_CARD_A11Y = "carousel.card.a11y"
+    const val CAROUSEL_PLAY_A11Y = "carousel.play.a11y"
+
+    /**
+     * Up to 6 per-clip caption keys per surface (`carousel.<surface>.<1..6>.caption`), pre-registered
+     * so a clip can carry a caption without a code change. Their baked defaults are **empty** — an
+     * empty caption renders no caption row ([OPTIONAL_BLANK] exempts them from the non-blank check).
+     */
+    val CAROUSEL_CAPTIONS_HOME: List<String> = (1..6).map { "carousel.home.$it.caption" }
+    val CAROUSEL_CAPTIONS_ACCESSIBILITY: List<String> = (1..6).map { "carousel.accessibility.$it.caption" }
+    val CAROUSEL_CAPTIONS_KEY: List<String> = (1..6).map { "carousel.key.$it.caption" }
+    val CAROUSEL_CAPTIONS: List<String> =
+        CAROUSEL_CAPTIONS_HOME + CAROUSEL_CAPTIONS_ACCESSIBILITY + CAROUSEL_CAPTIONS_KEY
+
     // --- Shared values (overridable) ---
     const val VALUE_ON = "value.on"
     const val VALUE_OFF = "value.off"
@@ -367,6 +385,13 @@ object CopyKeys {
         PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY,
         WELCOME_PRIVACY_PILL,
     )
+
+    /**
+     * Overridable keys whose baked-in default is intentionally **blank** (the carousel captions).
+     * Present in the catalog for completeness + OTA-overridability, but exempt from the "no blank
+     * default" check — a blank caption simply renders no caption row.
+     */
+    val OPTIONAL_BLANK: Set<String> = CAROUSEL_CAPTIONS.toSet()
 
     /** Keys an OTA bundle may override = everything that is **not** compliance. Enforced in M13. */
     val OVERRIDABLE: Set<String> = ALL - COMPLIANCE
@@ -466,9 +491,10 @@ object CopyKeys {
             NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
             NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,
             NOTIFICATION_TITLE_RECORDING, NOTIFICATION_TEXT_RECORDING, BUBBLE_DISMISS_TOAST,
+            CAROUSEL_HOME_HEADER, CAROUSEL_CARD_A11Y, CAROUSEL_PLAY_A11Y,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
             PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY, WELCOME_PRIVACY_PILL,
-        ).toSet()
+        ).toSet() + CAROUSEL_CAPTIONS
 }
