@@ -22,3 +22,6 @@ keystore.properties
 /shot.png
 *.tmp.png
 uidump*.xml
+
+# graphify knowledge-graph output — regenerated from source, not committed
+graphify-out/
