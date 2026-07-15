@@ -248,8 +248,10 @@ not proceed until build + tests + the manual script all pass, then commit.
 **M13a — device-side verified fetch + cache + 3-layer resolution: DONE (2026-06-28).** New `copy/ota/` package
 (`Ed25519Verifier` via `net.i2p.crypto:eddsa` — uniform on API 29–37, no platform "Ed25519" provider;
 `CopyBundleCanonical` defines the exact signed bytes; `CopyBundleVerifier`, `CopyBundleCache`,
-`CopyUpdateStore`, `CopyUpdater`). Cache re-verified + applied at launch (flicker-free, next-launch apply);
-compliance lock untouched. Canonical-input contract is in `CopyBundleCanonical` KDoc (and the uncommitted
+`CopyUpdateStore`, `CopyUpdater`). Cache re-verified + applied **on every foreground** (`MainActivity.onStart`,
+also `OnboardingActivity`) — a fetch that ACCEPTS a newer bundle re-applies immediately, so new copy shows
+**live in the same session** (warm-open), not only on the next cold launch; `LocalResolvedCopy` makes `copy(key)`
+recompose. Still flicker-free (synchronous cache read) and compliance lock untouched. Canonical-input contract is in `CopyBundleCanonical` KDoc (and the uncommitted
 `docs/copy-bundle-format.md` draft for M13b). 31 unit tests; `assembleRelease` green.
 *Follow-ups (non-blocking): (1) add a real RFC-8032 known-answer vector once M13b's reference signer exists,
 as the cross-spec check; (2) `CopyUpdater.BASE_URL` stays a placeholder until the CDN lands in M13b.*

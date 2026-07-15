@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.audio.AudioRecorder
+import com.tihor.quill.copy.Copy
 import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.copy.QuillRoot
 import com.tihor.quill.copy.copy
@@ -122,6 +123,14 @@ class OnboardingActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent { QuillRoot { OnboardingFlow(onFinish = { finish() }) } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Re-apply the cached OTA copy bundle on every foreground (same as MainActivity): this screen
+        // renders copy, so a bundle cached on a prior open should show here too. Cheap + idempotent;
+        // QuillRoot observes resolved copy, so it recomposes live.
+        Copy.repository(applicationContext).applyCachedOverride(applicationContext)
     }
 }
 

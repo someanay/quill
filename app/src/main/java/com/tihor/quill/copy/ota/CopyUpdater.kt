@@ -23,9 +23,11 @@ import java.util.concurrent.TimeUnit
  *   (rollback guard, spec §2.3).
  *
  * On acceptance the validated raw bytes are cached atomically and the applied revision/ETag are stored.
- * We deliberately **do not** live-apply: the new copy takes effect on the **next launch** (when
- * `CopyRepository.applyCachedOverride` re-verifies and applies the cache), so nothing flickers under a
- * screen the user is actively reading (spec §2.3 offline/airplane guarantee).
+ * The caller applies the cache **on foreground**: `MainActivity.onStart` calls
+ * `CopyRepository.applyCachedOverride` on every resume and re-applies immediately when a fetch returns
+ * [Outcome.Accepted], so an accepted bundle shows **live in the same session** — no cold restart needed.
+ * Applying is a cheap idempotent re-verify of the cache (falls back to baked-in on any problem), so it
+ * stays within the spec §2.3 offline/airplane guarantee.
  */
 class CopyUpdater(
     private val verifier: CopyBundleVerifier,
@@ -82,7 +84,7 @@ class CopyUpdater(
                 }
                 if (!cache.write(bytes)) return Outcome.Failed("cache write failed")
                 store.setApplied(result.revision, etag)
-                Log.d(TAG, "copy bundle accepted: revision ${result.revision} (applies next launch)")
+                Log.d(TAG, "copy bundle accepted: revision ${result.revision} (applied on foreground)")
                 return Outcome.Accepted(result.revision)
             }
         }
