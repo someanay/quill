@@ -209,10 +209,21 @@ not proceed until build + tests + the manual script all pass, then commit.
 - [ ] **Verify:** entries logged when on, none when private mode on, deletion + window/backstop pruning work.
 
 ## M10 — LLM cleanup pass (P1)
-- [ ] `CleanupClient` (chat-completions) + toggle + optional separate LLM key
-- [ ] System prompt: filler removal, punctuation/capitalisation, (optional) vocabulary substitution
-- [ ] **Test (write first):** returns raw text unchanged when disabled; cleanup failure → raw fallback (never blocks insertion); vocabulary substitution (P1.5)
-- [ ] **Verify:** cleaned output when on, raw transcript when off; cleanup failure falls back to raw, never blocks insertion.
+- [x] `CleanupClient` (chat-completions) + toggle + ~~optional separate LLM key~~ — see deviation
+- [x] System prompt: filler removal, punctuation/capitalisation, (optional) vocabulary substitution
+- [x] **Test (write first):** returns raw text unchanged when disabled; cleanup failure → raw fallback (never blocks insertion); vocabulary substitution (P1.5)
+- [ ] **Verify:** cleaned output when on, raw transcript when off; cleanup failure falls back to raw, never blocks insertion. *(Gemini "type my email" fidelity check folds into the Post-M13 on-device verify.)*
+
+> **M10 deviations:**
+> - **No separate cleanup key** — cleanup reuses the stored **Groq** key (`CleanupKeyPolicy`); a
+>   non-Groq STT provider still runs cleanup via the Groq key if present, else skips silently → raw
+>   transcript (decision recorded in the Post-M13 multi-provider notes).
+> - **Transcript-fidelity guard (the real "don't obey the dictation" fix).** Prompt hardening alone
+>   can't stop an LLM from occasionally obeying an imperative (`"type my email"` → `"I'm ready to type
+>   your email"`). `CleanupGuard.preservesMeaning` structurally verifies the *output* — length ratio
+>   0.5–2.0 **and** ≥0.6 token coverage of the raw — and on failure discards the cleanup and falls back
+>   to the raw transcript (same fail-soft path as a timeout). Pure + unit-tested (`CleanupGuardTest`);
+>   `CleanupClientTest` covers the divergent-response → raw path. Raw is always the safe value.
 
 ## M11 — OEM / reliability hardening
 - [ ] Battery-optimisation exemption prompt; best-effort OEM auto-start deep links via a helper lib

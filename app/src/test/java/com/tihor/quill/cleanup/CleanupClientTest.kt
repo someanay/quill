@@ -96,6 +96,25 @@ class CleanupClientTest {
     }
 
     @Test
+    fun divergentResponse_returnsNull_failsSoftToRaw() = runTest {
+        // The model obeyed the dictation instead of cleaning it. The divergence guard must reject the
+        // response so the caller falls back to the raw transcript (null), exactly like a timeout.
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(chat("I'm ready to type your email")),
+        )
+        assertNull(client().clean("type my email"))
+    }
+
+    @Test
+    fun wrapsTranscriptAsDelimitedData_inUserMessage() = runTest {
+        server.enqueue(MockResponse().setResponseCode(200).setBody(chat("Hello world.")))
+        client().clean("um hello world")
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue("fences the transcript so the model sees it as data", body.contains("<transcript>"))
+        assertTrue("still includes the raw transcript verbatim", body.contains("um hello world"))
+    }
+
+    @Test
     fun blankInput_returnsNull_withoutCallingProvider() = runTest {
         assertNull(client().clean("   "))
         assertEquals("no provider call for blank input", 0, server.requestCount)
