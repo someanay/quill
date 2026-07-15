@@ -1,0 +1,2161 @@
+{
+  "revision": 4,
+  "keys": {
+    "a11y.back": {
+      "default": "Back",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "a11y.hide_key": {
+      "default": "Hide key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "a11y.selected": {
+      "default": "Selected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "a11y.settings": {
+      "default": "Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "a11y.show_key": {
+      "default": "Show key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.back": {
+      "default": "Back",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.cancel": {
+      "default": "Cancel",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.continue": {
+      "default": "Continue",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.not_now": {
+      "default": "Not now",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "bubble.dismiss.toast": {
+      "default": "Bubble hidden — tap the notification to bring it back.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.accessibility.1.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.accessibility.2.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.accessibility.3.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.accessibility.4.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.accessibility.5.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.accessibility.6.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.card.a11y": {
+      "default": "Demo video",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.home.1.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.2.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.3.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.4.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.5.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.6.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.home.header": {
+      "default": "See Quill in action",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.key.1.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.key.2.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.key.3.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.key.4.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.key.5.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.key.6.caption": {
+      "default": "",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": true
+    },
+    "carousel.play.a11y": {
+      "default": "Play demo",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "common.coming_soon": {
+      "default": "Coming soon",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "compliance.accessibility.disclosure_accept": {
+      "default": "I understand — open Accessibility settings",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.accessibility.disclosure_body": {
+      "default": "To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.accessibility.disclosure_decline": {
+      "default": "Not now",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.accessibility.disclosure_title": {
+      "default": "Allow Quill to insert dictation",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.key.required_body": {
+      "default": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.key.required_title": {
+      "default": "You'll need your own API key",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.promise": {
+      "default": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.welcome_pill": {
+      "default": "Your key, your audio — nothing through our servers",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.rationale.accessibility": {
+      "default": "Quill uses accessibility only to detect the focused text field and insert your dictation. It never reads or writes password or banking fields.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.rationale.mic": {
+      "default": "Quill needs the microphone to record what you dictate. Audio is sent only to the speech provider whose key you supply, and is deleted after a successful transcription.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.rationale.overlay": {
+      "default": "The floating bubble needs permission to display over other apps. That bubble is also what lets Quill record while you're in another app.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "history.clear.body": {
+      "default": "This removes all %1$d saved dictations from this device. It can't be undone.",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.clear.confirm": {
+      "default": "Delete all",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.clear.title": {
+      "default": "Delete all history?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.clear_all": {
+      "default": "Clear all",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.off_body": {
+      "default": "Turn on Save dictation history in Settings to keep transcripts on this phone.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.off_cta": {
+      "default": "Open privacy settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.off_title": {
+      "default": "History is off",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.on_body": {
+      "default": "Once you start dictating, your transcripts show up here — saved on this phone only.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.on_cta": {
+      "default": "Try a dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.on_title": {
+      "default": "No dictations yet",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.group.today": {
+      "default": "Today",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.group.yesterday": {
+      "default": "Yesterday",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.sheet.copy": {
+      "default": "Copy text",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.sheet.delete": {
+      "default": "Delete",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.sheet.share": {
+      "default": "Share",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.title": {
+      "default": "History",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.banner.a11y_off_text": {
+      "default": "Accessibility is off — tap to switch it back on.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.battery.text": {
+      "default": "Open battery settings, find Quill, and set it to Unrestricted so it stops getting killed.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.battery.title": {
+      "default": "Quill keeps getting stopped",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.group.tip": {
+      "default": "Tip",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.group.today": {
+      "default": "Today",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.paused.banner_text": {
+      "default": "The bubble is hidden. Quill stays ready so you can bring it back anytime.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.paused.banner_title": {
+      "default": "Turn Quill on to bring back the bubble.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.paused.footer": {
+      "default": "No dictations while paused",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.tip.text": {
+      "default": "Drop it anywhere along the edge.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.tip.title": {
+      "default": "Long-press the bubble to move it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.today.dictations": {
+      "default": "0 dictations",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.today.dictations_sub": {
+      "default": "No words written yet today",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.today.last_used": {
+      "default": "Last used",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.today.last_used_sub": {
+      "default": "Not yet — tap the bubble in any app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.toggle.off_sub": {
+      "default": "The bubble is hidden",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.toggle.off_title": {
+      "default": "Quill is paused",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.toggle.on_sub": {
+      "default": "Bubble is floating & ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.toggle.on_title": {
+      "default": "Quill is on",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "inject.failed.text": {
+      "default": "Couldn't insert here — paste your dictation manually.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "inject.failed.title": {
+      "default": "Copied to clipboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "inject.reenable.action": {
+      "default": "Re-enable Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "inject.revoked.text": {
+      "default": "Accessibility is off, so Quill couldn't insert. Re-enable it, then paste.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "inject.revoked.title": {
+      "default": "Quill was turned off — copied instead",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.error.invalid": {
+      "default": "That key was rejected (401). Check you copied it fully.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.error.network": {
+      "default": "Couldn't reach the provider. Check your connection and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.history": {
+      "default": "History",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.home": {
+      "default": "Home",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.settings": {
+      "default": "Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.action.show": {
+      "default": "Show Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.action.stop": {
+      "default": "Dismiss bubble",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.text.active": {
+      "default": "Tap the bubble to dictate.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.text.hidden": {
+      "default": "Bubble hidden — tap Show Quill to bring it back.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.text.recording": {
+      "default": "Recording… tap the bubble to stop.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.title.active": {
+      "default": "Quill bubble active",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.title.hidden": {
+      "default": "Quill is running",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "notification.title.recording": {
+      "default": "Quill is listening",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.accessibility.enable_cta": {
+      "default": "Open Accessibility settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.accessibility.enable_title": {
+      "default": "Turn on insert-into-apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.allset.body": {
+      "default": "The bubble is live. Open any app, focus a text field, and give it a try.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.allset.cta": {
+      "default": "Try your first dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.allset.home_link": {
+      "default": "Go to Quill home",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.allset.look": {
+      "default": "Look for this in the corner of your screen.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.allset.title": {
+      "default": "You're ready to write",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.accessibility": {
+      "default": "Type into apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.accessibility_sub": {
+      "default": "Accessibility access",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.cta": {
+      "default": "Continue",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.key": {
+      "default": "Add your key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.key_sub": {
+      "default": "Groq · connected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.mic": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.mic_sub": {
+      "default": "So Quill can hear you",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.overlay": {
+      "default": "Floating bubble",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.overlay_sub": {
+      "default": "Display over other apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.progress": {
+      "default": "%1$d of %2$d done",
+      "placeholders": [
+        "%1$d",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.title": {
+      "default": "You're connected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.cta": {
+      "default": "Next",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.eyebrow": {
+      "default": "Three steps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.step1": {
+      "default": "The bubble starts listening — tap again to send.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.step2": {
+      "default": "Audio goes straight to your speech-to-text key. No middleman.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.step3": {
+      "default": "Text drops in at the cursor — chat, email, search, notes.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.t1": {
+      "default": "Tap & speak",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.t2": {
+      "default": "Your provider transcribes",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.t3": {
+      "default": "It writes where you are",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.howitworks.title": {
+      "default": "From voice to text, on your terms",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.body": {
+      "default": "Quill uses your own provider key (Groq by default). It's encrypted on this device and sent only to your provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.console_body": {
+      "default": "Any of these works — pick one for quick steps to get its key. Your key stays on this device.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.console_free": {
+      "default": "Free",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.cta": {
+      "default": "Save & verify",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.field_label": {
+      "default": "API key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.gemini_steps": {
+      "default": "1. Sign in at aistudio.google.com with your Google account.\n2. Tap Get API key, then Create API key.\n3. Copy the key and paste it into Quill.\n4. The free tier works without a card — a good way to start.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.groq_steps": {
+      "default": "1. Sign in at console.groq.com — Google, GitHub, or email works.\n2. Open API Keys and tap Create API Key.\n3. Give it a name (e.g. Quill) and create it.\n4. Copy the key right away — it's shown only once — then paste it into Quill.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.open": {
+      "default": "Open %1$s",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.openai_steps": {
+      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away — it's shown only once — then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.openrouter_steps": {
+      "default": "1. Sign in at openrouter.ai — Google, GitHub, or email works.\n2. Open Keys and tap Create Key.\n3. Name it, create it, and copy the key — then paste it into Quill.\n4. Add a little credit, or pick a model tagged \"free\" in Quill's model list.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.guide.title": {
+      "default": "Get your %1$s key",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.title": {
+      "default": "Add your speech-to-text key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.valid": {
+      "default": "Key verified",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.verifying": {
+      "default": "Checking your key…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.warning.accept": {
+      "default": "I understand — add my key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.warning.free_tier": {
+      "default": "You bring the key — some providers (like Groq) have a free tier to start.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.warning.reading": {
+      "default": "Take a moment to read this",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.warning.usage": {
+      "default": "Your provider may charge for usage — Quill itself is free.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.where_link": {
+      "default": "Where do I get a key?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.cta": {
+      "default": "Allow microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.title": {
+      "default": "Allow the microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mictest.body": {
+      "default": "Let's check your mic. Speak now — you should see the strokes move.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mictest.cta": {
+      "default": "Sounds good",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mictest.heard": {
+      "default": "Heard you loud and clear.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mictest.title": {
+      "default": "Say something",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.overlay.cta": {
+      "default": "Allow display over apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.overlay.title": {
+      "default": "Allow the floating bubble",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.splash.tagline": {
+      "default": "Dictate into any app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.already": {
+      "default": "Already set up?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.body": {
+      "default": "A bubble floats over every app. Tap it, speak, and your words land right where the cursor is.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.cta": {
+      "default": "Get started",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.open": {
+      "default": "Open Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.title": {
+      "default": "Dictate into any app you use",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "reliability.boot.channel": {
+      "default": "Quill reliability",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "reliability.boot.text": {
+      "default": "Your phone restarted. Open Quill to bring the bubble back.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "reliability.boot.title": {
+      "default": "Tap to re-activate Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.feedback": {
+      "default": "Send feedback",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.footer": {
+      "default": "Made for people who'd rather talk than type.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.licenses": {
+      "default": "Open-source licenses",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.privacy_policy": {
+      "default": "Privacy Policy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.terms": {
+      "default": "Terms of Service",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.title": {
+      "default": "About",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.about.version": {
+      "default": "Version %1$s · build %2$s",
+      "placeholders": [
+        "%1$s",
+        "%2$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.battery": {
+      "default": "Battery exemption",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.battery_sub": {
+      "default": "Open battery settings → find Quill → allow unrestricted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.clear": {
+      "default": "Clear all data & keys",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.clear_confirm_body": {
+      "default": "This removes your saved key, clears your dictation history and custom words, and resets every setting on this device. It can't be undone.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.clear_confirm_cta": {
+      "default": "Clear everything",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.clear_confirm_title": {
+      "default": "Clear all data & keys?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.endpoint": {
+      "default": "Custom endpoint (base URL)",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.endpoint_help": {
+      "default": "For any OpenAI-compatible provider. Changing this re-validates your key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.keepalive": {
+      "default": "Keep bubble alive aggressively",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.keepalive_sub": {
+      "default": "Helps on phones that kill apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.reset": {
+      "default": "Reset",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.reset_confirm_body": {
+      "default": "Restores all preferences to their defaults. Your API key and dictation history are kept.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.reset_confirm_cta": {
+      "default": "Reset",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.reset_confirm_title": {
+      "default": "Reset settings?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.reset_settings": {
+      "default": "Reset settings to default",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.timeout": {
+      "default": "Request timeout",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.timeout_sub": {
+      "default": "Give up after…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.timeout_value": {
+      "default": "30 s",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.advanced.title": {
+      "default": "Advanced",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.autostop": {
+      "default": "Auto-stops at",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.format": {
+      "default": "Upload format",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.format_sub": {
+      "default": "FLAC · smaller, lossless",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.format_value": {
+      "default": "Recommended",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.hold": {
+      "default": "Hold-to-talk",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.hold_sub": {
+      "default": "Press & hold for quick snippets",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.max_length": {
+      "default": "Max recording length",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.silence": {
+      "default": "Stop on silence",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.silence_banner": {
+      "default": "In very noisy places this may not trigger — the max-length limit always applies.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.silence_sub": {
+      "default": "End after a quiet pause",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.start_stop": {
+      "default": "Start & stop",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.title": {
+      "default": "Audio & recording",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.trigger": {
+      "default": "Trigger",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.trigger_sub": {
+      "default": "How recording starts",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.audio.trigger_value": {
+      "default": "Tap to toggle",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.help": {
+      "default": "The light ring keeps the bubble visible on any background.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.preview_dark": {
+      "default": "Dark app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.preview_light": {
+      "default": "Light app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.size": {
+      "default": "Size",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.theme": {
+      "default": "Theme",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.title": {
+      "default": "Visual preferences",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.after": {
+      "default": "After",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.before": {
+      "default": "Before",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.groq_key": {
+      "default": "Cleanup always runs on Groq — it uses your saved Groq key, not your active provider's.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.groq_missing": {
+      "default": "Cleanup runs on Groq only. Without a saved Groq key it's skipped and the raw transcript is inserted.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.help": {
+      "default": "If cleanup ever fails, your raw transcript is inserted instead — never blocked.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.model": {
+      "default": "Cleanup model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.tidy_sub": {
+      "default": "Remove filler, fix punctuation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.tidy_title": {
+      "default": "Tidy my dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.title": {
+      "default": "Clean up with AI",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.what": {
+      "default": "What it does",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.group.capture": {
+      "default": "Capture & bubble",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.group.dictation": {
+      "default": "Dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.group.privacy": {
+      "default": "Privacy & data",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.add": {
+      "default": "Add a key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.banner": {
+      "default": "Keys are encrypted in this device's keystore and never leave it or appear in logs.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.empty_body": {
+      "default": "Quill needs a speech-to-text key to transcribe. Add one to start dictating again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.empty_title": {
+      "default": "No keys yet",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.help": {
+      "default": "Your cleanup model reuses this key unless you add a separate one.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.remove": {
+      "default": "Remove",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.replace": {
+      "default": "Replace",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.role_stt": {
+      "default": "Speech-to-text",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.section": {
+      "default": "Your keys",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.set": {
+      "default": "%1$d set",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.test": {
+      "default": "Test again",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.title": {
+      "default": "API keys",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.accessibility": {
+      "default": "Accessibility",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.banner_text": {
+      "default": "Audio goes only to your provider; everything else stays on this phone.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.banner_title": {
+      "default": "Nothing is collected by Quill.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.crash": {
+      "default": "Share crash reports",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.crash_sub": {
+      "default": "Only if a crash happens — you review first",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.diag_help": {
+      "default": "Reports include the error, app version and device — never your audio, text, clipboard, or key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.diagnostics": {
+      "default": "Diagnostics",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.example": {
+      "default": "See an example report",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.example_sub": {
+      "default": "Exactly what a report contains",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history": {
+      "default": "Save dictation history",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention": {
+      "default": "Keep history for",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention.day": {
+      "default": "1 day",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention.forever": {
+      "default": "Forever",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention.hour": {
+      "default": "1 hour",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention.month": {
+      "default": "30 days",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_retention.week": {
+      "default": "1 week",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.history_sub": {
+      "default": "Kept on this phone, then auto-deleted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.mic": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.permissions": {
+      "default": "Permissions",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.private_mode": {
+      "default": "Private mode",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.private_mode_sub": {
+      "default": "Don't save any transcripts",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.privacy.title": {
+      "default": "Privacy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.about": {
+      "default": "About & legal",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.advanced": {
+      "default": "Advanced",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.api_keys": {
+      "default": "API keys",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.audio": {
+      "default": "Audio & recording",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.bubble": {
+      "default": "Visual preferences",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.cleanup": {
+      "default": "Clean up with AI",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.custom_words": {
+      "default": "Custom words",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.privacy": {
+      "default": "Privacy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.row.speech_model": {
+      "default": "Speech & model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.custom_url_error": {
+      "default": "Enter an https:// URL.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.custom_url_help": {
+      "default": "Any OpenAI-compatible endpoint. Quill calls <base URL>/audio/transcriptions with your key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.custom_url_hint": {
+      "default": "https://api.example.com/v1",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.custom_url_label": {
+      "default": "Base URL",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.gemini_caveat": {
+      "default": "Gemini is a chat model asked to transcribe — spoken commands may occasionally be paraphrased instead of written word-for-word.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.key_required": {
+      "default": "No API key saved for %1$s yet. Add one to dictate with this provider.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.key_required_cta": {
+      "default": "Add key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.lang_auto": {
+      "default": "Auto-detect",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.lang_en": {
+      "default": "English (Roman)",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.lang_hi": {
+      "default": "Hindi (Devanagari)",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.language": {
+      "default": "Spoken language",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.language_help": {
+      "default": "English keeps mixed Hindi-English speech in Roman script (\"aaj ka\"). Auto-detect or Hindi give native script.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model": {
+      "default": "Model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_accurate_sub": {
+      "default": "Most accurate",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_field_hint": {
+      "default": "Exact model ID from your provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_field_label": {
+      "default": "Model ID",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_gemini_flash_sub": {
+      "default": "Higher quality · has free tier",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_gemini_lite_sub": {
+      "default": "Cheapest · free-tier friendly",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_gemini_preview_sub": {
+      "default": "Preview · has free tier",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_gemini_pro_sub": {
+      "default": "Best quality · paid only",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openai_4o_sub": {
+      "default": "Highest accuracy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openai_mini_sub": {
+      "default": "Newer · lower cost",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openai_whisper_sub": {
+      "default": "Proven standard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_gemini_flash_sub": {
+      "default": "Gemini · high quality",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_gemini_lite_sub": {
+      "default": "Gemini · cheapest paid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_gpt_audio_mini_sub": {
+      "default": "OpenAI · low cost",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_gpt_audio_sub": {
+      "default": "OpenAI · highest quality",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_mimo_sub": {
+      "default": "Omni model · budget",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_nemotron_sub": {
+      "default": "Free · expect lower accuracy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_voxtral_sub": {
+      "default": "Speech-focused · recommended",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_turbo_sub": {
+      "default": "Fastest · recommended",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.provider": {
+      "default": "Provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.provider_custom": {
+      "default": "Custom",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.title": {
+      "default": "Speech & model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.body": {
+      "default": "Some phones (Honor, Xiaomi, Oppo, Vivo, Samsung) aggressively stop background apps. To keep the bubble alive, allow Quill to auto-start / run in the background in your device's app-management settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.fallback": {
+      "default": "Couldn't open it automatically on this device — open Settings ▸ Battery / App management and find Quill manually.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.open": {
+      "default": "Open device settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.row": {
+      "default": "Help Quill survive",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.steps": {
+      "default": "1. Open your device's app-launch or protected-apps settings.\n2. Find Quill in the list.\n3. Allow auto-start / background activity (and set battery to Unrestricted).",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.survival.title": {
+      "default": "Help Quill survive",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.title": {
+      "default": "Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.add": {
+      "default": "Add a word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.add_title": {
+      "default": "Add a custom word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.body": {
+      "default": "Teach Quill names and terms it keeps mishearing. Each is matched and replaced after transcription.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.count": {
+      "default": "%1$d",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.delete": {
+      "default": "Remove word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.empty_sub": {
+      "default": "Tap + to add a name or term",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.empty_title": {
+      "default": "No custom words yet",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.err_key": {
+      "default": "Add an API key in Settings to use voice capture.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.err_network": {
+      "default": "Transcription failed. Check your connection.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.err_permission": {
+      "default": "Microphone access is needed to record.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.err_record": {
+      "default": "Couldn't capture audio. Try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.heard_hint": {
+      "default": "e.g. clod code",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.heard_label": {
+      "default": "Heard as",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.listening": {
+      "default": "Listening… tap to stop",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.record": {
+      "default": "Record a sample",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.replacement_hint": {
+      "default": "e.g. Claude Code",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.replacement_label": {
+      "default": "Replace with",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.save": {
+      "default": "Save",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.title": {
+      "default": "Custom words",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.words.transcribing": {
+      "default": "Transcribing…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done": {
+      "default": "Done",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.quota.toast": {
+      "default": "API usage has run out — check your provider plan.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.always": {
+      "default": "Always send reports automatically",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.banner": {
+      "default": "Sent through your own share sheet — you choose the app, nothing auto-uploads.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.body": {
+      "default": "Quill closed unexpectedly last time. You can send a report to help fix it — here's exactly what it contains:",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.dont_send": {
+      "default": "Don't send",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.send": {
+      "default": "Send via…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.crash.title": {
+      "default": "Send crash report?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.banner_text": {
+      "default": "Your phone switched off Accessibility access — Quill can't insert text until it's back on.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.body": {
+      "default": "Some phones turn this off to save battery. Turning it back on takes two taps.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.cta": {
+      "default": "Re-enable Accessibility",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.heading": {
+      "default": "Let's switch it back on",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.title": {
+      "default": "Quill stopped typing into apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "system.recovery.why": {
+      "default": "Why did this happen?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.check": {
+      "default": "Check",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.granted": {
+      "default": "Granted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.none": {
+      "default": "None",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.off": {
+      "default": "Off",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.on": {
+      "default": "On",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.valid": {
+      "default": "Valid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    }
+  },
+  "placeholderTestVectors": [
+    {
+      "input": "",
+      "tokens": []
+    },
+    {
+      "input": "No placeholders here",
+      "tokens": []
+    },
+    {
+      "input": "%s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%d",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "%1$s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%2$.2f",
+      "tokens": [
+        "%2$f"
+      ]
+    },
+    {
+      "input": "%1$s and %1$s again",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%s = %d",
+      "tokens": [
+        "%1$s",
+        "%2$d"
+      ]
+    },
+    {
+      "input": "%2$s then %1$d",
+      "tokens": [
+        "%1$d",
+        "%2$s"
+      ]
+    },
+    {
+      "input": "%05.2f",
+      "tokens": [
+        "%1$f"
+      ]
+    },
+    {
+      "input": "100%%",
+      "tokens": []
+    },
+    {
+      "input": "50% off",
+      "tokens": [
+        "%1$o"
+      ]
+    },
+    {
+      "input": "%1$d items",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "line one%nline two",
+      "tokens": []
+    },
+    {
+      "input": "%d%% done",
+      "tokens": [
+        "%1$d"
+      ]
+    }
+  ]
+}

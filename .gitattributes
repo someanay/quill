@@ -1,0 +1,3 @@
+# Generated Copy Catalog export. Pinned to LF so the byte-for-byte guard test (CopyManifestTest)
+# passes regardless of core.autocrlf on the checkout machine — the generator always writes \n.
+copy-manifest.json text eol=lf

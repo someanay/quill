@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     alias(libs.plugins.android.application)
@@ -127,4 +128,22 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+}
+
+// Regenerates the repo-root copy-manifest.json — the machine-readable Copy Catalog export the external
+// copy-authoring tool (quill-copy-tool) consumes. CopyManifestTest guards it: the committed file must
+// match this task's output byte-for-byte, so copy can't drift from CopyKeys / strings.default.json
+// without a red build (same guard pattern as NoComposeStringLiteralsTest). The generator lives in the
+// unit-test source set (never shipped in the APK), so we run it on that classpath.
+tasks.register<JavaExec>("generateCopyManifest") {
+    group = "copy"
+    description = "Regenerate /copy-manifest.json from CopyKeys + strings.default.json (run after changing copy)."
+    dependsOn("compileDebugUnitTestKotlin")
+    // Reuse the unit-test runtime classpath (main + test classes + deps), but via a plain provider so we
+    // don't take a task dependency on testDebugUnitTest itself — otherwise generating the file would run
+    // the very test that guards it, before the file exists.
+    val unitTest = tasks.named<Test>("testDebugUnitTest")
+    classpath = files(provider { unitTest.get().classpath })
+    mainClass.set("com.tihor.quill.copy.CopyManifestKt")
+    workingDir = projectDir
 }
