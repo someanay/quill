@@ -69,6 +69,30 @@ class KeyValidatorTest {
     }
 
     @Test
+    fun paidAccessProbe_success_isTrue() = runTest {
+        val client = FakeClient(Result.success(Transcript("ok")))
+        val has = validator(client).hasPaidAccess(SttProvider.GEMINI, "AIza-key", "gemini-3.1-pro-preview")
+        assertEquals(true, has)
+        assertEquals("gemini-3.1-pro-preview", client.lastModel)
+    }
+
+    @Test
+    fun paidAccessProbe_quotaExhausted_isFalse() = runTest {
+        // A free-tier key calling a paid-only model gets 429 RESOURCE_EXHAUSTED (limit 0).
+        val client = FakeClient(Result.failure(TranscriptionError.QuotaExhausted()))
+        assertEquals(false, validator(client).hasPaidAccess(SttProvider.GEMINI, "AIza-key", "gemini-3.1-pro-preview"))
+    }
+
+    @Test
+    fun paidAccessProbe_inconclusive_isNull() = runTest {
+        // Offline or a provider hiccup proves nothing — the caller must keep the stored verdict.
+        val offline = FakeClient(Result.failure(TranscriptionError.Network(IOException("offline"))))
+        assertEquals(null, validator(offline).hasPaidAccess(SttProvider.GEMINI, "AIza-key", "gemini-3.1-pro-preview"))
+        val hiccup = FakeClient(Result.failure(TranscriptionError.Provider(503)))
+        assertEquals(null, validator(hiccup).hasPaidAccess(SttProvider.GEMINI, "AIza-key", "gemini-3.1-pro-preview"))
+    }
+
+    @Test
     fun custom_usesConfiguredModelAndEndpoint() = runTest {
         val client = FakeClient(Result.success(Transcript("ok")))
         val result = validator(client).validate(

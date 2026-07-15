@@ -304,8 +304,6 @@ private fun StepBar(onBack: (() -> Unit)?, body: @Composable (Modifier) -> Unit)
     ) { padding -> body(Modifier.padding(padding)) }
 }
 
-private const val KEY_MASK = "gsk_••••••••••••••••"
-
 // --- Steps ---
 
 @Composable
@@ -348,7 +346,10 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) { progress.animateTo(1f, tween(3000)) }
     val ready = progress.value >= 1f
-    val context = androidx.compose.ui.platform.LocalContext.current
+    var showConsoles by remember { mutableStateOf(false) }
+    if (showConsoles) {
+        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         QuillCard {
@@ -385,14 +386,10 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
-                    // Match the label: open the provider's key page (like AddKeyStep's sibling link),
-                    // rather than just advancing the flow. "Accept" below is what proceeds.
+                    // Match the label: open the all-providers console chooser (like AddKeyStep's
+                    // sibling link), rather than just advancing. "Accept" below is what proceeds.
                     TextButton(
-                        onClick = {
-                            context.startActivity(
-                                Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://console.groq.com/keys")),
-                            )
-                        },
+                        onClick = { showConsoles = true },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
@@ -429,6 +426,10 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
     var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
     var reveal by remember { mutableStateOf(false) }
     var state by remember { mutableStateOf(AddKeyState.IDLE) }
+    var showConsoles by remember { mutableStateOf(false) }
+    if (showConsoles) {
+        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
+    }
 
     FormStep(
         onBack = onBack,
@@ -443,6 +444,12 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
                 when (result) {
                     KeyValidation.Valid -> {
                         settingsRepo.setProvider(provider) // the onboarded key's provider becomes active
+                        // Probe paid-only access (Gemini pro-preview) so the model picker only
+                        // lists what this key can actually run; inconclusive → leave unchanged.
+                        provider.models.firstOrNull { it.paidOnly }?.let { paid ->
+                            withContext(Dispatchers.IO) { validator.hasPaidAccess(provider, key.trim(), paid.id) }
+                                ?.let { has -> settingsRepo.setFreeTierOnly(provider, freeOnly = !has) }
+                        }
                         state = AddKeyState.VALID
                         onVerified()
                     }
@@ -491,7 +498,7 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
             onValueChange = { key = it; state = AddKeyState.IDLE },
             singleLine = true,
             isError = state == AddKeyState.REJECTED,
-            placeholder = { Text(KEY_MASK, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
+            placeholder = { Text(provider.keyMask, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
             leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
             trailingIcon = {
                 IconButton(onClick = { reveal = !reveal }) {
@@ -524,12 +531,12 @@ private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified:
                 Banner(text = copy(K.PRIVACY_PROMISE), icon = Icons.Rounded.Info, kind = PillKind.INFO)
             }
             else -> {
-                val consoleUrl = provider.keyConsoleUrl
-                if (consoleUrl != null) {
+                if (provider.keyConsoleUrl != null) {
                     Spacer(Modifier.height(6.dp))
-                    TextButton(onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(consoleUrl)))
-                    }) { Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk) }
+                    // Opens the all-providers console chooser, not just the selected provider's page.
+                    TextButton(onClick = { showConsoles = true }) {
+                        Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
+                    }
                 }
             }
         }

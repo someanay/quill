@@ -63,9 +63,22 @@ class TranscriptionClientTest {
 
     @Test
     fun http429_mapsToRateLimited() = runTest {
+        // Groq-style plain 429 (burst limits AND its daily caps carry no quota marker).
         server.enqueue(MockResponse().setResponseCode(429))
         val result = client().transcribe(audio(), opts)
         assertTrue(result.exceptionOrNull() is TranscriptionError.RateLimited)
+    }
+
+    @Test
+    fun http429_insufficientQuota_mapsToQuotaExhausted() = runTest {
+        // OpenAI signals an exhausted plan as 429 + insufficient_quota (verified 2026-07).
+        server.enqueue(
+            MockResponse().setResponseCode(429).setBody(
+                """{"error":{"message":"You exceeded your current quota, please check your plan and billing details.","type":"insufficient_quota","param":null,"code":"insufficient_quota"}}""",
+            ),
+        )
+        val result = client().transcribe(audio(), opts)
+        assertTrue(result.exceptionOrNull() is TranscriptionError.QuotaExhausted)
     }
 
     @Test

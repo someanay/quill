@@ -19,6 +19,27 @@ sealed class TranscriptionError(message: String, cause: Throwable? = null) : Exc
     /** 429 — provider rate limit; retryable. */
     class RateLimited : TranscriptionError("Rate limited by the provider. Try again shortly.")
 
+    /**
+     * Out of quota/credits — the plan's usage is exhausted, not a momentary burst limit. Sources:
+     * OpenAI 429 `insufficient_quota`, Gemini 429 `RESOURCE_EXHAUSTED`, OpenRouter 402 (credits).
+     * Groq reports exhausted daily caps as a plain 429, indistinguishable from a burst limit — the
+     * UI treats [RateLimited] and this the same (usage toast) for that reason.
+     */
+    class QuotaExhausted : TranscriptionError("API usage has run out.")
+
+    companion object {
+        /** 429-body markers that mean "plan exhausted", not "slow down" (verified per-provider 2026-07). */
+        private val QUOTA_MARKERS = listOf("insufficient_quota", "RESOURCE_EXHAUSTED", "billing", "credit")
+
+        /** Maps a 429 to [QuotaExhausted] when the body carries a quota marker, else [RateLimited]. */
+        fun fromTooManyRequests(body: String?): TranscriptionError =
+            if (body != null && QUOTA_MARKERS.any { body.contains(it, ignoreCase = true) }) {
+                QuotaExhausted()
+            } else {
+                RateLimited()
+            }
+    }
+
     /** Other non-2xx from the provider. */
     class Provider(val httpCode: Int, body: String? = null) :
         TranscriptionError("Provider error $httpCode${body?.let { ": $it" } ?: ""}")

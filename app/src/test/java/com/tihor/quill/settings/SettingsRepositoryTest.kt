@@ -40,7 +40,27 @@ class SettingsRepositoryTest {
             r.setBubbleVisible(true)
             r.setCustomBaseUrl("")
             r.setCustomModel("")
+            r.setFreeTierOnly(SttProvider.GEMINI, freeOnly = false)
         }
+    }
+
+    @Test
+    fun freeTierOnly_roundTrips_andDeselectsHiddenPaidModel() = runTest {
+        val r = repo()
+        assertTrue(r.settings.first().freeTierProviders.isEmpty())
+
+        // A free-tier verdict while a paid-only model is selected must also fix the selection —
+        // the picker hides that model, so it can't stay active.
+        r.setProvider(SttProvider.GEMINI)
+        r.setSttModel("gemini-3.1-pro-preview")
+        r.setFreeTierOnly(SttProvider.GEMINI, freeOnly = true)
+        val s = r.settings.first()
+        assertTrue(SttProvider.GEMINI.id in s.freeTierProviders)
+        assertEquals(SttProvider.GEMINI.defaultModel, s.sttModel)
+
+        // A later paid verdict (e.g. the user upgraded and re-saved the key) clears the flag.
+        r.setFreeTierOnly(SttProvider.GEMINI, freeOnly = false)
+        assertTrue(r.settings.first().freeTierProviders.isEmpty())
     }
 
     @Test

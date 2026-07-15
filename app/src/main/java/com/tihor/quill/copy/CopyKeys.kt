@@ -50,6 +50,15 @@ object CopyKeys {
     const val KEY_FIELD_LABEL = "onboarding.key.field_label"
     const val KEY_CTA = "onboarding.key.cta"
     const val KEY_WHERE = "onboarding.key.where_link"
+    const val KEY_CONSOLE_BODY = "onboarding.key.console_body"
+    const val KEY_CONSOLE_FREE = "onboarding.key.console_free"
+    // Per-provider "how do I get this key" guide (shown before opening the provider's console).
+    const val KEY_GUIDE_TITLE = "onboarding.key.guide.title"
+    const val KEY_GUIDE_OPEN = "onboarding.key.guide.open"
+    const val KEY_GUIDE_GROQ_STEPS = "onboarding.key.guide.groq_steps"
+    const val KEY_GUIDE_OPENAI_STEPS = "onboarding.key.guide.openai_steps"
+    const val KEY_GUIDE_OPENROUTER_STEPS = "onboarding.key.guide.openrouter_steps"
+    const val KEY_GUIDE_GEMINI_STEPS = "onboarding.key.guide.gemini_steps"
     const val KEY_VERIFYING = "onboarding.key.verifying"
     const val KEY_VALID = "onboarding.key.valid"
     const val KEY_ERROR_INVALID = "key.error.invalid"
@@ -161,9 +170,18 @@ object CopyKeys {
     // Multi-provider picker (decision 1/4d/6)
     const val SETTINGS_MODEL_OPENAI_WHISPER_SUB = "settings.speech.model_openai_whisper_sub"
     const val SETTINGS_MODEL_OPENAI_MINI_SUB = "settings.speech.model_openai_mini_sub"
-    const val SETTINGS_MODEL_OPENROUTER_DEFAULT_SUB = "settings.speech.model_openrouter_default_sub"
+    const val SETTINGS_MODEL_OPENAI_4O_SUB = "settings.speech.model_openai_4o_sub"
+    const val SETTINGS_MODEL_OPENROUTER_VOXTRAL_SUB = "settings.speech.model_openrouter_voxtral_sub"
+    const val SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_MINI_SUB = "settings.speech.model_openrouter_gpt_audio_mini_sub"
+    const val SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_SUB = "settings.speech.model_openrouter_gpt_audio_sub"
+    const val SETTINGS_MODEL_OPENROUTER_GEMINI_FLASH_SUB = "settings.speech.model_openrouter_gemini_flash_sub"
+    const val SETTINGS_MODEL_OPENROUTER_GEMINI_LITE_SUB = "settings.speech.model_openrouter_gemini_lite_sub"
+    const val SETTINGS_MODEL_OPENROUTER_NEMOTRON_SUB = "settings.speech.model_openrouter_nemotron_sub"
+    const val SETTINGS_MODEL_OPENROUTER_MIMO_SUB = "settings.speech.model_openrouter_mimo_sub"
     const val SETTINGS_MODEL_GEMINI_LITE_SUB = "settings.speech.model_gemini_lite_sub"
     const val SETTINGS_MODEL_GEMINI_FLASH_SUB = "settings.speech.model_gemini_flash_sub"
+    const val SETTINGS_MODEL_GEMINI_PREVIEW_SUB = "settings.speech.model_gemini_preview_sub"
+    const val SETTINGS_MODEL_GEMINI_PRO_SUB = "settings.speech.model_gemini_pro_sub"
     const val SETTINGS_SPEECH_GEMINI_CAVEAT = "settings.speech.gemini_caveat"
     const val SETTINGS_SPEECH_KEY_REQUIRED = "settings.speech.key_required"
     const val SETTINGS_SPEECH_KEY_REQUIRED_CTA = "settings.speech.key_required_cta"
@@ -325,6 +343,9 @@ object CopyKeys {
     const val SETTINGS_SURVIVAL_OPEN = "settings.survival.open"
     const val SETTINGS_SURVIVAL_FALLBACK = "settings.survival.fallback"
 
+    // --- STT failure feedback (overridable) ---
+    const val STT_QUOTA_TOAST = "stt.quota.toast"
+
     // --- Overlay bubble + FGS notification (overridable) ---
     const val NOTIFICATION_ACTION_SHOW = "notification.action.show"
     const val NOTIFICATION_ACTION_STOP = "notification.action.stop"
@@ -406,8 +427,10 @@ object CopyKeys {
             CHECKLIST_TITLE, CHECKLIST_PROGRESS,
             CHECKLIST_KEY, CHECKLIST_KEY_SUB, CHECKLIST_MIC, CHECKLIST_MIC_SUB,
             CHECKLIST_OVERLAY, CHECKLIST_OVERLAY_SUB, CHECKLIST_ACCESSIBILITY, CHECKLIST_ACC_SUB, CHECKLIST_CTA,
-            KEY_TITLE, KEY_BODY, KEY_FIELD_LABEL, KEY_CTA, KEY_WHERE, KEY_VERIFYING, KEY_VALID,
-            KEY_ERROR_INVALID, KEY_ERROR_NETWORK,
+            KEY_TITLE, KEY_BODY, KEY_FIELD_LABEL, KEY_CTA, KEY_WHERE, KEY_CONSOLE_BODY, KEY_CONSOLE_FREE,
+            KEY_GUIDE_TITLE, KEY_GUIDE_OPEN, KEY_GUIDE_GROQ_STEPS, KEY_GUIDE_OPENAI_STEPS,
+            KEY_GUIDE_OPENROUTER_STEPS, KEY_GUIDE_GEMINI_STEPS,
+            KEY_VERIFYING, KEY_VALID, KEY_ERROR_INVALID, KEY_ERROR_NETWORK,
             MIC_TITLE, MIC_CTA, MICTEST_TITLE, MICTEST_BODY, MICTEST_CTA, MICTEST_HEARD,
             OVERLAY_TITLE, OVERLAY_CTA, ACC_ENABLE_TITLE, ACC_ENABLE_CTA,
             ALLSET_TITLE, ALLSET_BODY, ALLSET_CTA, ALLSET_LOOK, ALLSET_HOME_LINK,
@@ -432,8 +455,12 @@ object CopyKeys {
             SETTINGS_SPEECH_MODEL, SETTINGS_MODEL_TURBO_SUB, SETTINGS_MODEL_ACCURATE_SUB,
             SETTINGS_SPEECH_LANGUAGE, SETTINGS_LANG_EN, SETTINGS_LANG_AUTO, SETTINGS_LANG_HI,
             SETTINGS_LANGUAGE_HELP,
-            SETTINGS_MODEL_OPENAI_WHISPER_SUB, SETTINGS_MODEL_OPENAI_MINI_SUB,
-            SETTINGS_MODEL_OPENROUTER_DEFAULT_SUB, SETTINGS_MODEL_GEMINI_LITE_SUB, SETTINGS_MODEL_GEMINI_FLASH_SUB,
+            SETTINGS_MODEL_OPENAI_WHISPER_SUB, SETTINGS_MODEL_OPENAI_MINI_SUB, SETTINGS_MODEL_OPENAI_4O_SUB,
+            SETTINGS_MODEL_OPENROUTER_VOXTRAL_SUB, SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_MINI_SUB,
+            SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_SUB, SETTINGS_MODEL_OPENROUTER_GEMINI_FLASH_SUB,
+            SETTINGS_MODEL_OPENROUTER_GEMINI_LITE_SUB, SETTINGS_MODEL_OPENROUTER_NEMOTRON_SUB,
+            SETTINGS_MODEL_OPENROUTER_MIMO_SUB, SETTINGS_MODEL_GEMINI_LITE_SUB, SETTINGS_MODEL_GEMINI_FLASH_SUB,
+            SETTINGS_MODEL_GEMINI_PREVIEW_SUB, SETTINGS_MODEL_GEMINI_PRO_SUB,
             SETTINGS_SPEECH_GEMINI_CAVEAT, SETTINGS_SPEECH_KEY_REQUIRED, SETTINGS_SPEECH_KEY_REQUIRED_CTA,
             SETTINGS_SPEECH_MODEL_FIELD_LABEL, SETTINGS_SPEECH_MODEL_FIELD_HINT,
             SETTINGS_SPEECH_CUSTOM_URL_LABEL, SETTINGS_SPEECH_CUSTOM_URL_HINT,
@@ -487,6 +514,7 @@ object CopyKeys {
             INJECT_REENABLE_ACTION, HOME_BATTERY_TITLE, HOME_BATTERY_TEXT,
             SETTINGS_SURVIVAL_ROW, SETTINGS_SURVIVAL_TITLE, SETTINGS_SURVIVAL_BODY,
             SETTINGS_SURVIVAL_STEPS, SETTINGS_SURVIVAL_OPEN, SETTINGS_SURVIVAL_FALLBACK,
+            STT_QUOTA_TOAST,
             NOTIFICATION_ACTION_SHOW, NOTIFICATION_ACTION_STOP,
             NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
             NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,

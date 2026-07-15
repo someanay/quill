@@ -53,7 +53,9 @@ class OpenAiCompatibleTranscriptionClient(
                 when {
                     response.isSuccessful -> parse(payload)
                     response.code == 401 || response.code == 403 -> Result.failure(TranscriptionError.BadKey())
-                    response.code == 429 -> Result.failure(TranscriptionError.RateLimited())
+                    // OpenAI signals exhausted quota as 429 `insufficient_quota`; Groq's daily caps
+                    // are a plain 429 (no marker) and stay RateLimited.
+                    response.code == 429 -> Result.failure(TranscriptionError.fromTooManyRequests(payload))
                     else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(payload)))
                 }
             }

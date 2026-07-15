@@ -168,9 +168,10 @@ class GeminiTranscriptionClientTest {
     }
 
     @Test
-    fun http429_mapsToRateLimited() = runTest {
+    fun http429_mapsToQuotaExhausted() = runTest {
+        // Gemini's 429 is always RESOURCE_EXHAUSTED — quota semantics (free-tier caps included).
         server.enqueue(MockResponse().setResponseCode(429))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.RateLimited)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.QuotaExhausted)
     }
 
     @Test

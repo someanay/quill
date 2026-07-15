@@ -46,7 +46,7 @@ class OpenRouterTranscriptionClientTest {
     private fun audio(): File =
         File.createTempFile("quill_or", ".wav").apply { writeBytes(audioBytes) }
 
-    private val opts = TranscriptionOptions(model = "openai/whisper-large-v3-turbo", language = "en")
+    private val opts = TranscriptionOptions(model = OpenRouterTranscriptionClient.DEFAULT_MODEL, language = "en")
 
     @Test
     fun success_sendsJsonBase64Body_andParsesTranscript() = runTest {
@@ -64,7 +64,7 @@ class OpenRouterTranscriptionClientTest {
         assertTrue(req.getHeader("Content-Type")!!.startsWith("application/json"))
 
         val body = Json.parseToJsonElement(req.body.readUtf8()).jsonObject
-        assertEquals("openai/whisper-large-v3-turbo", body["model"]!!.jsonPrimitive.content)
+        assertEquals(OpenRouterTranscriptionClient.DEFAULT_MODEL, body["model"]!!.jsonPrimitive.content)
         assertEquals("en", body["language"]!!.jsonPrimitive.content)
         val inputAudio = body["input_audio"]!!.jsonObject
         assertEquals("wav", inputAudio["format"]!!.jsonPrimitive.content)
@@ -75,7 +75,7 @@ class OpenRouterTranscriptionClientTest {
     fun autoDetect_omitsLanguageField() = runTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("""{"text":"hi"}"""))
 
-        client().transcribe(audio(), TranscriptionOptions(model = "openai/whisper-large-v3-turbo", language = null))
+        client().transcribe(audio(), TranscriptionOptions(model = OpenRouterTranscriptionClient.DEFAULT_MODEL, language = null))
 
         val body = Json.parseToJsonElement(server.takeRequest().body.readUtf8()).jsonObject
         assertFalse("language must be omitted for auto-detect, not null", "language" in body)
@@ -103,6 +103,12 @@ class OpenRouterTranscriptionClientTest {
     fun http429_mapsToRateLimited() = runTest {
         server.enqueue(MockResponse().setResponseCode(429))
         assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.RateLimited)
+    }
+
+    @Test
+    fun http402_outOfCredits_mapsToQuotaExhausted() = runTest {
+        server.enqueue(MockResponse().setResponseCode(402).setBody("""{"error":{"message":"Insufficient credits"}}"""))
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.QuotaExhausted)
     }
 
     @Test

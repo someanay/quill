@@ -68,9 +68,10 @@ class SttProviderTest {
 
     @Test
     fun providerDefaults_matchVerifiedCatalogs() {
-        // Verified against live provider docs, 2026-07 (see the client KDocs).
+        // Verified against live provider docs, 2026-07 (see the client KDocs). OpenRouter delisted
+        // Whisper entirely (catalog check 2026-07-02) — Voxtral is its speech-focused replacement.
         assertEquals("whisper-1", SttProvider.OPENAI.defaultModel)
-        assertEquals("openai/whisper-large-v3-turbo", SttProvider.OPENROUTER.defaultModel)
+        assertEquals("mistralai/voxtral-small-24b-2507", SttProvider.OPENROUTER.defaultModel)
         assertEquals("gemini-3.1-flash-lite", SttProvider.GEMINI.defaultModel)
         assertEquals("", SttProvider.CUSTOM.defaultModel) // free-text, user-supplied
     }
@@ -95,12 +96,60 @@ class SttProviderTest {
     }
 
     @Test
+    fun everyProvider_hasAKeyMask_inItsOwnKeyFormat() {
+        // The entry-field placeholder must match the provider the key is FOR, not always Groq's.
+        SttProvider.entries.forEach { p -> assertTrue("${p.id} needs a key mask", p.keyMask.isNotBlank()) }
+        assertTrue(SttProvider.GROQ.keyMask.startsWith("gsk_"))
+        assertTrue(SttProvider.OPENAI.keyMask.startsWith("sk-"))
+        assertTrue(SttProvider.OPENROUTER.keyMask.startsWith("sk-or-"))
+        // Gemini keys come in two formats (AIza… from AI Studio, AQ.… from Cloud v2/Vertex express);
+        // the mask must show both so neither looks malformed.
+        assertTrue(SttProvider.GEMINI.keyMask.contains("AIza"))
+        assertTrue(SttProvider.GEMINI.keyMask.contains("AQ."))
+    }
+
+    @Test
+    fun geminiOnly_isTaggedFreeInTheConsoleChooser() {
+        assertTrue(SttProvider.GEMINI.keyConsoleFree)
+        SttProvider.entries.filter { it != SttProvider.GEMINI }.forEach { p ->
+            assertFalse("${p.id} must not carry the free tag", p.keyConsoleFree)
+        }
+    }
+
+    @Test
     fun modelChoices_deriveFromTheProvider() {
         // Decision 6: the screen renders provider.models, not hardcoded rows.
         assertEquals(listOf("whisper-large-v3-turbo", "whisper-large-v3"), SttProvider.GROQ.models.map { it.id })
-        assertEquals(listOf("whisper-1", "gpt-4o-mini-transcribe"), SttProvider.OPENAI.models.map { it.id })
-        assertEquals(listOf("openai/whisper-large-v3-turbo"), SttProvider.OPENROUTER.models.map { it.id })
-        assertEquals(listOf("gemini-3.1-flash-lite", "gemini-3.5-flash"), SttProvider.GEMINI.models.map { it.id })
+        assertEquals(
+            listOf("whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"),
+            SttProvider.OPENAI.models.map { it.id },
+        )
+        // OpenRouter: every audio-input model in the live catalog (2026-07-02), Voxtral first as
+        // the default; the free Nemotron ships labeled free/lower-accuracy in its subtitle copy.
+        assertEquals(
+            listOf(
+                "mistralai/voxtral-small-24b-2507",
+                "openai/gpt-audio-mini",
+                "openai/gpt-audio",
+                "google/gemini-3.5-flash",
+                "google/gemini-3.1-flash-lite",
+                "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+                "xiaomi/mimo-v2.5",
+            ),
+            SttProvider.OPENROUTER.models.map { it.id },
+        )
+        // Gemini: current-gen REST audio models only — 2.5-series is shutdown-dated (2026-10-16)
+        // and Live models (gemini-*-live-*) are WebSocket-only, never valid for generateContent.
+        assertEquals(
+            listOf("gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.1-pro-preview"),
+            SttProvider.GEMINI.models.map { it.id },
+        )
+        assertTrue(SttProvider.GEMINI.models.none { it.id.contains("live") })
+        // Only Gemini's pro-preview lacks a free tier; the picker hides it for free-tier keys.
+        assertEquals(
+            listOf("gemini-3.1-pro-preview"),
+            SttProvider.entries.flatMap { p -> p.models.filter { it.paidOnly } }.map { it.id },
+        )
         assertTrue(SttProvider.CUSTOM.models.isEmpty())
         // Free-text model entry: OpenRouter's catalog is huge; Custom is user-defined.
         assertTrue(SttProvider.OPENROUTER.freeTextModel)

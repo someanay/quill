@@ -58,6 +58,32 @@ class KeyValidator(
         }
     }
 
+    /**
+     * Probes whether [key] can use a paid-only [model] (e.g. `gemini-3.1-pro-preview`, which has no
+     * free tier). A free-tier key gets 429 RESOURCE_EXHAUSTED (limit 0) → `false`; a working call →
+     * `true`; anything inconclusive (offline, provider hiccup) → `null` so the caller leaves the
+     * stored answer unchanged rather than hiding capability on bad evidence.
+     */
+    suspend fun hasPaidAccess(
+        provider: SttProvider,
+        key: String,
+        model: String,
+        customBaseUrl: String? = null,
+    ): Boolean? {
+        val wav = tinySilentWav()
+        return try {
+            val result = clientFactory(provider, { key }, customBaseUrl)
+                .transcribe(wav, TranscriptionOptions(model = model))
+            when {
+                result.isSuccess -> true
+                result.exceptionOrNull() is TranscriptionError.QuotaExhausted -> false
+                else -> null
+            }
+        } finally {
+            wav.delete()
+        }
+    }
+
     private fun tinySilentWav(): File {
         val sampleRate = 16000
         val durationMs = 400

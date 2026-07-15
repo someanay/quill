@@ -342,9 +342,14 @@ fun SpeechModelScreen(nav: QuillNav) {
         }
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
-        if (settings.provider.models.isNotEmpty()) {
+        // Paid-only models are hidden once the key-save probe confirmed this provider's key is
+        // free-tier-only — no point offering a model the key can't run.
+        val visibleModels = settings.provider.models.filter {
+            !it.paidOnly || settings.provider.id !in settings.freeTierProviders
+        }
+        if (visibleModels.isNotEmpty()) {
             QuillListContainer {
-                settings.provider.models.forEachIndexed { i, model ->
+                visibleModels.forEachIndexed { i, model ->
                     if (i > 0) RowDivider()
                     ModelRow(
                         model.id, copy(model.subtitleKey), // model ids are copy-exempt
@@ -463,8 +468,6 @@ private fun CustomEndpointFields(settings: QuillSettings, repo: SettingsReposito
 // C3 — API keys
 // ============================================================================
 
-private const val KEY_MASK = "gsk_••••••••••••••••" // copy-exempt
-
 private enum class KeyEntryState { IDLE, CHECKING, REJECTED }
 
 @Composable
@@ -478,6 +481,10 @@ fun ApiKeysScreen(nav: QuillNav) {
     val stored = remember(revision) { SttProvider.selectable().filter { sttKeys.has(it) } }
     // The provider the inline entry form is open for (null = closed).
     var addingFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var showConsoles by rememberSaveable { mutableStateOf(false) }
+    if (showConsoles) {
+        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
+    }
 
     DetailScaffold(copy(K.SETTINGS_KEYS_TITLE), nav) {
         val adding = addingFor
@@ -507,6 +514,10 @@ fun ApiKeysScreen(nav: QuillNav) {
                         leadingIcon = Icons.Rounded.Key,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Spacer(Modifier.height(6.dp))
+                    TextButton(onClick = { showConsoles = true }) {
+                        Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
+                    }
                 }
             }
         } else {
@@ -530,6 +541,9 @@ fun ApiKeysScreen(nav: QuillNav) {
                 copy(K.SETTINGS_KEYS_ADD), onClick = { addingFor = settings.provider.id },
                 leadingIcon = Icons.Rounded.Key,
             )
+            TextButton(onClick = { showConsoles = true }) {
+                Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
+            }
             HelpText(copy(K.SETTINGS_KEYS_HELP))
         }
     }
@@ -559,6 +573,10 @@ private fun ColumnScope.ApiKeyEntry(
     var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
     var reveal by rememberSaveable { mutableStateOf(false) }
     var state by remember { mutableStateOf(KeyEntryState.IDLE) }
+    var showConsoles by rememberSaveable { mutableStateOf(false) }
+    if (showConsoles) {
+        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
+    }
 
     Spacer(Modifier.height(8.dp))
     FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER))
@@ -582,7 +600,7 @@ private fun ColumnScope.ApiKeyEntry(
         onValueChange = { key = it; state = KeyEntryState.IDLE },
         singleLine = true,
         isError = state == KeyEntryState.REJECTED,
-        placeholder = { Text(KEY_MASK, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
+        placeholder = { Text(provider.keyMask, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
         leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
         trailingIcon = {
             IconButton(onClick = { reveal = !reveal }) {
@@ -599,14 +617,14 @@ private fun ColumnScope.ApiKeyEntry(
         modifier = Modifier.fillMaxWidth(),
     )
 
-    val consoleUrl = provider.keyConsoleUrl
     if (state == KeyEntryState.REJECTED) {
         HelpText(copy(K.KEY_ERROR_INVALID), bad = true)
-    } else if (consoleUrl != null) { // hidden for Custom — the endpoint is the user's own
+    } else if (provider.keyConsoleUrl != null) { // hidden for Custom — the endpoint is the user's own
         Spacer(Modifier.height(6.dp))
-        TextButton(onClick = {
-            context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(consoleUrl)))
-        }) { Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk) }
+        // Opens the all-providers console chooser, not just the selected provider's page.
+        TextButton(onClick = { showConsoles = true }) {
+            Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
+        }
     }
 
     Spacer(Modifier.height(16.dp))
@@ -628,7 +646,10 @@ private fun ColumnScope.ApiKeyEntry(
                 }
                 when (result) {
                     // Valid or unverified (network/other) both persist; only a hard reject blocks.
-                    KeyValidation.Valid, is KeyValidation.Unverified -> onSaved()
+                    KeyValidation.Valid, is KeyValidation.Unverified -> {
+                        probePaidAccess(provider, trimmed, validator, settingsRepo, verified = result == KeyValidation.Valid)
+                        onSaved()
+                    }
                     KeyValidation.Rejected -> {
                         sttKeys.clear(provider)
                         state = KeyEntryState.REJECTED
@@ -648,6 +669,24 @@ private fun ColumnScope.ApiKeyEntry(
         TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(copy(K.ACTION_CANCEL)) }
     }
     HelpText(copy(K.SETTINGS_KEYS_HELP))
+}
+
+/**
+ * After a key saves, probe whether it can use the provider's paid-only models (Gemini's
+ * pro-preview) and persist the verdict so the model picker hides what the key can't run. Skipped
+ * when the key itself couldn't be verified (offline) — the probe would be equally inconclusive.
+ */
+private suspend fun probePaidAccess(
+    provider: SttProvider,
+    key: String,
+    validator: KeyValidator,
+    settingsRepo: SettingsRepository,
+    verified: Boolean,
+) {
+    if (!verified) return
+    val paidModel = provider.models.firstOrNull { it.paidOnly }?.id ?: return
+    withContext(Dispatchers.IO) { validator.hasPaidAccess(provider, key, paidModel) }
+        ?.let { has -> settingsRepo.setFreeTierOnly(provider, freeOnly = !has) }
 }
 
 @Composable

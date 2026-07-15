@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -73,6 +74,11 @@ data class QuillSettings(
      * battery-exemption re-prompt (only re-ask once a kill has actually happened); cleared on grant.
      */
     val bubbleWasKilled: Boolean = false,
+    /**
+     * Provider ids whose stored key was probed as **free-tier-only** at key-save time (no paid
+     * access). The model picker hides [ProviderModel.paidOnly] models for these providers.
+     */
+    val freeTierProviders: Set<String> = emptySet(),
 ) {
     companion object {
         const val DEFAULT_LANGUAGE = "en"
@@ -120,6 +126,7 @@ class SettingsRepository(private val context: Context) {
             bubbleVisible = p[Keys.BUBBLE_VISIBLE] ?: true,
             crashReportingEnabled = p[Keys.CRASH_REPORTING] ?: false,
             bubbleWasKilled = p[Keys.BUBBLE_WAS_KILLED] ?: false,
+            freeTierProviders = p[Keys.FREE_TIER_PROVIDERS] ?: emptySet(),
         )
     }
 
@@ -195,6 +202,23 @@ class SettingsRepository(private val context: Context) {
     suspend fun setBubbleWasKilled(killed: Boolean) =
         context.settingsDataStore.edit { it[Keys.BUBBLE_WAS_KILLED] = killed }
 
+    /**
+     * Record the key-save probe's verdict on paid access for [provider] (see
+     * `KeyValidator.hasPaidAccess`; callers skip this entirely on an inconclusive probe). Marking a
+     * provider free-tier-only also deselects a now-hidden paid-only model, falling back to the
+     * provider default so the active model is never one the picker refuses to show.
+     */
+    suspend fun setFreeTierOnly(provider: SttProvider, freeOnly: Boolean) =
+        context.settingsDataStore.edit { prefs ->
+            val current = prefs[Keys.FREE_TIER_PROVIDERS] ?: emptySet()
+            prefs[Keys.FREE_TIER_PROVIDERS] = if (freeOnly) current + provider.id else current - provider.id
+            if (freeOnly && SttProvider.fromId(prefs[Keys.PROVIDER]) == provider &&
+                provider.models.any { it.paidOnly && it.id == prefs[Keys.STT_MODEL] }
+            ) {
+                prefs[Keys.STT_MODEL] = provider.defaultModel
+            }
+        }
+
     /** Full wipe: every preference reverts to its default (incl. onboarding). For "clear all data". */
     suspend fun clear() {
         visibilityMirror.visible = true // keep the mirror in lockstep with the DataStore default
@@ -233,5 +257,6 @@ class SettingsRepository(private val context: Context) {
         val BUBBLE_VISIBLE = booleanPreferencesKey("bubble_visible")
         val CRASH_REPORTING = booleanPreferencesKey("crash_reporting")
         val BUBBLE_WAS_KILLED = booleanPreferencesKey("bubble_was_killed")
+        val FREE_TIER_PROVIDERS = stringSetPreferencesKey("free_tier_providers")
     }
 }

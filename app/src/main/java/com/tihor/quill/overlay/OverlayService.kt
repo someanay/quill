@@ -48,6 +48,7 @@ import com.tihor.quill.cleanup.CleanupKeyPolicy
 import com.tihor.quill.cleanup.CleanupPipeline
 import com.tihor.quill.stt.OpenAiCompatibleTranscriptionClient
 import com.tihor.quill.stt.RomanizePrompt
+import com.tihor.quill.stt.TranscriptionError
 import com.tihor.quill.stt.TranscriptionOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -711,6 +712,11 @@ class OverlayService : Service() {
                 },
                 onFailure = { err ->
                     Log.w(TAG, "Transcription failed: ${err.message}") // keep WAV for retry
+                    // Exhausted plan/credits (and Groq's indistinguishable daily-cap 429) get an
+                    // explicit toast — a silent ERROR bubble reads as "the app broke", not "top up".
+                    if (err is TranscriptionError.QuotaExhausted || err is TranscriptionError.RateLimited) {
+                        toast(Copy.repository(this@OverlayService).get(CopyKeys.STT_QUOTA_TOAST))
+                    }
                     applyState(BubbleState.ERROR)
                 },
             )

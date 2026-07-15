@@ -33,7 +33,7 @@ import java.util.Base64
  *    return exactly what the model said. The picker sets honest expectations with a caveat line.
  *
  * Error mapping is Gemini-shaped: an invalid key surfaces as **HTTP 400 with `API_KEY_INVALID`**
- * (not 401) → [TranscriptionError.BadKey]; 429 → [TranscriptionError.RateLimited].
+ * (not 401) → [TranscriptionError.BadKey]; 429 (RESOURCE_EXHAUSTED) → [TranscriptionError.QuotaExhausted].
  *
  * The language hint has no request field here — it is folded into the prompt (decision 7), along
  * with [TranscriptionOptions.prompt] (the Hinglish romanization seed) as style guidance.
@@ -116,7 +116,9 @@ class GeminiTranscriptionClient(
                     // Gemini reports an invalid key as 400 API_KEY_INVALID, not 401 (decision: map to BadKey).
                     response.code == 400 && body.contains("API_KEY_INVALID") ->
                         Result.failure(TranscriptionError.BadKey())
-                    response.code == 429 -> Result.failure(TranscriptionError.RateLimited())
+                    // Gemini's 429 is always RESOURCE_EXHAUSTED (quota semantics — free-tier caps
+                    // included), so it maps to QuotaExhausted, not a burst rate limit.
+                    response.code == 429 -> Result.failure(TranscriptionError.QuotaExhausted())
                     else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(body)))
                 }
             }

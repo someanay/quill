@@ -20,13 +20,13 @@ import java.util.Base64
  * `input_audio` contract — not multipart form-data (verified against openrouter.ai/docs, 2026-07):
  *
  * ```json
- * {"model": "openai/whisper-large-v3-turbo",
+ * {"model": "mistralai/voxtral-small-24b-2507",
  *  "input_audio": {"data": "<base64 raw bytes>", "format": "wav"},
  *  "language": "en"}   // optional ISO-639-1; omitted for auto-detect
  * ```
  *
  * Response is `{"text": "...", "usage": {...}}` — parsed with the shared [TranscriptionResponse].
- * Model ids are namespaced (`openai/whisper-large-v3-turbo`). [TranscriptionOptions.prompt] is not
+ * Model ids are namespaced (`mistralai/voxtral-small-24b-2507`). [TranscriptionOptions.prompt] is not
  * part of the top-level contract and is ignored. The key is read lazily via [apiKey] so it lives in
  * memory only for the call and is never logged (spec §6).
  */
@@ -75,7 +75,9 @@ class OpenRouterTranscriptionClient(
                 when {
                     response.isSuccessful -> parse(body)
                     response.code == 401 || response.code == 403 -> Result.failure(TranscriptionError.BadKey())
-                    response.code == 429 -> Result.failure(TranscriptionError.RateLimited())
+                    // OpenRouter returns 402 Payment Required when the account's credits run out.
+                    response.code == 402 -> Result.failure(TranscriptionError.QuotaExhausted())
+                    response.code == 429 -> Result.failure(TranscriptionError.fromTooManyRequests(body))
                     else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(body)))
                 }
             }
@@ -100,6 +102,10 @@ class OpenRouterTranscriptionClient(
         private val JSON_MEDIA = "application/json".toMediaType()
 
         const val BASE_URL = "https://openrouter.ai/api/v1"
-        const val DEFAULT_MODEL = "openai/whisper-large-v3-turbo"
+
+        // OpenRouter delisted every Whisper model (catalog check 2026-07-02: 0 whisper entries of
+        // 338 models) — the old openai/whisper-large-v3-turbo default now fails with "model not
+        // found". Voxtral is the remaining speech-focused model on the platform.
+        const val DEFAULT_MODEL = "mistralai/voxtral-small-24b-2507"
     }
 }
