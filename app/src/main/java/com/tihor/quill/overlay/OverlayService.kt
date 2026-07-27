@@ -1,5 +1,7 @@
 package com.tihor.quill.overlay
 
+import android.animation.Animator
+import android.animation.ValueAnimator
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -14,6 +16,10 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.PixelFormat
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -23,6 +29,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.tihor.quill.BuildConfig
@@ -78,8 +85,28 @@ class OverlayService : Service() {
     private lateinit var captionParams: WindowManager.LayoutParams
     private var cancelButton: CancelButtonView? = null
     private lateinit var cancelParams: WindowManager.LayoutParams
+    private var binTarget: BinTargetView? = null
+    private lateinit var binParams: WindowManager.LayoutParams
     private var recordSeconds = 0
     private var sensitiveActive = false
+
+    /** The running "fly into the bin" animation, held so a new drag / teardown can interrupt it. */
+    private var dismissAnimator: ValueAnimator? = null
+
+    /**
+     * Set just before the [autoReturn] timer writes `visible = true`, so [applyVisibility] can tell an
+     * automatic return from a user-initiated summon and explain itself with a toast. Consumed on read.
+     */
+    private var autoReturnFired = false
+
+    /**
+     * Set by [onBubbleDragEnd] just before it hides, so [applyVisibility] can tell a **transient**
+     * drag-dismiss from a **deliberate** hide. Only the former arms [autoReturn]: flicking the bubble
+     * into the bin means "not right now", but switching the Home master toggle off is a stated
+     * preference, and a preference that silently flips itself back on ten minutes later isn't a
+     * preference. Same respect-the-user's-intent line M11 draws around a force-stop. Consumed on read.
+     */
+    private var hiddenByDrag = false
 
     /** True while a long-press dictation is in flight — the transcript goes to the clipboard, not a field. */
     private var clipboardMode = false
@@ -123,6 +150,35 @@ class OverlayService : Service() {
     private val customWordsStore by lazy { CustomWordsStore(this) }
     private val historyRepository by lazy { HistoryRepository(this) }
     private val visibilityStore by lazy { BubbleVisibilityStore(this) }
+
+    /**
+     * v1.1 auto-return: a hidden bubble comes back on its own after [AutoReturn.DEFAULT_DELAY_MS].
+     * Runs on the service's own [scope] — the FGS stays alive while hidden (Option A), so this needs
+     * no AlarmManager and therefore no Play-restricted alarm permission (see [AutoReturn]).
+     */
+    private val autoReturn by lazy {
+        AutoReturn(scope) {
+            autoReturnFired = true
+            settingsRepository.setBubbleVisible(true)
+        }
+    }
+
+    // --- v1.1 shake-to-summon: only listening while the bubble is hidden ---
+    private val sensorManager: SensorManager? by lazy { getSystemService(SensorManager::class.java) }
+    private val shakeDetector = ShakeDetector()
+    private var shakeListening = false
+    private val shakeListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            // SensorEvent.timestamp is nanos on a monotonic clock; ShakeDetector wants millis.
+            val whenMs = event.timestamp / 1_000_000L
+            if (shakeDetector.onSample(event.values[0], event.values[1], event.values[2], whenMs)) {
+                Log.i(TAG, "Shake detected — summoning the bubble.")
+                scope.launch { settingsRepository.setBubbleVisible(true) }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+    }
 
     /** Last-applied notification state, so [refreshNotification] re-posts the correct title/text. */
     private var micActive = false
@@ -188,11 +244,25 @@ class OverlayService : Service() {
      * Apply the unified visibility state to the bubble window. Hiding is **not** stopping: the FGS and
      * its notification stay up (the notification's "Show Quill" action is the way back). Re-posts the
      * notification so its title/text reflect shown vs hidden.
+     *
+     * This is also the single arm/disarm point for both v1.1 return paths — the ~10-minute
+     * [autoReturn] timer and the shake listener. Because *every* show/hide funnels through
+     * [SettingsRepository.setBubbleVisible] → the visibility Flow → here, hooking them at this one
+     * place means no entry point can leave a stacked timer or a sensor running behind it: showing
+     * always cancels + unregisters, hiding always registers the sensor.
+     *
+     * The timer is the one asymmetric part: it arms only for a **transient** hide (a drag into the
+     * bin, flagged by [hiddenByDrag]), never for a deliberate one (the Home master toggle). Shake
+     * stays available either way — that's the user asking for it back, not the app deciding.
      */
     private fun applyVisibility(visible: Boolean) {
         currentVisible = visible
         bubble?.let { view ->
             if (visible) {
+                // Undo any dismiss transform *before* showing: a summon that lands while a
+                // fly-into-bin is still running would otherwise reveal a half-shrunk bubble.
+                cancelDismissAnimation()
+                resetDismissTransform()
                 view.visibility = View.VISIBLE
                 applyAppearance()
                 applyState(BubbleState.IDLE) // summon/show returns to the idle baseline
@@ -202,8 +272,26 @@ class OverlayService : Service() {
                 view.visibility = View.GONE
                 caption?.visibility = View.GONE
                 cancelButton?.visibility = View.GONE
+                // The bubble is off-screen now, so undoing the fly-into-bin transform can't flash.
+                resetDismissTransform()
             }
         }
+        if (visible) {
+            autoReturn.cancel()   // any early summon (notification / Home toggle / shake) disarms it
+            stopShakeListening()
+            if (autoReturnFired) {
+                autoReturnFired = false
+                toast(Copy.repository(this).get(CopyKeys.BUBBLE_AUTORETURN_TOAST))
+            }
+        } else {
+            val transient = hiddenByDrag
+            hiddenByDrag = false
+            // Drag-dismiss → come back on your own. Home toggle off (and a hidden-state restore after
+            // an OEM kill, which also lands here with the flag clear) → stay gone until asked.
+            if (transient) autoReturn.schedule() else autoReturn.cancel()
+            startShakeListening()
+        }
+        hideBinTarget(animate = false)
         refreshNotification()
     }
 
@@ -333,7 +421,8 @@ class OverlayService : Service() {
      * Build the single FGS notification. Content reflects state (recording / hidden / active). Both
      * actions are always present: "Show Quill" ([ACTION_SHOW]) summons a hidden bubble back (no-op when
      * shown) — the reliable way back, no timer/sensor; "Dismiss bubble" ([ACTION_STOP]) is the explicit
-     * full-stop (distinct from hide). All strings soft-coded (OVERRIDABLE).
+     * full-stop (distinct from hide). **Tapping the body** also summons the bubble (same [ACTION_SHOW],
+     * not a MainActivity launch) and must not dismiss the ongoing notification. All strings soft-coded.
      */
     private fun buildNotification(microphone: Boolean, visible: Boolean): android.app.Notification {
         val copy = Copy.repository(this)
@@ -350,11 +439,19 @@ class OverlayService : Service() {
             this, 0, Intent(this, OverlayService::class.java).setAction(ACTION_STOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
+        // Body tap → summon the bubble (same ACTION_SHOW), without opening the app. Distinct requestCode
+        // from the action button (2) so the two PendingIntents don't collide.
+        val bodyPending = PendingIntent.getService(
+            this, 3, Intent(this, OverlayService::class.java).setAction(ACTION_SHOW),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(copy.get(titleKey))
             .setContentText(copy.get(textKey))
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
+            .setContentIntent(bodyPending)
+            .setAutoCancel(false) // ongoing FGS notification: a body tap summons, never dismisses it
             .addAction(0, copy.get(CopyKeys.NOTIFICATION_ACTION_SHOW), showPending)
             .addAction(0, copy.get(CopyKeys.NOTIFICATION_ACTION_STOP), stopPending)
             .build()
@@ -369,6 +466,12 @@ class OverlayService : Service() {
                 settingsRepository.setBubbleActive(false)
                 settingsRepository.setBubbleVisible(false)
             }
+            // A full-stop must not leave a v1.1 return path armed: the auto-return timer would try to
+            // re-show a bubble the user explicitly dismissed, and the sensor would keep draining.
+            // onDestroy repeats both (scope.cancel also kills the timer) — this just makes the
+            // intent explicit at the one place "hidden" and "stopped" mean different things.
+            autoReturn.cancel()
+            stopShakeListening()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -389,8 +492,8 @@ class OverlayService : Service() {
         val view = BubbleView(this)
         view.onTap = { onBubbleTap(view) }
         view.onLongPress = { onBubbleLongPress(view) }  // long-press dictates to the clipboard
-        view.onDragStart = {}
-        view.onDrag = { dx, dy -> moveBy(dx, dy) }
+        view.onDragStart = { onBubbleDragStart() }
+        view.onDrag = { dx, dy -> moveBy(dx, dy); updateBinTarget() }
         view.onDragEnd = { onBubbleDragEnd() }
 
         val (sw, sh) = screenSize()
@@ -435,6 +538,32 @@ class OverlayService : Service() {
         windowManager.addView(cancel, cancelParams)
         cancelButton = cancel
 
+        // Drag-to-dismiss bin target (v1.1). Added **once here** and removed in onDestroy alongside
+        // the other overlay windows — never added/removed per drag — so there is no path (including
+        // the service being killed mid-drag) that can leak the window. It stays GONE until a drag
+        // brings the bubble near the bottom. NOT_TOUCHABLE as well as NOT_FOCUSABLE: it sits under
+        // the user's finger during exactly the gesture it's reacting to and must never steal it.
+        val copy = Copy.repository(this)
+        val bin = BinTargetView(
+            this,
+            label = copy.get(CopyKeys.BUBBLE_BIN_LABEL),
+            activeLabel = copy.get(CopyKeys.BUBBLE_BIN_LABEL_ACTIVE),
+        )
+        binParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            PixelFormat.TRANSLUCENT,
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = ((sw - bin.viewWidth) / 2).coerceAtLeast(0)   // bottom-centre
+            y = (sh - dpx(BIN_BOTTOM_MARGIN_DP) - bin.viewHeight).coerceAtLeast(0)
+        }
+        bin.visibility = View.GONE
+        windowManager.addView(bin, binParams)
+        binTarget = bin
+
         // Honour the persisted visibility across a service restart (START_STICKY / boot / foreground
         // recovery): a bubble the user hid stays hidden until summoned. Read synchronously from the
         // mirror so there's no flash before the visibility Flow delivers its first value.
@@ -444,23 +573,185 @@ class OverlayService : Service() {
         Log.i(TAG, "Bubble added at x=${params.x} y=${params.y} visible=$currentVisible")
     }
 
+    /** A fresh drag always cancels a fly-into-bin still settling from the previous one. */
+    private fun onBubbleDragStart() {
+        cancelDismissAnimation()
+        resetDismissTransform()
+    }
+
+    /**
+     * The bubble's visible bottom edge in window coordinates — what the dismiss-zone / proximity maths
+     * are measured against (excludes the transparent halo + shadow padding, so the threshold matches
+     * what the user actually sees).
+     */
+    private fun bubbleBottomY(view: BubbleView): Int = params.y + view.viewSize - view.contentInset
+
+    /**
+     * Called on every drag move: fade/grow the bin target in as the bubble nears the bottom, and
+     * "activate" it (red + pop) once releasing would genuinely hide the bubble — so the outcome is
+     * visible *before* the user lets go.
+     */
+    private fun updateBinTarget() {
+        val view = bubble ?: return
+        val bin = binTarget ?: return
+        val (_, sh) = screenSize()
+        val bottom = bubbleBottomY(view)
+        val proximity = BubbleGeometry.dismissProximity(
+            bubbleBottomY = bottom,
+            screenHeight = sh,
+            thresholdPx = dpx(DISMISS_ZONE_DP),
+            approachPx = dpx(BIN_APPROACH_DP),
+        )
+        bin.progress = proximity
+        bin.active = BubbleGeometry.isInDismissZone(bottom, sh, dpx(DISMISS_ZONE_DP))
+        bin.visibility = if (proximity > 0f) View.VISIBLE else View.GONE
+    }
+
     /**
      * Drag-release decision (this service owns the window position): if the bubble's visible bottom
-     * edge landed in the bottom dismiss zone, hide it (Wispr-Flow-style); otherwise edge-snap as usual.
+     * edge landed in the bottom dismiss zone, animate it into the bin and hide it (Wispr-Flow-style);
+     * otherwise fade the bin out and edge-snap as usual.
      */
     private fun onBubbleDragEnd() {
         val view = bubble ?: return
         val (_, sh) = screenSize()
-        val bubbleBottomY = params.y + view.viewSize - view.contentInset
-        if (BubbleGeometry.isInDismissZone(bubbleBottomY, sh, dpx(DISMISS_ZONE_DP))) {
+        if (BubbleGeometry.isInDismissZone(bubbleBottomY(view), sh, dpx(DISMISS_ZONE_DP))) {
             // Hide, don't stop: write the unified visibility state. The observer hides the view, the
-            // Home toggle reflects "off" live, and the FGS + notification stay up for summon. No timer /
-            // sensor (auto-return + shake-to-summon are deferred to v1.1, see todo.md).
-            toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
-            scope.launch { settingsRepository.setBubbleVisible(false) }
+            // Home toggle reflects "off" live, the FGS + notification stay up for summon, and
+            // applyVisibility arms the auto-return timer + shake listener.
+            animateIntoBin {
+                hideBinTarget(animate = false)
+                toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
+                // Flag first: this is the *transient* hide, the only one that earns an auto-return.
+                hiddenByDrag = true
+                scope.launch { settingsRepository.setBubbleVisible(false) }
+            }
         } else {
+            hideBinTarget(animate = true)
             snapToEdge()
         }
+    }
+
+    /** The bin target circle's centre in screen coordinates — where a dismissed bubble flies to. */
+    private fun binCenter(): Pair<Float, Float> {
+        val bin = binTarget
+        val (sw, sh) = screenSize()
+        if (bin == null) return sw / 2f to (sh - dpx(BIN_BOTTOM_MARGIN_DP)).toFloat()
+        return (binParams.x + bin.viewWidth / 2f) to (binParams.y + bin.circleCenterY).toFloat()
+    }
+
+    /**
+     * Short "sucked into the bin" animation: the bubble's window slides toward the bin centre while
+     * the view scales down, then [onEnd] hides it for real.
+     *
+     * Two deliberate choices here. **Only scale + window position are animated — never `alpha`**: the
+     * bubble's alpha already has an owner (the sensitive-field dimmer in [onSensitiveField] sets
+     * 0.45), and a second consumer would fight it, e.g. leaving the bubble permanently at 45 % if a
+     * password field gained focus mid-animation. Shrinking to nothing reads the same. And it's the
+     * **window** that moves, not `translationX/Y`: the bubble's window is `WRAP_CONTENT`-sized to the
+     * view, so a translation would simply clip at the window's edge, whereas scaling shrinks inward
+     * and is safe.
+     *
+     * Interruptible: [cancelDismissAnimation] (a new drag, a show, teardown) still runs [onEnd]-free
+     * and [resetDismissTransform] puts the bubble back, so a cancelled dismiss never strands a
+     * half-shrunk bubble.
+     */
+    private fun animateIntoBin(onEnd: () -> Unit) {
+        val view = bubble ?: return onEnd()
+        cancelDismissAnimation()
+        val startX = params.x
+        val startY = params.y
+        val (binCx, binCy) = binCenter()
+        val targetX = (binCx - view.viewSize / 2f)
+        val targetY = (binCy - view.viewSize / 2f)
+        dismissAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = DISMISS_ANIM_MS
+            interpolator = AccelerateInterpolator(1.4f)
+            addUpdateListener { anim ->
+                val t = anim.animatedValue as Float
+                params.x = (startX + (targetX - startX) * t).toInt()
+                params.y = (startY + (targetY - startY) * t).toInt()
+                val scale = 1f - DISMISS_SHRINK * t
+                view.scaleX = scale
+                view.scaleY = scale
+                runCatching { windowManager.updateViewLayout(view, params) }
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) { cancelled = true }
+                override fun onAnimationEnd(animation: Animator) {
+                    dismissAnimator = null
+                    // Restore the pre-dismiss position (edge-snapped) so summoning brings the bubble
+                    // back where the user left it rather than stranded at the bin. Safe to do while
+                    // it's still visible-but-tiny: applyVisibility's GONE lands within a frame or two.
+                    params.y = startY
+                    params.x = BubbleGeometry.snapTargetX(startX, view.viewSize, screenSize().first)
+                    if (!cancelled) onEnd()
+                }
+            })
+            start()
+        }
+    }
+
+    private fun cancelDismissAnimation() {
+        dismissAnimator?.cancel()
+        dismissAnimator = null
+    }
+
+    /** Undo the fly-into-bin transform so the bubble is full-size again the next time it's shown. */
+    private fun resetDismissTransform() {
+        val view = bubble ?: return
+        view.scaleX = 1f
+        view.scaleY = 1f
+        runCatching { windowManager.updateViewLayout(view, params) }
+    }
+
+    /** Retire the bin target — fading out on a released-outside-the-zone drag, instantly otherwise. */
+    private fun hideBinTarget(animate: Boolean) {
+        val bin = binTarget ?: return
+        bin.active = false
+        if (!animate || bin.visibility != View.VISIBLE) {
+            bin.progress = 0f
+            bin.visibility = View.GONE
+            return
+        }
+        val from = bin.progress
+        ValueAnimator.ofFloat(from, 0f).apply {
+            duration = BIN_FADE_MS
+            addUpdateListener { bin.progress = it.animatedValue as Float }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    if (bin.progress <= 0f) bin.visibility = View.GONE
+                }
+            })
+            start()
+        }
+    }
+
+    // --- v1.1 shake-to-summon ---
+
+    /**
+     * Start listening for a summon shake. Registered **only while the bubble is hidden** (see
+     * [applyVisibility]) — an accelerometer left running while the bubble is perfectly visible would
+     * be pure battery cost for nothing. `SENSOR_DELAY_UI` (~60 ms) is plenty to resolve a 3–5 Hz
+     * shake; `SENSOR_DELAY_FASTEST` would just burn power.
+     */
+    private fun startShakeListening() {
+        if (shakeListening) return
+        val manager = sensorManager ?: return
+        val accelerometer = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) ?: run {
+            Log.i(TAG, "No accelerometer on this device — shake-to-summon unavailable.")
+            return
+        }
+        shakeDetector.reset() // never carry a half-finished sequence across a hide
+        shakeListening = manager.registerListener(shakeListener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+    }
+
+    private fun stopShakeListening() {
+        if (!shakeListening) return
+        runCatching { sensorManager?.unregisterListener(shakeListener) }
+        shakeListening = false
+        shakeDetector.reset()
     }
 
     /** Drive the bubble state, its caption, and the Cancel button together (board E). */
@@ -866,6 +1157,11 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         isRunning = false
+        // v1.1 teardown first: disarm the auto-return, release the accelerometer, and stop any
+        // in-flight dismiss animation before the windows it drives are torn down.
+        autoReturn.cancel()
+        stopShakeListening()
+        cancelDismissAnimation()
         runCatching { scope.cancel() }
         QuillAccessibilityService.sensitiveListener = null
         stopTimer()
@@ -874,6 +1170,8 @@ class OverlayService : Service() {
         debugReceiver?.let { runCatching { unregisterReceiver(it) } }
         debugReceiver = null
         runCatching { audioRecorder.stop() }
+        binTarget?.let { runCatching { windowManager.removeView(it) } }
+        binTarget = null
         cancelButton?.let { runCatching { windowManager.removeView(it) } }
         cancelButton = null
         caption?.let { runCatching { windowManager.removeView(it) } }
@@ -903,6 +1201,25 @@ class OverlayService : Service() {
 
         /** Drag-release within this many dp of the screen's bottom edge dismisses (hides) the bubble. */
         private const val DISMISS_ZONE_DP = 72f
+
+        /**
+         * The bin target starts fading/growing in once the bubble's bottom edge is within this many dp
+         * of the screen bottom, and is fully drawn by [DISMISS_ZONE_DP]. Must exceed [DISMISS_ZONE_DP]
+         * so the target announces itself *before* the drop would take effect.
+         */
+        private const val BIN_APPROACH_DP = 210f
+
+        /** Gap between the screen's bottom edge and the bin target's own bottom. */
+        private const val BIN_BOTTOM_MARGIN_DP = 22f
+
+        /** "Fly into the bin" duration — short enough to stay responsive, long enough to read. */
+        private const val DISMISS_ANIM_MS = 200L
+
+        /** How far the bubble shrinks on its way into the bin (1 - this = final scale). */
+        private const val DISMISS_SHRINK = 0.85f
+
+        /** Bin fade-out when a drag is released outside the dismiss zone. */
+        private const val BIN_FADE_MS = 150L
         const val ACTION_DEBUG_RECORD_START = "com.tihor.quill.DEBUG_RECORD_START"
         const val ACTION_DEBUG_RECORD_STOP = "com.tihor.quill.DEBUG_RECORD_STOP"
         const val ACTION_DEBUG_SET_KEY = "com.tihor.quill.DEBUG_SET_KEY"

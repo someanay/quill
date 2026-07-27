@@ -356,6 +356,12 @@ object CopyKeys {
     const val NOTIFICATION_TITLE_RECORDING = "notification.title.recording"
     const val NOTIFICATION_TEXT_RECORDING = "notification.text.recording"
     const val BUBBLE_DISMISS_TOAST = "bubble.dismiss.toast"
+    // Drag-to-dismiss bin target (v1.1): the caption under the bin, resting vs "release now".
+    const val BUBBLE_BIN_LABEL = "bubble.bin.label"
+    const val BUBBLE_BIN_LABEL_ACTIVE = "bubble.bin.label_active"
+    // Shown when the ~10-minute auto-return brings the bubble back on its own, so its reappearance
+    // reads as designed behaviour rather than the hide having failed.
+    const val BUBBLE_AUTORETURN_TOAST = "bubble.autoreturn.toast"
 
     // --- Demo-video carousel (overridable) ---
     // Home section header (baked default "See Quill in action"). Onboarding surfaces carry no header.
@@ -519,6 +525,7 @@ object CopyKeys {
             NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
             NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,
             NOTIFICATION_TITLE_RECORDING, NOTIFICATION_TEXT_RECORDING, BUBBLE_DISMISS_TOAST,
+            BUBBLE_BIN_LABEL, BUBBLE_BIN_LABEL_ACTIVE, BUBBLE_AUTORETURN_TOAST,
             CAROUSEL_HOME_HEADER, CAROUSEL_CARD_A11Y, CAROUSEL_PLAY_A11Y,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,

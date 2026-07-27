@@ -87,4 +87,64 @@ class BubbleGeometryTest {
     fun dismissZone_atVeryBottom_dismisses() {
         assertTrue(BubbleGeometry.isInDismissZone(screenHeight, screenHeight, dismissThreshold))
     }
+
+    // --- v1.1: bin-target proximity (drives the bin's fade/grow while dragging) ---
+
+    /** Approach band: the bin starts appearing well above the zone it announces. */
+    private val approach = 600
+
+    @Test
+    fun proximity_farFromTheBottom_isZero() {
+        // Above the approach band → the bin stays hidden entirely.
+        assertEquals(0f, BubbleGeometry.dismissProximity(200, screenHeight, dismissThreshold, approach), 0f)
+        assertEquals(
+            "Exactly at the band's top edge is still nothing",
+            0f,
+            BubbleGeometry.dismissProximity(screenHeight - approach, screenHeight, dismissThreshold, approach),
+            0f,
+        )
+    }
+
+    @Test
+    fun proximity_insideTheDismissZone_isFullyOne() {
+        // At and below the dismiss zone the bin is fully drawn — proximity == 1 mirrors isInDismissZone.
+        assertEquals(
+            1f,
+            BubbleGeometry.dismissProximity(screenHeight - dismissThreshold, screenHeight, dismissThreshold, approach),
+            0f,
+        )
+        assertEquals(1f, BubbleGeometry.dismissProximity(screenHeight, screenHeight, dismissThreshold, approach), 0f)
+        // Past the bottom edge (a fast drag can overshoot) must clamp, not exceed 1.
+        assertEquals(
+            1f,
+            BubbleGeometry.dismissProximity(screenHeight + 500, screenHeight, dismissThreshold, approach),
+            0f,
+        )
+    }
+
+    @Test
+    fun proximity_rampsLinearlyAcrossTheApproachBand() {
+        // Band spans (screenHeight - approach) .. (screenHeight - threshold) = 1320..1720, i.e. 400 px.
+        val bandTop = screenHeight - approach
+        assertEquals(0.5f, BubbleGeometry.dismissProximity(bandTop + 200, screenHeight, dismissThreshold, approach), 1e-4f)
+        assertEquals(0.25f, BubbleGeometry.dismissProximity(bandTop + 100, screenHeight, dismissThreshold, approach), 1e-4f)
+    }
+
+    @Test
+    fun proximity_isMonotonicAsTheBubbleDescends() {
+        var previous = -1f
+        for (bottom in 0..screenHeight step 40) {
+            val p = BubbleGeometry.dismissProximity(bottom, screenHeight, dismissThreshold, approach)
+            assertTrue("Proximity must never decrease as the bubble moves down (at y=$bottom)", p >= previous)
+            previous = p
+        }
+    }
+
+    @Test
+    fun proximity_degradesToAStep_whenTheApproachBandIsDegenerate() {
+        // Guards the divide-by-zero path: approach <= threshold falls back to a hard 0/1 at the zone.
+        assertEquals(0f, BubbleGeometry.dismissProximity(1000, screenHeight, dismissThreshold, dismissThreshold), 0f)
+        assertEquals(1f, BubbleGeometry.dismissProximity(1800, screenHeight, dismissThreshold, dismissThreshold), 0f)
+        assertEquals(1f, BubbleGeometry.dismissProximity(1900, screenHeight, dismissThreshold, 10), 0f)
+    }
 }

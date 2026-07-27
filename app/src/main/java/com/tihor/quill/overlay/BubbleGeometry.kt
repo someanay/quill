@@ -45,4 +45,30 @@ object BubbleGeometry {
      */
     fun isInDismissZone(bubbleBottomY: Int, screenHeight: Int, thresholdPx: Int): Boolean =
         bubbleBottomY >= screenHeight - thresholdPx
+
+    /**
+     * How close the dragged bubble is to dismissing, as 0..1 — what fades and grows the bin target
+     * while the user drags (v1.1). 0 until the bubble's visible bottom edge ([bubbleBottomY]) enters
+     * the approach band [approachPx] off the screen's bottom, then ramps linearly to 1 at the dismiss
+     * zone itself ([thresholdPx]), staying 1 all the way down. So the bin appears *before* the drop
+     * would take effect, and is fully drawn exactly when releasing would hide the bubble — the
+     * proximity `> 0` is the show/hide signal for the bin window, and `== 1` mirrors
+     * [isInDismissZone].
+     *
+     * [approachPx] is expected to be larger than [thresholdPx]; if it isn't, this degrades to a hard
+     * 0/1 step at the dismiss zone rather than dividing by zero.
+     */
+    fun dismissProximity(
+        bubbleBottomY: Int,
+        screenHeight: Int,
+        thresholdPx: Int,
+        approachPx: Int,
+    ): Float {
+        if (approachPx <= thresholdPx) {
+            return if (isInDismissZone(bubbleBottomY, screenHeight, thresholdPx)) 1f else 0f
+        }
+        val enterY = screenHeight - approachPx
+        val fullY = screenHeight - thresholdPx
+        return ((bubbleBottomY - enterY).toFloat() / (fullY - enterY)).coerceIn(0f, 1f)
+    }
 }

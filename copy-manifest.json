@@ -55,8 +55,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "bubble.autoreturn.toast": {
+      "default": "Quill's back. Drag the bubble to the bin to hide it again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "bubble.bin.label": {
+      "default": "Drag here to hide",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "bubble.bin.label_active": {
+      "default": "Release to hide",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "bubble.dismiss.toast": {
-      "default": "Bubble hidden — tap the notification to bring it back.",
+      "default": "Bubble hidden — shake your phone or tap the notification to bring it back.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

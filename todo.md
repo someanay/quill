@@ -308,17 +308,43 @@ Groq / OpenAI / OpenRouter / Gemini / Custom all selectable (Deepgram chip remov
     (OVERRIDABLE). Skipped the optional drag-dim hint (would fight the sensitive-field alpha); shows a
     recovery toast instead. No timer/sensor/AlarmManager/SensorManager added — the notification is the
     only way back.
-  - [ ] (2) **~10-min auto-return**: a SCHEDULED re-show — needs AlarmManager/WorkManager and must
-    survive doze/background-kill on the Honor (the same battle as M11; a naive postDelayed won't fire
-    after a doze-kill). **Still deferred.**
-  - [ ] (3) **shake-to-summon**: a SensorManager accelerometer listener that must run while the bubble
-    is hidden (battery cost in the FGS) + shake-detection tuning (pocket false-positives, sensitivity
-    threshold — an on-device tuning exercise like the silence detector). **Still deferred.**
+  - [x] (2) **~10-min auto-return** — **SHIPPED (2026-07-27).** `AutoReturn` (pure, over the service's
+    own scope) holds a `delay(10 min)`; `AutoReturn.DEFAULT_DELAY_MS` is the tuning knob. **The earlier
+    "needs AlarmManager/WorkManager" note above was written before Option A and its premise no longer
+    holds:** it assumed the service dies while the bubble is hidden. It doesn't — hiding keeps the FGS
+    and its notification alive (only `ACTION_STOP` fully stops), so a living service can just hold a
+    suspended coroutine. That means **no scheduler and no `SCHEDULE_EXACT_ALARM`/`USE_EXACT_ALARM`**
+    (Play-restricted; we dropped one such permission in M12 and won't re-add one for this). Accepted
+    cost: `delay` is not doze-proof — screen-off in deep idle the return fires on the next wake, not on
+    the minute. If the process is killed and recovered (M11) the timer is simply gone and the bubble
+    stays hidden, with the notification as the way back — deliberately no persistence.
+    **Scoped to drag-dismiss only:** flicking the bubble into the bin means "not right now" and earns a
+    return; the Home master toggle off is a stated preference and must not flip itself back on (same
+    respect-user-intent line M11 draws around force-stop). `ACTION_STOP` cancels the timer.
+  - [x] (3) **shake-to-summon** — **SHIPPED (2026-07-27).** `ShakeDetector` is pure/Android-free like
+    `BubbleGeometry`, so the tuning is unit-tested rather than guessed at: low-pass gravity removal
+    (works in any orientation, so tilting registers nothing), a 16 m/s² *linear* jolt threshold
+    (~1.6 g net — above walking's 3–7 and running's 10–15), **2 same-axis direction reversals** within
+    900 ms (one hard bump is not a shake; a jostled bag flails across axes and restarts the sequence),
+    and a 2 s cooldown so one shake summons once. Measured floor ≈ 19 m/s² peak (~1.9 g), flat across
+    2–5 Hz. Registered at `SENSOR_DELAY_UI` **only while hidden**, unregistered on show and destroy.
+    Tests cover walking, jogging-in-pocket, single jolt, slow tilt and stationary all NOT firing.
+  - Also shipped with (2)/(3): the **bin target + dismiss animation** — `BinTargetView` in its own
+    `NOT_FOCUSABLE|NOT_TOUCHABLE` overlay window, added once in `addBubble` and removed in `onDestroy`
+    (never per-drag, so a mid-drag service death can't leak it); `BubbleGeometry.dismissProximity`
+    fades/grows it in across a 210 dp approach band and pops it error-red inside the 72 dp zone; the
+    bubble then flies into it via window-position + `scaleX/scaleY` only. **Never `alpha`** — that
+    belongs to the sensitive-field dimmer (0.45) and a second consumer would fight it; and never
+    `translationX/Y`, which would clip against the `WRAP_CONTENT` window. Bin icon is a vector drawable
+    (`ic_bin_target.xml`), no raster. New copy keys `bubble.bin.label`, `bubble.bin.label_active`,
+    `bubble.autoreturn.toast` (all OVERRIDABLE); `bubble.dismiss.toast` reworded to mention shake.
+  - [ ] **Verify (yours, on the Honor):** bin fade-in timing + position vs the gesture-nav bar; the
+    fly-in landing in the bin at all three bubble sizes; shake calibration in daily use (does a natural
+    shake fire first try? any false-fire while walking/pocketed?); auto-return promptness under MagicOS
+    doze; sensitive-field dimming surviving a drag-dismiss + summon.
 
-  Build (2)/(3) AFTER the M11 device matrix, because that run tells you exactly how background timers
-  behave on the target device — knowledge those sub-features need. **All new copy soft-coded** via
-  CopyKeys as OVERRIDABLE, same as everything else; the shipped keys flow through the OTA bundle.
-  (Origin: user request, 2026-06-28.)
+  **All new copy soft-coded** via CopyKeys as OVERRIDABLE, same as everything else; the shipped keys
+  flow through the OTA bundle. (Origin: user request, 2026-06-28.)
 
 - **Insert-at-cursor when a field has genuine content.** v1 *replaces* the whole field on inject
   (M3 decision — the only safe behaviour when placeholders are indistinguishable from content, e.g.

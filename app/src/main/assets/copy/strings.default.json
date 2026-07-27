@@ -336,7 +336,10 @@
     "notification.text.hidden": "Bubble hidden — tap Show Quill to bring it back.",
     "notification.title.recording": "Quill is listening",
     "notification.text.recording": "Recording… tap the bubble to stop.",
-    "bubble.dismiss.toast": "Bubble hidden — tap the notification to bring it back.",
+    "bubble.dismiss.toast": "Bubble hidden — shake your phone or tap the notification to bring it back.",
+    "bubble.bin.label": "Drag here to hide",
+    "bubble.bin.label_active": "Release to hide",
+    "bubble.autoreturn.toast": "Quill's back. Drag the bubble to the bin to hide it again.",
 
     "carousel.home.header": "See Quill in action",
     "carousel.card.a11y": "Demo video",
