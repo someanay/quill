@@ -62,6 +62,61 @@ class CleanupPipelineTest {
         assertEquals("hello Claude", result)
     }
 
+    // --- Divergence guard, enforced at the pipeline (scope doc §9.1) ---
+    //
+    // These prove the guarantee holds for ANY injected `clean`, not just CleanupClient's: the lambdas
+    // below return divergent text with no guard of their own, and the pipeline still yields raw.
+
+    @Test
+    fun divergentCleanup_isDiscarded_rawIsUsedInstead() = runTest {
+        // The reported M10 bug: the model obeyed the dictation instead of cleaning it.
+        val result = CleanupPipeline.process(
+            raw = "type my email",
+            cleanupEnabled = true,
+            words = emptyList(),
+            clean = { "I'm ready to type your email" },
+        )
+        assertEquals("type my email", result)
+    }
+
+    @Test
+    fun assistantReply_isDiscarded_evenThoughCleanReturnedNonNull() = runTest {
+        val result = CleanupPipeline.process(
+            raw = "what time is it",
+            cleanupEnabled = true,
+            words = emptyList(),
+            clean = { "It's currently 3pm" },
+        )
+        assertEquals("what time is it", result)
+    }
+
+    @Test
+    fun rejectedCleanup_stillGetsCustomWordSubstitution() = runTest {
+        // Falling back to raw must not also skip substitution — the user's vocabulary applies either
+        // way, exactly as it does on a null/timeout.
+        val result = CleanupPipeline.process(
+            raw = "hey clod what time is it",
+            cleanupEnabled = true,
+            words = clodToClaude,
+            clean = { "It is currently 3pm, let me know if you need anything else." },
+        )
+        assertEquals("hey Claude what time is it", result)
+    }
+
+    @Test
+    fun legitimateStyling_survivesTheGuard_inBothDirections() = runTest {
+        // Formal expands contractions, casual drops them; both must reach the output unchanged.
+        val formal = CleanupPipeline.process("dont worry", cleanupEnabled = true, words = emptyList()) {
+            "Do not worry."
+        }
+        assertEquals("Do not worry.", formal)
+
+        val casual = CleanupPipeline.process("I do not think so.", cleanupEnabled = true, words = emptyList()) {
+            "i dont think so"
+        }
+        assertEquals("i dont think so", casual)
+    }
+
     @Test
     fun finalString_isOneValue_forBothHistoryAndInjector() = runTest {
         // OverlayService hands this single return value to BOTH history and the injector (decision 4),

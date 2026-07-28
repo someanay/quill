@@ -49,12 +49,94 @@ class CleanupGuardTest {
     }
 
     @Test
-    fun rejects_grossExpansion_byLength() {
-        // A short dictation ballooning into a paragraph is a rewrite, regardless of token overlap.
+    fun rejects_grossExpansion_intoAParagraph() {
+        // A short dictation ballooning into a paragraph is a rewrite. Caught by precision: almost
+        // every word in the output has no counterpart in the two-word input.
         assertFalse(
             CleanupGuard.preservesMeaning(
                 raw = "remind me",
                 cleaned = "Sure, I'll remind you. What would you like me to remind you about, and when?",
+            ),
+        )
+    }
+
+    // --- Styling must survive the guard (scope doc §9.2) ---
+    //
+    // These are the cases a length-ratio guard cannot get right: formal styling EXPANDS contractions
+    // (longer) and casual styling DROPS them (shorter), while both preserve every token. Contraction
+    // normalisation is what makes the two sides compare equal.
+
+    @Test
+    fun accepts_formalStyling_expandingContractions() {
+        assertTrue(CleanupGuard.preservesMeaning(raw = "dont worry", cleaned = "Do not worry."))
+        assertTrue(CleanupGuard.preservesMeaning("i cant make it wont be there", "I can not make it. I will not be there."))
+        assertTrue(CleanupGuard.preservesMeaning("its fine and thats ok", "It is fine, and that is ok."))
+    }
+
+    @Test
+    fun accepts_casualStyling_droppingContractionsAndPunctuation() {
+        assertTrue(CleanupGuard.preservesMeaning(raw = "I do not think so.", cleaned = "i dont think so"))
+        assertTrue(CleanupGuard.preservesMeaning("It is not going to work.", "its not going to work"))
+        assertTrue(CleanupGuard.preservesMeaning("We are running late, I am afraid.", "were running late im afraid"))
+    }
+
+    @Test
+    fun contractionNormalisation_isSymmetric() {
+        // Whichever direction the styling goes, the pair compares equal.
+        assertTrue(CleanupGuard.preservesMeaning("you're right", "You are right."))
+        assertTrue(CleanupGuard.preservesMeaning("You are right.", "youre right"))
+    }
+
+    // --- The new basis: token overlap in BOTH directions ---
+
+    @Test
+    fun rejects_assistantReply_thatAnswersAQuestion() {
+        // The §-required case: an answer reuses "it"/"is" but invents the rest.
+        assertFalse(CleanupGuard.preservesMeaning(raw = "what time is it", cleaned = "It's currently 3pm"))
+        assertFalse(CleanupGuard.preservesMeaning("whats the weather", "The weather today is sunny and warm."))
+        assertFalse(CleanupGuard.preservesMeaning("remind me to call mum", "I've set a reminder for you to call your mum."))
+    }
+
+    @Test
+    fun rejects_summarising_whichPrecisionAloneWouldAllow() {
+        // Invents nothing (perfect precision) but throws most of the dictation away — only the recall
+        // direction catches this, which is why the guard checks both.
+        assertFalse(
+            CleanupGuard.preservesMeaning(
+                raw = "so i went to the shop this morning and picked up some milk and bread and then " +
+                    "i walked back home through the park because the weather was really nice",
+                cleaned = "I went to the shop.",
+            ),
+        )
+    }
+
+    @Test
+    fun rejects_degenerateRepetition() {
+        // Multiset (not set) overlap is what catches this: the second copy of every token has no
+        // unused counterpart in the raw, so precision halves. A set comparison would score 1.0.
+        assertFalse(
+            CleanupGuard.preservesMeaning(
+                raw = "meet me at five",
+                cleaned = "Meet me at five. Meet me at five. Meet me at five.",
+            ),
+        )
+    }
+
+    @Test
+    fun accepts_genuineRepetition_presentInTheRaw() {
+        // The flip side: repetition the user actually spoke must survive, so the multiset budget has
+        // to allow as many copies as the raw contains.
+        assertTrue(CleanupGuard.preservesMeaning("no no no thats wrong", "No, no, no, that is wrong."))
+    }
+
+    @Test
+    fun accepts_heavyFillerRemoval() {
+        // Filler removal is sanctioned deletion and can strip a large fraction of tokens — the recall
+        // floor has to stay below what a legitimately disfluent dictation loses.
+        assertTrue(
+            CleanupGuard.preservesMeaning(
+                raw = "um so like you know i think uh we should probably meet tomorrow",
+                cleaned = "So I think we should probably meet tomorrow.",
             ),
         )
     }

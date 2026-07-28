@@ -14,6 +14,9 @@ import com.tihor.quill.settings.WordSubstitutions
  *
  * Pure orchestration (no Android, no networking) so the ordering/off/fail-soft guarantees are
  * unit-testable: [clean] is the only side-effecting input and it is injected.
+ *
+ * The pipeline is also where the [CleanupGuard] divergence check is **enforced**, so that no [clean]
+ * implementation can bypass it — see [cleanedOrRaw].
  */
 object CleanupPipeline {
     /**
@@ -30,7 +33,24 @@ object CleanupPipeline {
         words: List<CustomWord>,
         clean: suspend (String) -> String?,
     ): String {
-        val tidied = if (cleanupEnabled) (clean(raw) ?: raw) else raw
+        val tidied = if (cleanupEnabled) cleanedOrRaw(raw, clean) else raw
         return WordSubstitutions.apply(tidied, words)
+    }
+
+    /**
+     * Run [clean] and keep its result **only if it still says what the user said** ([CleanupGuard]);
+     * otherwise fall back to [raw], the same fail-soft path as a null/timeout/HTTP error.
+     *
+     * This check is enforced here, at the choke point every cleanup flows through, rather than only
+     * inside a particular [clean] implementation. [clean] is an injected lambda — as the prompt it
+     * builds grows (per-app writing style composes an extra directive into it), the odds of some
+     * future variant returning an assistant reply go up, not down. Enforcing at the pipeline means the
+     * guarantee holds for *any* lambda, including one that forgets to check for itself.
+     * [CleanupClient] also checks before returning; both call the same pure predicate, so the two can
+     * never disagree, and the earlier check just saves this one a wasted comparison.
+     */
+    private suspend fun cleanedOrRaw(raw: String, clean: suspend (String) -> String?): String {
+        val cleaned = clean(raw) ?: return raw
+        return if (CleanupGuard.preservesMeaning(raw, cleaned)) cleaned else raw
     }
 }
