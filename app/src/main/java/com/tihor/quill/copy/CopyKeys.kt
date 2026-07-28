@@ -149,6 +149,7 @@ object CopyKeys {
     const val SETTINGS_ROW_API_KEYS = "settings.row.api_keys"
     const val SETTINGS_ROW_CLEANUP = "settings.row.cleanup"
     const val SETTINGS_ROW_CUSTOM_WORDS = "settings.row.custom_words"
+    const val SETTINGS_ROW_WRITING_STYLE = "settings.row.writing_style"
     const val SETTINGS_KEYS_SET = "settings.keys.set"
     const val SETTINGS_ROW_AUDIO = "settings.row.audio"
     const val SETTINGS_ROW_BUBBLE = "settings.row.bubble"
@@ -215,6 +216,30 @@ object CopyKeys {
     // Decision 5: cleanup is Groq-only — status lines when a non-Groq STT provider is active.
     const val SETTINGS_CLEANUP_GROQ_KEY = "settings.cleanup.groq_key"
     const val SETTINGS_CLEANUP_GROQ_MISSING = "settings.cleanup.groq_missing"
+
+    // Per-app writing style (rides on the cleanup pass; all overridable — none of this is compliance
+    // copy. The privacy/permission/BYOK promises stay locked to the binary.)
+    const val SETTINGS_STYLE_TITLE = "settings.style.title"
+    const val SETTINGS_STYLE_INTRO = "settings.style.intro"
+    const val SETTINGS_STYLE_DEFAULT_SECTION = "settings.style.default_section"
+    const val SETTINGS_STYLE_PER_APP_SECTION = "settings.style.per_app_section"
+    const val SETTINGS_STYLE_FORMAL = "settings.style.formal"
+    const val SETTINGS_STYLE_FORMAL_SUB = "settings.style.formal_sub"
+    const val SETTINGS_STYLE_NEUTRAL = "settings.style.neutral"
+    const val SETTINGS_STYLE_NEUTRAL_SUB = "settings.style.neutral_sub"
+    const val SETTINGS_STYLE_CASUAL = "settings.style.casual"
+    const val SETTINGS_STYLE_CASUAL_SUB = "settings.style.casual_sub"
+    const val SETTINGS_STYLE_SEARCH_HINT = "settings.style.search_hint"
+    const val SETTINGS_STYLE_ASSIGN_TITLE = "settings.style.assign_title"
+    const val SETTINGS_STYLE_USE_DEFAULT = "settings.style.use_default"
+    const val SETTINGS_STYLE_LOADING = "settings.style.loading"
+    const val SETTINGS_STYLE_NO_RESULTS = "settings.style.no_results"
+    // §7 availability: styling rides on the cleanup pass, so it does nothing without cleanup ON and a
+    // Groq key. Surfaced rather than left silent — a feature that never fires reads as broken.
+    const val SETTINGS_STYLE_NEEDS_CLEANUP = "settings.style.needs_cleanup"
+    const val SETTINGS_STYLE_NEEDS_GROQ = "settings.style.needs_groq"
+    const val SETTINGS_STYLE_WORDS_PROMISE = "settings.style.words_promise"
+    const val SETTINGS_STYLE_HELP = "settings.style.help"
 
     const val SETTINGS_WORDS_TITLE = "settings.words.title"
     const val SETTINGS_WORDS_BODY = "settings.words.body"
@@ -455,6 +480,7 @@ object CopyKeys {
             HOME_TOGGLE_ON_TITLE, HOME_TOGGLE_OFF_TITLE, HOME_TOGGLE_ON_SUB, HOME_TOGGLE_OFF_SUB,
             SETTINGS_TITLE, SETTINGS_GROUP_DICTATION, SETTINGS_GROUP_CAPTURE, SETTINGS_GROUP_PRIVACY,
             SETTINGS_ROW_SPEECH_MODEL, SETTINGS_ROW_API_KEYS, SETTINGS_ROW_CLEANUP, SETTINGS_ROW_CUSTOM_WORDS,
+            SETTINGS_ROW_WRITING_STYLE,
             SETTINGS_KEYS_SET, SETTINGS_ROW_AUDIO, SETTINGS_ROW_BUBBLE, SETTINGS_ROW_PRIVACY,
             SETTINGS_ROW_ADVANCED, SETTINGS_ROW_ABOUT,
             SETTINGS_SPEECH_TITLE, SETTINGS_SPEECH_PROVIDER, SETTINGS_SPEECH_PROVIDER_CUSTOM,
@@ -478,6 +504,13 @@ object CopyKeys {
             SETTINGS_CLEANUP_WHAT, SETTINGS_CLEANUP_BEFORE, SETTINGS_CLEANUP_AFTER,
             SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP,
             SETTINGS_CLEANUP_GROQ_KEY, SETTINGS_CLEANUP_GROQ_MISSING,
+            SETTINGS_STYLE_TITLE, SETTINGS_STYLE_INTRO, SETTINGS_STYLE_DEFAULT_SECTION,
+            SETTINGS_STYLE_PER_APP_SECTION, SETTINGS_STYLE_FORMAL, SETTINGS_STYLE_FORMAL_SUB,
+            SETTINGS_STYLE_NEUTRAL, SETTINGS_STYLE_NEUTRAL_SUB, SETTINGS_STYLE_CASUAL,
+            SETTINGS_STYLE_CASUAL_SUB, SETTINGS_STYLE_SEARCH_HINT, SETTINGS_STYLE_ASSIGN_TITLE,
+            SETTINGS_STYLE_USE_DEFAULT, SETTINGS_STYLE_LOADING, SETTINGS_STYLE_NO_RESULTS,
+            SETTINGS_STYLE_NEEDS_CLEANUP, SETTINGS_STYLE_NEEDS_GROQ, SETTINGS_STYLE_WORDS_PROMISE,
+            SETTINGS_STYLE_HELP,
             SETTINGS_WORDS_TITLE, SETTINGS_WORDS_BODY, SETTINGS_WORDS_EMPTY_TITLE, SETTINGS_WORDS_EMPTY_SUB,
             SETTINGS_WORDS_ADD, SETTINGS_WORDS_ADD_TITLE, SETTINGS_WORDS_HEARD_LABEL, SETTINGS_WORDS_HEARD_HINT,
             SETTINGS_WORDS_REPLACEMENT_LABEL, SETTINGS_WORDS_REPLACEMENT_HINT, SETTINGS_WORDS_SAVE,

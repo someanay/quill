@@ -1599,6 +1599,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "settings.row.writing_style": {
+      "default": "Writing style",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "settings.speech.custom_url_error": {
       "default": "Enter an https:// URL.",
       "placeholders": [],
@@ -1801,6 +1807,120 @@
     },
     "settings.speech.title": {
       "default": "Speech & model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.assign_title": {
+      "default": "Writing style for",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.casual": {
+      "default": "Casual",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.casual_sub": {
+      "default": "Relaxed caps, light punctuation, contractions",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.default_section": {
+      "default": "Default for every app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.formal": {
+      "default": "Formal",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.formal_sub": {
+      "default": "Full sentences, always punctuated, no contractions",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.help": {
+      "default": "Style is picked from the app you were in when you started speaking. Custom words are still applied last.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.intro": {
+      "default": "Match how you write in each app — more formal at work, more relaxed with friends.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.loading": {
+      "default": "Loading your apps…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.needs_cleanup": {
+      "default": "Writing style rides on the AI cleanup pass — turn on \"Clean up with AI\" for it to apply.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.needs_groq": {
+      "default": "Cleanup runs on Groq only. Without a saved Groq key, writing style won't be applied.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.neutral": {
+      "default": "Neutral",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.neutral_sub": {
+      "default": "Sentence case, standard punctuation, as you said it",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.no_results": {
+      "default": "No apps match that search",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.per_app_section": {
+      "default": "Per app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.search_hint": {
+      "default": "Search apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.title": {
+      "default": "Writing style",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.use_default": {
+      "default": "Use the default",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.style.words_promise": {
+      "default": "Style only changes punctuation, capitalization and contractions. It never changes your words.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

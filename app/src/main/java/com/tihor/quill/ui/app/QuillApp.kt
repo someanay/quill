@@ -18,6 +18,7 @@ import com.tihor.quill.ui.screens.PermissionRevokedScreen
 import com.tihor.quill.ui.screens.PrivacyScreen
 import com.tihor.quill.ui.screens.SettingsScreen
 import com.tihor.quill.ui.screens.SpeechModelScreen
+import com.tihor.quill.ui.screens.WritingStyleScreen
 
 /** Single-activity root: hosts the back stack and dispatches to the current [Screen]. */
 @Composable
@@ -32,6 +33,7 @@ fun QuillApp() {
         Screen.SpeechModel -> SpeechModelScreen(nav)
         Screen.ApiKeys -> ApiKeysScreen(nav)
         Screen.AiCleanup -> AiCleanupScreen(nav)
+        Screen.WritingStyle -> WritingStyleScreen(nav)
         Screen.CustomWords -> CustomWordsScreen(nav)
         Screen.AudioRecording -> AudioRecordingScreen(nav)
         Screen.Privacy -> PrivacyScreen(nav)

@@ -19,6 +19,18 @@
          allowlist a BYOK dictation app doesn't qualify for, so we only deep-link to the battery
          settings list and let the user allow Quill there. -->
 
+    <!-- Package visibility for the per-app writing-style picker. On API 30+ the installed-app list is
+         filtered; this <queries> element makes exactly the user-LAUNCHABLE apps visible, which is
+         precisely the set you can dictate into. It is the non-restricted alternative to
+         QUERY_ALL_PACKAGES, which Play grants only to launchers/security/file-manager apps and which
+         this app must never request (see the note above, and M12's precedent). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
 
     <application
         android:allowBackup="true"

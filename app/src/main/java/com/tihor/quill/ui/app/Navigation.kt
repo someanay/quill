@@ -34,6 +34,7 @@ sealed interface Screen {
     data object SpeechModel : Screen
     data object ApiKeys : Screen
     data object AiCleanup : Screen
+    data object WritingStyle : Screen
     data object CustomWords : Screen
     data object AudioRecording : Screen
     data object Privacy : Screen

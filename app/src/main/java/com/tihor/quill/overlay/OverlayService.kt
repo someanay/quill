@@ -52,6 +52,8 @@ import com.tihor.quill.settings.SttProvider
 import com.tihor.quill.settings.TranscriptionClientFactory
 import com.tihor.quill.cleanup.CleanupClient
 import com.tihor.quill.cleanup.CleanupKeyPolicy
+import com.tihor.quill.style.WritingStyleResolver
+import com.tihor.quill.style.WritingStyleStore
 import com.tihor.quill.cleanup.CleanupPipeline
 import com.tihor.quill.stt.OpenAiCompatibleTranscriptionClient
 import com.tihor.quill.stt.RomanizePrompt
@@ -148,6 +150,7 @@ class OverlayService : Service() {
     private val sttKeyStore: SttKeyStore by lazy { SttKeyStore(secretStore) }
     private val settingsRepository by lazy { SettingsRepository(this) }
     private val customWordsStore by lazy { CustomWordsStore(this) }
+    private val writingStyleStore by lazy { WritingStyleStore(this) }
     private val historyRepository by lazy { HistoryRepository(this) }
     private val visibilityStore by lazy { BubbleVisibilityStore(this) }
 
@@ -959,6 +962,19 @@ class OverlayService : Service() {
             )
             result.fold(
                 onSuccess = {
+                    // The app that was focused when recording STARTED — already captured for history's
+                    // "target app". Per-app writing style reuses it rather than adding plumbing: the
+                    // user was composing in that app's context when they spoke, so that is the context
+                    // to style for, even if they've since switched apps (scope doc §6a).
+                    val pkg = recordingPackage
+                    // Resolve fresh per dictation: override → curated (in code) → global default.
+                    // Always resolves; Neutral (the shipped default) composes to the unmodified M10
+                    // prompt, so this is inert until the user opts in.
+                    val style = WritingStyleResolver.resolve(
+                        packageName = pkg,
+                        overrides = writingStyleStore.overrides.first(),
+                        globalDefault = settings.writingStyleDefault,
+                    )
                     // M10: tidy the raw transcript with the LLM (gated by cleanupEnabled, fail-soft —
                     // any error/timeout/empty falls back to raw), THEN apply custom-word substitution
                     // so the deterministic vocabulary wins last (decision 3). The single result is what
@@ -983,13 +999,13 @@ class OverlayService : Service() {
                                 CleanupClient(
                                     baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
                                     apiKey = { groqKey },
+                                    style = style,
                                 ).clean(text)
                             }
                         },
                     )
                     // Save on a successful transcription (gated), BEFORE insertion — a transcript that
                     // fails to land is exactly when a saved copy is the safety net (M9).
-                    val pkg = recordingPackage
                     historyRepository.maybeSave(
                         historyEnabled = settings.historyEnabled,
                         privateMode = settings.privateMode,

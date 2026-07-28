@@ -41,6 +41,7 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
@@ -88,6 +89,7 @@ import com.tihor.quill.settings.QuillSettings
 import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.settings.VoiceWordCapture
 import com.tihor.quill.settings.SttProvider
+import com.tihor.quill.style.WritingStyleStore
 import com.tihor.quill.ui.LegalLinks
 import com.tihor.quill.stt.KeyValidation
 import com.tihor.quill.stt.KeyValidator
@@ -237,6 +239,12 @@ fun SettingsScreen(nav: QuillNav) {
                     leadIcon = Icons.Rounded.AutoAwesome, title = copy(K.SETTINGS_ROW_CLEANUP),
                     onClick = { nav.navigate(Screen.AiCleanup) },
                     trailing = { RowValueChevron(if (settings.cleanupEnabled) copy(K.VALUE_ON) else copy(K.VALUE_OFF)) },
+                )
+                RowDivider()
+                QuillRow(
+                    leadIcon = Icons.Rounded.Style, title = copy(K.SETTINGS_ROW_WRITING_STYLE),
+                    onClick = { nav.navigate(Screen.WritingStyle) },
+                    trailing = { RowValueChevron(styleName(settings.writingStyleDefault)) },
                 )
                 RowDivider()
                 QuillRow(
@@ -1267,6 +1275,7 @@ fun AdvancedScreen(nav: QuillNav) {
     val repo = remember { SettingsRepository(context) }
     val historyRepo = remember { HistoryRepository(context) }
     val wordsStore = remember { CustomWordsStore(context) }
+    val stylesStore = remember { WritingStyleStore(context) }
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
     var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
@@ -1344,10 +1353,11 @@ fun AdvancedScreen(nav: QuillNav) {
             body = copy(K.SETTINGS_ADVANCED_CLEAR_CONFIRM_BODY),
             confirmLabel = copy(K.SETTINGS_ADVANCED_CLEAR_CONFIRM_CTA),
             cancelLabel = copy(K.ACTION_CANCEL),
-            // Match the label: wipe keys + settings (to defaults) + history + custom words. Full wipe
-            // resets onboarding, so the next launch shows onboarding (the key is gone anyway).
+            // Match the label: wipe keys + settings (to defaults) + history + custom words + per-app
+            // style overrides. Full wipe resets onboarding, so the next launch shows onboarding (the
+            // key is gone anyway).
             onConfirm = {
-                scope.launch { AppDataReset.clearAll(secretStore, repo, historyRepo, wordsStore) }
+                scope.launch { AppDataReset.clearAll(secretStore, repo, historyRepo, wordsStore, stylesStore) }
                 showClearConfirm = false
             },
             onDismiss = { showClearConfirm = false },

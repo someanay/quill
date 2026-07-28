@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.tihor.quill.style.WritingStyle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -29,6 +30,12 @@ data class QuillSettings(
     val languageHint: String = DEFAULT_LANGUAGE, // ISO code, or LANGUAGE_AUTO for auto-detect
     /** LLM cleanup pass before insertion (M10). Opt-in: default OFF (extra latency + a second BYOK call). */
     val cleanupEnabled: Boolean = false,
+    /**
+     * Global writing-style default — the last tier of [com.tihor.quill.style.WritingStyleResolver],
+     * used for any app with neither a user override nor a curated default. Ships Neutral, which
+     * composes to the unmodified cleanup prompt, so the feature is inert until someone opts in.
+     */
+    val writingStyleDefault: WritingStyle = WritingStyle.DEFAULT,
     val privateMode: Boolean = false,
     /** Save dictation history on device (M9). Default ON; [privateMode] hard-overrides it. */
     val historyEnabled: Boolean = true,
@@ -114,6 +121,7 @@ class SettingsRepository(private val context: Context) {
             customModel = p[Keys.CUSTOM_MODEL].orEmpty(),
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
             cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: false,
+            writingStyleDefault = WritingStyle.fromId(p[Keys.WRITING_STYLE_DEFAULT]),
             privateMode = p[Keys.PRIVATE_MODE] ?: false,
             historyEnabled = p[Keys.HISTORY_ENABLED] ?: true,
             historyRetentionMinutes = p[Keys.HISTORY_RETENTION_MINUTES] ?: QuillSettings.RETENTION_DEFAULT_MINUTES,
@@ -156,6 +164,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setCleanupEnabled(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.CLEANUP_ENABLED] = enabled }
+
+    /** Persist the global writing-style default (the resolver's last tier). Stored as [WritingStyle.id]. */
+    suspend fun setWritingStyleDefault(style: WritingStyle) =
+        context.settingsDataStore.edit { it[Keys.WRITING_STYLE_DEFAULT] = style.id }
 
     suspend fun setPrivateMode(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.PRIVATE_MODE] = enabled }
@@ -245,6 +257,7 @@ class SettingsRepository(private val context: Context) {
         val CUSTOM_MODEL = stringPreferencesKey("custom_model")
         val LANGUAGE_HINT = stringPreferencesKey("language_hint")
         val CLEANUP_ENABLED = booleanPreferencesKey("cleanup_enabled")
+        val WRITING_STYLE_DEFAULT = stringPreferencesKey("writing_style_default")
         val PRIVATE_MODE = booleanPreferencesKey("private_mode")
         val HISTORY_ENABLED = booleanPreferencesKey("history_enabled")
         val HISTORY_RETENTION_MINUTES = intPreferencesKey("history_retention_minutes")

@@ -1,8 +1,20 @@
 # Per-App Writing Style — Scope Document
 
-**Status:** ⬜ Not built. Planning complete, ready to implement.
+**Status:** ✅ Built (2026-07-28). Unit-verified; **device pass (§11 step 6) still outstanding.**
 **Written:** 2026-06-28. Supersedes nothing; new feature.
 **Depends on:** M10 LLM cleanup (must be working and trustworthy — see §9 Risks).
+
+> **Deviations from this document, as built** (all deliberate; see §5.1 and §6):
+> - **Neutral composes to the byte-identical unmodified cleanup prompt**, as does "no style". Neutral
+>   *is* what the base prompt already does and is the shipped global default, so appending a directive
+>   for it would add instruction surface (§9.1) to every dictation of every user who never opted in,
+>   for no behaviour change. Formal and Casual append. The feature ships inert.
+> - **Curated map corrections.** The §5.1 draft was unverified; every package was checked against its
+>   live Play listing. Dropped: **Skype** (retired by Microsoft, May 2025), **iMessage-likes** (not an
+>   Android package), **"Search bars"** (not a package — mapped to the Google app instead). 41 packages
+>   ship. See `CuratedAppStyles` for the verified ids.
+> - **Reset-settings scope.** Per-app overrides are cleared by "Clear all data & keys" but *not* by
+>   "Reset settings to default", matching how custom words already behave.
 
 ---
 

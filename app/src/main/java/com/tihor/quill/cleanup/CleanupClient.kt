@@ -1,6 +1,8 @@
 package com.tihor.quill.cleanup
 
 import android.util.Log
+import com.tihor.quill.style.WritingStyle
+import com.tihor.quill.style.WritingStylePrompt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -22,10 +24,14 @@ import java.util.concurrent.TimeUnit
  * [timeoutMs] call timeout (separate from transcription) keeps it from noticeably extending the loop.
  *
  * The key is read lazily via [apiKey] so it lives in memory only for the call; it is never logged.
+ *
+ * [style] is the per-app writing style resolved for this dictation; it composes an extra directive into
+ * [SYSTEM_PROMPT] (see [WritingStylePrompt]). Null — and Neutral — send the M10 prompt unchanged.
  */
 class CleanupClient(
     private val baseUrl: String,
     private val apiKey: () -> String,
+    private val style: WritingStyle? = null,
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
     private val httpClient: OkHttpClient =
         OkHttpClient.Builder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build(),
@@ -40,7 +46,7 @@ class CleanupClient(
                 ChatRequest(
                     model = MODEL,
                     messages = listOf(
-                        ChatMessage(role = "system", content = SYSTEM_PROMPT),
+                        ChatMessage(role = "system", content = WritingStylePrompt.compose(SYSTEM_PROMPT, style)),
                         ChatMessage(role = "user", content = userMessage(text)),
                     ),
                 ),
