@@ -29,8 +29,10 @@ import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Contacts
 import androidx.compose.material.icons.rounded.Create
 import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.PictureInPicture
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Style
 import androidx.compose.material.icons.rounded.Visibility
@@ -55,6 +58,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -201,8 +205,10 @@ fun SettingsScreen(nav: QuillNav) {
     val repo = remember { SettingsRepository(context) }
     val secretStore = remember { KeystoreSecretStore(context) }
     val wordsStore = remember { CustomWordsStore(context) }
+    val vocabStore = remember { com.tihor.quill.vocab.ContactsVocabularyStore(context) }
     val settings by repo.settings.collectAsState(initial = QuillSettings())
     val customWords by wordsStore.words.collectAsState(initial = emptyList())
+    val contactsVocab by vocabStore.terms.collectAsState(initial = emptyList())
 
     val sttKeys = remember { SttKeyStore(secretStore) }
     val keyCount = SttProvider.selectable().count { sttKeys.has(it) } +
@@ -251,6 +257,12 @@ fun SettingsScreen(nav: QuillNav) {
                     leadIcon = Icons.Rounded.Create, title = copy(K.SETTINGS_ROW_CUSTOM_WORDS),
                     onClick = { nav.navigate(Screen.CustomWords) },
                     trailing = { RowValueChevron(copy(K.SETTINGS_WORDS_COUNT, customWords.size)) },
+                )
+                RowDivider()
+                QuillRow(
+                    leadIcon = Icons.Rounded.Contacts, title = copy(K.SETTINGS_ROW_CONTACTS_VOCAB),
+                    onClick = { nav.navigate(Screen.ContactsVocab) },
+                    trailing = { RowValueChevron(copy(K.SETTINGS_VOCAB_COUNT, contactsVocab.size)) },
                 )
             }
 
@@ -1040,6 +1052,149 @@ private fun AddWordDialog(onAdd: (String, String) -> Unit, onDismiss: () -> Unit
 }
 
 // ============================================================================
+// C5b — Contacts vocabulary (Phase 1: opt-in import, on-device only, unwired)
+// ============================================================================
+
+@Composable
+fun ContactsVocabScreen(nav: QuillNav) {
+    val context = LocalContext.current
+    val importer = remember { com.tihor.quill.vocab.ContactsImporter(context) }
+    val store = remember { com.tihor.quill.vocab.ContactsVocabularyStore(context) }
+    val scope = rememberCoroutineScope()
+    val terms by store.terms.collectAsState(initial = emptyList())
+
+    var granted by remember { mutableStateOf(importer.hasPermission()) }
+    var importing by remember { mutableStateOf(false) }
+    var importedCount by remember { mutableStateOf<Int?>(null) }
+    var importFailed by remember { mutableStateOf(false) }
+    var showClearConfirm by rememberSaveable { mutableStateOf(false) }
+
+    fun doImport() {
+        scope.launch {
+            importing = true
+            importFailed = false
+            importedCount = null
+            importer.import().fold(
+                onSuccess = { importedCount = it },
+                onFailure = { importFailed = true },
+            )
+            importing = false
+        }
+    }
+
+    val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { wasGranted ->
+        granted = wasGranted
+        if (wasGranted) doImport()
+    }
+
+    // Re-check on resume: the user may have just granted contacts access in system settings and
+    // come back — the "permission needed" state must clear itself without a process restart.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) granted = importer.hasPermission()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    DetailScaffold(copy(K.SETTINGS_VOCAB_TITLE), nav) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            copy(K.SETTINGS_VOCAB_BODY),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted,
+            modifier = Modifier.padding(bottom = 14.dp),
+        )
+
+        if (!granted) {
+            // Denied (or never granted): honest "permission needed" state with a way out — same
+            // deep-link-to-system-settings pattern as the battery row in Advanced.
+            QuillListContainer {
+                QuillRow(
+                    leadIcon = Icons.Rounded.Contacts, leadVariant = LeadIconVariant.PLAIN,
+                    title = copy(K.SETTINGS_VOCAB_PERMISSION_NEEDED),
+                    trailing = { StatusPill(copy(K.VALUE_OFF), PillKind.ERROR) },
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+            com.tihor.quill.ui.components.QuillTonalButton(
+                copy(K.SETTINGS_VOCAB_OPEN_SETTINGS),
+                onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                android.net.Uri.fromParts("package", context.packageName, null),
+                            ),
+                        )
+                    }
+                },
+                leadingIcon = Icons.Rounded.Settings,
+            )
+        } else {
+            QuillListContainer {
+                if (terms.isEmpty()) {
+                    QuillRow(
+                        title = copy(K.SETTINGS_VOCAB_EMPTY_TITLE),
+                        subtitle = copy(K.SETTINGS_VOCAB_EMPTY_SUB), trailing = {},
+                    )
+                } else {
+                    QuillRow(
+                        leadIcon = Icons.Rounded.Contacts, leadVariant = LeadIconVariant.PLAIN,
+                        title = copy(K.SETTINGS_VOCAB_IMPORTED, terms.size),
+                        trailing = { StatusPill(copy(K.VALUE_ON), PillKind.OK) },
+                    )
+                }
+            }
+            if (importFailed) {
+                Text(
+                    copy(K.SETTINGS_VOCAB_IMPORT_FAILED),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            if (terms.isNotEmpty()) {
+                Spacer(Modifier.height(14.dp))
+                QuillListContainer {
+                    terms.forEachIndexed { i, term ->
+                        if (i > 0) RowDivider()
+                        QuillRow(title = term, trailing = {}) // copy-exempt: user data, not UI copy
+                    }
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            com.tihor.quill.ui.components.QuillTonalButton(
+                if (importing) copy(K.SETTINGS_VOCAB_IMPORTING)
+                else if (terms.isEmpty()) copy(K.SETTINGS_VOCAB_IMPORT)
+                else copy(K.SETTINGS_VOCAB_REIMPORT),
+                onClick = { doImport() },
+                enabled = !importing,
+                leadingIcon = Icons.Rounded.Download,
+            )
+            Spacer(Modifier.height(10.dp))
+            if (terms.isNotEmpty()) {
+                com.tihor.quill.ui.components.QuillGhostButton(
+                    copy(K.SETTINGS_VOCAB_CLEAR), onClick = { showClearConfirm = true },
+                )
+            }
+        }
+    }
+
+    if (showClearConfirm) {
+        ConfirmDialog(
+            icon = Icons.Rounded.DeleteOutline,
+            title = copy(K.SETTINGS_VOCAB_CLEAR_CONFIRM_TITLE),
+            body = copy(K.SETTINGS_VOCAB_CLEAR_CONFIRM_BODY),
+            confirmLabel = copy(K.SETTINGS_VOCAB_CLEAR_CONFIRM_CTA),
+            cancelLabel = copy(K.ACTION_CANCEL),
+            onConfirm = { scope.launch { store.clear() }; showClearConfirm = false },
+            onDismiss = { showClearConfirm = false },
+        )
+    }
+}
+
+// ============================================================================
 // C6 — Audio & recording
 // ============================================================================
 
@@ -1276,6 +1431,7 @@ fun AdvancedScreen(nav: QuillNav) {
     val historyRepo = remember { HistoryRepository(context) }
     val wordsStore = remember { CustomWordsStore(context) }
     val stylesStore = remember { WritingStyleStore(context) }
+    val vocabStore = remember { com.tihor.quill.vocab.ContactsVocabularyStore(context) }
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
     var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
@@ -1357,7 +1513,7 @@ fun AdvancedScreen(nav: QuillNav) {
             // style overrides. Full wipe resets onboarding, so the next launch shows onboarding (the
             // key is gone anyway).
             onConfirm = {
-                scope.launch { AppDataReset.clearAll(secretStore, repo, historyRepo, wordsStore, stylesStore) }
+                scope.launch { AppDataReset.clearAll(secretStore, repo, historyRepo, wordsStore, stylesStore, vocabStore) }
                 showClearConfirm = false
             },
             onDismiss = { showClearConfirm = false },

@@ -1581,6 +1581,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "settings.row.contacts_vocab": {
+      "default": "Contacts vocabulary",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "settings.row.custom_words": {
       "default": "Custom words",
       "placeholders": [],
@@ -1963,6 +1969,106 @@
     },
     "settings.title": {
       "default": "Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.body": {
+      "default": "Import names from your contacts so Quill can learn how the people you know are spelled. Names are stored only on this device and are never sent anywhere.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.clear": {
+      "default": "Clear imported vocabulary",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.clear_confirm_body": {
+      "default": "This removes every imported contact name from this device. Your custom words are not affected.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.clear_confirm_cta": {
+      "default": "Clear",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.clear_confirm_title": {
+      "default": "Clear imported vocabulary?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.count": {
+      "default": "%1$d",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.empty_sub": {
+      "default": "Import from contacts to see them here",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.empty_title": {
+      "default": "No imported names yet",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.import": {
+      "default": "Import from contacts",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.import_failed": {
+      "default": "Couldn't read contacts. The previous import was kept.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.imported": {
+      "default": "%1$d names imported",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.importing": {
+      "default": "Importing…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.open_settings": {
+      "default": "Open Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.permission_needed": {
+      "default": "Contacts access is needed to import names. You can grant it in system settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.reimport": {
+      "default": "Re-import",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.title": {
+      "default": "Contacts vocabulary",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

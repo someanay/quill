@@ -4,6 +4,7 @@ import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.style.WritingStyle
 import com.tihor.quill.style.WritingStyleStore
+import com.tihor.quill.vocab.ContactsVocabularyStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -18,9 +19,9 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * "Clear all data & keys" must wipe ALL five on-device stores (Pass 2 — data-deletion correctness):
- * API keys, settings (back to defaults), dictation history, the custom-word vocabulary, and the
- * per-app writing-style overrides.
+ * "Clear all data & keys" must wipe ALL six on-device stores (Pass 2 — data-deletion correctness):
+ * API keys, settings (back to defaults), dictation history, the custom-word vocabulary, the
+ * per-app writing-style overrides, and the contacts-imported vocabulary (Phase 1).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -45,6 +46,7 @@ class AppDataResetTest {
             HistoryRepository(app).clearAll()
             CustomWordsStore(app).clearAll()
             WritingStyleStore(app).clearAll()
+            ContactsVocabularyStore(app).clear()
         }
     }
 
@@ -58,6 +60,7 @@ class AppDataResetTest {
         val history = HistoryRepository(app)
         val words = CustomWordsStore(app)
         val styles = WritingStyleStore(app)
+        val vocab = ContactsVocabularyStore(app)
 
         // Seed every store with non-default / non-empty data.
         settings.setPrivateMode(true)
@@ -66,14 +69,16 @@ class AppDataResetTest {
         history.maybeSave(true, false, QuillSettings.RETENTION_FOREVER, "hello", "com.x", "X", 1_000)
         words.add("clod", "Claude")
         styles.setOverride("com.example.app", WritingStyle.CASUAL)
+        vocab.replaceAll(listOf("Rohit Tikmany", "Rohit", "Tikmany"))
 
         // Sanity: populated before the wipe.
         assertTrue(secrets.contains(SecretStore.ALIAS_STT_KEY))
         assertEquals(1, history.all().size)
         assertEquals(1, words.words.first().size)
         assertEquals(1, styles.overrides.first().size)
+        assertEquals(3, vocab.terms.first().size)
 
-        AppDataReset.clearAll(secrets, settings, history, words, styles)
+        AppDataReset.clearAll(secrets, settings, history, words, styles, vocab)
 
         // Keys gone.
         assertFalse(secrets.contains(SecretStore.ALIAS_STT_KEY))
@@ -91,5 +96,7 @@ class AppDataResetTest {
         assertTrue(words.words.first().isEmpty())
         // Per-app style overrides empty — every app falls back to its curated/global default again.
         assertTrue(styles.overrides.first().isEmpty())
+        // Contacts-imported vocabulary empty.
+        assertTrue(vocab.terms.first().isEmpty())
     }
 }

@@ -4,11 +4,13 @@ import com.tihor.quill.history.HistoryRepository
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.style.WritingStyleStore
+import com.tihor.quill.vocab.ContactsVocabularyStore
 
 /**
  * Full data-and-keys wipe for the Advanced "Clear all data & keys" action. Clears every on-device
  * store the app owns: the Keystore-backed API keys, all settings (back to defaults), dictation
- * history, the custom-word vocabulary, and the per-app writing-style overrides.
+ * history, the custom-word vocabulary, the per-app writing-style overrides, and the
+ * contacts-imported vocabulary.
  *
  * Pure orchestration over the store interfaces so it is unit-testable with a fake [SecretStore] —
  * the real Keystore-backed store needs a device, but the orchestration (and the data stores) do not.
@@ -20,6 +22,7 @@ object AppDataReset {
         history: HistoryRepository,
         words: CustomWordsStore,
         styles: WritingStyleStore,
+        vocab: ContactsVocabularyStore,
     ) {
         SttProvider.entries.forEach { secretStore.clear(SttKeyStore.alias(it)) } // per-provider STT keys
         secretStore.clear(SecretStore.ALIAS_STT_KEY) // legacy single-slot key (pre-migration installs)
@@ -28,5 +31,6 @@ object AppDataReset {
         history.clearAll()
         words.clearAll()
         styles.clearAll()
+        vocab.clear()
     }
 }

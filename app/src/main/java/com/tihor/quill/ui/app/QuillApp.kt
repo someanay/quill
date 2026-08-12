@@ -9,6 +9,7 @@ import com.tihor.quill.ui.screens.AiCleanupScreen
 import com.tihor.quill.ui.screens.ApiKeysScreen
 import com.tihor.quill.ui.screens.AudioRecordingScreen
 import com.tihor.quill.ui.screens.BubbleAppearanceScreen
+import com.tihor.quill.ui.screens.ContactsVocabScreen
 import com.tihor.quill.ui.screens.CustomWordsScreen
 import com.tihor.quill.ui.screens.HistoryScreen
 import com.tihor.quill.ui.screens.HomeScreen
@@ -35,6 +36,7 @@ fun QuillApp() {
         Screen.AiCleanup -> AiCleanupScreen(nav)
         Screen.WritingStyle -> WritingStyleScreen(nav)
         Screen.CustomWords -> CustomWordsScreen(nav)
+        Screen.ContactsVocab -> ContactsVocabScreen(nav)
         Screen.AudioRecording -> AudioRecordingScreen(nav)
         Screen.Privacy -> PrivacyScreen(nav)
         Screen.BubbleAppearance -> BubbleAppearanceScreen(nav)

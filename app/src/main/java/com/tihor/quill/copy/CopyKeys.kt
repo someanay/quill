@@ -262,6 +262,26 @@ object CopyKeys {
     const val SETTINGS_WORDS_ERR_NETWORK = "settings.words.err_network"
     const val SETTINGS_WORDS_ERR_PERMISSION = "settings.words.err_permission"
 
+    // Contacts-imported vocabulary (Phase 1, feature #6 re-scoped: contacts only). Opt-in import,
+    // on-device only; separate store from custom words.
+    const val SETTINGS_ROW_CONTACTS_VOCAB = "settings.row.contacts_vocab"
+    const val SETTINGS_VOCAB_TITLE = "settings.vocab.title"
+    const val SETTINGS_VOCAB_BODY = "settings.vocab.body"
+    const val SETTINGS_VOCAB_COUNT = "settings.vocab.count"
+    const val SETTINGS_VOCAB_IMPORT = "settings.vocab.import"
+    const val SETTINGS_VOCAB_IMPORTING = "settings.vocab.importing"
+    const val SETTINGS_VOCAB_REIMPORT = "settings.vocab.reimport"
+    const val SETTINGS_VOCAB_IMPORTED = "settings.vocab.imported"
+    const val SETTINGS_VOCAB_IMPORT_FAILED = "settings.vocab.import_failed"
+    const val SETTINGS_VOCAB_EMPTY_TITLE = "settings.vocab.empty_title"
+    const val SETTINGS_VOCAB_EMPTY_SUB = "settings.vocab.empty_sub"
+    const val SETTINGS_VOCAB_PERMISSION_NEEDED = "settings.vocab.permission_needed"
+    const val SETTINGS_VOCAB_OPEN_SETTINGS = "settings.vocab.open_settings"
+    const val SETTINGS_VOCAB_CLEAR = "settings.vocab.clear"
+    const val SETTINGS_VOCAB_CLEAR_CONFIRM_TITLE = "settings.vocab.clear_confirm_title"
+    const val SETTINGS_VOCAB_CLEAR_CONFIRM_BODY = "settings.vocab.clear_confirm_body"
+    const val SETTINGS_VOCAB_CLEAR_CONFIRM_CTA = "settings.vocab.clear_confirm_cta"
+
     const val SETTINGS_AUDIO_TITLE = "settings.audio.title"
     const val SETTINGS_AUDIO_START_STOP = "settings.audio.start_stop"
     const val SETTINGS_AUDIO_TRIGGER = "settings.audio.trigger"
@@ -517,6 +537,12 @@ object CopyKeys {
             SETTINGS_WORDS_DELETE, SETTINGS_WORDS_COUNT, SETTINGS_WORDS_RECORD, SETTINGS_WORDS_LISTENING,
             SETTINGS_WORDS_TRANSCRIBING, SETTINGS_WORDS_ERR_RECORD, SETTINGS_WORDS_ERR_KEY,
             SETTINGS_WORDS_ERR_NETWORK, SETTINGS_WORDS_ERR_PERMISSION,
+            SETTINGS_ROW_CONTACTS_VOCAB, SETTINGS_VOCAB_TITLE, SETTINGS_VOCAB_BODY,
+            SETTINGS_VOCAB_COUNT, SETTINGS_VOCAB_IMPORT, SETTINGS_VOCAB_IMPORTING,
+            SETTINGS_VOCAB_REIMPORT, SETTINGS_VOCAB_IMPORTED, SETTINGS_VOCAB_IMPORT_FAILED,
+            SETTINGS_VOCAB_EMPTY_TITLE, SETTINGS_VOCAB_EMPTY_SUB, SETTINGS_VOCAB_PERMISSION_NEEDED,
+            SETTINGS_VOCAB_OPEN_SETTINGS, SETTINGS_VOCAB_CLEAR, SETTINGS_VOCAB_CLEAR_CONFIRM_TITLE,
+            SETTINGS_VOCAB_CLEAR_CONFIRM_BODY, SETTINGS_VOCAB_CLEAR_CONFIRM_CTA,
             SETTINGS_AUDIO_TITLE, SETTINGS_AUDIO_START_STOP, SETTINGS_AUDIO_TRIGGER, SETTINGS_AUDIO_TRIGGER_SUB,
             SETTINGS_AUDIO_TRIGGER_VALUE, SETTINGS_AUDIO_HOLD, SETTINGS_AUDIO_HOLD_SUB,
             SETTINGS_AUDIO_MAX_LENGTH, SETTINGS_AUDIO_AUTOSTOP, SETTINGS_AUDIO_SILENCE,

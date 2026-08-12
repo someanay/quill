@@ -36,6 +36,7 @@ sealed interface Screen {
     data object AiCleanup : Screen
     data object WritingStyle : Screen
     data object CustomWords : Screen
+    data object ContactsVocab : Screen
     data object AudioRecording : Screen
     data object Privacy : Screen
     data object BubbleAppearance : Screen
