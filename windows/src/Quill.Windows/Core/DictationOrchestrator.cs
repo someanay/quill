@@ -110,15 +110,11 @@ public sealed class DictationOrchestrator : IDisposable
             var cleaned = false;
             if (settings.CleanupEnabled)
             {
-                var groqKey = _secrets.Get(SttProvider.Groq);
-                if (!string.IsNullOrWhiteSpace(groqKey))
-                {
-                    SetStatus(DictationState.Cleaning, "Tidying", "Meaning and names are guarded before insertion.");
-                    var style = ResolveStyle(settings, _target?.Application);
-                    var candidate = await _cleanup.CleanAsync(text, groqKey, style, timeout.Token);
-                    cleaned = !string.Equals(candidate, text, StringComparison.Ordinal);
-                    text = candidate;
-                }
+                SetStatus(DictationState.Cleaning, "Tidying", "Meaning and names are guarded before insertion.");
+                var style = ResolveStyle(settings, _target?.Application);
+                var candidate = await _cleanup.CleanAsync(text, settings.Provider, key, style, timeout.Token);
+                cleaned = !string.Equals(candidate, text, StringComparison.Ordinal);
+                text = candidate;
             }
             text = ApplyCustomWords(text, settings.CustomWords);
             SetStatus(DictationState.Inserting, "Typing", _target?.Application ?? "Focused application");

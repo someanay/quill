@@ -8,9 +8,9 @@ namespace Quill.Windows.Core;
 
 public sealed class AppServices : IDisposable
 {
-    public AppServices()
+    public AppServices(string? root = null)
     {
-        Paths = new AppPaths();
+        Paths = new AppPaths(root);
         Settings = new SettingsStore(Paths);
         Secrets = new SecretStore(Paths);
         History = new HistoryStore(Paths);

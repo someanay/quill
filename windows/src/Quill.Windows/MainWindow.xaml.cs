@@ -9,10 +9,12 @@ namespace Quill.Windows;
 public partial class MainWindow : Window
 {
     private readonly GlobalHotkeyService _hotkey = new();
+    private readonly AppServices _services;
     private bool _allowClose;
 
     public MainWindow(AppServices services)
     {
+        _services = services;
         InitializeComponent();
         ViewModel = new MainViewModel(services);
         DataContext = ViewModel;
@@ -58,11 +60,13 @@ public partial class MainWindow : Window
     private void Settings_Click(object sender, RoutedEventArgs e) => Pages.SelectedIndex = 2;
     private async void ToggleDictation_Click(object sender, RoutedEventArgs e) => await ViewModel.ToggleAsync();
     private async void ClearHistory_Click(object sender, RoutedEventArgs e) => await ViewModel.ClearHistoryAsync();
-    private void SaveKey_Click(object sender, RoutedEventArgs e) { ViewModel.SaveKey(ApiKeyField.Password); ApiKeyField.Clear(); }
+    private async void SaveKey_Click(object sender, RoutedEventArgs e) { await ViewModel.SaveKeyAsync(ApiKeyField.Password); ApiKeyField.Clear(); }
     private async void SaveSettings_Click(object sender, RoutedEventArgs e) => await ViewModel.SaveSettingsAsync();
 
-    private void ProviderPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void ProviderPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ProviderPicker.SelectedItem is SttProvider provider) ViewModel.SelectProvider(provider);
+        if (ProviderPicker.SelectedItem is SttProvider provider) await ViewModel.SelectProviderAsync(provider);
     }
+
+    private void RunSetup_Click(object sender, RoutedEventArgs e) => new SetupWindow(_services) { Owner = this }.ShowDialog();
 }

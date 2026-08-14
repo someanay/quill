@@ -12,6 +12,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly AppServices _services;
     private AppSettings _loaded = new();
+    private bool _initializing;
     private SttProvider _selectedProvider;
     private string _model = "";
     private string _language = "en";
@@ -29,6 +30,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _minimizeToTray = true;
     private int _sessionCapSeconds = 300;
     private int _historyRetentionMinutes = 60;
+    private AppTheme _theme = AppTheme.Dark;
     private string _keyStatus = "Keys are encrypted for your Windows account.";
 
     public MainViewModel(AppServices services)
@@ -40,6 +42,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     public IReadOnlyList<SttProvider> Providers { get; } = Enum.GetValues<SttProvider>();
     public IReadOnlyList<WritingStyle> WritingStyles { get; } = Enum.GetValues<WritingStyle>();
+    public IReadOnlyList<AppTheme> Themes { get; } = Enum.GetValues<AppTheme>();
     public ObservableCollection<HistoryEntry> History { get; } = [];
 
     public SttProvider SelectedProvider { get => _selectedProvider; set => Set(ref _selectedProvider, value); }
@@ -56,14 +59,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool MinimizeToTray { get => _minimizeToTray; set => Set(ref _minimizeToTray, value); }
     public int SessionCapSeconds { get => _sessionCapSeconds; set { if (Set(ref _sessionCapSeconds, value)) OnPropertyChanged(nameof(SessionCapLabel)); } }
     public int HistoryRetentionMinutes { get => _historyRetentionMinutes; set => Set(ref _historyRetentionMinutes, Math.Max(0, value)); }
+    public AppTheme Theme { get => _theme; set => Set(ref _theme, value); }
     public string KeyStatus { get => _keyStatus; private set => Set(ref _keyStatus, value); }
     public string StatusTitle { get => _statusTitle; private set => Set(ref _statusTitle, value); }
     public string StatusDetail { get => _statusDetail; private set => Set(ref _statusDetail, value); }
     public string Hotkey => _loaded.Hotkey;
     public string ProviderName => ProviderCatalog.All[SelectedProvider].DisplayName;
+    public string CleanupHelp => SelectedProvider is SttProvider.Groq or SttProvider.OpenAI or SttProvider.OpenRouter
+        ? $"Uses the same {ProviderName} key—no second provider key required."
+        : "Cleanup is unavailable for this provider; transcription still works normally.";
     public string SessionCapLabel => $"{SessionCapSeconds / 60} min";
     public string ActionLabel => _state == DictationState.Listening ? "Finish dictation" : "Start dictation";
     public int TodayCount => History.Count(it => it.CreatedAt.LocalDateTime.Date == DateTime.Today);
+    public Visibility HistoryEmptyVisibility => History.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility HistoryListVisibility => History.Count == 0 ? Visibility.Collapsed : Visibility.Visible;
     public System.Windows.Media.Brush StateBrush => _state switch
     {
         DictationState.Listening => (System.Windows.Media.Brush)System.Windows.Application.Current.FindResource("Signal"),
@@ -74,6 +83,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public async Task InitializeAsync()
     {
+        _initializing = true;
         _loaded = await _services.Settings.LoadAsync();
         SelectedProvider = _loaded.Provider;
         Model = _loaded.Model;
@@ -89,28 +99,41 @@ public sealed class MainViewModel : INotifyPropertyChanged
         MinimizeToTray = _loaded.MinimizeToTray;
         SessionCapSeconds = _loaded.SessionCapSeconds;
         HistoryRetentionMinutes = _loaded.HistoryRetentionMinutes;
+        Theme = _loaded.Theme;
+        ThemeService.Apply(Theme);
         await ReloadHistoryAsync();
         KeyStatus = _services.Secrets.Has(SelectedProvider)
-            ? $"A {ProviderName} key is stored securely."
+            ? $"{KeyArticle(SelectedProvider)} {ProviderName} key is stored securely."
             : $"No {ProviderName} key saved yet.";
         OnPropertyChanged(nameof(Hotkey));
         OnPropertyChanged(nameof(ProviderName));
+        OnPropertyChanged(nameof(CleanupHelp));
+        _initializing = false;
     }
 
-    public void SelectProvider(SttProvider provider)
+    public async Task SelectProviderAsync(SttProvider provider)
     {
+        if (SelectedProvider == provider && !_initializing) return;
         SelectedProvider = provider;
         Model = ProviderCatalog.All[provider].DefaultModel;
         KeyStatus = _services.Secrets.Has(provider)
-            ? $"A {ProviderCatalog.All[provider].DisplayName} key is stored securely."
+            ? $"{KeyArticle(provider)} {ProviderCatalog.All[provider].DisplayName} key is stored securely."
             : $"No {ProviderCatalog.All[provider].DisplayName} key saved yet.";
         OnPropertyChanged(nameof(ProviderName));
+        OnPropertyChanged(nameof(CleanupHelp));
+        if (!_initializing)
+        {
+            _loaded = _loaded with { Provider = provider, Model = Model };
+            await _services.Settings.SaveAsync(_loaded);
+        }
     }
 
-    public void SaveKey(string key)
+    public async Task SaveKeyAsync(string key)
     {
         _services.Secrets.Set(SelectedProvider, key);
         KeyStatus = string.IsNullOrWhiteSpace(key) ? "Key removed." : $"{ProviderName} key saved for this Windows account.";
+        _loaded = _loaded with { Provider = SelectedProvider, Model = Model.Trim(), Language = Language.Trim(), CustomBaseUrl = CustomBaseUrl.Trim() };
+        await _services.Settings.SaveAsync(_loaded);
     }
 
     public async Task SaveSettingsAsync()
@@ -131,8 +154,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             MinimizeToTray = MinimizeToTray,
             SessionCapSeconds = SessionCapSeconds,
             HistoryRetentionMinutes = HistoryRetentionMinutes,
+            Theme = Theme,
         };
         await _services.Settings.SaveAsync(_loaded);
+        ThemeService.Apply(Theme);
         StartupService.SetEnabled(StartWithWindows);
         StatusTitle = "Settings saved";
         StatusDetail = "The global shortcut is ready.";
@@ -151,6 +176,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         await _services.History.ClearAsync();
         History.Clear();
         OnPropertyChanged(nameof(TodayCount));
+        OnPropertyChanged(nameof(HistoryEmptyVisibility));
+        OnPropertyChanged(nameof(HistoryListVisibility));
     }
 
     private async Task ReloadHistoryAsync()
@@ -159,6 +186,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         History.Clear();
         foreach (var entry in entries) History.Add(entry);
         OnPropertyChanged(nameof(TodayCount));
+        OnPropertyChanged(nameof(HistoryEmptyVisibility));
+        OnPropertyChanged(nameof(HistoryListVisibility));
     }
 
     private static IReadOnlyList<WordReplacement> ParseCustomWords(string input) => input
@@ -167,6 +196,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         .Where(parts => parts.Length == 2 && parts.All(part => !string.IsNullOrWhiteSpace(part)))
         .Select(parts => new WordReplacement(parts[0], parts[1]))
         .ToArray();
+
+    private static string KeyArticle(SttProvider provider) => provider is SttProvider.OpenAI or SttProvider.OpenRouter ? "An" : "A";
 
     private void OnStatusChanged(object? sender, DictationStatus status)
     {

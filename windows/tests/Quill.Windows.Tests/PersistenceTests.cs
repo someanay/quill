@@ -30,6 +30,22 @@ public sealed class PersistenceTests : IDisposable
         Assert.Null(store.Get(SttProvider.Groq));
     }
 
+    [Fact]
+    public async Task SavingKeyAlsoPersistsTheSelectedProvider()
+    {
+        using var services = new AppServices(_root);
+        var viewModel = new MainViewModel(services);
+
+        await viewModel.SelectProviderAsync(SttProvider.OpenRouter);
+        await viewModel.SaveKeyAsync("sk-or-test-secret");
+
+        var stored = await services.Settings.LoadAsync();
+        Assert.Equal(SttProvider.OpenRouter, stored.Provider);
+        Assert.Equal("openai/whisper-large-v3-turbo", stored.Model);
+        Assert.True(services.Secrets.Has(SttProvider.OpenRouter));
+        Assert.False(services.Secrets.Has(SttProvider.Groq));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);

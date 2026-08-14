@@ -8,8 +8,12 @@ public enum SttProvider { Groq, OpenAI, OpenRouter, Gemini, Custom }
 
 public enum WritingStyle { Formal, Neutral, Casual }
 
+public enum AppTheme { Dark, Light }
+
 public sealed record AppSettings
 {
+    public bool OnboardingComplete { get; init; }
+    public AppTheme Theme { get; init; } = AppTheme.Dark;
     public SttProvider Provider { get; init; } = SttProvider.Groq;
     public string Model { get; init; } = "whisper-large-v3-turbo";
     public string Language { get; init; } = "en";

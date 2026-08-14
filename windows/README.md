@@ -4,6 +4,11 @@ Native Windows port of Quill's BYOK dictation pipeline. It keeps the Android app
 design and privacy model, but replaces the floating bubble with a system-wide shortcut and a
 non-activating dictation ribbon.
 
+The first normal launch opens a five-step setup guide covering the product tour, provider/key,
+shortcut, privacy choices, and first dictation. Dark mode is the default; light mode is available in
+Settings and applies on the next launch. The Home/setup demo-carousel stages are intentionally
+reserved for product clips that have not been supplied yet.
+
 ## Current core path
 
 1. Press **Ctrl+Alt+Space** in any ordinary text field.
@@ -50,6 +55,7 @@ profile is unavailable even though the same test succeeds for the signed-in user
 - `src/Quill.Windows/Cleanup` — optional cleanup and structural guard
 - `src/Quill.Windows/Core` — settings, history, models, and end-to-end orchestration
 - `src/Quill.Windows/Platform` — global hotkey, focused-field safety, insertion, tray/startup
+- `src/Quill.Windows/SetupWindow.*` — guided first-run and repeatable setup wizard
 - `src/Quill.Windows/Security` — per-provider DPAPI secret storage
 - `tests/Quill.Windows.Tests` — pure pipeline and persistence tests
 

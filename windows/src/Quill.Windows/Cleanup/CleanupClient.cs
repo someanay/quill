@@ -9,7 +9,7 @@ namespace Quill.Windows.Cleanup;
 public sealed class CleanupClient(HttpClient http)
 {
     public async Task<string> CleanAsync(
-        string raw, string groqKey, WritingStyle style, CancellationToken cancellation)
+        string raw, SttProvider provider, string key, WritingStyle style, CancellationToken cancellation)
     {
         var styleLine = style switch
         {
@@ -17,9 +17,17 @@ public sealed class CleanupClient(HttpClient http)
             WritingStyle.Casual => "Use a relaxed conversational register.",
             _ => "Preserve the speaker's natural register.",
         };
+        var connection = provider switch
+        {
+            SttProvider.Groq => ("https://api.groq.com/openai/v1/chat/completions", "llama-3.3-70b-versatile"),
+            SttProvider.OpenAI => ("https://api.openai.com/v1/chat/completions", "gpt-4o-mini"),
+            SttProvider.OpenRouter => ("https://openrouter.ai/api/v1/chat/completions", "openai/gpt-4o-mini"),
+            _ => (null, null),
+        };
+        if (connection.Item1 is null) return raw;
         var body = new
         {
-            model = "llama-3.3-70b-versatile",
+            model = connection.Item2,
             temperature = 0,
             messages = new[]
             {
@@ -27,9 +35,9 @@ public sealed class CleanupClient(HttpClient http)
                 new { role = "user", content = raw },
             },
         };
-        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions")
+        using var request = new HttpRequestMessage(HttpMethod.Post, connection.Item1)
         { Content = JsonContent.Create(body) };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", groqKey);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
