@@ -25,3 +25,7 @@ uidump*.xml
 
 # graphify knowledge-graph output — regenerated from source, not committed
 graphify-out/
+# Windows/.NET build output
+windows/**/bin/
+windows/**/obj/
+windows/.vs/
