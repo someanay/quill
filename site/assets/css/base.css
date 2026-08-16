@@ -1,0 +1,231 @@
+/* ============================================================================
+   Quill — base reset, typography, layout primitives
+   ============================================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Theme transition — applied only once the user has interacted with the toggle,
+   so initial load never flashes. Enabled by .theme-ready on <html>. */
+html.theme-ready,
+html.theme-ready body,
+html.theme-ready body *,
+html.theme-ready body *::before,
+html.theme-ready body *::after {
+  transition:
+    background-color var(--dur-med) var(--ease-out),
+    color var(--dur-med) var(--ease-out),
+    border-color var(--dur-med) var(--ease-out),
+    fill var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+/* Wordmark serif — the single editorial flourish, used for "Quill" only. */
+.wordmark {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrow / overline */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brand-ink);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 1.5px;
+  background: var(--brand);
+  border-radius: 1px;
+}
+
+/* Display & heading scale */
+.display {
+  font-size: clamp(2.35rem, 5.4vw, 4rem);
+  line-height: 1.05;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+}
+
+.heading-xl {
+  font-size: clamp(1.9rem, 3.6vw, 2.85rem);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+}
+
+.heading-lg {
+  font-size: clamp(1.55rem, 2.6vw, 2.1rem);
+  line-height: 1.18;
+  letter-spacing: -0.012em;
+}
+
+.heading-md {
+  font-size: 1.2rem;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  font-size: clamp(1.05rem, 1.6vw, 1.22rem);
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.body-lg {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+/* Layout container */
+.container {
+  width: 100%;
+  max-width: 1160px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 5vw, 40px);
+}
+
+.section {
+  padding-block: clamp(72px, 10vw, 132px);
+}
+
+.section--tight {
+  padding-block: clamp(48px, 7vw, 84px);
+}
+
+/* Generic section heading block */
+.section-head {
+  max-width: 620px;
+  display: grid;
+  gap: 18px;
+}
+
+.section-head p {
+  max-width: 54ch;
+}
+
+/* Visually hidden (a11y only) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Scroll-reveal primitives (driven by IntersectionObserver in site.js) */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,772 @@
+/* ============================================================================
+   Quill — components: nav, buttons, wordmark, bubble, ink meter, carousel
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   Wordmark lockup (brand mark + serif "Quill")
+---------------------------------------------------------------------------- */
+.wordmark-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.wordmark-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--grad-brand);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--sh-1);
+  flex: none;
+}
+
+.wordmark-mark svg {
+  width: 19px;
+  height: 19px;
+  color: #fff;
+}
+
+/* ----------------------------------------------------------------------------
+   Site navigation
+---------------------------------------------------------------------------- */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+
+.site-nav__inner {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.site-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.site-nav__link {
+  font-size: 0.92rem;
+  font-weight: 550;
+  color: var(--text-2);
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  transition: color var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+.site-nav__link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.site-nav__link[aria-current="page"] {
+  color: var(--brand-ink);
+  background: var(--brand-soft);
+}
+
+.site-nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Theme toggle + mobile menu button share this round-icon style */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-pill);
+  display: inline-grid;
+  place-items: center;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: color var(--dur-fast), border-color var(--dur-fast), background-color var(--dur-fast);
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Sun/moon icon swap based on theme */
+.icon-btn .icon-sun { display: none; }
+.icon-btn .icon-moon { display: block; }
+[data-theme="dark"] .icon-btn .icon-sun { display: block; }
+[data-theme="dark"] .icon-btn .icon-moon { display: none; }
+
+/* Mobile nav drawer */
+.mobile-menu {
+  display: none;
+}
+
+.site-nav__links.mobile-open {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 12px 20px 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
+}
+
+.site-nav__links.mobile-open .site-nav__link {
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+}
+
+/* ----------------------------------------------------------------------------
+   Buttons
+---------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 52px;
+  padding: 0 26px;
+  border-radius: var(--r-pill);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+.btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn--primary {
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: var(--sh-1);
+}
+
+.btn--primary:hover {
+  background: var(--brand-ink);
+  box-shadow: var(--sh-2);
+}
+
+.btn--tonal {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+.btn--tonal:hover {
+  background: color-mix(in srgb, var(--brand-soft) 84%, var(--brand) 16%);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--brand-ink);
+  border: 1px solid var(--line-strong);
+}
+
+.btn--ghost:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.btn--sm {
+  height: 40px;
+  padding: 0 18px;
+  font-size: 0.88rem;
+}
+
+/* ----------------------------------------------------------------------------
+   Section eyebrow + title helpers
+---------------------------------------------------------------------------- */
+.section-head--center {
+  margin-inline: auto;
+  text-align: center;
+  justify-items: center;
+}
+
+/* ----------------------------------------------------------------------------
+   SIGNATURE 1 — The floating bubble
+   Faithful to design_system.md §9. Canvas-drawn via SVG so states are exact.
+---------------------------------------------------------------------------- */
+.bubble-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.bubble {
+  --bubble-d: 64px;
+  position: relative;
+  width: var(--bubble-d);
+  height: var(--bubble-d);
+  border-radius: 50%;
+  background: var(--grad-brand);
+  box-shadow: var(--sh-bubble);
+  display: grid;
+  place-items: center;
+}
+
+/* White contrast ring — guarantees legibility over any background */
+.bubble::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.92);
+  pointer-events: none;
+}
+
+.bubble .glyph {
+  width: 44%;
+  height: 44%;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+  display: none;
+}
+
+.bubble[data-state="idle"] .glyph-mic,
+.bubble[data-state="recording"] .glyph-mic,
+.bubble[data-state="paste"] .glyph-copy,
+.bubble[data-state="error"] .glyph-bang,
+.bubble[data-state="transcribing"] .glyph-spinner {
+  display: block;
+}
+
+/* Gold "listening" halo + breathe (1.8s) */
+.bubble[data-state="recording"] {
+  background: var(--grad-gold);
+}
+
+.bubble[data-state="recording"] .bubble-halo {
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 0 rgba(224, 160, 58, 0.24);
+  animation: halo-breathe 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes halo-breathe {
+  0%, 100% { box-shadow: 0 0 0 7px rgba(224, 160, 58, 0.28); }
+  50%      { box-shadow: 0 0 0 13px rgba(224, 160, 58, 0.10); }
+}
+
+.bubble[data-state="transcribing"] {
+  background: var(--grad-busy);
+  animation: bubble-thinking 1.3s cubic-bezier(.4,0,.2,1) infinite;
+}
+
+.bubble[data-state="transcribing"] .glyph-spinner {
+  animation: spin 1s linear infinite;
+}
+
+.bubble[data-state="paste"] {
+  background: var(--grad-brand);
+}
+
+.bubble[data-state="error"] {
+  background: var(--grad-err);
+  box-shadow: var(--sh-bubble-err);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bubble-thinking {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: var(--sh-bubble); }
+  50% { transform: translateY(-5px) scale(1.06); box-shadow: 0 18px 38px rgba(102, 90, 238, .42); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble[data-state="recording"] .bubble-halo {
+    animation: none;
+    box-shadow: 0 0 0 9px rgba(224, 160, 58, 0.22);
+  }
+  .bubble[data-state="transcribing"] .glyph-spinner {
+    animation: none;
+  }
+  .bubble[data-state="transcribing"] { animation: none; }
+}
+
+/* ----------------------------------------------------------------------------
+   SIGNATURE 2 — The ink-stroke level meter
+   design_system.md §10. Voice drawn as gold nib strokes.
+---------------------------------------------------------------------------- */
+.ink-meter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 64px;
+}
+
+.ink-meter__bar {
+  width: 5px;
+  height: 42px;
+  border-radius: 3px;
+  background: var(--grad-meter-gold);
+  transform-origin: center;
+  transform: scaleY(0.12);
+  transition: transform 100ms var(--ease-out);
+  will-change: transform;
+}
+
+.ink-meter--brand .ink-meter__bar {
+  background: var(--grad-meter-brand);
+}
+
+/* Compact pill meter (beside the bubble, design_system.md §9 companion) */
+.ink-meter--pill {
+  height: 26px;
+  gap: 3px;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+}
+
+.ink-meter--pill .ink-meter__bar {
+  width: 3px;
+  height: 14px;
+}
+
+/* Larger hero bubble */
+.bubble--lg {
+  --bubble-d: 84px;
+}
+
+/* ----------------------------------------------------------------------------
+   Product frames (phone + desktop) used to stage the product scenes
+---------------------------------------------------------------------------- */
+.device-frame {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-pop);
+  overflow: hidden;
+  position: relative;
+}
+
+.phone-frame {
+  width: min(300px, 78vw);
+  aspect-ratio: 9 / 16;
+  border-radius: 38px;
+  padding: 10px;
+  background: #1C1B33;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  background: var(--bg);
+  position: relative;
+}
+
+.desktop-frame {
+  width: 100%;
+  max-width: 820px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-1);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.desktop-frame--dark {
+  background: radial-gradient(120% 120% at 50% 0%, #171a24 0%, #0f1117 60%);
+  border-color: var(--line);
+}
+
+/* ----------------------------------------------------------------------------
+   Carousel (shared by Android + Windows pages)
+---------------------------------------------------------------------------- */
+.carousel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.carousel__viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-xl);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
+}
+
+.carousel__track {
+  display: flex;
+  transition: transform var(--dur-slow) var(--ease-out);
+  will-change: transform;
+}
+
+.carousel__slide {
+  flex: 0 0 100%;
+  display: grid;
+  place-items: center;
+}
+
+/* Scene shell: centres the device inside the slide with breathing room */
+.carousel__scene {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 48px);
+}
+
+/* Progress indicator: a segmented timer bar above the carousel */
+.carousel__progress {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel__progress-step {
+  position: relative;
+  width: clamp(20px, 4vw, 42px);
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  overflow: hidden;
+}
+
+.carousel__progress-step.is-active .carousel__progress-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--brand);
+  transform-origin: left;
+  animation: progress-fill var(--carousel-interval, 6000ms) linear forwards;
+}
+
+.carousel__progress-step.is-done {
+  background: var(--brand);
+}
+
+@keyframes progress-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Controls row */
+.carousel__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.carousel__arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  transition: background-color var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
+}
+
+.carousel__arrow:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.carousel__arrow:active {
+  transform: scale(0.96);
+}
+
+.carousel__arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+.carousel__dots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.carousel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+  transition: background-color var(--dur-fast), transform var(--dur-fast);
+}
+
+.carousel__dot.is-active {
+  background: var(--brand);
+  transform: scale(1.35);
+}
+
+.carousel__caption {
+  text-align: center;
+  display: grid;
+  gap: 6px;
+  min-height: 3.4em;
+}
+
+.carousel__caption h3 {
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+.carousel__caption p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+/* Pause/resume + counter chip */
+.carousel__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+}
+
+.carousel__counter {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reduced motion: freeze auto-advance, drop the timed progress animation */
+@media (prefers-reduced-motion: reduce) {
+  .carousel__progress-step.is-active .carousel__progress-fill {
+    animation: none;
+    transform: none;
+  }
+  .carousel__track {
+    transition: none;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   Platform cards
+---------------------------------------------------------------------------- */
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.platform-card {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  padding: 30px;
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+  transition: transform var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out), border-color var(--dur-med) var(--ease-out);
+}
+
+.platform-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-2);
+  border-color: var(--line-strong);
+}
+
+/* Native-platform highlight (platform detection in site.js) */
+.platform-card.is-native-platform {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft), var(--sh-1);
+}
+
+.btn.is-native-platform {
+  box-shadow: 0 0 0 3px var(--brand-soft), var(--sh-1);
+}
+
+.native-chip {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.native-chip::before {
+  content: "\2713";
+  font-weight: 800;
+}
+
+.platform-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: grid;
+  place-items: center;
+}
+
+.platform-card__icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Left-align the card's CTA pill (avoids a stretched full-width pill) */
+.platform-card .btn {
+  justify-self: start;
+}
+
+/* ----------------------------------------------------------------------------
+   Feature rows
+---------------------------------------------------------------------------- */
+.feature-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.feature-row .feature {
+  display: grid;
+  gap: 14px;
+  padding: 26px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  align-content: start;
+}
+
+.feature .feature__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  display: grid;
+  place-items: center;
+}
+
+.feature .feature__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.feature h3 {
+  font-size: 1.05rem;
+}
+
+.feature p {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ----------------------------------------------------------------------------
+   Footer
+---------------------------------------------------------------------------- */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding-block: 48px 40px;
+  background: var(--surface);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px 48px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+}
+
+.site-footer__links a {
+  font-size: 0.9rem;
+  color: var(--muted);
+  transition: color var(--dur-fast);
+}
+
+.site-footer__links a:hover {
+  color: var(--text);
+}
+
+.site-footer__note {
+  font-size: 0.82rem;
+  color: var(--faint);
+  max-width: 46ch;
+  line-height: 1.5;
+}
+
+/* ----------------------------------------------------------------------------
+   Responsive
+---------------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .site-nav__links { display: none; }
+  .mobile-menu { display: inline-grid; }
+  .site-nav__links.mobile-open { display: flex; }
+
+  .platform-grid,
+  .feature-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 861px) {
+  .mobile-menu { display: none; }
+}

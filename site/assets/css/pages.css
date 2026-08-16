@@ -1,0 +1,866 @@
+/* ============================================================================
+   Quill — page layouts: heroes, product stories, scene mockups
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   Hero (shared)
+---------------------------------------------------------------------------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(64px, 9vw, 120px) clamp(40px, 6vw, 80px);
+  isolation: isolate;
+}
+
+.hero::before,
+.hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.hero::before {
+  width: 520px;
+  height: 520px;
+  right: -180px;
+  top: -170px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--brand) 20%, transparent), transparent 68%);
+}
+
+.hero::after {
+  width: 360px;
+  height: 360px;
+  left: -220px;
+  bottom: -210px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%);
+}
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+}
+
+.hero__copy {
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+
+.hero__copy .lead {
+  max-width: 46ch;
+}
+
+.hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* The homepage is an actual two-platform product preview, not a generic phone hero. */
+.platform-preview {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-2) 92%, var(--brand-soft));
+}
+
+.platform-preview__button {
+  display: grid;
+  gap: 2px;
+  min-width: 145px;
+  padding: 10px 13px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted);
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color var(--dur-fast), background-color var(--dur-fast), box-shadow var(--dur-fast), transform var(--dur-fast);
+}
+
+.platform-preview__button span { font-size: .67rem; font-weight: 500; opacity: .78; }
+.platform-preview__button:hover { color: var(--text); transform: translateY(-1px); }
+.platform-preview__button.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), #7669f5);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--brand) 32%, transparent);
+}
+
+.hero__visual {
+  display: grid;
+  place-items: center;
+  position: relative;
+  min-height: 440px;
+}
+
+.hero-desktop-demo {
+  display: none;
+  width: min(560px, 100%);
+  aspect-ratio: 1.28;
+  padding: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 22px;
+  background: linear-gradient(145deg, var(--surface), var(--surface-2));
+  box-shadow: 0 28px 70px color-mix(in srgb, var(--text) 20%, transparent), 0 0 0 8px color-mix(in srgb, var(--brand) 7%, transparent);
+  transform: perspective(900px) rotateY(-3deg) rotateX(1deg);
+  animation: desktop-float 5s ease-in-out infinite;
+}
+
+@keyframes desktop-float { 50% { transform: perspective(900px) rotateY(-3deg) rotateX(1deg) translateY(-8px); } }
+
+.hero-desktop-demo__bar {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero-desktop-demo__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); }
+.hero-desktop-demo__dot--brand { background: var(--brand); }
+.hero-desktop-demo__title { margin-left: 8px; color: var(--muted); font-size: .75rem; }
+
+.hero-desktop-demo__body {
+  position: relative;
+  height: calc(100% - 34px);
+  padding: 32px;
+  background: repeating-linear-gradient(0deg, transparent 0 28px, color-mix(in srgb, var(--line) 55%, transparent) 29px 30px);
+}
+
+.hero-desktop-demo__line { display: block; width: 58%; height: 10px; margin-bottom: 16px; border-radius: 5px; background: var(--line-strong); opacity: .7; }
+.hero-desktop-demo__line--long { width: 78%; height: 14px; background: var(--brand-soft); }
+.hero-desktop-demo__line--short { width: 42%; }
+
+.hero-ribbon {
+  position: absolute;
+  right: 26px;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(330px, calc(100% - 52px));
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--brand) 48%, var(--line));
+  border-radius: 16px;
+  color: #fff;
+  background: #1c1b33;
+  box-shadow: 0 16px 34px rgba(17, 17, 26, .34);
+}
+
+.hero-ribbon__orb { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: var(--grad-brand); }
+.hero-ribbon__orb svg { width: 20px; height: 20px; }
+.hero-ribbon strong, .hero-ribbon small { display: block; }
+.hero-ribbon strong { font-size: .85rem; }
+.hero-ribbon small { margin-top: 2px; color: #bfc3d4; font-size: .68rem; }
+.hero-ribbon__meter { display: flex; align-items: center; gap: 3px; margin-left: auto; }
+.hero-ribbon__meter i { display: block; width: 3px; height: 18px; border-radius: 3px; background: var(--gold); animation: meter-wave 1.2s ease-in-out infinite; }
+.hero-ribbon__meter i:nth-child(2) { animation-delay: .12s; height: 26px; }
+.hero-ribbon__meter i:nth-child(3) { animation-delay: .24s; height: 20px; }
+.hero-ribbon__meter i:nth-child(4) { animation-delay: .36s; height: 30px; }
+.hero-ribbon__meter i:nth-child(5) { animation-delay: .48s; height: 15px; }
+
+.hero-ribbon { animation: ribbon-arrive .55s cubic-bezier(.2,.85,.3,1.2) both; }
+.hero-ribbon[data-state="transcribing"] .hero-ribbon__orb { animation: ribbon-orb-spin 1.2s linear infinite; }
+.hero-ribbon[data-state="ready"] .hero-ribbon__meter { opacity: .3; }
+@keyframes ribbon-arrive { from { opacity: 0; transform: translateY(16px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ribbon-orb-spin { to { transform: rotate(360deg); } }
+
+html[data-platform-preview="windows"] .hero-desktop-demo { display: block; }
+html[data-platform-preview="windows"] .hero__visual > .hero-phone { display: none; }
+html[data-platform-preview="android"] .hero-desktop-demo { display: none; }
+
+html[data-platform-preview="windows"] .hero {
+  background: linear-gradient(115deg, color-mix(in srgb, var(--brand-soft) 45%, transparent), transparent 52%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ribbon__meter i { animation: none; }
+  .hero-desktop-demo, .hero-ribbon { animation: none; }
+}
+
+/* Trust line under the hero CTAs */
+.hero__trust {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.hero__trust svg {
+  width: 16px;
+  height: 16px;
+  color: var(--ok);
+}
+
+/* ----------------------------------------------------------------------------
+   Product-story sections (alternating two-column)
+---------------------------------------------------------------------------- */
+.story {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(36px, 6vw, 80px);
+  align-items: center;
+}
+
+.story--flip .story__visual { order: 2; }
+.story--flip .story__copy { order: 1; }
+
+.story__copy {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+
+.story__copy .body-lg {
+  max-width: 50ch;
+}
+
+.story__visual {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* A quiet framed stage behind story visuals (content-sized, not full-bleed) */
+.stage {
+  display: grid;
+  place-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  padding: clamp(28px, 5vw, 56px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+}
+
+/* ----------------------------------------------------------------------------
+   Step list (three-step story)
+---------------------------------------------------------------------------- */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  counter-reset: step;
+}
+
+.step {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  align-content: start;
+}
+
+.step__num {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--brand-ink);
+  text-transform: uppercase;
+}
+
+.step__num::after {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 2px;
+  background: var(--brand);
+  margin-top: 10px;
+  border-radius: 1px;
+}
+
+.step h3 {
+  font-size: 1.22rem;
+  letter-spacing: -0.01em;
+}
+
+.step p {
+  color: var(--muted);
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+/* ----------------------------------------------------------------------------
+   Privacy / BYOK band
+---------------------------------------------------------------------------- */
+.privacy-band {
+  border-radius: var(--r-xl);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: clamp(28px, 4vw, 48px);
+  display: grid;
+  gap: 28px;
+}
+
+.privacy-band__row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.privacy-point {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.privacy-point__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: grid;
+  place-items: center;
+  margin-bottom: 6px;
+}
+
+.privacy-point__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.privacy-point h3 {
+  font-size: 1.05rem;
+}
+
+.privacy-point p {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+/* ----------------------------------------------------------------------------
+   Scene mockups — faithful reconstructions of real Quill UI
+---------------------------------------------------------------------------- */
+
+/* Floating bubble + companion meter over a phone screen */
+.bubble-float {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* A row of bubbles showing each state (bubble story section) */
+.bubble-states {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(28px, 5vw, 56px);
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: clamp(32px, 5vw, 56px);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+}
+
+.bubble-state {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+
+.bubble-state__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* Large ink meter (signature 2 story section) */
+.ink-meter--large {
+  height: 96px;
+  gap: 6px;
+  min-width: 150px;
+  justify-content: center;
+}
+
+.ink-meter--large .ink-meter__bar {
+  width: 6px;
+  height: 62px;
+  border-radius: 4px;
+}
+
+/* CSS-only ambient meter (carousel scenes) — no JS required */
+@keyframes meter-wave {
+  0%, 100% { transform: scaleY(0.22); }
+  50%      { transform: scaleY(0.92); }
+}
+
+.ink-meter--ambient .ink-meter__bar {
+  animation: meter-wave 1.7s ease-in-out infinite;
+}
+
+.ink-meter--ambient .ink-meter__bar:nth-child(1)  { animation-delay: 0s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(2)  { animation-delay: 0.12s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(3)  { animation-delay: 0.24s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(4)  { animation-delay: 0.36s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(5)  { animation-delay: 0.48s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(6)  { animation-delay: 0.6s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(7)  { animation-delay: 0.72s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(8)  { animation-delay: 0.84s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(9)  { animation-delay: 0.96s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(10) { animation-delay: 1.08s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(11) { animation-delay: 1.2s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(12) { animation-delay: 1.32s; }
+.ink-meter--ambient .ink-meter__bar:nth-child(13) { animation-delay: 1.44s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ink-meter--ambient .ink-meter__bar {
+    animation: none;
+    transform: scaleY(0.5);
+  }
+}
+
+
+/* --- Android: a lightweight chat surface behind the bubble --- */
+.chat-mock {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding: 14px 12px;
+  gap: 10px;
+}
+
+.chat-mock__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chat-mock__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--grad-brand);
+  flex: none;
+}
+
+.chat-mock__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.chat-mock__status {
+  font-size: 0.72rem;
+  color: var(--ok);
+}
+
+.chat-mock__bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.msg {
+  max-width: 78%;
+  padding: 9px 13px;
+  border-radius: 18px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  align-self: flex-start;
+}
+
+.msg--mine {
+  align-self: flex-end;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+}
+
+.chat-mock__input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  padding: 10px 16px;
+  min-height: 46px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.chat-mock__input--filled {
+  color: var(--text);
+  border-color: var(--brand);
+}
+
+.chat-mock__input .caret {
+  width: 1.5px;
+  height: 16px;
+  background: var(--brand);
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+/* --- Android: onboarding welcome screen --- */
+.onboard-mock {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 26px;
+  text-align: center;
+}
+
+.onboard-mock .perm-illustration {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, var(--brand-soft), transparent 70%);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.onboard-mock .perm-illustration::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--line-strong);
+}
+
+.onboard-mock .perm-core {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--grad-brand);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.onboard-mock .perm-core svg {
+  width: 26px;
+  height: 26px;
+}
+
+.onboard-mock h4 {
+  font-size: 1.12rem;
+}
+
+.onboard-mock p {
+  font-size: 0.84rem;
+  color: var(--muted);
+  max-width: 30ch;
+}
+
+.onboard-mock .mock-btn {
+  margin-top: 6px;
+  height: 44px;
+  padding: 0 24px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- Windows: dictation ribbon --- */
+.ribbon-mock {
+  width: min(390px, 90%);
+  border-radius: 22px;
+  background: #1C1B33;
+  border: 1px solid rgba(74, 63, 208, 0.28);
+  box-shadow: 0 8px 28px rgba(17, 17, 26, 0.5);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ribbon-mock__orb {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
+  background: var(--grad-brand);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  flex: none;
+}
+
+.ribbon-mock__orb svg {
+  width: 22px;
+  height: 22px;
+}
+
+.ribbon-mock__text {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.ribbon-mock__title {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ribbon-mock__detail {
+  color: #BFC3D4;
+  font-size: 0.76rem;
+}
+
+.ribbon-mock__meter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ribbon-mock__meter span {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+
+/* --- Windows: setup wizard mock --- */
+.wizard-mock {
+  width: min(560px, 92%);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.wizard-mock__bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.wizard-mock__bar .dots {
+  display: flex;
+  gap: 6px;
+}
+
+.wizard-mock__bar .dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+.wizard-mock__bar .dots i.on { background: var(--brand); }
+
+.wizard-mock__body {
+  padding: 24px;
+  display: grid;
+  gap: 14px;
+}
+
+.wizard-mock__body .row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+.wizard-mock__body .row .tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.wizard-mock__body .row .tile svg {
+  width: 18px;
+  height: 18px;
+}
+
+.wizard-mock__body .row .lbl { flex: 1; font-size: 0.9rem; font-weight: 600; }
+.wizard-mock__body .row .val { font-size: 0.8rem; color: var(--muted); }
+
+/* --- Windows: notepad / text field mock --- */
+.notepad-mock {
+  width: min(560px, 92%);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--sh-pop);
+  overflow: hidden;
+}
+
+.notepad-mock__bar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.notepad-mock__body {
+  padding: 22px;
+  min-height: 140px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--text);
+}
+
+.notepad-mock__body .typed {
+  color: var(--text);
+}
+
+.notepad-mock__body .caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--brand);
+  vertical-align: -0.15em;
+  animation: caret-blink 1.1s steps(1) infinite;
+}
+
+/* ----------------------------------------------------------------------------
+   Download / CTA band
+---------------------------------------------------------------------------- */
+.cta-band {
+  border-radius: var(--r-xl);
+  padding: clamp(40px, 6vw, 72px);
+  text-align: center;
+  display: grid;
+  gap: 24px;
+  justify-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-band .display {
+  max-width: 18ch;
+}
+
+.cta-band p {
+  max-width: 52ch;
+  color: var(--muted);
+}
+
+.cta-band__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+}
+
+/* The hero is now the single platform chooser; these legacy repeats are hidden. */
+section:has(.platform-grid),
+section:has(.cta-band) { display: none; }
+
+/* Store badge chips (honest, non-linking when URL unknown) */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: border-color var(--dur-fast), background-color var(--dur-fast);
+}
+
+.badge:hover {
+  border-color: var(--brand);
+  background: var(--surface-2);
+}
+
+.badge svg {
+  width: 22px;
+  height: 22px;
+}
+
+.badge--disabled {
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------------------------------
+   Responsive
+---------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .hero__grid,
+  .story {
+    grid-template-columns: 1fr;
+  }
+  .story--flip .story__visual { order: 0; }
+  .story--flip .story__copy { order: 0; }
+
+  .steps {
+    grid-template-columns: 1fr;
+  }
+
+  .privacy-band__row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .platform-preview { width: 100%; }
+  .platform-preview__button { min-width: 0; flex: 1; padding-inline: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-mock__input .caret,
+  .notepad-mock__body .caret {
+    animation: none;
+  }
+}
