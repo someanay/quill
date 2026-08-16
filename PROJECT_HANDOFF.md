@@ -1,5 +1,19 @@
 # Quill — Project Handoff / Comprehensive Context
 
+> **Current implementation addendum (2026-08-14).** A native Windows port now lives in `windows/`.
+> It includes a dark-first WPF UI, five-step setup wizard, configurable global shortcut (default
+> `Alt+Q`), tray/startup behavior, local history retention presets, provider-specific STT model
+> dropdowns, a 15-second-step recording cap (through 10 minutes, then uncapped), and separate 16:9
+> desktop demo carousels. OpenRouter STT defaults to `openai/whisper-large-v3-turbo`. Cleanup is
+> fail-soft and meaning-guarded; setup and Settings expose provider-specific cleanup model dropdowns
+> using the same provider key, while Gemini and Custom disable cleanup. Windows tests are under
+> `windows/tests/Quill.Windows.Tests`; the debug executable builds to
+> `windows/src/Quill.Windows/bin/Debug/net10.0-windows/Quill.Windows.exe`.
+>
+> Android also defaults OpenRouter STT to `openai/whisper-large-v3-turbo` and migrates the prior
+> stored default. The historical Android snapshot below remains useful, but current source plus
+> `AGENT_ONBOARDING.md` and `AGENT_MEMORY_ADDENDUM.md` take precedence.
+
 > Purpose: give a fresh AI instance (or new engineer) enough context to work on this project
 > without re-deriving it. Written 2026-06-28, end of a long build+debug session.
 > The author of this doc worked as reviewer/architect via a Filesystem connector into the real repo;
