@@ -7,7 +7,7 @@ using Quill.Windows.Stt;
 
 namespace Quill.Windows.Core;
 
-public sealed record DictationStatus(DictationState State, string Title, string Detail = "");
+public sealed record DictationStatus(DictationState State, string Title, string Detail = "", string Toast = "");
 
 public sealed class DictationOrchestrator : IDisposable
 {
@@ -20,6 +20,7 @@ public sealed class DictationOrchestrator : IDisposable
     private readonly HttpClient _http;
     private readonly SemaphoreSlim _transition = new(1, 1);
     private FocusTarget? _target;
+    private bool _clipboardOnly;
     private DictationState _state = DictationState.Idle;
 
     public DictationOrchestrator(
@@ -55,6 +56,22 @@ public sealed class DictationOrchestrator : IDisposable
         finally { _transition.Release(); }
     }
 
+    /// <summary>Records without a focused target and places the transcript on the clipboard.</summary>
+    public async Task ToggleClipboardAsync()
+    {
+        if (!await _transition.WaitAsync(0)) return;
+        try
+        {
+            if (_state == DictationState.Idle || _state == DictationState.Error)
+            {
+                _clipboardOnly = true;
+                await StartAsync();
+            }
+            else if (_state == DictationState.Listening) await StopAndProcessAsync();
+        }
+        finally { _transition.Release(); }
+    }
+
     private async Task StartAsync()
     {
         var settings = await _settings.LoadAsync();
@@ -64,16 +81,19 @@ public sealed class DictationOrchestrator : IDisposable
             SetStatus(DictationState.Error, "API key required", $"Add a {ProviderCatalog.All[settings.Provider].DisplayName} key in Settings.");
             return;
         }
-        _target = _injector.CaptureTarget();
-        if (_target.IsSensitive)
+        _target = _clipboardOnly ? null : _injector.CaptureTarget();
+        if (_target?.IsSensitive == true)
         {
             SetStatus(DictationState.Error, "Protected field", "Quill never records for or types into password fields.");
             return;
         }
+        var diverted = _target is { HasEditableField: false };
+        if (diverted) _clipboardOnly = true;
         try
         {
             _audio.Start(settings);
-            SetStatus(DictationState.Listening, "Listening", $"Press {settings.Hotkey} again to finish.");
+            SetStatus(DictationState.Listening, "Listening", $"Press {settings.Hotkey} again to finish.",
+                diverted ? "No text field selected — this dictation will be copied to your clipboard." : "");
         }
         catch (Exception error)
         {
@@ -97,6 +117,11 @@ public sealed class DictationOrchestrator : IDisposable
 
         try
         {
+            if (!recording.HasSpeech)
+            {
+                SetStatus(DictationState.Idle, "Nothing heard", "No speech was detected, so nothing was sent to your provider.");
+                return;
+            }
             var settings = await _settings.LoadAsync();
             var key = _secrets.Get(settings.Provider);
             if (string.IsNullOrWhiteSpace(key)) throw new TranscriptionException("The API key is missing.");
@@ -105,27 +130,33 @@ public sealed class DictationOrchestrator : IDisposable
             var client = TranscriptionClientFactory.Create(settings.Provider, key, settings.CustomBaseUrl, _http);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
             var transcript = await client.TranscribeAsync(recording.Path,
-                new TranscriptionOptions(model, settings.Language, CustomWordPrompt(settings)), timeout.Token);
+                new TranscriptionOptions(model, settings.Language, TranscriptionPrompt(settings)), timeout.Token);
             var text = transcript.Text;
             var cleaned = false;
             if (settings.CleanupEnabled)
             {
                 SetStatus(DictationState.Cleaning, "Tidying", "Meaning and names are guarded before insertion.");
                 var style = ResolveStyle(settings, _target?.Application);
-                var candidate = await _cleanup.CleanAsync(text, settings.Provider, key, style, timeout.Token);
+                var candidate = await _cleanup.CleanAsync(
+                    text, settings.Provider, key, settings.CleanupModel, style, timeout.Token);
                 cleaned = !string.Equals(candidate, text, StringComparison.Ordinal);
                 text = candidate;
             }
             text = ApplyCustomWords(text, settings.CustomWords);
-            SetStatus(DictationState.Inserting, "Typing", _target?.Application ?? "Focused application");
-            var result = await _injector.InsertAsync(_target ?? _injector.CaptureTarget(), text);
+            SetStatus(DictationState.Inserting,
+                _clipboardOnly ? "Copying" : "Typing",
+                _clipboardOnly ? "Clipboard" : _target?.Application ?? "Focused application");
+            var result = _clipboardOnly
+                ? await CopyToClipboardAsync(text)
+                : await _injector.InsertAsync(_target ?? _injector.CaptureTarget(), text);
             if (!result.Inserted && !result.CopiedToClipboard)
                 throw new InvalidOperationException(result.Error ?? "Windows did not accept the text.");
             await _history.AddAsync(new HistoryEntry(Guid.NewGuid(), DateTimeOffset.UtcNow, text,
-                _target?.Application ?? "Unknown app", settings.Provider, cleaned), settings);
+                _clipboardOnly ? "Clipboard" : _target?.Application ?? "Unknown app", settings.Provider, cleaned), settings);
             SetStatus(DictationState.Idle,
                 result.Inserted ? "Ready" : "Copied to clipboard",
-                result.Inserted ? $"Press {settings.Hotkey} to dictate." : result.Error ?? "Paste it where you need it.");
+                result.Inserted ? $"Press {settings.Hotkey} to dictate." : result.Error ?? "Paste it where you need it.",
+                result.Inserted ? "" : "Transcript copied — paste it with Ctrl+V.");
         }
         catch (Exception error) when (error is TranscriptionException or HttpRequestException or TaskCanceledException or InvalidOperationException)
         {
@@ -135,6 +166,7 @@ public sealed class DictationOrchestrator : IDisposable
         {
             try { File.Delete(recording.Path); } catch { /* transient audio is best-effort deleted */ }
             _target = null;
+            _clipboardOnly = false;
         }
     }
 
@@ -145,18 +177,38 @@ public sealed class DictationOrchestrator : IDisposable
         finally { _transition.Release(); }
     }
 
-    private void SetStatus(DictationState state, string title, string detail)
+    private void SetStatus(DictationState state, string title, string detail, string toast = "")
     {
         _state = state;
-        StatusChanged?.Invoke(this, new DictationStatus(state, title, detail));
+        StatusChanged?.Invoke(this, new DictationStatus(state, title, detail, toast));
+    }
+
+    private static async Task<InjectionResult> CopyToClipboardAsync(string text)
+    {
+        try
+        {
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => System.Windows.Clipboard.SetText(text));
+            return new InjectionResult(false, true, "Dictation copied to your clipboard.");
+        }
+        catch (Exception error) when (error is System.Runtime.InteropServices.ExternalException or InvalidOperationException)
+        {
+            return new InjectionResult(false, false, error.Message);
+        }
     }
 
     private static WritingStyle ResolveStyle(AppSettings settings, string? application) =>
         application is not null && settings.PerAppStyles.TryGetValue(application, out var style)
             ? style : settings.DefaultWritingStyle;
 
-    private static string? CustomWordPrompt(AppSettings settings) => settings.CustomWords.Count == 0
-        ? null : "Preferred spellings: " + string.Join(", ", settings.CustomWords.Select(it => it.Replacement));
+    internal static string? TranscriptionPrompt(AppSettings settings)
+    {
+        var parts = new List<string>();
+        var romanize = RomanizePrompt.ForLanguage(settings.Language);
+        if (romanize is not null) parts.Add(romanize);
+        if (settings.CustomWords.Count > 0)
+            parts.Add("Preferred spellings: " + string.Join(", ", settings.CustomWords.Select(it => it.Replacement)));
+        return parts.Count == 0 ? null : string.Join("\n", parts);
+    }
 
     internal static string ApplyCustomWords(string text, IReadOnlyList<WordReplacement> words)
     {

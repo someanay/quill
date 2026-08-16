@@ -6,7 +6,7 @@ using System.Windows.Threading;
 
 namespace Quill.Windows.Platform;
 
-public sealed record FocusTarget(IntPtr Window, string Application, bool IsSensitive);
+public sealed record FocusTarget(IntPtr Window, string Application, bool IsSensitive, bool HasEditableField = true);
 
 public sealed record InjectionResult(bool Inserted, bool CopiedToClipboard, string? Error = null);
 
@@ -20,14 +20,28 @@ public sealed class FocusedTextInjector
         try { application = Process.GetProcessById((int)processId).ProcessName; } catch { /* best effort */ }
 
         var sensitive = false;
+        // Assume editable when UI Automation cannot answer — blind SendInput was the old behavior.
+        var editable = true;
         try
         {
             var focused = AutomationElement.FocusedElement;
             sensitive = focused is not null && focused.Current.IsPassword;
+            editable = focused is not null && IsEditable(focused);
         }
         catch (ElementNotAvailableException) { }
         catch (InvalidOperationException) { }
-        return new FocusTarget(window, application, sensitive);
+        return new FocusTarget(window, application, sensitive, editable);
+    }
+
+    private static bool IsEditable(AutomationElement focused)
+    {
+        var control = focused.Current.ControlType;
+        if (control == ControlType.Edit || control == ControlType.Document) return true;
+        if (focused.TryGetCurrentPattern(ValuePattern.Pattern, out var value))
+            return !((ValuePattern)value).Current.IsReadOnly;
+        // Terminals and rich editors expose Text without a Value pattern; only a focused
+        // element with neither pattern (button, list item, bare desktop) has no caret.
+        return focused.TryGetCurrentPattern(TextPattern.Pattern, out _);
     }
 
     public async Task<InjectionResult> InsertAsync(FocusTarget target, string text)
