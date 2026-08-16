@@ -88,9 +88,10 @@ enum class SttProvider(
         keyConsoleUrl = "https://openrouter.ai/keys",
         keyGuideStepsKey = CopyKeys.KEY_GUIDE_OPENROUTER_STEPS,
         keyMask = "sk-or-v1-••••••••••••",
-        // Every audio-input model on OpenRouter (catalog check 2026-07-02); Whisper is delisted.
+        // Dedicated Whisper STT default verified against OpenRouter's live docs in 2026-08.
         models = listOf(
-            ProviderModel(OpenRouterTranscriptionClient.DEFAULT_MODEL, CopyKeys.SETTINGS_MODEL_OPENROUTER_VOXTRAL_SUB),
+            ProviderModel(OpenRouterTranscriptionClient.DEFAULT_MODEL, CopyKeys.SETTINGS_MODEL_OPENROUTER_WHISPER_TURBO_SUB),
+            ProviderModel(OpenRouterTranscriptionClient.LEGACY_DEFAULT_MODEL, CopyKeys.SETTINGS_MODEL_OPENROUTER_VOXTRAL_SUB),
             ProviderModel("openai/gpt-audio-mini", CopyKeys.SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_MINI_SUB),
             ProviderModel("openai/gpt-audio", CopyKeys.SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_SUB),
             ProviderModel("google/gemini-3.5-flash", CopyKeys.SETTINGS_MODEL_OPENROUTER_GEMINI_FLASH_SUB),

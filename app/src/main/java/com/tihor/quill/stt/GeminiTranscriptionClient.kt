@@ -42,7 +42,7 @@ import java.util.Base64
 class GeminiTranscriptionClient(
     private val apiKey: () -> String,
     private val baseUrl: String = BASE_URL,
-    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val httpClient: OkHttpClient = defaultClient(),
     private val json: Json = OpenAiCompatibleTranscriptionClient.DEFAULT_JSON,
 ) : TranscriptionClient {
 
@@ -162,6 +162,13 @@ class GeminiTranscriptionClient(
 
         /** Cheapest current flash tier (free-tier keys are the point of this provider); verified 2026-07. */
         const val DEFAULT_MODEL = "gemini-3.1-flash-lite"
+
+        private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(90, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
 
         /**
          * Hardened transcription prompt (decision 4a): the audio is data to transcribe verbatim, never

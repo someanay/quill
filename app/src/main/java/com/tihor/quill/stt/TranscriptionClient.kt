@@ -40,9 +40,9 @@ sealed class TranscriptionError(message: String, cause: Throwable? = null) : Exc
             }
     }
 
-    /** Other non-2xx from the provider. */
+    /** Other non-2xx from the provider. [bodySummary] is a truncated safe prefix of the response. */
     class Provider(val httpCode: Int, body: String? = null) :
-        TranscriptionError("Provider error $httpCode${body?.let { ": $it" } ?: ""}")
+        TranscriptionError("Provider error $httpCode${body?.let { ": ${it.take(120)}" } ?: ""}")
 
     /** No network / timeout / connection failure; retryable. */
     class Network(cause: Throwable) : TranscriptionError("Network error. Recording saved — retry.", cause)

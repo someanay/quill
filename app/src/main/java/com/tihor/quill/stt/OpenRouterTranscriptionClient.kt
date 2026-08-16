@@ -20,20 +20,20 @@ import java.util.Base64
  * `input_audio` contract — not multipart form-data (verified against openrouter.ai/docs, 2026-07):
  *
  * ```json
- * {"model": "mistralai/voxtral-small-24b-2507",
+ * {"model": "openai/whisper-large-v3-turbo",
  *  "input_audio": {"data": "<base64 raw bytes>", "format": "wav"},
  *  "language": "en"}   // optional ISO-639-1; omitted for auto-detect
  * ```
  *
  * Response is `{"text": "...", "usage": {...}}` — parsed with the shared [TranscriptionResponse].
- * Model ids are namespaced (`mistralai/voxtral-small-24b-2507`). [TranscriptionOptions.prompt] is not
+ * Model ids are namespaced (`openai/whisper-large-v3-turbo`). [TranscriptionOptions.prompt] is not
  * part of the top-level contract and is ignored. The key is read lazily via [apiKey] so it lives in
  * memory only for the call and is never logged (spec §6).
  */
 class OpenRouterTranscriptionClient(
     private val apiKey: () -> String,
     private val baseUrl: String = BASE_URL,
-    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val httpClient: OkHttpClient = defaultClient(),
     private val json: Json = OpenAiCompatibleTranscriptionClient.DEFAULT_JSON,
 ) : TranscriptionClient {
 
@@ -103,9 +103,16 @@ class OpenRouterTranscriptionClient(
 
         const val BASE_URL = "https://openrouter.ai/api/v1"
 
-        // OpenRouter delisted every Whisper model (catalog check 2026-07-02: 0 whisper entries of
-        // 338 models) — the old openai/whisper-large-v3-turbo default now fails with "model not
-        // found". Voxtral is the remaining speech-focused model on the platform.
-        const val DEFAULT_MODEL = "mistralai/voxtral-small-24b-2507"
+        // OpenRouter's dedicated STT catalog restored this namespaced Whisper model; verified
+        // against the live transcription endpoint documentation in 2026-08.
+        const val DEFAULT_MODEL = "openai/whisper-large-v3-turbo"
+        const val LEGACY_DEFAULT_MODEL = "mistralai/voxtral-small-24b-2507"
+
+        private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(90, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
     }
 }

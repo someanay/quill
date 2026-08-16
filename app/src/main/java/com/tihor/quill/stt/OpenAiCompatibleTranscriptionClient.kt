@@ -23,7 +23,7 @@ import java.io.IOException
 class OpenAiCompatibleTranscriptionClient(
     private val baseUrl: String,
     private val apiKey: () -> String,
-    private val httpClient: OkHttpClient = OkHttpClient(),
+    private val httpClient: OkHttpClient = defaultClient(),
     private val json: Json = DEFAULT_JSON,
 ) : TranscriptionClient {
 
@@ -86,5 +86,12 @@ class OpenAiCompatibleTranscriptionClient(
         const val GROQ_BASE_URL = "https://api.groq.com/openai/v1"
         const val GROQ_DEFAULT_MODEL = "whisper-large-v3"
         const val OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+        private fun defaultClient(): OkHttpClient = OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(90, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
     }
 }

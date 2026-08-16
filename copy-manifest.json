@@ -1788,7 +1788,13 @@
       "optionalBlank": false
     },
     "settings.speech.model_openrouter_voxtral_sub": {
-      "default": "Speech-focused · recommended",
+      "default": "Legacy speech model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.speech.model_openrouter_whisper_turbo_sub": {
+      "default": "Fast speech recognition · recommended",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

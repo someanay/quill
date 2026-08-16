@@ -68,10 +68,9 @@ class SttProviderTest {
 
     @Test
     fun providerDefaults_matchVerifiedCatalogs() {
-        // Verified against live provider docs, 2026-07 (see the client KDocs). OpenRouter delisted
-        // Whisper entirely (catalog check 2026-07-02) — Voxtral is its speech-focused replacement.
+        // Verified against live provider docs; OpenRouter's dedicated STT model is namespaced.
         assertEquals("whisper-1", SttProvider.OPENAI.defaultModel)
-        assertEquals("mistralai/voxtral-small-24b-2507", SttProvider.OPENROUTER.defaultModel)
+        assertEquals("openai/whisper-large-v3-turbo", SttProvider.OPENROUTER.defaultModel)
         assertEquals("gemini-3.1-flash-lite", SttProvider.GEMINI.defaultModel)
         assertEquals("", SttProvider.CUSTOM.defaultModel) // free-text, user-supplied
     }
@@ -124,10 +123,10 @@ class SttProviderTest {
             listOf("whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"),
             SttProvider.OPENAI.models.map { it.id },
         )
-        // OpenRouter: every audio-input model in the live catalog (2026-07-02), Voxtral first as
-        // the default; the free Nemotron ships labeled free/lower-accuracy in its subtitle copy.
+        // OpenRouter: the dedicated Whisper STT model is first and therefore the default.
         assertEquals(
             listOf(
+                "openai/whisper-large-v3-turbo",
                 "mistralai/voxtral-small-24b-2507",
                 "openai/gpt-audio-mini",
                 "openai/gpt-audio",

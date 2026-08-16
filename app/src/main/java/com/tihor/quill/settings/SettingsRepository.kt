@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.tihor.quill.style.WritingStyle
+import com.tihor.quill.stt.OpenRouterTranscriptionClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -114,9 +115,15 @@ class SettingsRepository(private val context: Context) {
 
     val settings: Flow<QuillSettings> = context.settingsDataStore.data.map { p ->
         val provider = SttProvider.fromId(p[Keys.PROVIDER])
+        val storedModel = p[Keys.STT_MODEL]
+        val activeModel = when {
+            provider == SttProvider.OPENROUTER && storedModel == OpenRouterTranscriptionClient.LEGACY_DEFAULT_MODEL -> provider.defaultModel
+            storedModel.isNullOrBlank() -> provider.defaultModel
+            else -> storedModel
+        }
         QuillSettings(
             provider = provider,
-            sttModel = p[Keys.STT_MODEL] ?: provider.defaultModel,
+            sttModel = activeModel,
             customBaseUrl = p[Keys.CUSTOM_BASE_URL].orEmpty(),
             customModel = p[Keys.CUSTOM_MODEL].orEmpty(),
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
