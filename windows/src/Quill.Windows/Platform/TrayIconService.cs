@@ -16,7 +16,7 @@ public sealed class TrayIconService : IDisposable
         menu.Items.Add("Exit", null, (_, _) => exit());
         _icon = new Forms.NotifyIcon
         {
-            Icon = SystemIcons.Information,
+            Icon = BrandIconFactory.CreateIcon(),
             Text = "Quill — ready",
             Visible = true,
             ContextMenuStrip = menu,

@@ -1,6 +1,7 @@
 <Window x:Class="Quill.Windows.SetupWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Quill.Windows.Controls"
         Title="Set up Quill" Width="1040" Height="700" MinWidth="900" MinHeight="620"
         WindowStartupLocation="CenterOwner" Background="{StaticResource Paper}" Foreground="{StaticResource Ink}" FontFamily="{StaticResource UiFont}">
     <Grid>
@@ -41,20 +42,7 @@
                     <StackPanel>
                         <TextBlock Text="Your voice, wherever you type." FontSize="36" FontWeight="Bold"/>
                         <TextBlock Text="Quill turns a global shortcut into clean text in the app you were already using." Foreground="{StaticResource Muted}" FontSize="16" Margin="0,10,0,24"/>
-                        <Border Style="{StaticResource Card}" Padding="0" Height="270" ClipToBounds="True">
-                            <Grid Background="{StaticResource Sunken}">
-                                <Grid.RowDefinitions><RowDefinition Height="34"/><RowDefinition Height="*"/><RowDefinition Height="34"/></Grid.RowDefinitions>
-                                <Border Background="{StaticResource SurfaceRaised}"/>
-                                <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Border Width="70" Height="70" CornerRadius="35" Background="{StaticResource BrandSoft}">
-                                        <TextBlock Text="▶" Foreground="{StaticResource BrandInk}" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                                    </Border>
-                                    <TextBlock Text="DEMO CAROUSEL" Style="{StaticResource Eyebrow}" HorizontalAlignment="Center" Margin="0,17,0,0"/>
-                                    <TextBlock Text="Reserved for product clips" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,5,0,0"/>
-                                </StackPanel>
-                                <Border Grid.Row="2" Background="{StaticResource SurfaceRaised}"/>
-                            </Grid>
-                        </Border>
+                        <controls:DemoCarousel AssetFolder="Setup" Height="270"/>
                         <Grid Margin="0,18,0,0">
                             <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
                             <TextBlock Text="① Press the shortcut" Foreground="{StaticResource Ink2}"/>
@@ -71,14 +59,29 @@
                         <Border Style="{StaticResource Card}">
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="170"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                                <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
                                 <TextBlock Text="Provider" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 <ComboBox x:Name="SetupProvider" Grid.Column="1" SelectionChanged="SetupProvider_SelectionChanged"/>
                                 <TextBlock Grid.Row="1" Text="Model" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,15,0,0"/>
-                                <TextBox x:Name="SetupModel" Grid.Row="1" Grid.Column="1" Margin="0,15,0,0"/>
-                                <TextBlock Grid.Row="2" Text="API key" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,15,0,0"/>
-                                <PasswordBox x:Name="SetupKey" Grid.Row="2" Grid.Column="1" Margin="0,15,0,0"/>
-                                <TextBlock x:Name="SetupKeyStatus" Grid.Row="3" Grid.Column="1" Foreground="{StaticResource Muted}" FontSize="12" Margin="0,8,0,0"/>
+                                <ComboBox x:Name="SetupModel" Grid.Row="1" Grid.Column="1" Margin="0,15,0,0"/>
+                                <TextBlock x:Name="SetupCustomEndpointLabel" Grid.Row="2" Text="Custom HTTPS endpoint" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,15,0,0"/>
+                                <TextBox x:Name="SetupCustomBaseUrl" Grid.Row="2" Grid.Column="1" Margin="0,15,0,0" ToolTip="Required only for the Custom provider"/>
+                                <TextBlock Grid.Row="3" Text="API key" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,15,0,0"/>
+                                <PasswordBox x:Name="SetupKey" Grid.Row="3" Grid.Column="1" Margin="0,15,0,0" PasswordChanged="SetupKey_PasswordChanged"/>
+                                <Border x:Name="SetupKeyStatusCard" Grid.Row="4" Grid.Column="1" CornerRadius="9" Padding="10,7" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock x:Name="SetupKeyStatus" FontSize="12"/>
+                                        <Button x:Name="SetupProviderLink" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                                                Padding="10,5" Margin="0,8,0,0" Click="OpenProviderConsole_Click"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Grid.Row="5" Text="AI cleanup" FontWeight="SemiBold" VerticalAlignment="Top" Margin="0,18,0,0"/>
+                                <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,15,0,0">
+                                    <CheckBox x:Name="SetupCleanup" Content="Improve punctuation and remove false starts"/>
+                                    <TextBlock x:Name="SetupCleanupHelp" Foreground="{StaticResource Muted}" FontSize="12" Margin="24,-2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <TextBlock Grid.Row="6" Text="Cleanup model" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,15,0,0"/>
+                                <ComboBox x:Name="SetupCleanupModel" Grid.Row="6" Grid.Column="1" Margin="0,15,0,0"/>
                             </Grid>
                         </Border>
                         <Border Background="{StaticResource SignalSoft}" CornerRadius="12" Padding="15" Margin="0,14,0,0">
@@ -95,13 +98,11 @@
                         <Border Style="{StaticResource Card}" Padding="30">
                             <StackPanel HorizontalAlignment="Center">
                                 <TextBlock Text="GLOBAL DICTATION SHORTCUT" Style="{StaticResource Eyebrow}" HorizontalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,22,0,22">
-                                    <Border Style="{StaticResource KeyCap}"><TextBlock Text="Ctrl" FontFamily="{StaticResource UtilityFont}" FontWeight="Bold"/></Border>
-                                    <TextBlock Text="+" VerticalAlignment="Center" Foreground="{StaticResource Faint}" Margin="0,0,7,0"/>
-                                    <Border Style="{StaticResource KeyCap}"><TextBlock Text="Alt" FontFamily="{StaticResource UtilityFont}" FontWeight="Bold"/></Border>
-                                    <TextBlock Text="+" VerticalAlignment="Center" Foreground="{StaticResource Faint}" Margin="0,0,7,0"/>
-                                    <Border Style="{StaticResource KeyCap}"><TextBlock Text="Space" FontFamily="{StaticResource UtilityFont}" FontWeight="Bold"/></Border>
-                                </StackPanel>
+                                <TextBox x:Name="SetupShortcut" Width="260" Margin="0,22,0,12" IsReadOnly="True"
+                                         TextAlignment="Center" FontSize="18" FontFamily="{StaticResource UtilityFont}"
+                                         FontWeight="Bold" PreviewKeyDown="SetupShortcut_PreviewKeyDown"/>
+                                <TextBlock Text="Click the shortcut, then press a modifier and key." Foreground="{StaticResource BrandInk}"
+                                           HorizontalAlignment="Center" Margin="0,0,0,18"/>
                                 <TextBlock Text="Quill listens only after you press it. Press it again to finish." Foreground="{StaticResource Muted}" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
@@ -117,7 +118,6 @@
                             <StackPanel>
                                 <CheckBox x:Name="SetupHistory" Content="Keep a local dictation history"/>
                                 <TextBlock Text="Default retention is one hour. You can change it later." Foreground="{StaticResource Muted}" FontSize="12" Margin="24,-2,0,10"/>
-                                <CheckBox x:Name="SetupPrivate" Content="Private mode — never write history"/>
                                 <CheckBox x:Name="SetupStartup" Content="Start Quill when I sign in"/>
                             </StackPanel>
                         </Border>
@@ -134,7 +134,7 @@
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520">
                         <Border Width="92" Height="92" CornerRadius="46" Background="{StaticResource OkaySoft}"><TextBlock Text="✓" Foreground="{StaticResource Okay}" FontSize="45" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
                         <TextBlock Text="Quill is ready." FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,22,0,8"/>
-                        <TextBlock Text="Focus a text field, press Ctrl+Alt+Space, and speak. The bottom-right ribbon shows when Quill is listening." Foreground="{StaticResource Muted}" FontSize="15" TextAlignment="Center"/>
+                        <TextBlock x:Name="ReadyInstruction" Foreground="{StaticResource Muted}" FontSize="15" TextAlignment="Center"/>
                     </StackPanel>
                 </Grid>
             </Grid>

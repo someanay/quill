@@ -138,25 +138,72 @@ internal static class ResponseParser
         var payload = await response.Content.ReadAsStringAsync(cancellation);
         try
         {
-            var text = JsonDocument.Parse(payload).RootElement.GetProperty("text").GetString()?.Trim() ?? "";
-            if (text.Length == 0) throw new JsonException("empty transcript");
+            using var json = JsonDocument.Parse(payload);
+            var root = json.RootElement;
+            var text = ExtractText(root)?.Trim() ?? "";
+            if (text.Length == 0 && root.TryGetProperty("error", out var error))
+                throw new TranscriptionException(ExtractErrorMessage(error) ?? "The provider could not transcribe this recording.");
+            if (text.Length == 0) throw new JsonException("response contained no transcript text");
             return new Transcript(text);
         }
-        catch (JsonException error) { throw new TranscriptionException("The provider returned an unreadable response.", false, error); }
+        catch (JsonException error)
+        {
+            var plain = payload.Trim();
+            if (response.Content.Headers.ContentType?.MediaType?.StartsWith("text/plain", StringComparison.OrdinalIgnoreCase) == true && plain.Length > 0)
+                return new Transcript(plain);
+            throw new TranscriptionException("The provider response did not contain transcript text. Check the selected model and try again.", false, error);
+        }
     }
 
     public static async Task ThrowAsync(HttpResponseMessage response, CancellationToken cancellation)
     {
-        var message = await response.Content.ReadAsStringAsync(cancellation);
+        var payload = await response.Content.ReadAsStringAsync(cancellation);
+        var providerMessage = TryReadProviderMessage(payload);
         throw response.StatusCode switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.BadRequest
-                when message.Contains("API_KEY_INVALID", StringComparison.OrdinalIgnoreCase)
+                when payload.Contains("API_KEY_INVALID", StringComparison.OrdinalIgnoreCase)
                   || response.StatusCode != HttpStatusCode.BadRequest => new TranscriptionException("The API key was rejected."),
             HttpStatusCode.PaymentRequired => new TranscriptionException("The provider account has no available credit."),
             HttpStatusCode.TooManyRequests => new TranscriptionException("The provider rate limit or quota was reached.", true),
             >= HttpStatusCode.InternalServerError => new TranscriptionException("The speech provider is temporarily unavailable.", true),
+            _ when !string.IsNullOrWhiteSpace(providerMessage) => new TranscriptionException(providerMessage),
             _ => new TranscriptionException($"The speech provider returned {(int)response.StatusCode}."),
         };
+    }
+
+    private static string? ExtractText(JsonElement root)
+    {
+        if (root.ValueKind == JsonValueKind.String) return root.GetString();
+        if (root.ValueKind != JsonValueKind.Object) return null;
+        foreach (var property in new[] { "text", "transcript", "output_text" })
+            if (root.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String)
+                return value.GetString();
+        if (root.TryGetProperty("choices", out var choices) && choices.ValueKind == JsonValueKind.Array && choices.GetArrayLength() > 0)
+        {
+            var first = choices[0];
+            if (first.TryGetProperty("message", out var message) && message.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.String)
+                return content.GetString();
+        }
+        return null;
+    }
+
+    private static string? TryReadProviderMessage(string payload)
+    {
+        try
+        {
+            using var json = JsonDocument.Parse(payload);
+            if (!json.RootElement.TryGetProperty("error", out var error)) return null;
+            return ExtractErrorMessage(error);
+        }
+        catch (JsonException) { return null; }
+    }
+
+    private static string? ExtractErrorMessage(JsonElement error)
+    {
+        if (error.ValueKind == JsonValueKind.String) return error.GetString();
+        if (error.ValueKind == JsonValueKind.Object && error.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String)
+            return message.GetString();
+        return null;
     }
 }

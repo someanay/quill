@@ -2,12 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace Quill.Windows.Cleanup;
 
-/// <summary>Fail-soft structural guard: cleaned text must preserve most source tokens.</summary>
+/// <summary>Fail closed: cleanup can adjust casing and punctuation, never spoken words.</summary>
 public static partial class CleanupGuard
 {
-    public const double MinimumPrecision = 0.70;
-    public const double MinimumRecall = 0.50;
-
     public static bool IsSafe(string original, string candidate)
     {
         if (string.IsNullOrWhiteSpace(candidate)) return false;
@@ -15,17 +12,7 @@ public static partial class CleanupGuard
         var output = Tokens(candidate);
         if (source.Count == 0 || output.Count == 0) return false;
 
-        var remaining = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var token in source) remaining[token] = remaining.GetValueOrDefault(token) + 1;
-        var overlap = 0;
-        foreach (var token in output)
-        {
-            if (remaining.GetValueOrDefault(token) <= 0) continue;
-            overlap++;
-            remaining[token]--;
-        }
-        return overlap / (double)output.Count >= MinimumPrecision
-               && overlap / (double)source.Count >= MinimumRecall;
+        return source.SequenceEqual(output, StringComparer.OrdinalIgnoreCase);
     }
 
     private static List<string> Tokens(string value) => TokenRegex().Matches(NormalizeContractions(value))

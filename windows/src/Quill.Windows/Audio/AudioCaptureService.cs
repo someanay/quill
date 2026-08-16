@@ -3,7 +3,7 @@ using Quill.Windows.Core;
 
 namespace Quill.Windows.Audio;
 
-public sealed record AudioCaptureResult(string Path, TimeSpan Duration, bool AutoStopped);
+public sealed record AudioCaptureResult(string Path, TimeSpan Duration, bool AutoStopped, bool HasSpeech);
 
 /// <summary>16 kHz mono PCM capture with silence and hard-session limits.</summary>
 public sealed class AudioCaptureService(AppPaths paths) : IDisposable
@@ -15,9 +15,10 @@ public sealed class AudioCaptureService(AppPaths paths) : IDisposable
     private DateTimeOffset _started;
     private string? _path;
     private int _silentMilliseconds;
+    private int _speechMilliseconds;
     private bool _autoStopped;
     private int _sessionCapSeconds;
-    private bool _silenceAutoStop;
+    private int _silenceAutoStopSeconds;
 
     public bool IsRecording => _input is not null;
     public event EventHandler? AutoStopRequested;
@@ -29,12 +30,20 @@ public sealed class AudioCaptureService(AppPaths paths) : IDisposable
             if (_input is not null) throw new InvalidOperationException("A recording is already active.");
             _started = DateTimeOffset.UtcNow;
             _path = Path.Combine(paths.Recordings, $"dictation-{_started:yyyyMMdd-HHmmss-fff}.wav");
-            _sessionCapSeconds = Math.Clamp(settings.SessionCapSeconds, 60, 300);
-            _silenceAutoStop = settings.SilenceAutoStop;
+            _sessionCapSeconds = settings.SessionCapSeconds <= 0
+                ? int.MaxValue
+                : Math.Clamp(settings.SessionCapSeconds, 15, 600);
+            _silenceAutoStopSeconds = settings.SilenceAutoStopSeconds;
             _silentMilliseconds = 0;
+            _speechMilliseconds = 0;
             _autoStopped = false;
             _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-            _input = new WaveInEvent { WaveFormat = new WaveFormat(16_000, 16, 1), BufferMilliseconds = 100 };
+            _input = new WaveInEvent
+            {
+                DeviceNumber = InputDeviceCatalog.ResolveDeviceNumber(settings.InputDeviceId),
+                WaveFormat = new WaveFormat(16_000, 16, 1),
+                BufferMilliseconds = 100,
+            };
             _writer = new WaveFileWriter(_path, _input.WaveFormat);
             _input.DataAvailable += OnDataAvailable;
             _input.RecordingStopped += OnRecordingStopped;
@@ -61,11 +70,12 @@ public sealed class AudioCaptureService(AppPaths paths) : IDisposable
         {
             _writer?.Write(args.Buffer, 0, args.BytesRecorded);
             if ((DateTimeOffset.UtcNow - _started).TotalSeconds >= _sessionCapSeconds) shouldStop = true;
-            if (_silenceAutoStop && (DateTimeOffset.UtcNow - _started).TotalSeconds >= 1.2)
+            var rms = RootMeanSquare(args.Buffer, args.BytesRecorded);
+            if (rms >= 0.012) _speechMilliseconds += 100;
+            if (_silenceAutoStopSeconds > 0)
             {
-                var rms = RootMeanSquare(args.Buffer, args.BytesRecorded);
                 _silentMilliseconds = rms < 0.012 ? _silentMilliseconds + 100 : 0;
-                if (_silentMilliseconds >= 1_600) shouldStop = true;
+                if (_silentMilliseconds >= _silenceAutoStopSeconds * 1_000) shouldStop = true;
             }
             if (shouldStop) _autoStopped = true;
         }
@@ -89,7 +99,8 @@ public sealed class AudioCaptureService(AppPaths paths) : IDisposable
             }
             completion = _completion;
             if (args.Exception is null && _path is not null)
-                result = new AudioCaptureResult(_path, DateTimeOffset.UtcNow - _started, _autoStopped);
+                result = new AudioCaptureResult(_path, DateTimeOffset.UtcNow - _started, _autoStopped,
+                    _speechMilliseconds >= 200);
             _completion = null;
         }
         if (args.Exception is not null) completion?.TrySetException(args.Exception);

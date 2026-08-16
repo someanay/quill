@@ -1,4 +1,6 @@
 using System.Threading;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
 using Quill.Windows.Core;
 using Quill.Windows.Platform;
@@ -17,7 +19,20 @@ public partial class App : System.Windows.Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         _singleInstance = new Mutex(true, @"Local\Quill.Windows.Singleton", out _ownsMutex);
-        if (!_ownsMutex) { Shutdown(); return; }
+        if (!_ownsMutex)
+        {
+            // Restore an existing tray/background window. If the old process has no
+            // top-level window (for example, it is still booting), continue startup
+            // so the new launch still produces a usable window.
+            var existing = FindWindowForProcess("Quill.Windows");
+            if (existing != IntPtr.Zero)
+            {
+                ShowWindow(existing, 9);
+                SetForegroundWindow(existing);
+                Shutdown();
+                return;
+            }
+        }
         base.OnStartup(e);
 
         _services = new AppServices();
@@ -63,4 +78,44 @@ public partial class App : System.Windows.Application
         _singleInstance?.Dispose();
         base.OnExit(e);
     }
+
+    private static IntPtr FindWindowForProcess(string processName)
+    {
+        foreach (var process in Process.GetProcessesByName(processName))
+        {
+            var processId = process.Id;
+            IntPtr found = IntPtr.Zero;
+            EnumWindows((handle, _) =>
+            {
+                GetWindowThreadProcessId(handle, out var ownerId);
+                if (ownerId == processId && IsWindowVisible(handle))
+                {
+                    found = handle;
+                    return false;
+                }
+                return true;
+            }, IntPtr.Zero);
+            process.Dispose();
+            if (found != IntPtr.Zero) return found;
+        }
+        return IntPtr.Zero;
+    }
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr extraData);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int command);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
 }

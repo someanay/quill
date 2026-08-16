@@ -11,14 +11,14 @@ public sealed class SettingsStore(AppPaths paths)
         await _gate.WaitAsync();
         try
         {
-            if (!File.Exists(paths.Settings)) return new AppSettings();
+            if (!File.Exists(paths.Settings)) return SettingsPolicy.Normalize(new AppSettings());
             await using var stream = File.OpenRead(paths.Settings);
-            return await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonDefaults.Options)
-                   ?? new AppSettings();
+            return SettingsPolicy.Normalize(await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonDefaults.Options)
+                   ?? new AppSettings());
         }
         catch (JsonException)
         {
-            return new AppSettings();
+            return SettingsPolicy.Normalize(new AppSettings());
         }
         finally { _gate.Release(); }
     }
@@ -30,7 +30,7 @@ public sealed class SettingsStore(AppPaths paths)
         {
             var temporary = paths.Settings + ".tmp";
             await using (var stream = File.Create(temporary))
-                await JsonSerializer.SerializeAsync(stream, settings, JsonDefaults.Options);
+                await JsonSerializer.SerializeAsync(stream, SettingsPolicy.Normalize(settings), JsonDefaults.Options);
             File.Move(temporary, paths.Settings, true);
         }
         finally { _gate.Release(); }

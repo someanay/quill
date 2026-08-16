@@ -154,7 +154,9 @@
                                 </ToggleButton.Template>
                             </ToggleButton>
                             <ContentPresenter Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="Left"
-                                              IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}"/>
+                                              IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" x:Name="SelectedContent"/>
+                            <TextBox x:Name="PART_EditableTextBox" Margin="8,2,34,2" Padding="4" Background="Transparent"
+                                     BorderThickness="0" VerticalContentAlignment="Center" Visibility="Collapsed"/>
                             <Path Data="M 0 0 L 5 5 L 10 0" Stroke="{StaticResource Muted}" StrokeThickness="1.5" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,13,0" IsHitTestVisible="False"/>
                             <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
                                 <Border Background="{StaticResource SurfaceRaised}" BorderBrush="{StaticResource LineStrong}" BorderThickness="1" CornerRadius="8" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Padding="4">
@@ -162,6 +164,17 @@
                                 </Border>
                             </Popup>
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SelectedContent" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="DropDownToggle" Property="Opacity" Value="0.42"/>
+                                <Setter TargetName="SelectedContent" Property="Opacity" Value="0.42"/>
+                                <Setter TargetName="PART_EditableTextBox" Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -172,9 +185,98 @@
             <Setter Property="Padding" Value="10,8"/>
         </Style>
         <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="{StaticResource Ink2}"/>
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Margin" Value="0,7"/>
+            <Setter Property="Margin" Value="0,5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="Chrome" Background="{StaticResource Sunken}" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="9" Padding="11,9">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="20"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <Border x:Name="Box" Width="16" Height="16" CornerRadius="4" BorderBrush="{StaticResource LineStrong}" BorderThickness="1" Background="{StaticResource SurfaceRaised}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Path x:Name="Check" Data="M 3,8 L 7,12 L 14,3" Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Visibility="Collapsed"/>
+                                </Border>
+                                <ContentPresenter Grid.Column="1" VerticalAlignment="Center" RecognizesAccessKey="True" ContentSource="Content"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource Brand}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource BrandHover}"/>
+                                <Setter TargetName="Check" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource BrandInk}"/>
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource SurfaceRaised}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource BrandSoft}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.48"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="HistoryModeSwitch" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+            <Setter Property="Background" Value="{StaticResource Sunken}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineStrong}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Track" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="3">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                                <Border x:Name="Thumb" Width="119" HorizontalAlignment="Left" Background="{StaticResource Brand}" CornerRadius="9">
+                                    <Border.RenderTransform>
+                                        <TranslateTransform x:Name="ThumbTransform" X="0"/>
+                                    </Border.RenderTransform>
+                                </Border>
+                                <TextBlock x:Name="HistoryLabel" Grid.Column="0" Text="History kept" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="SemiBold" IsHitTestVisible="False"/>
+                                <TextBlock x:Name="PrivateLabel" Grid.Column="1" Text="Private" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Muted}" FontWeight="SemiBold" IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Thumb" Property="Background" Value="{StaticResource Signal}"/>
+                                <Setter TargetName="HistoryLabel" Property="Foreground" Value="{StaticResource Muted}"/>
+                                <Setter TargetName="PrivateLabel" Property="Foreground" Value="{StaticResource Ink}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTransform" Storyboard.TargetProperty="X" To="119" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTransform" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.18"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Track" Property="BorderBrush" Value="{StaticResource BrandInk}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Track" Property="Background" Value="{StaticResource SurfaceRaised}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Track" Property="Opacity" Value="0.48"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style x:Key="KeyCap" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource SurfaceRaised}"/>
@@ -183,6 +285,34 @@
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="11,7"/>
             <Setter Property="Margin" Value="0,0,7,0"/>
+        </Style>
+        <Style x:Key="QuillSlider" TargetType="Slider">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center" Height="24">
+                            <Track x:Name="PART_Track" VerticalAlignment="Center">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Height="5" Background="{StaticResource Brand}" BorderThickness="0">
+                                        <RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Background="{TemplateBinding Background}" CornerRadius="3"/></ControlTemplate></RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="18" Height="18">
+                                        <Thumb.Template><ControlTemplate TargetType="Thumb"><Ellipse Fill="{StaticResource BrandInk}" Stroke="{StaticResource Paper}" StrokeThickness="3"/></ControlTemplate></Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Height="5" Background="{StaticResource LineStrong}" BorderThickness="0">
+                                        <RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Background="{TemplateBinding Background}" CornerRadius="3"/></ControlTemplate></RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="ScrollBar">
             <Setter Property="Background" Value="{StaticResource Paper}"/>

@@ -16,4 +16,10 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Assets\Carousel\**\*.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

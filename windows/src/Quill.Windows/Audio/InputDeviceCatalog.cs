@@ -1,0 +1,42 @@
+using NAudio.Wave;
+
+namespace Quill.Windows.Audio;
+
+/// <summary>Lists the Windows WaveIn microphones Quill can capture from.</summary>
+public sealed record AudioInputDevice(string Id, string DisplayName);
+
+public static class InputDeviceCatalog
+{
+    public const string SystemDefaultId = "";
+
+    public static IReadOnlyList<AudioInputDevice> Enumerate()
+    {
+        var devices = new List<AudioInputDevice>
+        {
+            new(SystemDefaultId, "Default microphone"),
+        };
+        for (var number = 0; number < WaveIn.DeviceCount; number++)
+        {
+            try
+            {
+                var capabilities = WaveIn.GetCapabilities(number);
+                var name = string.IsNullOrWhiteSpace(capabilities.ProductName) ? "Microphone" : capabilities.ProductName.Trim();
+                devices.Add(new($"wavein:{number}", $"{name}  (input {number + 1})"));
+            }
+            catch (Exception) { }
+        }
+        return devices;
+    }
+
+    public static int ResolveDeviceNumber(string? deviceId) =>
+        ResolveDeviceNumber(deviceId, WaveIn.DeviceCount, defaultDeviceNumber: 0);
+
+    internal static int ResolveDeviceNumber(string? deviceId, int deviceCount, int defaultDeviceNumber)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || !deviceId.StartsWith("wavein:", StringComparison.OrdinalIgnoreCase))
+            return defaultDeviceNumber;
+        return int.TryParse(deviceId[7..], out var deviceNumber) && deviceNumber >= 0 && deviceNumber < deviceCount
+            ? deviceNumber
+            : defaultDeviceNumber;
+    }
+}
