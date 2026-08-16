@@ -10,4 +10,6 @@
     <exclude domain="file" path="copy/" />
     <!-- Dictation history stays on this device only (M9). -->
     <exclude domain="database" path="quill_history.db" />
+    <!-- Crash reports (M11): local-only, user-reviewable; must not transfer. -->
+    <exclude domain="file" path="crash/" />
 </full-backup-content>

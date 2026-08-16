@@ -121,13 +121,18 @@ class OverlayService : Service() {
 
     /**
      * Sensitive-clip auto-expiry (M11): wipe a failed-injection transcript off the clipboard ~60 s
-     * later, but only if it's still Quill's clip (never clobber something the user copied since).
+     * later, but only if it's still Quill's clip AND the same one (matched by embedded token) —
+     * never clobber something the user copied since. Nulled when the user copies something new.
      */
+    private var pendingClearToken: String? = null
+
     private val clearSensitiveClip = Runnable {
+        val token = pendingClearToken ?: return@Runnable
         val cb = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager ?: return@Runnable
-        if (ClipboardHygiene.shouldClear(cb.primaryClipDescription?.label)) {
+        if (ClipboardHygiene.shouldClear(cb.primaryClipDescription?.label, token)) {
             runCatching { cb.clearPrimaryClip() }
         }
+        pendingClearToken = null
     }
 
     private val density by lazy { resources.displayMetrics.density }
@@ -521,7 +526,7 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_SECURE,
             PixelFormat.TRANSLUCENT,
         ).apply { gravity = Gravity.TOP or Gravity.START }
         cap.visibility = View.GONE
@@ -1097,7 +1102,8 @@ class OverlayService : Service() {
      */
     private fun copyTranscriptToClipboard(text: String, autoExpire: Boolean) {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(ClipboardHygiene.QUILL_CLIP_LABEL, text)
+        val label = ClipboardHygiene.tokenLabel()
+        val clip = ClipData.newPlainText(label, text)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             clip.description.extras = PersistableBundle().apply {
                 putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
@@ -1105,7 +1111,10 @@ class OverlayService : Service() {
         }
         runCatching { clipboard.setPrimaryClip(clip) }
         mainHandler.removeCallbacks(clearSensitiveClip)
-        if (autoExpire) mainHandler.postDelayed(clearSensitiveClip, ClipboardHygiene.SENSITIVE_CLEAR_DELAY_MS)
+        if (autoExpire) {
+            pendingClearToken = label
+            mainHandler.postDelayed(clearSensitiveClip, ClipboardHygiene.SENSITIVE_CLEAR_DELAY_MS)
+        }
     }
 
     private fun notifyInjectionFailed(text: String, failure: InjectionFailure) {
@@ -1183,6 +1192,7 @@ class OverlayService : Service() {
         stopTimer()
         mainHandler.removeCallbacks(idleReset)
         mainHandler.removeCallbacks(clearSensitiveClip)
+        pendingClearToken = null
         debugReceiver?.let { runCatching { unregisterReceiver(it) } }
         debugReceiver = null
         runCatching { audioRecorder.stop() }

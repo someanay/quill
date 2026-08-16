@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import com.tihor.quill.overlay.ClipboardHygiene
 
 /**
  * [TextInjector] over the accessibility APIs (spec §5B/§5C).
@@ -93,7 +94,8 @@ class AccessibilityTextInjector(private val context: Context) : TextInjector {
     private fun clipboardFallback(text: String): InsertResult {
         priorClip = runCatching { clipboard.primaryClip }.getOrNull()
         pendingTranscript = text
-        val clip = ClipData.newPlainText("Quill dictation", text)
+        val label = ClipboardHygiene.tokenLabel()
+        val clip = ClipData.newPlainText(label, text)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             clip.description.extras = PersistableBundle().apply {
                 putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network security policy (M12 hardening). Enforces:
+  - HTTPS-only for all traffic (cleartext blocked).
+  - Certificate pinning for Quill's own OTA copy-bundle host (the one domain we control).
+    The pinned keys use SPKI (SubjectPublicKeyInfo) SHA-256 hashes, not raw certificates,
+    so certificate rotation within the same key pair does not require an app update.
+
+  The STT/LLM provider calls (Groq, OpenAI, OpenRouter, Gemini, Custom) use standard
+  platform trust (no pinning) — those are user-chosen third parties we cannot pin.
+
+  Android 9+ (API 28+) blocks cleartext by default, but an explicit config ensures the
+  behaviour stays locked regardless of future platform defaults or OEM overrides.
+-->
+<network-security-config>
+    <!-- Domain config for the OTA copy-bundle host (static read-only CDN). -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">supabase.co</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Default: HTTPS only, system trust anchors, no cleartext. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
