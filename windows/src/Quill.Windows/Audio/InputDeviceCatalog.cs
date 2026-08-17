@@ -29,7 +29,10 @@ public static class InputDeviceCatalog
     }
 
     public static int ResolveDeviceNumber(string? deviceId) =>
-        ResolveDeviceNumber(deviceId, WaveIn.DeviceCount, defaultDeviceNumber: 0);
+        // -1 is NAudio's WAVE_MAPPER = the current Windows default recording device, which is what a
+        // blank InputDeviceId ("Default microphone") is documented to follow (Models.cs). Device 0 is
+        // merely the first enumerated input, which is not the system default when several exist.
+        ResolveDeviceNumber(deviceId, WaveIn.DeviceCount, defaultDeviceNumber: -1);
 
     internal static int ResolveDeviceNumber(string? deviceId, int deviceCount, int defaultDeviceNumber)
     {

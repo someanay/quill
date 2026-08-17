@@ -54,7 +54,11 @@ public partial class App : System.Windows.Application
             () => Dispatcher.InvokeAsync(_main.ViewModel.ToggleAsync).Task.Unwrap(),
             ExitApplication);
 
-        _services.Dictation.StatusChanged += (_, status) => _tray.SetStatus($"Quill — {status.Title}");
+        // Marshal to the UI thread: on silence/session auto-stop, StatusChanged is raised on NAudio's
+        // capture thread, and NotifyIcon.Text is a WinForms control mutation with thread affinity (the
+        // ribbon and view-model subscribers already marshal; this one must too).
+        _services.Dictation.StatusChanged += (_, status) =>
+            Dispatcher.InvokeAsync(() => _tray?.SetStatus($"Quill — {status.Title}"));
         // Even tray-start needs an HWND: RegisterHotKey delivers WM_HOTKEY to that native handle.
         _main.Show();
         if (background) _main.Hide();

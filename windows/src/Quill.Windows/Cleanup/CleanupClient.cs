@@ -45,13 +45,33 @@ public sealed class CleanupClient(HttpClient http)
             using var response = await http.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode) return raw;
             using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(timeout.Token));
-            var candidate = json.RootElement.GetProperty("choices")[0].GetProperty("message")
-                .GetProperty("content").GetString()?.Trim() ?? "";
-            return string.IsNullOrWhiteSpace(candidate) ? raw : candidate;
+            // Defensive navigation keeps the fail-soft contract: a 200 with an unexpected shape (empty
+            // choices, missing/non-string content) must fall back to raw, not throw
+            // KeyNotFoundException/IndexOutOfRangeException (which the orchestrator would not catch).
+            var candidate = ExtractChoiceContent(json.RootElement);
+            if (string.IsNullOrWhiteSpace(candidate)) return raw;
+            // Structural safeguard (mirrors Android CleanupClient/CleanupPipeline): even with the
+            // hardened prompt the model can still obey or expand the dictation (e.g. "type my email"
+            // -> "I'm ready to type your email"). If the result diverged from the transcript it
+            // changed meaning rather than tidied — discard it and fall back to raw (fail-soft,
+            // identical to a timeout or HTTP error). Raw is always the safe value.
+            return CleanupGuard.IsSafe(raw, candidate) ? candidate : raw;
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or JsonException)
         {
             return raw;
         }
+    }
+
+    private static string ExtractChoiceContent(JsonElement root)
+    {
+        if (!root.TryGetProperty("choices", out var choices) ||
+            choices.ValueKind != JsonValueKind.Array || choices.GetArrayLength() == 0)
+            return "";
+        return choices[0].TryGetProperty("message", out var message) &&
+               message.TryGetProperty("content", out var content) &&
+               content.ValueKind == JsonValueKind.String
+            ? content.GetString()?.Trim() ?? ""
+            : "";
     }
 }

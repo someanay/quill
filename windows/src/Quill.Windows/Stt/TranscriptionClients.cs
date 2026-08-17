@@ -67,6 +67,12 @@ public sealed class OpenAiCompatibleTranscriptionClient(HttpClient http, string 
 public sealed class OpenRouterTranscriptionClient(HttpClient http, string key, string baseUrl)
     : ITranscriptionClient
 {
+    // Omit "language" from the JSON body when null (auto-detect), matching Android's OpenRouter
+    // request. JsonContent.Create's default options serialize null properties as "language": null,
+    // which a strict provider-side schema validator can reject.
+    private static readonly JsonSerializerOptions OmitNullOptions =
+        new() { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull };
+
     public async Task<Transcript> TranscribeAsync(
         string audioPath, TranscriptionOptions options, CancellationToken cancellation)
     {
@@ -77,7 +83,7 @@ public sealed class OpenRouterTranscriptionClient(HttpClient http, string key, s
             language = string.IsNullOrWhiteSpace(options.Language) ? null : options.Language,
         };
         using var request = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/audio/transcriptions")
-        { Content = JsonContent.Create(body) };
+        { Content = JsonContent.Create(body, options: OmitNullOptions) };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", key);
         request.Headers.Add("X-Title", "Quill for Windows");
         using var response = await http.SendAsync(request, cancellation);
@@ -112,17 +118,39 @@ public sealed class GeminiTranscriptionClient(HttpClient http, string key, strin
         using var response = await http.SendAsync(request, cancellation);
         if (!response.IsSuccessStatusCode) await ResponseParser.ThrowAsync(response, cancellation);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellation));
-        var text = json.RootElement.GetProperty("candidates")[0].GetProperty("content")
-            .GetProperty("parts")[0].GetProperty("text").GetString()?.Trim() ?? "";
+        // Defensive navigation: a 200 with a safety block or empty candidates has no candidates[0] /
+        // parts[0]; GetProperty/indexer would throw KeyNotFoundException/IndexOutOfRangeException,
+        // which the orchestrator does not catch (→ crash on the async-void auto-stop path). Mirror
+        // Android's firstOrNull()?.. path and let the empty case fall through to the controlled error.
+        var text = ExtractGeminiText(json.RootElement);
         text = StripWrapping(text);
         if (text.Length == 0) throw new TranscriptionException("The provider returned an empty transcript.");
         return new Transcript(text);
     }
 
+    private static string ExtractGeminiText(JsonElement root)
+    {
+        if (!root.TryGetProperty("candidates", out var candidates) ||
+            candidates.ValueKind != JsonValueKind.Array || candidates.GetArrayLength() == 0)
+            return "";
+        if (!candidates[0].TryGetProperty("content", out var content) ||
+            !content.TryGetProperty("parts", out var parts) ||
+            parts.ValueKind != JsonValueKind.Array || parts.GetArrayLength() == 0)
+            return "";
+        var builder = new System.Text.StringBuilder();
+        foreach (var part in parts.EnumerateArray())
+            if (part.TryGetProperty("text", out var value) && value.ValueKind == JsonValueKind.String)
+                builder.Append(value.GetString());
+        return builder.ToString().Trim();
+    }
+
     internal static string StripWrapping(string text)
     {
         text = text.Trim();
-        if (text.StartsWith("```") && text.EndsWith("```"))
+        // Length guard mirrors the Android reference: a bare/short fence like "```" or "````"
+        // (length < 6) would make the text[3..^3] slice throw ArgumentOutOfRangeException, which the
+        // orchestrator does not catch — crashing the app on a degenerate provider response.
+        if (text.StartsWith("```") && text.EndsWith("```") && text.Length >= 6)
             text = text[3..^3].Trim().Replace("text\n", "", StringComparison.OrdinalIgnoreCase);
         foreach (var prefix in new[] { "Transcript:", "Transcription:", "Here is the transcript:" })
             if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) text = text[prefix.Length..].Trim();

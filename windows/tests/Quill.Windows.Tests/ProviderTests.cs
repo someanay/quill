@@ -21,6 +21,10 @@ public sealed class ProviderTests
     [InlineData("Transcript: hello world", "hello world")]
     [InlineData("```text\nhello world\n```", "hello world")]
     [InlineData("literal words", "literal words")]
+    // Degenerate short fences must not throw (regression: text[3..^3] on length < 6 crashed).
+    [InlineData("```", "```")]
+    [InlineData("````", "````")]
+    [InlineData("`````", "`````")]
     public void GeminiWrappingIsConservativelyRemoved(string raw, string expected) =>
         Assert.Equal(expected, GeminiTranscriptionClient.StripWrapping(raw));
 

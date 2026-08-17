@@ -79,12 +79,14 @@ public sealed class DictationOrchestrator : IDisposable
         if (string.IsNullOrWhiteSpace(key))
         {
             SetStatus(DictationState.Error, "API key required", $"Add a {ProviderCatalog.All[settings.Provider].DisplayName} key in Settings.");
+            ResetPending();
             return;
         }
         _target = _clipboardOnly ? null : _injector.CaptureTarget();
         if (_target?.IsSensitive == true)
         {
             SetStatus(DictationState.Error, "Protected field", "Quill never records for or types into password fields.");
+            ResetPending();
             return;
         }
         var diverted = _target is { HasEditableField: false };
@@ -98,7 +100,19 @@ public sealed class DictationOrchestrator : IDisposable
         catch (Exception error)
         {
             SetStatus(DictationState.Error, "Microphone unavailable", error.Message);
+            ResetPending();
         }
+    }
+
+    /// <summary>
+    /// Clear the pending target/clipboard-mode flags after a start that never reached Listening.
+    /// Otherwise a failed clipboard start (e.g. no key) leaves <c>_clipboardOnly = true</c> and
+    /// misroutes the *next* normal dictation to the clipboard instead of the focused field.
+    /// </summary>
+    private void ResetPending()
+    {
+        _clipboardOnly = false;
+        _target = null;
     }
 
     private async Task StopAndProcessAsync()
@@ -213,8 +227,12 @@ public sealed class DictationOrchestrator : IDisposable
     internal static string ApplyCustomWords(string text, IReadOnlyList<WordReplacement> words)
     {
         foreach (var word in words.Where(it => !string.IsNullOrWhiteSpace(it.Heard)))
+            // MatchEvaluator (not the replacement-string overload) so the replacement is inserted
+            // literally: a replacement containing '$' (e.g. "US$", "$5") would otherwise be parsed as
+            // a substitution pattern ($5 = capture group 5). Mirrors Android's WordSubstitutions,
+            // which uses the lambda form for the same reason.
             text = System.Text.RegularExpressions.Regex.Replace(text,
-                $@"\b{System.Text.RegularExpressions.Regex.Escape(word.Heard)}\b", word.Replacement,
+                $@"\b{System.Text.RegularExpressions.Regex.Escape(word.Heard)}\b", _ => word.Replacement,
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         return text;
     }
