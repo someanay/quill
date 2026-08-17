@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      Quill is intentionally NOT sandboxed: like Wispr Flow (and the Windows port), it must observe
+      the system-wide focused text field and type into ANY app via the Accessibility API + synthesized
+      key events, which the App Sandbox forbids. Distribution is direct-download + notarization (Developer
+      ID), not the Mac App Store — mirroring the Windows per-user install path. Hardened Runtime is on.
+      Microphone capture requires the audio-input entitlement below AND a runtime TCC grant.
+      Accessibility control of other apps requires a runtime grant in System Settings > Privacy &
+      Security > Accessibility (AXIsProcessTrusted) — that is a user grant, not an entitlement.
+    -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+</dict>
+</plist>
