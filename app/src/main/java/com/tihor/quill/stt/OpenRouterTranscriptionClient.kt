@@ -84,6 +84,11 @@ class OpenRouterTranscriptionClient(
         } catch (e: IOException) {
             Log.w(TAG, "OpenRouter transcription network error: ${e.message}")
             Result.failure(TranscriptionError.Network(e))
+        } catch (e: IllegalArgumentException) {
+            // Request construction can throw for a malformed key/URL; keep the "always return a Result"
+            // contract so the caller surfaces an error instead of crashing.
+            Log.w(TAG, "OpenRouter transcription request could not be built: ${e.message}")
+            Result.failure(TranscriptionError.Network(e))
         }
     }
 

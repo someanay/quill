@@ -10,6 +10,10 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.core.content.ContextCompat
 import com.tihor.quill.BuildConfig
+import com.tihor.quill.settings.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Tracks the focused editable field + foreground app (spec §3.1) and performs text insertion
@@ -35,6 +39,12 @@ class QuillAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         instance = this
         registerDebugTriggerIfDebug()
+        // Persist that accessibility has been enabled at least once, so the Home revocation banner can
+        // tell "was enabled, now revoked" apart from "never enabled" (a user who declined it during
+        // onboarding must not be shown a revocation/recovery prompt).
+        CoroutineScope(Dispatchers.IO).launch {
+            runCatching { SettingsRepository(applicationContext).setAccessibilityEnabledOnce(true) }
+        }
         Log.i(TAG, "Service connected.")
     }
 

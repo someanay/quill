@@ -172,8 +172,11 @@ fun HomeScreen(nav: QuillNav) {
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
-            // Revocation recovery: only nag if the user previously enabled the service (it's now off).
-            if (ReliabilityPolicy.shouldPromptRevocation(settings.onboardingComplete, a11yOn)) {
+            // Revocation recovery: only nag if the user actually enabled the service before (it's now
+            // off). Gated on accessibilityEnabledOnce, NOT onboardingComplete — onboarding has a decline
+            // path, so onboardingComplete would wrongly show this recovery banner to someone who never
+            // enabled accessibility at all.
+            if (ReliabilityPolicy.shouldPromptRevocation(settings.accessibilityEnabledOnce, a11yOn)) {
                 Banner(
                     title = copy(K.SYSTEM_RECOVERY_TITLE),
                     text = copy(K.HOME_BANNER_A11Y_OFF_TEXT),

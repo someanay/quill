@@ -47,6 +47,12 @@ data class QuillSettings(
     val historyRetentionMinutes: Int = RETENTION_DEFAULT_MINUTES,
     val sessionCapSeconds: Int = 300,
     val onboardingComplete: Boolean = false,
+    /**
+     * True once the accessibility service has connected at least once. Distinguishes "was enabled,
+     * now revoked" (show the recovery banner) from "never enabled" (a user who declined it in
+     * onboarding must NOT see a revocation prompt). Set in [com.tihor.quill.accessibility.QuillAccessibilityService].
+     */
+    val accessibilityEnabledOnce: Boolean = false,
     /** Floating-bubble size: [BUBBLE_SIZE_SMALL] / [BUBBLE_SIZE_MEDIUM] / [BUBBLE_SIZE_LARGE]. */
     val bubbleSize: String = BUBBLE_SIZE_MEDIUM,
     /** App theme: [APP_THEME_SYSTEM] / [APP_THEME_LIGHT] / [APP_THEME_DARK] — drives the whole UI. */
@@ -134,6 +140,7 @@ class SettingsRepository(private val context: Context) {
             historyRetentionMinutes = p[Keys.HISTORY_RETENTION_MINUTES] ?: QuillSettings.RETENTION_DEFAULT_MINUTES,
             sessionCapSeconds = p[Keys.SESSION_CAP_SECONDS] ?: 300,
             onboardingComplete = p[Keys.ONBOARDING_COMPLETE] ?: false,
+            accessibilityEnabledOnce = p[Keys.ACCESSIBILITY_ENABLED_ONCE] ?: false,
             bubbleSize = p[Keys.BUBBLE_SIZE] ?: QuillSettings.BUBBLE_SIZE_MEDIUM,
             appTheme = p[Keys.APP_THEME] ?: QuillSettings.APP_THEME_SYSTEM,
             bootRestore = p[Keys.BOOT_RESTORE] ?: true,
@@ -190,6 +197,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setOnboardingComplete(complete: Boolean) =
         context.settingsDataStore.edit { it[Keys.ONBOARDING_COMPLETE] = complete }
+
+    /** Record that the accessibility service has connected at least once (gates the revocation banner). */
+    suspend fun setAccessibilityEnabledOnce(enabled: Boolean) =
+        context.settingsDataStore.edit { it[Keys.ACCESSIBILITY_ENABLED_ONCE] = enabled }
 
     suspend fun setBubbleSize(size: String) =
         context.settingsDataStore.edit { it[Keys.BUBBLE_SIZE] = size }
@@ -252,8 +263,12 @@ class SettingsRepository(private val context: Context) {
         visibilityMirror.visible = true // keep the mirror in lockstep with the DataStore default
         context.settingsDataStore.edit { prefs ->
             val onboarded = prefs[Keys.ONBOARDING_COMPLETE]
+            val a11yEnabledOnce = prefs[Keys.ACCESSIBILITY_ENABLED_ONCE]
             prefs.clear()
             if (onboarded != null) prefs[Keys.ONBOARDING_COMPLETE] = onboarded
+            // Historical fact, not a preference — a settings reset must not resurrect the revocation
+            // banner for a user who legitimately had accessibility enabled.
+            if (a11yEnabledOnce != null) prefs[Keys.ACCESSIBILITY_ENABLED_ONCE] = a11yEnabledOnce
         }
     }
 
@@ -270,6 +285,7 @@ class SettingsRepository(private val context: Context) {
         val HISTORY_RETENTION_MINUTES = intPreferencesKey("history_retention_minutes")
         val SESSION_CAP_SECONDS = intPreferencesKey("session_cap_seconds")
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
+        val ACCESSIBILITY_ENABLED_ONCE = booleanPreferencesKey("accessibility_enabled_once")
         val BUBBLE_SIZE = stringPreferencesKey("bubble_size")
         val APP_THEME = stringPreferencesKey("app_theme")
         val BOOT_RESTORE = booleanPreferencesKey("boot_restore")

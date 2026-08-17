@@ -58,6 +58,8 @@ import com.tihor.quill.ui.components.QuillTopBarTitle
 import com.tihor.quill.ui.components.RowDivider
 import com.tihor.quill.ui.components.SectionHeader
 import com.tihor.quill.ui.theme.quill
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -77,11 +79,20 @@ fun HistoryScreen(nav: QuillNav) {
     var selected by remember { mutableStateOf<HistoryEntry?>(null) }
     var showClearAll by remember { mutableStateOf(false) }
 
-    // Drop anything past the retention window first, so the list reflects the cutoff even when no
-    // new dictation has happened since (M9). Re-runs if the user changes the window in Settings.
-    LaunchedEffect(settings.historyRetentionMinutes) {
-        historyRepo.prune(settings.historyRetentionMinutes, System.currentTimeMillis())
-        entries = historyRepo.all()
+    // Drop anything past the retention window first, so the list reflects the cutoff even when no new
+    // dictation has happened since (M9). Collect the retention straight from the settings flow — whose
+    // first emission is the PERSISTED value — instead of keying on the `settings` state, whose initial
+    // value is the QuillSettings() default (60 min). Keying on that default pruned to an hour-old cutoff
+    // before the real (usually longer) window loaded, permanently deleting history. distinctUntilChanged
+    // preserves the "re-prune when the user changes the window" behaviour.
+    LaunchedEffect(Unit) {
+        settingsRepo.settings
+            .map { it.historyRetentionMinutes }
+            .distinctUntilChanged()
+            .collect { retentionMinutes ->
+                historyRepo.prune(retentionMinutes, System.currentTimeMillis())
+                entries = historyRepo.all()
+            }
     }
 
     Scaffold(

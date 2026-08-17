@@ -115,35 +115,55 @@ class AudioRecorder(
         var warned = false
         var reason = StopReason.MANUAL
 
-        val raf = RandomAccessFile(output, "rw")
-        raf.setLength(0)
-        // Placeholder header, patched with the real data size on stop.
-        raf.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, 0))
-
-        val started = clock()
-        silence.start(started)
-        record.startRecording()
+        // raf + startRecording() live INSIDE the try so a throw there (full cache, mic HAL busy) still
+        // runs the finally: releases the AudioRecord, closes the file, resets `recording`, and fires
+        // onFinished — otherwise the recorder leaks and the service is pinned in RECORDING forever.
+        var raf: RandomAccessFile? = null
         try {
+            val file = RandomAccessFile(output, "rw")
+            raf = file
+            file.setLength(0)
+            // Placeholder header, patched with the real data size on stop.
+            file.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, 0))
+
+            val started = clock()
+            silence.start(started)
+            record.startRecording()
+
+            var consecutiveErrors = 0
             while (recording) {
-                val read = record.read(buffer, 0, buffer.size)
-                if (read <= 0) continue
-
-                val rms = rms(buffer, read)
-                onAmplitude(rms.toInt())
-
-                raf.write(shortsToLeBytes(buffer, read))
-                dataBytes += read * BYTES_PER_SAMPLE
-
                 val now = clock()
                 val elapsed = now - started
                 if (!warned && RecordingLimits.shouldWarn(elapsed, capMs)) {
                     warned = true
                     onWarning()
                 }
+                // Evaluate the cap every iteration, BEFORE the read guard, so a persistent read error
+                // can never defeat the session cap (the documented backstop).
                 if (RecordingLimits.reachedCap(elapsed, capMs)) {
                     reason = StopReason.CAP
                     break
                 }
+
+                val read = record.read(buffer, 0, buffer.size)
+                if (read <= 0) {
+                    // Negative codes (ERROR_DEAD_OBJECT / ERROR_INVALID_OPERATION) return immediately;
+                    // without this bail a mic death mid-session spins a CPU core at 100% until the cap.
+                    if (++consecutiveErrors >= MAX_CONSECUTIVE_READ_ERRORS) {
+                        Log.e(TAG, "AudioRecord.read failed repeatedly ($read); stopping.")
+                        reason = StopReason.ERROR
+                        break
+                    }
+                    continue
+                }
+                consecutiveErrors = 0
+
+                val rms = rms(buffer, read)
+                onAmplitude(rms.toInt())
+
+                file.write(shortsToLeBytes(buffer, read))
+                dataBytes += read * BYTES_PER_SAMPLE
+
                 if (silence.onFrame(rms, now)) {
                     reason = StopReason.SILENCE
                     break
@@ -158,11 +178,11 @@ class AudioRecorder(
             record.release()
             // Patch RIFF/data sizes.
             runCatching {
-                raf.seek(0)
-                raf.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, dataBytes))
+                raf?.seek(0)
+                raf?.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, dataBytes))
             }
-            runCatching { raf.close() }
-            Log.i(TAG, "Recording stopped ($reason): ${output.name}, ${dataBytes} PCM bytes")
+            runCatching { raf?.close() }
+            Log.i(TAG, "Recording stopped ($reason): ${output.name}, $dataBytes PCM bytes")
             onFinished(output, reason)
         }
     }
@@ -194,5 +214,8 @@ class AudioRecorder(
         private const val BYTES_PER_SAMPLE = BITS_PER_SAMPLE / 8
         private const val CHANNEL = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
+
+        /** Bail out of the read loop after this many consecutive read errors (mic died mid-session). */
+        private const val MAX_CONSECUTIVE_READ_ERRORS = 50
     }
 }

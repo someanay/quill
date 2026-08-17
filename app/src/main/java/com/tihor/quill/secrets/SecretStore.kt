@@ -54,23 +54,36 @@ class KeystoreSecretStore(context: Context) : SecretStore {
     private fun secretKey(): SecretKey {
         val ks = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         (ks.getEntry(MASTER_KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
-        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
-        generator.init(
-            KeyGenParameterSpec.Builder(
-                MASTER_KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setKeySize(256)
-                .build(),
-        )
-        return generator.generateKey()
+        // Serialize first-use creation across all instances: KeyGenerator.generateKey() for an existing
+        // alias REPLACES the Keystore key, so two concurrent first-time callers could both see "no
+        // entry" and both generate — orphaning a secret already written under the first key (it then
+        // reads back as null via the swallowed AEADBadTagException). Re-check inside the lock.
+        return synchronized(KEY_GEN_LOCK) {
+            val existing = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+                .getEntry(MASTER_KEY_ALIAS, null) as? KeyStore.SecretKeyEntry
+            existing?.secretKey ?: run {
+                val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+                generator.init(
+                    KeyGenParameterSpec.Builder(
+                        MASTER_KEY_ALIAS,
+                        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+                    )
+                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        .setKeySize(256)
+                        .build(),
+                )
+                generator.generateKey()
+            }
+        }
     }
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
         const val MASTER_KEY_ALIAS = "quill_secret_master_key"
+
+        /** Process-wide lock so master-key creation happens at most once across store instances. */
+        val KEY_GEN_LOCK = Any()
     }
 }
 

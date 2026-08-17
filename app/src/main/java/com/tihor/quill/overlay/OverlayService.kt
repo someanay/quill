@@ -483,6 +483,12 @@ class OverlayService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        // Every start() uses startForegroundService(), which arms the framework watchdog requiring a
+        // startForeground() call on EVERY delivery — including when the service is already running (the
+        // Home toggle off→on start()s the live service). Re-promote with the current mic state so a
+        // re-delivery can't crash with ForegroundServiceDidNotStartInTimeException. onCreate/startRecording
+        // also promote, so re-promoting here is idempotent and never changes the mic FGS type.
+        setForeground(micActive)
         // Recreate the window if a re-start arrives after the system trimmed us.
         if (bubble == null) addBubble()
         // Notification "Show Quill": summon a hidden bubble back by writing the unified visibility state

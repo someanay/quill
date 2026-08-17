@@ -103,4 +103,17 @@ class TranscriptionClientTest {
         val result = client().transcribe(audio(), opts)
         assertTrue(result.exceptionOrNull() is TranscriptionError.Network)
     }
+
+    @Test
+    fun malformedKey_withNewline_returnsFailure_notThrow() = runTest {
+        // A pasted key with a newline is forbidden in an OkHttp header value, so request construction
+        // throws IllegalArgumentException before any network call. The client must return a
+        // Result.failure rather than let it escape the suspend fun (which crashed KeyValidator/dictation).
+        val client = OpenAiCompatibleTranscriptionClient(
+            baseUrl = server.url("/openai/v1").toString().trimEnd('/'),
+            apiKey = { "bad\nkey" },
+        )
+        val result = client.transcribe(audio(), opts)
+        assertTrue(result.isFailure)
+    }
 }

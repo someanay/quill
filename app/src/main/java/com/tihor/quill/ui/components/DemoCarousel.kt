@@ -49,6 +49,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
@@ -184,6 +185,9 @@ fun DemoCarousel(
     }
 }
 
+// media3's PlayerSurface / SURFACE_TYPE_TEXTURE_VIEW are @UnstableApi; opt in explicitly (lint-fatal
+// UnsafeOptInUsageError otherwise). The surface API is the documented Compose integration point.
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun CarouselCard(
     clip: CarouselClip,

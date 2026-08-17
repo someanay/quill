@@ -14,8 +14,10 @@ import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.overlay.OverlayPermission
 import com.tihor.quill.overlay.OverlayService
 import com.tihor.quill.settings.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 
 /**
  * Reboot survival (M11). On BOOT_COMPLETED / QUICKBOOT_POWERON, [ReliabilityPolicy.bootAction]
@@ -31,22 +33,33 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED, ACTION_QUICKBOOT_POWERON, ACTION_HTC_QUICKBOOT_POWERON -> Unit
             else -> return
         }
-        // Never let a boot broadcast crash the app — every branch is wrapped.
-        runCatching {
-            val settings = runBlocking { SettingsRepository(context).settings.first() }
-            val action = ReliabilityPolicy.bootAction(
-                bootRestore = settings.bootRestore,
-                bubbleActive = settings.bubbleActive,
-                overlayGranted = OverlayPermission.isGranted(context),
-            )
-            ReliabilityPolicy.executeBoot(
-                action = action,
-                // specialUse bubble only — never the mic FGS. A background FGS start is illegal on
-                // modern Android, so a refusal falls back to the notification (never crashes).
-                restore = { OverlayService.start(context) },
-                notify = { postReactivate(context) },
-            )
-        }.onFailure { Log.w(TAG, "Boot handling failed", it) }
+        // onReceive runs on the main thread; blocking it on a DataStore disk read during a boot storm
+        // risks an ANR. goAsync() keeps the receiver + process alive until finish() while the read and
+        // boot action run on a background dispatcher. Every branch is still wrapped so a boot broadcast
+        // can never crash the app.
+        val pending = goAsync()
+        val appContext = context.applicationContext
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val settings = SettingsRepository(appContext).settings.first()
+                val action = ReliabilityPolicy.bootAction(
+                    bootRestore = settings.bootRestore,
+                    bubbleActive = settings.bubbleActive,
+                    overlayGranted = OverlayPermission.isGranted(appContext),
+                )
+                ReliabilityPolicy.executeBoot(
+                    action = action,
+                    // specialUse bubble only — never the mic FGS. A background FGS start is illegal on
+                    // modern Android, so a refusal falls back to the notification (never crashes).
+                    restore = { OverlayService.start(appContext) },
+                    notify = { postReactivate(appContext) },
+                )
+            } catch (t: Throwable) {
+                Log.w(TAG, "Boot handling failed", t)
+            } finally {
+                pending.finish()
+            }
+        }
     }
 
     private fun postReactivate(context: Context) {

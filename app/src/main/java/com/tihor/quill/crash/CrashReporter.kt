@@ -20,11 +20,15 @@ object CrashReporter {
      * Install the handler once (from the host Activity), passing the persisted opt-in flag. Kept free
      * of the settings layer so the reporter is self-contained; the caller reads the flag and supplies it.
      */
-    fun install(context: Context, enabled: Boolean) {
+    fun install(context: Context, initialEnabled: Boolean) {
         appContext = context.applicationContext
-        this.enabled = enabled
+        this.enabled = initialEnabled
         previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            // Read the @Volatile field, NOT a captured parameter: a parameter named `enabled` would
+            // shadow the field and freeze the value at install time, making setEnabled() (the Privacy
+            // toggle) dead — so turning reporting off mid-session would still write the next crash, and
+            // turning it on would do nothing until a process restart.
             if (enabled) runCatching { write(throwable) }
             previous?.uncaughtException(thread, throwable)
         }

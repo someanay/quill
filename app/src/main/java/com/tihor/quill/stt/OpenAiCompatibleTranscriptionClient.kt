@@ -62,6 +62,12 @@ class OpenAiCompatibleTranscriptionClient(
         } catch (e: IOException) {
             Log.w(TAG, "Transcription network error: ${e.message}")
             Result.failure(TranscriptionError.Network(e))
+        } catch (e: IllegalArgumentException) {
+            // Request construction can throw for a malformed key (a pasted value with a newline or
+            // non-ASCII char that OkHttp forbids in a header) or a bad custom base URL. Return a Result
+            // so the "never throw" contract holds and KeyValidator/dictation surface an error, not a crash.
+            Log.w(TAG, "Transcription request could not be built: ${e.message}")
+            Result.failure(TranscriptionError.Network(e))
         }
     }
 

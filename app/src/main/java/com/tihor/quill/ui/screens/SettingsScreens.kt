@@ -939,6 +939,13 @@ private fun AddWordDialog(onAdd: (String, String) -> Unit, onDismiss: () -> Unit
     var errorKey by remember { mutableStateOf<String?>(null) }
     val canSave = heard.isNotBlank() && replacement.isNotBlank()
 
+    // Stop the microphone if the dialog is dismissed mid-capture. Otherwise VoiceWordCapture's recording
+    // thread keeps the mic live (up to the 8 s cap) after the UI is gone — a resource leak, and in a
+    // dictation app a privacy concern (the mic-active indicator lingers). Mirrors MicTestStep.
+    DisposableEffect(Unit) {
+        onDispose { capture.stopRecording() }
+    }
+
     fun beginCapture() {
         errorKey = null
         phase = WordCapturePhase.RECORDING
