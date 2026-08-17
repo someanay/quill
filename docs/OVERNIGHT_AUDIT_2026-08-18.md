@@ -110,8 +110,43 @@ Regression test added: `TranscriptionClientTest.malformedKey_withNewline_returns
 
 ---
 
-## 5. macOS & iOS ports
+## 5. macOS & iOS ports (new)
 
-See §6/§7 (below). Apple toolchains don't run on Windows, so these ship as **complete, faithful
-Swift source + a deterministic XcodeGen project spec + build instructions**, with an explicit
-"unverified — needs a Mac to compile/run" section enumerating platform-specific risks.
+Both ship as **complete, faithful Swift source + a deterministic XcodeGen project spec + a build
+README**, and both port the **fixed** logic (guard-wired cleanup, short-fence guard, literal
+custom-word replacement, defensive JSON, omit-null-language). Apple toolchains don't run on Windows,
+so **neither has been compiled or run** — each README has a "Needs a Mac" section enumerating the
+platform surfaces to validate on-device. Both carry an XCTest target mirroring the Windows pure-logic
+suite (`CleanupGuard`, `stripWrapping` incl. the W-2 short-fence cases, `applyCustomWords` incl. the
+W-3 `$` case, `SettingsPolicy.normalize`, `HistoryStore.prune`, tolerant settings decode).
+
+### 6. macOS (`macos/`) — mirrors the Windows app
+A menu-bar agent app (`LSUIElement`) with a non-activating floating HUD (the desktop analogue of the
+Windows ribbon). One-to-one with Windows:
+
+| Concern | Windows | macOS |
+|---|---|---|
+| Global hotkey | `RegisterHotKey` | Carbon `RegisterEventHotKey` |
+| Focused-field safety | UI Automation | Accessibility API (`AXUIElement`, `kAXSecureTextFieldSubrole`) |
+| Typing | Unicode `SendInput` | Unicode `CGEvent` (`keyboardSetUnicodeString`) + clipboard fallback |
+| Capture | NAudio 16 kHz mono | `AVAudioEngine` + `AVAudioConverter` → 16 kHz mono Int16 |
+| Secrets | DPAPI | Keychain |
+| Menu/tray | `NotifyIcon` | `NSStatusItem` |
+| Start at login | StartupService | `SMAppService` |
+
+Intentionally **not sandboxed** (must control other apps via Accessibility), Hardened Runtime on,
+distribution via Developer ID + notarization — mirroring the Windows per-user install path.
+
+### 7. iOS (`ios/`) — mirrors the Android app within iOS constraints
+iOS forbids Android's floating overlay and cross-app accessibility injection, so "dictate into any
+app" is delivered by a **custom keyboard extension** (`UIInputViewController` → `UITextDocumentProxy`)
+plus an **in-app dictation screen**. Everything after capture is the shared pipeline
+(`DictationEngine`), identical to Android. The platform-agnostic core is compiled into **both** the app
+and the keyboard extension (no framework/`public` boilerplate); they share data via an **App Group**
+container and (optionally) a shared **Keychain** group. Capture uses `AVAudioSession` + `AVAudioEngine`.
+The app works standalone on its private Keychain; sharing keys with the keyboard needs the documented
+shared-Keychain + Full-Access setup (`ios/README.md`).
+
+**Cross-platform parity:** the four apps now share the same provider catalog, cleanup-guard semantics,
+custom-word rules, retention policy, and settings normalization — covered by four parallel test suites
+(Android JUnit ×379, Windows xUnit ×45, macOS/iOS XCTest ×11 each).

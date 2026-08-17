@@ -7,11 +7,25 @@ any text field in any app; the audio is transcribed by a speech-to-text provider
 own API key**, optionally cleaned up by an LLM, and inserted into the focused field. Modelled on
 Wispr Flow's Android experience.
 
-**Planning only — no code yet.** The purpose is to lock the architecture, scope, and risks before
-the first line of Kotlin, and give Claude Code a precise contract to execute against.
-
 This bundle is deliberately **five files**: this README (overview + how to work on the repo), plus
 `prd.md`, `spec.md`, `todo.md`, `testing_plan.md`.
+
+> **Status note (2026-08):** this README began as a planning-only bundle; Quill is now a working app
+> across **four** platforms. The Android and Windows apps build and pass their test suites; the macOS
+> and iOS ports are source-complete (pending a Mac to compile/validate). See each platform's README
+> and the audit/fix report.
+
+## Platforms
+
+| Platform | Location | Stack | Status |
+|---|---|---|---|
+| **Android** (reference) | `app/` | Kotlin, Compose; overlay bubble + AccessibilityService | Builds; 379 unit tests pass |
+| **Windows** | `windows/` | .NET 10 WPF, NAudio; global hotkey + UI Automation | Builds; 45 tests pass |
+| **macOS** | `macos/` | Swift/SwiftUI/AppKit; menu-bar + Accessibility/CGEvent | Source-complete — [`macos/README.md`](macos/README.md) |
+| **iOS** | `ios/` | Swift/SwiftUI; keyboard extension + in-app dictation | Source-complete — [`ios/README.md`](ios/README.md) |
+
+The four apps share the same BYOK model, provider catalog, guarded cleanup, custom-word rules, and
+privacy posture. Latest cross-platform audit + fixes: [`docs/OVERNIGHT_AUDIT_2026-08-18.md`](docs/OVERNIGHT_AUDIT_2026-08-18.md).
 
 ---
 
