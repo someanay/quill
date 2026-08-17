@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Same App Group as the app, so the keyboard reads the user's settings/provider and writes
+         history to the shared container. -->
+    <key>com.apple.security.application-groups</key>
+    <array>
+        <string>group.com.tihor.quill</string>
+    </array>
+    <!-- To read API keys the app saved to the shared Keychain group, add the SAME keychain group the
+         app declares and set SecretStore.accessGroup to it (see ios/README.md):
+    <key>keychain-access-groups</key>
+    <array>
+        <string>$(AppIdentifierPrefix)com.tihor.quill.keys</string>
+    </array>
+    -->
+</dict>
+</plist>

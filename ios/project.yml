@@ -1,0 +1,59 @@
+# XcodeGen spec for Quill (iOS + keyboard extension). On a Mac:
+#   brew install xcodegen
+#   cd ios && xcodegen generate && open Quill.xcodeproj
+# Set your Development Team on both targets, and (for the keyboard to share keys) configure a shared
+# keychain group + SecretStore.accessGroup — see ios/README.md.
+name: Quill
+options:
+  bundleIdPrefix: com.tihor.quill
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  Quill:
+    type: application
+    platform: iOS
+    # The app AND the keyboard extension both compile the platform-agnostic Shared/ core (no separate
+    # framework, so no public-API boilerplate); they share data via the App Group + Keychain.
+    sources:
+      - path: Quill
+        excludes: ["**/*.md"]
+      - path: Shared
+    dependencies:
+      - target: QuillKeyboard
+    settings:
+      base:
+        PRODUCT_NAME: Quill
+        PRODUCT_MODULE_NAME: Quill
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios
+        INFOPLIST_FILE: Quill/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Quill/App/Quill.entitlements
+        TARGETED_DEVICE_FAMILY: "1,2"
+  QuillKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: QuillKeyboard
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_NAME: QuillKeyboard
+        PRODUCT_MODULE_NAME: QuillKeyboard
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.keyboard
+        INFOPLIST_FILE: QuillKeyboard/Info.plist
+        CODE_SIGN_ENTITLEMENTS: QuillKeyboard/QuillKeyboard.entitlements
+  QuillTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: SharedTests
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.tests
