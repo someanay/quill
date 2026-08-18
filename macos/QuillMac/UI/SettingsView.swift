@@ -17,7 +17,7 @@ final class SettingsViewModel: ObservableObject {
     init(services: AppServices, onHotkeyChanged: @escaping () -> Void) {
         self.services = services
         self.onHotkeyChanged = onHotkeyChanged
-        Task { await load() }
+        Task { await self.load() }
     }
 
     func load() async {
@@ -32,7 +32,7 @@ final class SettingsViewModel: ObservableObject {
         guard loaded else { return }
         var s = settings
         s.customWords = customWords
-        Task { await services.settingsStore.save(s) }
+        Task { await self.services.settingsStore.save(s) }
     }
 
     func onProviderChanged() {
@@ -48,11 +48,11 @@ final class SettingsViewModel: ObservableObject {
         keyStatus = "Saved — verifying…"
         let provider = settings.provider, key = apiKey, model = settings.model, url = settings.customBaseURL
         Task {
-            let result = await services.keyValidator.validate(provider: provider, key: key, model: model, customBaseURL: url)
+            let result = await self.services.keyValidator.validate(provider: provider, key: key, model: model, customBaseURL: url)
             switch result {
-            case .valid: keyStatus = "Key verified ✓"
-            case .rejected: keyStatus = "Key rejected ✗ — check you copied it fully"
-            case .unverified(let reason): keyStatus = "Saved (couldn't verify: \(reason))"
+            case .valid: self.keyStatus = "Key verified ✓"
+            case .rejected: self.keyStatus = "Key rejected ✗ — check you copied it fully"
+            case .unverified(let reason): self.keyStatus = "Saved (couldn't verify: \(reason))"
             }
         }
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit  // NSPasteboard for per-item copy
 
 // Local dictation history (mirrors the Windows history panel): per-item copy/delete + clear all,
 // pruned to the configured retention window on open.

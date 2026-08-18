@@ -109,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 // Small NSWindowDelegate that fires a closure when the window closes (so we can drop our reference).
+@MainActor
 final class WindowCloser: NSObject, NSWindowDelegate {
     private let onClose: () -> Void
     init(_ onClose: @escaping () -> Void) { self.onClose = onClose }
@@ -118,10 +119,11 @@ final class WindowCloser: NSObject, NSWindowDelegate {
 // Non-activating floating panel that shows dictation state WITHOUT stealing keyboard focus, so the
 // underlying app keeps focus for the synthesized keystrokes. The macOS stand-in for the Windows
 // non-activating dictation ribbon (and the Android overlay bubble's caption).
+@MainActor
 final class DictationHUD {
     private let panel: NSPanel
     private let label = NSTextField(labelWithString: "Quill")
-    private var hideWork: DispatchWorkItem?
+    private var hideTask: Task<Void, Never>?
 
     init() {
         panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 300, height: 46),
@@ -155,7 +157,7 @@ final class DictationHUD {
     }
 
     private func show() {
-        hideWork?.cancel()
+        hideTask?.cancel()
         if let screen = NSScreen.main {
             let f = screen.visibleFrame
             panel.setFrameOrigin(NSPoint(x: f.midX - panel.frame.width / 2, y: f.minY + 120))
@@ -165,8 +167,12 @@ final class DictationHUD {
 
     private func scheduleHide() {
         show()
-        let work = DispatchWorkItem { [weak self] in self?.panel.orderOut(nil) }
-        hideWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
+        // Task inherits DictationHUD's @MainActor isolation, so the panel access stays on the main
+        // actor (a DispatchWorkItem block would be @Sendable/nonisolated and couldn't touch panel).
+        hideTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            guard !Task.isCancelled else { return }
+            self?.panel.orderOut(nil)
+        }
     }
 }

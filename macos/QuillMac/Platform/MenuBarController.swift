@@ -1,7 +1,9 @@
 import AppKit
 
 // Menu-bar status item — the macOS equivalent of the Windows TrayIconService (open, start/stop
-// dictation, settings, quit + a live status tooltip).
+// dictation, settings, quit + a live status tooltip). @MainActor: it builds AppKit objects
+// (NSStatusBar/NSMenu/NSMenuItem) in init, so the whole controller lives on the main actor.
+@MainActor
 final class MenuBarController: NSObject {
     private let statusItem: NSStatusItem
     private let onOpen: () -> Void

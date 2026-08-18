@@ -15,8 +15,9 @@ final class FocusedTextInjector {
 
     @discardableResult
     func requestAccessibilityPermission() -> Bool {
-        // The prompt-option key is imported as CFString; bridge it to a String dictionary key.
-        let options = [kAXTrustedCheckOptionPrompt as String: true] as CFDictionary
+        // kAXTrustedCheckOptionPrompt imports as Unmanaged<CFString>; take its value, then bridge to a
+        // String dictionary key (its literal value is "AXTrustedCheckOptionPrompt").
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
     }
 
