@@ -39,6 +39,30 @@ public sealed class KeyValidatorTests
         Assert.False(result);
     }
 
+    [Fact]
+    public async Task EmptyTranscriptFromSilentProbeIsValidNotUnverified()
+    {
+        // Real clients throw on a 2xx that carries no transcript text — exactly what the 400 ms
+        // silent probe elicits — so this must still read as a valid, authenticated key.
+        var validator = new KeyValidator((_, _, _) => new FakeClient(null,
+            new TranscriptionException("The recording contained no speech.", emptyTranscript: true)));
+
+        var result = await validator.ValidateAsync(SttProvider.Groq, "sk-test", "whisper-large-v3-turbo", "");
+
+        Assert.IsType<KeyValidation.Valid>(result);
+    }
+
+    [Fact]
+    public async Task PaidProbeTreatsEmptyTranscriptAsAccessible()
+    {
+        var validator = new KeyValidator((_, _, _) => new FakeClient(null,
+            new TranscriptionException("The recording contained no speech.", emptyTranscript: true)));
+
+        var result = await validator.HasPaidAccessAsync(SttProvider.Gemini, "key", "gemini-3.1-pro-preview", "");
+
+        Assert.True(result);
+    }
+
     private sealed class FakeClient(Action? onCalled, Exception? error) : ITranscriptionClient
     {
         public Task<Transcript> TranscribeAsync(string audioPath, TranscriptionOptions options, CancellationToken cancellation)
@@ -46,7 +70,7 @@ public sealed class KeyValidatorTests
             Assert.True(File.Exists(audioPath));
             Assert.True(new FileInfo(audioPath).Length > 44);
             onCalled?.Invoke();
-            return error is null ? Task.FromResult(new Transcript("")) : Task.FromException<Transcript>(error);
+            return error is null ? Task.FromResult(new Transcript("ok")) : Task.FromException<Transcript>(error);
         }
     }
 }

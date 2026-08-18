@@ -12,10 +12,14 @@ public interface ITranscriptionClient
     Task<Transcript> TranscribeAsync(string audioPath, TranscriptionOptions options, CancellationToken cancellation);
 }
 
-public sealed class TranscriptionException(string message, bool retryable = false, Exception? inner = null)
+public sealed class TranscriptionException(string message, bool retryable = false, Exception? inner = null, bool emptyTranscript = false)
     : Exception(message, inner)
 {
     public bool Retryable { get; } = retryable;
+
+    /// <summary>True when a successful (2xx) response simply carried no transcript text — e.g. the
+    /// silent key-validation probe. The request authenticated even though there is nothing to insert.</summary>
+    public bool EmptyTranscript { get; } = emptyTranscript;
 }
 
 public static class TranscriptionClientFactory
@@ -171,7 +175,8 @@ internal static class ResponseParser
             var text = ExtractText(root)?.Trim() ?? "";
             if (text.Length == 0 && root.TryGetProperty("error", out var error))
                 throw new TranscriptionException(ExtractErrorMessage(error) ?? "The provider could not transcribe this recording.");
-            if (text.Length == 0) throw new JsonException("response contained no transcript text");
+            if (text.Length == 0)
+                throw new TranscriptionException("The recording contained no speech.", emptyTranscript: true);
             return new Transcript(text);
         }
         catch (JsonException error)

@@ -54,4 +54,13 @@ public sealed class ProviderTests
         var error = await Assert.ThrowsAsync<TranscriptionException>(() => ResponseParser.ParseAsync(response, CancellationToken.None));
         Assert.Equal("Model does not support transcription", error.Message);
     }
+
+    [Fact]
+    public async Task EmptySuccessfulResponseIsFlaggedAsEmptyTranscript()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.OK)
+        { Content = new StringContent("{\"text\":\"\"}", Encoding.UTF8, "application/json") };
+        var error = await Assert.ThrowsAsync<TranscriptionException>(() => ResponseParser.ParseAsync(response, CancellationToken.None));
+        Assert.True(error.EmptyTranscript);
+    }
 }

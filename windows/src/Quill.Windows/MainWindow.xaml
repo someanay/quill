@@ -262,7 +262,7 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="190"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <StackPanel VerticalAlignment="Center">
                                         <TextBlock Text="Global shortcut" FontWeight="SemiBold"/>
-                                        <TextBlock Text="Click the field, then press your combination." Foreground="{StaticResource Muted}" FontSize="12" Margin="0,3,16,0"/>
+                                        <TextBlock Text="Use Change shortcut to pick a new combination." Foreground="{StaticResource Muted}" FontSize="12" Margin="0,3,16,0"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
                                         <TextBox x:Name="ShortcutField" Text="{Binding Hotkey}" IsReadOnly="True"

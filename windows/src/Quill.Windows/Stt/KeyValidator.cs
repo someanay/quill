@@ -39,6 +39,12 @@ public sealed class KeyValidator
                 .TranscribeAsync(wav, new TranscriptionOptions(model.Trim(), null), cancellation);
             return new KeyValidation.Valid();
         }
+        catch (TranscriptionException error) when (error.EmptyTranscript)
+        {
+            // A 2xx response with an empty transcript means the request authenticated and the
+            // silent probe simply produced no words — the key is valid.
+            return new KeyValidation.Valid();
+        }
         catch (TranscriptionException error) when (error.Message.Contains("API key was rejected", StringComparison.OrdinalIgnoreCase))
         {
             return new KeyValidation.Rejected();
@@ -66,6 +72,11 @@ public sealed class KeyValidator
         {
             await _clientFactory(provider, key.Trim(), customBaseUrl.Trim())
                 .TranscribeAsync(wav, new TranscriptionOptions(model.Trim(), null), cancellation);
+            return true;
+        }
+        catch (TranscriptionException error) when (error.EmptyTranscript)
+        {
+            // The probe request succeeded (empty transcript from silence) — the model is accessible.
             return true;
         }
         catch (TranscriptionException error) when (

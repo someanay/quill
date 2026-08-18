@@ -13,7 +13,6 @@ public partial class MainWindow : Window
     private readonly GlobalHotkeyService _hotkey = new();
     private readonly AppServices _services;
     private bool _allowClose;
-    private bool _capturingHotkey;
     private string _registeredHotkey = SettingsPolicy.DefaultHotkey;
 
     public MainWindow(AppServices services)
@@ -103,46 +102,6 @@ public partial class MainWindow : Window
         _registeredHotkey = normalized;
         ViewModel.SetHotkeyStatus("Available — Quill is listening for this shortcut.");
         await ViewModel.SaveSettingsAsync();
-    }
-
-    private void Window_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (!_capturingHotkey) return;
-        e.Handled = true;
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
-        if (key == Key.Escape)
-        {
-            _capturingHotkey = false;
-            SidebarShortcutButton.Content = "Change shortcut";
-            SettingsShortcutButton.Content = "Change shortcut";
-            ViewModel.SetHotkeyStatus("Shortcut change cancelled.");
-            return;
-        }
-        if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or
-            Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin) return;
-        var parts = new List<string>();
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) parts.Add("Ctrl");
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) parts.Add("Alt");
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) parts.Add("Shift");
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Windows)) parts.Add("Win");
-        var keyName = key == Key.Space ? "Space" : key.ToString();
-        if (parts.Count == 0 || keyName.Length == 0)
-        {
-            ViewModel.SetHotkeyStatus("Choose at least one modifier and one key.");
-            return;
-        }
-        parts.Add(keyName);
-        var candidate = string.Join('+', parts);
-        if (!GlobalHotkeyService.TryNormalize(candidate, out var normalized))
-        {
-            ViewModel.SetHotkeyStatus("That key combination is not supported.");
-            return;
-        }
-        _capturingHotkey = false;
-        SidebarShortcutButton.Content = "Change shortcut";
-        SettingsShortcutButton.Content = "Change shortcut";
-        ViewModel.Hotkey = normalized;
-        ViewModel.SetHotkeyStatus("New shortcut selected — click Save settings to apply it.");
     }
 
     private async void ProviderPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)

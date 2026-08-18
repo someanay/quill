@@ -165,14 +165,22 @@ public sealed class DictationOrchestrator : IDisposable
                 : await _injector.InsertAsync(_target ?? _injector.CaptureTarget(), text);
             if (!result.Inserted && !result.CopiedToClipboard)
                 throw new InvalidOperationException(result.Error ?? "Windows did not accept the text.");
-            await _history.AddAsync(new HistoryEntry(Guid.NewGuid(), DateTimeOffset.UtcNow, text,
-                _clipboardOnly ? "Clipboard" : _target?.Application ?? "Unknown app", settings.Provider, cleaned), settings);
+            try
+            {
+                await _history.AddAsync(new HistoryEntry(Guid.NewGuid(), DateTimeOffset.UtcNow, text,
+                    _clipboardOnly ? "Clipboard" : _target?.Application ?? "Unknown app", settings.Provider, cleaned), settings);
+            }
+            catch (Exception historyError) when (historyError is IOException or UnauthorizedAccessException)
+            {
+                // History is best-effort — a locked or unwritable store must not fail (or crash on the
+                // async-void auto-stop path) a dictation whose text was already inserted above.
+            }
             SetStatus(DictationState.Idle,
                 result.Inserted ? "Ready" : "Copied to clipboard",
                 result.Inserted ? $"Press {settings.Hotkey} to dictate." : result.Error ?? "Paste it where you need it.",
                 result.Inserted ? "" : "Transcript copied — paste it with Ctrl+V.");
         }
-        catch (Exception error) when (error is TranscriptionException or HttpRequestException or TaskCanceledException or InvalidOperationException)
+        catch (Exception error) when (error is TranscriptionException or HttpRequestException or TaskCanceledException or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
             SetStatus(DictationState.Error, "Dictation stopped", error.Message);
         }
