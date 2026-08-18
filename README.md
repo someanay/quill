@@ -11,9 +11,9 @@ This bundle is deliberately **five files**: this README (overview + how to work 
 `prd.md`, `spec.md`, `todo.md`, `testing_plan.md`.
 
 > **Status note (2026-08):** this README began as a planning-only bundle; Quill is now a working app
-> across **four** platforms. The Android and Windows apps build and pass their test suites; the macOS
-> and iOS ports are source-complete (pending a Mac to compile/validate). See each platform's README
-> and the audit/fix report.
+> across **four** platforms — **all four build and pass their test suites**. The macOS + iOS Swift
+> ports (authored on Windows) are built and XCTest-green on GitHub-hosted Macs via
+> [`.github/workflows/apple.yml`](.github/workflows/apple.yml). See each platform's README and the audit/fix report.
 
 ## Platforms
 
@@ -21,8 +21,8 @@ This bundle is deliberately **five files**: this README (overview + how to work 
 |---|---|---|---|
 | **Android** (reference) | `app/` | Kotlin, Compose; overlay bubble + AccessibilityService | Builds; 379 unit tests pass |
 | **Windows** | `windows/` | .NET 10 WPF, NAudio; global hotkey + UI Automation | Builds; 45 tests pass |
-| **macOS** | `macos/` | Swift/SwiftUI/AppKit; menu-bar + Accessibility/CGEvent | Source-complete — [`macos/README.md`](macos/README.md) |
-| **iOS** | `ios/` | Swift/SwiftUI; keyboard extension + in-app dictation | Source-complete — [`ios/README.md`](ios/README.md) |
+| **macOS** | `macos/` | Swift/SwiftUI/AppKit; menu-bar + Accessibility/CGEvent | Builds + 11 tests pass (CI, Xcode 16.2) — [`macos/README.md`](macos/README.md) |
+| **iOS** | `ios/` | Swift/SwiftUI; keyboard extension + in-app dictation | Builds + 11 tests pass (CI, Xcode 16.2) — [`ios/README.md`](ios/README.md) |
 
 The four apps share the same BYOK model, provider catalog, guarded cleanup, custom-word rules, and
 privacy posture. Latest cross-platform audit + fixes: [`docs/OVERNIGHT_AUDIT_2026-08-18.md`](docs/OVERNIGHT_AUDIT_2026-08-18.md).

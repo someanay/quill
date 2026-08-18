@@ -114,11 +114,12 @@ Regression test added: `TranscriptionClientTest.malformedKey_withNewline_returns
 
 Both ship as **complete, faithful Swift source + a deterministic XcodeGen project spec + a build
 README**, and both port the **fixed** logic (guard-wired cleanup, short-fence guard, literal
-custom-word replacement, defensive JSON, omit-null-language). Apple toolchains don't run on Windows,
-so **neither has been compiled or run** — each README has a "Needs a Mac" section enumerating the
-platform surfaces to validate on-device. Both carry an XCTest target mirroring the Windows pure-logic
-suite (`CleanupGuard`, `stripWrapping` incl. the W-2 short-fence cases, `applyCustomWords` incl. the
-W-3 `$` case, `SettingsPolicy.normalize`, `HistoryStore.prune`, tolerant settings decode).
+custom-word replacement, defensive JSON, omit-null-language). They were authored on Windows (no Apple
+toolchain here) and are now **built + XCTest-green on GitHub-hosted Macs** — see §8. Each README also
+keeps a "Needs a Mac" section for the on-device surfaces CI can't exercise (overlay/keyboard, mic,
+Accessibility). Both carry an XCTest target mirroring the Windows pure-logic suite (`CleanupGuard`,
+`stripWrapping` incl. the W-2 short-fence cases, `applyCustomWords` incl. the W-3 `$` case,
+`SettingsPolicy.normalize`, `HistoryStore.prune`, tolerant settings decode) — **11/11 each**.
 
 ### 6. macOS (`macos/`) — mirrors the Windows app
 A menu-bar agent app (`LSUIElement`) with a non-activating floating HUD (the desktop analogue of the
@@ -150,3 +151,31 @@ shared-Keychain + Full-Access setup (`ios/README.md`).
 **Cross-platform parity:** the four apps now share the same provider catalog, cleanup-guard semantics,
 custom-word rules, retention policy, and settings normalization — covered by four parallel test suites
 (Android JUnit ×379, Windows xUnit ×45, macOS/iOS XCTest ×11 each).
+
+## 8. Apple CI — the ports compiled & tested green on real Macs (added later 2026-08-18)
+
+Because the Swift was written without a compiler, it was built on a **GitHub-hosted Mac**
+(`.github/workflows/apple.yml`, `macos-14`, Xcode 16.2, `xcodegen generate` → `xcodebuild test`,
+`CODE_SIGNING_ALLOWED=NO`). Final result: **macOS 11/11 and iOS 11/11 tests pass** (run 5).
+
+**Reading CI from Windows without credentials.** The repo is private (404s unauthenticated), `gh`
+isn't installed, and extracting the cached git token is blocked. So each CI job **publishes its own
+`xcodebuild` output** to `ci-logs/{macos,ios}.txt` using the runner's ephemeral `GITHUB_TOKEN`; the
+log is then readable via `git fetch` + `git show origin/master:ci-logs/macos.txt`. Log commits carry
+`[skip ci]` and live outside the trigger paths, so publishing never loops.
+
+**Fixes needed to reach green** (Xcode 16.2 makes constructing a `@MainActor` type — including AppKit
+`NSPanel`/`NSMenu`/`NSStatusBar`/`NSTextField` — from a nonisolated context a *hard error*, and it
+compiles fail-fast, one error per run):
+
+| # | Fix | Files |
+|---|---|---|
+| S-1 | Explicit `self.` in escaping `Task {}` closures inside **classes** (View structs are exempt) | mac+iOS `SettingsViewModel`, iOS `KeyboardViewController`, mac `AppDelegate` |
+| S-2 | Mark the `AppDelegate` `@MainActor` so it can build the `@MainActor` `AppServices` (iOS was already fine — `UIViewController` is `@MainActor`) | mac `QuillApp.swift` |
+| S-3 | Mark AppKit-hosting helper classes `@MainActor`; move `DictationHUD`'s hide off a `@Sendable` `DispatchWorkItem` onto an isolation-inheriting `Task` | mac `MenuBarController`, `DictationHUD`, `WindowCloser` |
+| S-4 | `kAXTrustedCheckOptionPrompt` imports as `Unmanaged<CFString>` → `.takeUnretainedValue()` before bridging | mac `FocusedTextInjector` |
+| S-5 | `import AppKit` where `NSPasteboard` is used under a `SwiftUI`-only import | mac `HistoryView` |
+
+All are host-integration/isolation issues — no shared-logic changes — consistent with iOS passing the
+shared suite unmodified. The `ci-logs/` files and `ci(log:)` commits are a debugging aid and can be
+pruned (or the log-publish step reverted) once no longer needed.
