@@ -2387,9 +2387,7 @@
     },
     {
       "input": "50% off",
-      "tokens": [
-        "%1$o"
-      ]
+      "tokens": []
     },
     {
       "input": "%1$d items",
