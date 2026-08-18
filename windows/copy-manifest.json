@@ -1,0 +1,1715 @@
+{
+  "revision": 1,
+  "keys": {
+    "action.back": {
+      "default": "Back",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.cancel": {
+      "default": "Cancel",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.continue": {
+      "default": "Continue",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.refresh": {
+      "default": "Refresh",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.retry": {
+      "default": "Retry",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "action.save_settings": {
+      "default": "Save settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "brand.wordmark": {
+      "default": "Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.empty.body": {
+      "default": "Add 1280 × 720 MP4 clips to this carousel",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.empty.eyebrow": {
+      "default": "DESKTOP DEMO · 16:9",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "carousel.position": {
+      "default": "%1$d / %2$d",
+      "placeholders": [
+        "%1$d",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "compliance.privacy.audio_deleted_no_server": {
+      "default": "Audio is deleted after transcription. Quill runs no server for your data.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.audio_direct_to_provider": {
+      "default": "Your audio goes directly to your chosen provider.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.audio_temp_history_local": {
+      "default": "Audio is temporary and deleted after transcription. History is optional and local.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.byok_key_required": {
+      "default": "Quill is bring-your-own-key: without a provider key, it cannot transcribe. Your key is encrypted for this Windows account and never sent to us.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_audio_label": {
+      "default": "AUDIO",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_audio_value": {
+      "default": "Deleted after use",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_backend_label": {
+      "default": "BACKEND",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_backend_value": {
+      "default": "None for your data",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_key_label": {
+      "default": "KEY",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.chip_key_value": {
+      "default": "DPAPI encrypted",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.no_account_no_server": {
+      "default": "No Quill account. No Quill data server. Your key stays encrypted on this PC.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.private_by_construction_eyebrow": {
+      "default": "PRIVATE BY CONSTRUCTION",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.private_by_construction_lead": {
+      "default": "Private by construction.  ",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.provider_cost_no_key": {
+      "default": "Provider usage may cost money. Quill itself does not charge for transcription and never receives your key.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "compliance.privacy.sensitive_field_blocked_detail": {
+      "default": "Quill never records for or types into password fields.",
+      "placeholders": [],
+      "overridable": false,
+      "optionalBlank": false
+    },
+    "history.clear_button": {
+      "default": "Clear history",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.body": {
+      "default": "Complete a dictation to build a local, time-limited history - or turn history off in Settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.empty.title": {
+      "default": "Your words will appear here.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.eyebrow": {
+      "default": "HISTORY",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "history.title": {
+      "default": "Recent dictations",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.action.finish": {
+      "default": "Finish dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.action.start": {
+      "default": "Start dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.demo.section_label": {
+      "default": "SEE QUILL IN ACTION",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.eyebrow": {
+      "default": "CONTROL CENTER",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.stats.provider_eyebrow": {
+      "default": "SPEECH PROVIDER",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.stats.today_eyebrow": {
+      "default": "TODAY",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.stats.today_unit": {
+      "default": "dictations",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.subtitle": {
+      "default": "Quill stays in your tray and listens only when you press the shortcut.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "home.title": {
+      "default": "Dictate wherever you type.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.none_saved": {
+      "default": "No %1$s key saved yet.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.rejected": {
+      "default": "Key rejected - check the provider and paste a new key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.removed": {
+      "default": "Key removed.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.saved_unverified": {
+      "default": "Key saved, but not verified: %1$s.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.stored_securely": {
+      "default": "A %1$s key is stored securely. Save it again to verify it.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.testing": {
+      "default": "Testing the %1$s key with a silent audio check...",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "key.status.verified": {
+      "default": "Key verified with %1$s.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "main.sidebar.dictate_clipboard": {
+      "default": "Dictate to clipboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "main.sidebar.key_direct_connection": {
+      "default": "Your key · direct connection",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "main.sidebar.open_settings": {
+      "default": "Open settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "main.sidebar.shortcut_eyebrow": {
+      "default": "GLOBAL SHORTCUT",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.history": {
+      "default": "History",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.home": {
+      "default": "Home",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "nav.settings": {
+      "default": "Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.action.open_quill": {
+      "default": "Open Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.api_key.label": {
+      "default": "API key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.cleanup.checkbox": {
+      "default": "Improve punctuation and remove false starts",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.cleanup.help_supported": {
+      "default": "Uses the same %1$s key. You can change this later in Settings.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.cleanup.help_unsupported": {
+      "default": "Cleanup is unavailable for this provider; transcription still works normally.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.cleanup.label": {
+      "default": "AI cleanup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.cleanup_model.label": {
+      "default": "Cleanup model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.custom_endpoint.label": {
+      "default": "Custom HTTPS endpoint",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.custom_endpoint.tooltip": {
+      "default": "Required only for the Custom provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.error.add_key_to_continue": {
+      "default": "Add a %1$s key to continue.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.error.custom_https_required": {
+      "default": "Custom provider requires an absolute HTTPS endpoint.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.eyebrow.first_run": {
+      "default": "FIRST-RUN SETUP",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.already_stored": {
+      "default": "%1$s %2$s key is already stored. Leave this blank to keep it.",
+      "placeholders": [
+        "%1$s",
+        "%2$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.rejected": {
+      "default": "Key rejected - check the provider and paste a new key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.saved_unverified": {
+      "default": "Key saved, but not verified: %1$s.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.testing": {
+      "default": "Testing this key with a silent audio check...",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.verified": {
+      "default": "Key verified with a silent audio check.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.model.label": {
+      "default": "Model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.privacy.history_checkbox": {
+      "default": "Keep a local dictation history",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.privacy.retention_hint": {
+      "default": "Default retention is one hour. You can change it later.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.privacy.startup_checkbox": {
+      "default": "Start Quill when I sign in",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.privacy.title": {
+      "default": "Choose what stays on this PC.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.provider.label": {
+      "default": "Provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.provider.title": {
+      "default": "Connect your speech provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.provider_link.get_key": {
+      "default": "Get a %1$s key ↗",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.provider_link.open_console": {
+      "default": "Open %1$s key console",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.provider_link.use_dashboard": {
+      "default": "Use your provider dashboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.rail.privacy": {
+      "default": "04  Privacy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.rail.provider": {
+      "default": "02  Speech provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.rail.ready": {
+      "default": "05  Ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.rail.shortcut": {
+      "default": "03  Shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.rail.welcome": {
+      "default": "01  Welcome",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.ready.instruction": {
+      "default": "Focus a text field, press %1$s, and speak. The bottom-right ribbon shows when Quill is listening.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.ready.title": {
+      "default": "Quill is ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.elevated_apps_note": {
+      "default": "Windows blocks typing into administrator-elevated apps. In that case, Quill safely copies the transcript so you can paste it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.eyebrow": {
+      "default": "GLOBAL DICTATION SHORTCUT",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.hint": {
+      "default": "Quill listens only after you press it. Press it again to finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.instruction": {
+      "default": "Click the shortcut, then press a modifier and key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.subtitle": {
+      "default": "Focus where you want the words, then use the shortcut to start and finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.shortcut.title": {
+      "default": "One shortcut. Any ordinary text field.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.step_counter": {
+      "default": "STEP %1$d OF 5",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.step1": {
+      "default": "① Press the shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.step2": {
+      "default": "② Speak naturally",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.step3": {
+      "default": "③ Quill types it",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.subtitle": {
+      "default": "Quill turns a global shortcut into clean text in the app you were already using.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.welcome.title": {
+      "default": "Your voice, wherever you type.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.window.title": {
+      "default": "Set up Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ribbon.default.detail": {
+      "default": "Ctrl + Alt + Space to finish",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ribbon.default.title": {
+      "default": "Listening",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.api_key.label": {
+      "default": "API key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.api_key.test_save": {
+      "default": "Test & save key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.checkbox": {
+      "default": "Improve punctuation and capitalization",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.help_supported": {
+      "default": "Uses the same %1$s key—no second provider key required.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.help_unsupported": {
+      "default": "Cleanup is unavailable for this provider; transcription still works normally.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup_model.label": {
+      "default": "Cleanup model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.custom_endpoint.label": {
+      "default": "Custom HTTPS endpoint",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.custom_endpoint.tooltip": {
+      "default": "Used only with the Custom provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.eyebrow": {
+      "default": "SETTINGS",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.history_retention.label": {
+      "default": "History retention",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.history_switch.off": {
+      "default": "Private",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.history_switch.on": {
+      "default": "History kept",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.history_switch.tooltip": {
+      "default": "Choose whether Quill keeps local dictation history.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.language.label": {
+      "default": "Language code",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.language.tooltip": {
+      "default": "Choose a language or type an ISO code; auto detects the language",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.microphone.device_format": {
+      "default": "%1$s  (input %2$d)",
+      "placeholders": [
+        "%1$s",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.microphone.label": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.model.label": {
+      "default": "Model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.model.tooltip": {
+      "default": "Choose a listed model, or type one for OpenRouter/Custom.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.provider.label": {
+      "default": "Provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.provider.switch_fail_body": {
+      "default": "The provider could not be switched. Your previous settings are still available.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.provider.switch_fail_title": {
+      "default": "Provider switch failed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.provider_link.open_console": {
+      "default": "Open %1$s key console",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.provider_link.use_dashboard": {
+      "default": "Use your provider dashboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.saved_detail": {
+      "default": "The global shortcut is ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.saved_title": {
+      "default": "Settings saved",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.section.appearance": {
+      "default": "APPEARANCE & GUIDANCE",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.section.dictation": {
+      "default": "DICTATION",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.section.privacy_windows": {
+      "default": "PRIVACY & WINDOWS",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.section.speech": {
+      "default": "SPEECH",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.hint": {
+      "default": "15-second steps up to 10 minutes; the final stop is uncapped.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.label": {
+      "default": "Maximum recording length",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.min_sec": {
+      "default": "%1$d min %2$d sec",
+      "placeholders": [
+        "%1$d",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.minutes": {
+      "default": "%1$d min",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.seconds": {
+      "default": "%1$d sec",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.session_cap.uncapped": {
+      "default": "Uncapped",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.setup_guide.button": {
+      "default": "Run setup again",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.setup_guide.hint": {
+      "default": "Review providers, privacy, and the shortcut.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.setup_guide.label": {
+      "default": "Setup guide",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.shortcut.change_button": {
+      "default": "Change shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.shortcut.hint": {
+      "default": "Click the field, then press your combination.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.shortcut.label": {
+      "default": "Global shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.silence.prefix": {
+      "default": "Stop recording after",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.silence.suffix": {
+      "default": "of silence.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.startup.checkbox": {
+      "default": "Start Quill when I sign in",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.theme.hint": {
+      "default": "Theme changes apply the next time Quill opens.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.theme.label": {
+      "default": "Theme",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.title": {
+      "default": "Make dictation yours.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.tray.checkbox": {
+      "default": "Keep Quill in the notification area when closed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.add_button": {
+      "default": "+  Add word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.label": {
+      "default": "Custom vocabulary",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.vocab.remove_tooltip": {
+      "default": "Remove word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.writing_style.label": {
+      "default": "Writing style",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.accept_button": {
+      "default": "Use this shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.eyebrow": {
+      "default": "RECORDING",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.hint": {
+      "default": "Try Alt + a letter, or Ctrl + Shift + a letter.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.instruction": {
+      "default": "Press a modifier plus a key. Esc cancels.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.listening": {
+      "default": "Listening…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.need_modifier": {
+      "default": "Add Ctrl, Alt, Shift, or Win to the key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.review": {
+      "default": "Review it, then choose Use this shortcut — or Retry.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.title": {
+      "default": "Choose a global shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.unsupported": {
+      "default": "That combination is not supported. Try another.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.capture.window_title": {
+      "default": "Choose shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.dialog.invalid_body": {
+      "default": "Choose a shortcut with at least one modifier and one key, for example Alt+Q.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.dialog.invalid_title": {
+      "default": "Shortcut not valid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.dialog.unavailable_body": {
+      "default": "%1$s remains active because the shortcut chosen in setup is already in use.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.dialog.unavailable_title": {
+      "default": "Shortcut unavailable",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.available": {
+      "default": "Available — Quill is listening for this shortcut.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.cancelled": {
+      "default": "Shortcut change cancelled.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.checking": {
+      "default": "Checking shortcut availability...",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.need_modifier": {
+      "default": "Choose at least one modifier and one key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.new_selected": {
+      "default": "New shortcut selected - click Save settings to apply it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.occupied": {
+      "default": "Occupied — %1$s",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "shortcut.status.unsupported": {
+      "default": "That key combination is not supported.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.clipboard.copied": {
+      "default": "Dictation copied to your clipboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done.copied_title": {
+      "default": "Copied to clipboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done.copied_toast": {
+      "default": "Transcript copied — paste it with Ctrl+V.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done.paste_detail": {
+      "default": "Paste it where you need it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done.ready_detail": {
+      "default": "Press %1$s to dictate.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.done.ready_title": {
+      "default": "Ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.error.missing_key": {
+      "default": "The API key is missing.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.error.windows_rejected": {
+      "default": "Windows did not accept the text.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.inserting.clipboard_detail": {
+      "default": "Clipboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.inserting.copying_title": {
+      "default": "Copying",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.inserting.focused_app_fallback": {
+      "default": "Focused application",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.inserting.typing_title": {
+      "default": "Typing",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.key_required.detail": {
+      "default": "Add a %1$s key in Settings.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.key_required.title": {
+      "default": "API key required",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.listening.clipboard_toast": {
+      "default": "No text field selected — this dictation will be copied to your clipboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.listening.detail": {
+      "default": "Press %1$s again to finish.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.listening.title": {
+      "default": "Listening",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.mic_unavailable.title": {
+      "default": "Microphone unavailable",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.nothing_heard.detail": {
+      "default": "No speech was detected, so nothing was sent to your provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.nothing_heard.title": {
+      "default": "Nothing heard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.recording_failed.title": {
+      "default": "Recording failed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.sensitive_field.title": {
+      "default": "Protected field",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.stopped.title": {
+      "default": "Dictation stopped",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.tidying.detail": {
+      "default": "Meaning and names are guarded before insertion.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.tidying.title": {
+      "default": "Tidying",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "status.transcribing.title": {
+      "default": "Transcribing",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.custom_https": {
+      "default": "The custom endpoint must be an absolute HTTPS URL.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.empty_transcript": {
+      "default": "The provider returned an empty transcript.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.key_rejected": {
+      "default": "The API key was rejected.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.no_credit": {
+      "default": "The provider account has no available credit.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.no_transcribe": {
+      "default": "The provider could not transcribe this recording.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.no_transcript_text": {
+      "default": "The provider response did not contain transcript text. Check the selected model and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.rate_limit": {
+      "default": "The provider rate limit or quota was reached.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.status_code": {
+      "default": "The speech provider returned %1$d.",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.error.unavailable": {
+      "default": "The speech provider is temporarily unavailable.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.custom_not_configured": {
+      "default": "custom endpoint not configured",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.no_key": {
+      "default": "no key entered",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.no_model": {
+      "default": "no model selected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.no_network": {
+      "default": "no network connection",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.timed_out": {
+      "default": "timed out",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "stt.reason.unverifiable": {
+      "default": "could not verify right now",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "tray.menu.exit": {
+      "default": "Exit",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "tray.menu.open": {
+      "default": "Open Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "tray.menu.toggle": {
+      "default": "Start / stop dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "tray.tooltip.ready": {
+      "default": "Quill — ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "tray.tooltip.status": {
+      "default": "Quill — %1$s",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.default_microphone": {
+      "default": "Default microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.microphone_fallback": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.provider.custom": {
+      "default": "Custom",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.provider.gemini": {
+      "default": "Gemini",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.provider.groq": {
+      "default": "Groq",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.provider.openai": {
+      "default": "OpenAI",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.provider.openrouter": {
+      "default": "OpenRouter",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.10min": {
+      "default": "10 minutes",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.1day": {
+      "default": "1 day",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.1hour": {
+      "default": "1 hour",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.30days": {
+      "default": "30 days",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.7days": {
+      "default": "7 days",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.retention.forever": {
+      "default": "Forever",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.10s": {
+      "default": "10 seconds",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.15s": {
+      "default": "15 seconds",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.1s": {
+      "default": "1 second",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.2s": {
+      "default": "2 seconds",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.30s": {
+      "default": "30 seconds",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.5s": {
+      "default": "5 seconds",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.silence.never": {
+      "default": "Never",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.style.casual": {
+      "default": "Casual",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.style.formal": {
+      "default": "Formal",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.style.neutral": {
+      "default": "Neutral",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.theme.dark": {
+      "default": "Dark",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "value.theme.light": {
+      "default": "Light",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.eyebrow": {
+      "default": "CUSTOM VOCABULARY",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.heard.label": {
+      "default": "Heard word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.heard.tooltip": {
+      "default": "The word or phrase Quill may hear",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.record.captured": {
+      "default": "Captured. You can edit the heard word before saving.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.record.listening": {
+      "default": "Listening… click the mic again when you finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.record.no_key": {
+      "default": "Add a %1$s key before recording.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.record.tooltip": {
+      "default": "Record the heard word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.replaced.label": {
+      "default": "Replaced word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.replaced.tooltip": {
+      "default": "The spelling Quill should insert",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.save_button": {
+      "default": "Save word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.subtitle": {
+      "default": "Record or type what Quill hears, then tell it what to write instead.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.title": {
+      "default": "Teach Quill a preferred spelling",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.validation.need_both": {
+      "default": "Add both the heard word and its replacement.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "vocab.window.title": {
+      "default": "Add custom word",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    }
+  },
+  "placeholderTestVectors": [
+    {
+      "input": "",
+      "tokens": []
+    },
+    {
+      "input": "No placeholders here",
+      "tokens": []
+    },
+    {
+      "input": "%s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%d",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "%1$s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%2$.2f",
+      "tokens": [
+        "%2$f"
+      ]
+    },
+    {
+      "input": "%1$s and %1$s again",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%s = %d",
+      "tokens": [
+        "%1$s",
+        "%2$d"
+      ]
+    },
+    {
+      "input": "%2$s then %1$d",
+      "tokens": [
+        "%1$d",
+        "%2$s"
+      ]
+    },
+    {
+      "input": "%05.2f",
+      "tokens": [
+        "%1$f"
+      ]
+    },
+    {
+      "input": "100%%",
+      "tokens": []
+    },
+    {
+      "input": "50% off",
+      "tokens": []
+    },
+    {
+      "input": "%1$d items",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "line one%nline two",
+      "tokens": []
+    },
+    {
+      "input": "%d%% done",
+      "tokens": [
+        "%1$d"
+      ]
+    }
+  ]
+}
