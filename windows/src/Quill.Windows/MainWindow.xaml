@@ -22,9 +22,9 @@
                                VerticalAlignment="Center" Margin="10,0,0,0"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1">
-                    <Button Style="{StaticResource NavButton}" Click="Home_Click" Content="âŒ‚   Home"/>
-                    <Button Style="{StaticResource NavButton}" Click="History_Click" Content="â—·   History"/>
-                    <Button Style="{StaticResource NavButton}" Click="Settings_Click" Content="âš™   Settings"/>
+                    <Button Style="{StaticResource NavButton}" Click="Home_Click" Content="Home"/>
+                    <Button Style="{StaticResource NavButton}" Click="History_Click" Content="History"/>
+                    <Button Style="{StaticResource NavButton}" Click="Settings_Click" Content="Settings"/>
                 </StackPanel>
                 <Border Grid.Row="2" Background="{StaticResource BrandSoft}" CornerRadius="12" Padding="14">
                     <StackPanel>
@@ -56,7 +56,9 @@
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                 <Border Width="72" Height="72" CornerRadius="24" Background="{Binding StateBrush}">
-                                    <TextBlock Text="â—‰" Foreground="White" FontSize="29" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Path Width="32" Height="32" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Stroke="White" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Data="M9,6 A3,3 0 0 1 15,6 V11 A3,3 0 0 1 9,11 Z M5,11 A7,7 0 0 0 19,11 M12,18 V21"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" Margin="20,5,28,0">
                                     <TextBlock Text="{Binding StatusTitle}" FontSize="20" FontWeight="SemiBold"/>
@@ -79,7 +81,7 @@
                                 <StackPanel>
                                     <TextBlock Text="SPEECH PROVIDER" Style="{StaticResource Eyebrow}"/>
                                     <TextBlock Text="{Binding ProviderName}" FontSize="22" FontWeight="SemiBold" Margin="0,12,0,0"/>
-                                    <TextBlock Text="Your key Â· direct connection" Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
+                                    <TextBlock Text="Your key · direct connection" Foreground="{StaticResource Muted}" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -107,9 +109,9 @@
                     <Grid Grid.Row="1" Margin="0,24,0,0">
                     <Border Visibility="{Binding HistoryEmptyVisibility}" Style="{StaticResource Card}" MinHeight="230">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
-                            <Border Width="60" Height="60" CornerRadius="30" Background="{StaticResource BrandSoft}"><TextBlock Text="â—·" Foreground="{StaticResource BrandInk}" FontSize="25" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                            <Border Width="60" Height="60" CornerRadius="30" Background="{StaticResource BrandSoft}"><Path Width="26" Height="26" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Stroke="{StaticResource BrandInk}" StrokeThickness="1.8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Data="M3,12 A9,9 0 1 1 21,12 A9,9 0 1 1 3,12 Z M12,7.5 V12 L15.5,13.5"/></Border>
                             <TextBlock Text="Your words will appear here." FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,16,0,6"/>
-                            <TextBlock Text="Complete a dictation to build a local, time-limited historyâ€”or turn history off in Settings." Foreground="{StaticResource Muted}" TextAlignment="Center"/>
+                            <TextBlock Text="Complete a dictation to build a local, time-limited history - or turn history off in Settings." Foreground="{StaticResource Muted}" TextAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     <ListBox Visibility="{Binding HistoryListVisibility}" ItemsSource="{Binding History}" Background="Transparent" BorderThickness="0">
@@ -120,7 +122,7 @@
                                         <TextBlock Text="{Binding Text}" FontSize="15" Foreground="{StaticResource Ink2}" TextWrapping="Wrap"/>
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                             <TextBlock Text="{Binding Application}" Foreground="{StaticResource BrandInk}" FontWeight="SemiBold" FontSize="12"/>
-                                            <TextBlock Text="  Â·  " Foreground="{StaticResource Faint}"/>
+                                            <TextBlock Text="  ·  " Foreground="{StaticResource Faint}"/>
                                             <TextBlock Text="{Binding CreatedAt, StringFormat={}{0:g}}" Foreground="{StaticResource Muted}" FontSize="12"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -220,12 +222,14 @@
                                                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
                                                         <TextBlock Text="{Binding Heard}" VerticalAlignment="Center"/>
                                                         <TextBlock Grid.Column="1" Text="{Binding Replacement}" Foreground="{StaticResource BrandInk}" VerticalAlignment="Center"/>
-                                                        <Button Grid.Column="2" Content="Ã—" Tag="{Binding}" Style="{StaticResource GhostButton}" Padding="8,3" Click="RemoveCustomWord_Click" ToolTip="Remove word"/>
+                                                        <Button Grid.Column="2" Tag="{Binding}" Style="{StaticResource GhostButton}" Padding="9,7" Click="RemoveCustomWord_Click" ToolTip="Remove word">
+                                                            <Path Width="11" Height="11" Stretch="Uniform" Stroke="{StaticResource BrandInk}" StrokeThickness="1.8" StrokeStartLineCap="Round" Data="M5,5 L15,15 M15,5 L5,15"/>
+                                                        </Button>
                                                     </Grid>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
-                                        <Button Content="ï¼‹  Add word" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Padding="13,7" Click="AddCustomWord_Click"/>
+                                        <Button Content="+  Add word" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Padding="13,7" Click="AddCustomWord_Click"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

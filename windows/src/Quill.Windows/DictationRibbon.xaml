@@ -16,7 +16,9 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <Border x:Name="SignalOrb" Width="44" Height="44" CornerRadius="15" Background="{StaticResource Brand}" RenderTransformOrigin="0.5,0.5">
                 <Border.RenderTransform><ScaleTransform x:Name="OrbScale"/></Border.RenderTransform>
-                <TextBlock Text="◉" Foreground="White" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Path Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Stroke="White" StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                      Data="M9,6 A3,3 0 0 1 15,6 V11 A3,3 0 0 1 9,11 Z M5,11 A7,7 0 0 0 19,11 M12,18 V21"/>
             </Border>
             <StackPanel Grid.Column="1" Margin="12,2,12,0">
                 <TextBlock x:Name="RibbonTitle" Text="Listening" Foreground="White" FontSize="16" FontWeight="SemiBold"/>

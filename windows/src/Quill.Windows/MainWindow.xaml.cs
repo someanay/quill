@@ -33,7 +33,6 @@ public partial class MainWindow : Window
     private async void OnLoaded(object sender, RoutedEventArgs args)
     {
         Loaded -= OnLoaded;
-        RepairLegacyEncoding(this);
         await ViewModel.InitializeAsync();
         if (!_hotkey.Register(this, ViewModel.Hotkey))
             ViewModel.SetHotkeyStatus($"Occupied — {_hotkey.RegistrationFailureReason}");
@@ -41,35 +40,6 @@ public partial class MainWindow : Window
         {
             _registeredHotkey = ViewModel.Hotkey;
             ViewModel.SetHotkeyStatus("Available — Quill is listening for this shortcut.");
-        }
-    }
-
-    // Older generated XAML contained a UTF-8/Windows-1252 conversion. Normalize those
-    // visible strings at load so existing installs do not show replacement glyphs.
-    private static void RepairLegacyEncoding(DependencyObject root)
-    {
-        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            switch (child)
-            {
-                case System.Windows.Controls.Button button when button.Content is string content:
-                    if (content.Contains("Home", StringComparison.Ordinal)) button.Content = "Home";
-                    else if (content.Contains("History", StringComparison.Ordinal)) button.Content = "History";
-                    else if (content.Contains("Settings", StringComparison.Ordinal)) button.Content = "Settings";
-                    else if (content.Contains("Add word", StringComparison.Ordinal)) button.Content = "+  Add word";
-                    else if (button.ToolTip is "Remove word") button.Content = "×";
-                    break;
-                case TextBlock textBlock when textBlock.Text.Contains('â') || textBlock.Text.Contains('Ã') || textBlock.Text.Contains('ï'):
-                    if (textBlock.Text.Contains("Your key", StringComparison.Ordinal)) textBlock.Text = "Your key · direct connection";
-                    else if (textBlock.Text.Contains("Complete a dictation", StringComparison.Ordinal))
-                        textBlock.Text = "Complete a dictation to build a local, time-limited history - or turn history off in Settings.";
-                    else if (textBlock.Text.Length < 12) textBlock.Text = "•";
-                    else if (textBlock.Text.Contains("CreatedAt", StringComparison.Ordinal) || textBlock.Text.Contains("Application", StringComparison.Ordinal))
-                        textBlock.Text = " · ";
-                    break;
-            }
-            RepairLegacyEncoding(child);
         }
     }
 
@@ -173,7 +143,6 @@ public partial class MainWindow : Window
         SettingsShortcutButton.Content = "Change shortcut";
         ViewModel.Hotkey = normalized;
         ViewModel.SetHotkeyStatus("New shortcut selected — click Save settings to apply it.");
-        ViewModel.SetHotkeyStatus("New shortcut selected - click Save settings to apply it.");
     }
 
     private async void ProviderPicker_SelectionChanged(object sender, SelectionChangedEventArgs e)

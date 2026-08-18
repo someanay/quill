@@ -8,7 +8,7 @@
             <Grid x:Name="EmptyState" Background="{StaticResource Sunken}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Width="60" Height="60" CornerRadius="30" Background="{StaticResource BrandSoft}">
-                        <TextBlock Text="▶" Foreground="{StaticResource BrandInk}" FontSize="21" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                        <Path Width="22" Height="22" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="3,0,0,0" Fill="{StaticResource BrandInk}" Data="M8,5 L19,12 L8,19 Z"/>
                     </Border>
                     <TextBlock Text="DESKTOP DEMO · 16:9" Style="{StaticResource Eyebrow}" HorizontalAlignment="Center" Margin="0,15,0,0"/>
                     <TextBlock Text="Add 1280 × 720 MP4 clips to this carousel" Foreground="{StaticResource Muted}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
@@ -17,12 +17,16 @@
             <Border x:Name="Controls" VerticalAlignment="Bottom" Background="#B3090B15" Padding="14,10" Visibility="Collapsed">
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <Button Content="‹" Style="{StaticResource GhostButton}" Padding="12,5" Click="Previous_Click"/>
+                    <Button Style="{StaticResource GhostButton}" Padding="12,8" Click="Previous_Click">
+                        <Path Width="9" Height="14" Stretch="Uniform" Stroke="{StaticResource BrandInk}" StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeLineJoin="Round" Data="M14,6 L8,12 L14,18"/>
+                    </Button>
                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                         <TextBlock x:Name="ClipTitle" Foreground="White" FontWeight="SemiBold"/>
                         <TextBlock x:Name="Position" Foreground="{StaticResource Muted}" FontSize="11" HorizontalAlignment="Center"/>
                     </StackPanel>
-                    <Button Grid.Column="2" Content="›" Style="{StaticResource GhostButton}" Padding="12,5" Click="Next_Click"/>
+                    <Button Grid.Column="2" Style="{StaticResource GhostButton}" Padding="12,8" Click="Next_Click">
+                        <Path Width="9" Height="14" Stretch="Uniform" Stroke="{StaticResource BrandInk}" StrokeThickness="1.9" StrokeStartLineCap="Round" StrokeLineJoin="Round" Data="M9,6 L15,12 L9,18"/>
+                    </Button>
                 </Grid>
             </Border>
         </Grid>

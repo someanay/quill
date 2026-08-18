@@ -48,7 +48,8 @@
             <Setter Property="TextBlock.FontStretch" Value="Expanded"/>
         </Style>
         <Style x:Key="Title" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="28"/>
+            <Setter Property="FontFamily" Value="{StaticResource WordmarkFont}"/>
+            <Setter Property="FontSize" Value="30"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="{StaticResource Ink}"/>
         </Style>
