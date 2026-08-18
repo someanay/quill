@@ -213,6 +213,12 @@
       chip.className = "native-chip";
       chip.textContent = "Your device";
       el.appendChild(chip);
+      // On role="img" badges the injected chip text is not announced, so fold
+      // the cue into the element's own accessible name.
+      var label = el.getAttribute("aria-label");
+      if (label && label.toLowerCase().indexOf("your device") === -1) {
+        el.setAttribute("aria-label", label + " — your device");
+      }
     });
   }
 
