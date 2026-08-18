@@ -14,7 +14,7 @@ final class SettingsViewModel: ObservableObject {
     private let validator = KeyValidator(session: .shared)
     private var loaded = false
 
-    init() { Task { await load() } }
+    init() { Task { await self.load() } }
 
     func load() async {
         settings = await settingsStore.load()
@@ -26,7 +26,7 @@ final class SettingsViewModel: ObservableObject {
     func persist() {
         guard loaded else { return }
         var s = settings; s.customWords = customWords
-        Task { await settingsStore.save(s) }
+        Task { await self.settingsStore.save(s) }
     }
 
     func onProviderChanged() {
@@ -41,10 +41,10 @@ final class SettingsViewModel: ObservableObject {
         keyStatus = "Saved — verifying…"
         let p = settings.provider, k = apiKey, m = settings.model, u = settings.customBaseURL
         Task {
-            switch await validator.validate(provider: p, key: k, model: m, customBaseURL: u) {
-            case .valid: keyStatus = "Key verified ✓"
-            case .rejected: keyStatus = "Key rejected ✗ — check you copied it fully"
-            case .unverified(let r): keyStatus = "Saved (couldn't verify: \(r))"
+            switch await self.validator.validate(provider: p, key: k, model: m, customBaseURL: u) {
+            case .valid: self.keyStatus = "Key verified ✓"
+            case .rejected: self.keyStatus = "Key rejected ✗ — check you copied it fully"
+            case .unverified(let r): self.keyStatus = "Saved (couldn't verify: \(r))"
             }
         }
     }

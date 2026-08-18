@@ -70,8 +70,8 @@ final class KeyboardViewController: UIInputViewController {
         }
         let host = "Keyboard"
         runTask = Task { @MainActor in
-            if let text = await engine.toggle(application: host) {
-                textDocumentProxy.insertText(text)
+            if let text = await self.engine.toggle(application: host) {
+                self.textDocumentProxy.insertText(text)
             }
         }
     }

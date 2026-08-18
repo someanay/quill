@@ -59,16 +59,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task { @MainActor in
-            let settings = await services.settingsStore.load()
-            _ = hotkey.register(settings.hotkey)
-            if !settings.onboardingComplete { showSetup() }
+            let settings = await self.services.settingsStore.load()
+            _ = self.hotkey.register(settings.hotkey)
+            if !settings.onboardingComplete { self.showSetup() }
             // Accessibility is required to type into other apps; nudge the user to grant it.
-            if !services.injector.hasAccessibilityPermission() { services.injector.requestAccessibilityPermission() }
+            if !self.services.injector.hasAccessibilityPermission() { self.services.injector.requestAccessibilityPermission() }
         }
     }
 
     func reloadHotkey() {
-        Task { @MainActor in _ = hotkey.register(await services.settingsStore.load().hotkey) }
+        Task { @MainActor in _ = self.hotkey.register(await self.services.settingsStore.load().hotkey) }
     }
 
     private func showSettings() {
