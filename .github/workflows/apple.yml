@@ -1,10 +1,11 @@
 name: Apple build & test
 
 # Builds and tests the macOS and iOS ports on a GitHub-hosted Mac (the ports are authored on Windows,
-# where Apple toolchains can't run). Each job publishes its xcodebuild output to ci-logs/<platform>.txt
-# using the runner's own GITHUB_TOKEN, so the errors are visible via `git fetch` without needing any
-# personal credential. The ci-logs/ path is not in the trigger filters, and the commit carries
-# [skip ci], so publishing logs never re-triggers the workflow.
+# where Apple toolchains can't run). On GREEN runs nothing is committed — master stays clean. ONLY on
+# a build/test FAILURE does each job publish its xcodebuild output to ci-logs/<platform>.txt using the
+# runner's own GITHUB_TOKEN, so the errors are visible via `git fetch` without needing any personal
+# credential. The ci-logs/ path is not in the trigger filters, and the commit carries [skip ci], so
+# publishing a failure log never re-triggers the workflow.
 
 on:
   push:
@@ -46,8 +47,8 @@ jobs:
             -scheme QuillMac \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$GITHUB_WORKSPACE/full-macos.txt"
-      - name: Publish build log
-        if: always()
+      - name: Publish build log (only on failure)
+        if: steps.build.outcome == 'failure'
         run: |
           mkdir -p ci-logs
           {
@@ -104,8 +105,8 @@ jobs:
             -scheme Quill \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$GITHUB_WORKSPACE/full-ios.txt"
-      - name: Publish build log
-        if: always()
+      - name: Publish build log (only on failure)
+        if: steps.build.outcome == 'failure'
         run: |
           mkdir -p ci-logs
           {
