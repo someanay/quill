@@ -57,3 +57,12 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.tests
+# Explicit shared scheme: builds the app + keyboard (compile-check) and runs the logic tests in CI.
+schemes:
+  Quill:
+    build:
+      targets:
+        Quill: all
+    test:
+      targets:
+        - QuillTests

@@ -45,3 +45,12 @@ targets:
         # Host the tests in the app so @testable import QuillMac resolves.
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Quill.app/Contents/MacOS/Quill"
         BUNDLE_LOADER: "$(TEST_HOST)"
+# Explicit shared scheme so `xcodebuild -scheme QuillMac test` works headlessly in CI.
+schemes:
+  QuillMac:
+    build:
+      targets:
+        QuillMac: all
+    test:
+      targets:
+        - QuillMacTests

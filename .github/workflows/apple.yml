@@ -1,0 +1,73 @@
+name: Apple build & test
+
+# Builds and tests the macOS and iOS ports on a GitHub-hosted Mac. The ports are authored on a Windows
+# box where Apple toolchains can't run, so this CI is where they first compile. Expect the initial runs
+# to surface compile errors to fix — that is exactly the point. Uses GitHub's free macOS runner minutes;
+# no Mac or purchase required.
+
+on:
+  push:
+    paths:
+      - "macos/**"
+      - "ios/**"
+      - ".github/workflows/apple.yml"
+  pull_request:
+    paths:
+      - "macos/**"
+      - "ios/**"
+      - ".github/workflows/apple.yml"
+  workflow_dispatch: {}
+
+jobs:
+  macos:
+    name: macOS · build & test
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: macos
+        run: xcodegen generate
+      - name: Build & test (macOS)
+        working-directory: macos
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project QuillMac.xcodeproj \
+            -scheme QuillMac \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO
+
+  ios:
+    name: iOS · build & test
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+      - name: Pick an available iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          echo "Using simulator UDID: $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build & test (iOS)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project Quill.xcodeproj \
+            -scheme Quill \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            CODE_SIGNING_ALLOWED=NO

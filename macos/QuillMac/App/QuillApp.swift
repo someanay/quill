@@ -42,6 +42,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusObserver: AnyCancellable?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Skip agent/UI setup when hosting unit tests (CI): don't spin up the menu bar, global hotkey,
+        // or the Accessibility prompt in a headless test run.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
         menuBar = MenuBarController(
             onOpen: { [weak self] in self?.showSettings() },
             onToggle: { [weak self] in Task { await self?.services.orchestrator.toggle() } },
