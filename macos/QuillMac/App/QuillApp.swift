@@ -32,6 +32,10 @@ struct QuillApp: App {
     }
 }
 
+// @MainActor mirrors iOS's UIViewController-hosted controllers: the whole delegate runs on the main
+// actor, so constructing the @MainActor AppServices (which builds the @MainActor DictationOrchestrator)
+// and touching its members is in-actor. NSApplicationDelegate is already @MainActor in the SDK.
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let services = AppServices()
     private var menuBar: MenuBarController!
