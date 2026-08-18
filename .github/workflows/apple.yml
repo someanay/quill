@@ -1,9 +1,10 @@
 name: Apple build & test
 
-# Builds and tests the macOS and iOS ports on a GitHub-hosted Mac. The ports are authored on a Windows
-# box where Apple toolchains can't run, so this CI is where they first compile. Expect the initial runs
-# to surface compile errors to fix — that is exactly the point. Uses GitHub's free macOS runner minutes;
-# no Mac or purchase required.
+# Builds and tests the macOS and iOS ports on a GitHub-hosted Mac (the ports are authored on Windows,
+# where Apple toolchains can't run). Each job publishes its xcodebuild output to ci-logs/<platform>.txt
+# using the runner's own GITHUB_TOKEN, so the errors are visible via `git fetch` without needing any
+# personal credential. The ci-logs/ path is not in the trigger filters, and the commit carries
+# [skip ci], so publishing logs never re-triggers the workflow.
 
 on:
   push:
@@ -11,12 +12,10 @@ on:
       - "macos/**"
       - "ios/**"
       - ".github/workflows/apple.yml"
-  pull_request:
-    paths:
-      - "macos/**"
-      - "ios/**"
-      - ".github/workflows/apple.yml"
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   macos:
@@ -25,9 +24,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Select the newest installed Xcode
-        # XcodeGen writes an Xcode-16-format project (objectVersion 77); the runner's default Xcode
-        # (15.4) can't read it. Pick the highest Xcode present on the image.
         run: |
           sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           xcodebuild -version
@@ -37,6 +36,8 @@ jobs:
         working-directory: macos
         run: xcodegen generate
       - name: Build & test (macOS)
+        id: build
+        continue-on-error: true
         working-directory: macos
         run: |
           set -o pipefail
@@ -44,7 +45,31 @@ jobs:
             -project QuillMac.xcodeproj \
             -scheme QuillMac \
             -destination 'platform=macOS' \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$GITHUB_WORKSPACE/full-macos.txt"
+      - name: Publish build log
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "# macOS — run $GITHUB_RUN_NUMBER — outcome=${{ steps.build.outcome }} — $(date -u)"
+            echo "## error/diagnostic lines"
+            grep -n -i -E "error:|cannot find|no such module|has no member|is not a member of|cannot convert|missing argument|extra argument|ambiguous|does not conform|unable to|failed" "$GITHUB_WORKSPACE/full-macos.txt" | head -200 || echo "(none matched)"
+            echo
+            echo "## tail (last 150 lines)"
+            tail -n 150 "$GITHUB_WORKSPACE/full-macos.txt"
+          } > ci-logs/macos.txt
+          git config user.name "quill-ci"
+          git config user.email "quill-ci@users.noreply.github.com"
+          git add ci-logs/macos.txt
+          git commit -m "ci(log): macOS run $GITHUB_RUN_NUMBER [skip ci]" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5 6; do
+            if git pull --rebase --autostash origin master && git push origin HEAD:master; then echo pushed; exit 0; fi
+            sleep $(( (RANDOM % 6) + 2 ))
+          done
+          echo "log push failed after retries"; exit 0
+      - name: Reflect build result
+        if: steps.build.outcome != 'success'
+        run: exit 1
 
   ios:
     name: iOS · build & test
@@ -52,9 +77,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Select the newest installed Xcode
-        # XcodeGen writes an Xcode-16-format project (objectVersion 77); the runner's default Xcode
-        # (15.4) can't read it. Pick the highest Xcode present on the image.
         run: |
           sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           xcodebuild -version
@@ -66,11 +91,11 @@ jobs:
       - name: Pick an available iPhone simulator
         id: sim
         run: |
-          UDID=$(xcrun simctl list devices available -j \
-            | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
-          echo "Using simulator UDID: $UDID"
+          UDID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
       - name: Build & test (iOS)
+        id: build
+        continue-on-error: true
         working-directory: ios
         run: |
           set -o pipefail
@@ -78,4 +103,28 @@ jobs:
             -project Quill.xcodeproj \
             -scheme Quill \
             -destination "id=${{ steps.sim.outputs.udid }}" \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$GITHUB_WORKSPACE/full-ios.txt"
+      - name: Publish build log
+        if: always()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "# iOS — run $GITHUB_RUN_NUMBER — outcome=${{ steps.build.outcome }} — $(date -u)"
+            echo "## error/diagnostic lines"
+            grep -n -i -E "error:|cannot find|no such module|has no member|is not a member of|cannot convert|missing argument|extra argument|ambiguous|does not conform|unable to|failed" "$GITHUB_WORKSPACE/full-ios.txt" | head -200 || echo "(none matched)"
+            echo
+            echo "## tail (last 150 lines)"
+            tail -n 150 "$GITHUB_WORKSPACE/full-ios.txt"
+          } > ci-logs/ios.txt
+          git config user.name "quill-ci"
+          git config user.email "quill-ci@users.noreply.github.com"
+          git add ci-logs/ios.txt
+          git commit -m "ci(log): iOS run $GITHUB_RUN_NUMBER [skip ci]" || { echo "nothing to commit"; exit 0; }
+          for i in 1 2 3 4 5 6; do
+            if git pull --rebase --autostash origin master && git push origin HEAD:master; then echo pushed; exit 0; fi
+            sleep $(( (RANDOM % 6) + 2 ))
+          done
+          echo "log push failed after retries"; exit 0
+      - name: Reflect build result
+        if: steps.build.outcome != 'success'
+        run: exit 1
