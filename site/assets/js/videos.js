@@ -102,6 +102,56 @@ window.QuillDemos = {
       },
     ],
   },
+
+  // Combined phone + desktop reel for the single overview page. Interleaves the
+  // Android (portrait) and Windows (landscape) scenes so one carousel shows the
+  // product on both form factors; the carousel frame is aspect-ratio agnostic.
+  ALL: {
+    slides: [
+      {
+        id: "all-bubble",
+        scene: "android-bubble-idle",
+        title: "A bubble over every app",
+        description:
+          "On your phone, Quill floats wherever you type — chat, email, search, notes.",
+      },
+      {
+        id: "all-listening",
+        scene: "android-listening",
+        title: "Tap, then speak",
+        description:
+          "The bubble turns gold while listening; the ink meter draws your voice.",
+      },
+      {
+        id: "all-ribbon",
+        scene: "windows-ribbon",
+        title: "A keystroke on the desktop",
+        description:
+          "On your PC, a shortcut summons a quiet ribbon that never steals focus.",
+      },
+      {
+        id: "all-typing",
+        scene: "windows-typing",
+        title: "Types where your cursor is",
+        description:
+          "Your words go straight into the focused window; the clipboard covers the rest.",
+      },
+      {
+        id: "all-inserted",
+        scene: "android-inserted",
+        title: "Words land at the cursor",
+        description:
+          "The transcript drops right where you were typing. What you say is what gets typed.",
+      },
+      {
+        id: "all-private",
+        scene: "windows-private",
+        title: "Encrypted, by default",
+        description:
+          "Keys are isolated per provider and sealed by the platform keystore.",
+      },
+    ],
+  },
 };
 
 /* Which carousel config a page uses. */

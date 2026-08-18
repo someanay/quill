@@ -192,13 +192,21 @@
   function initPlatformHighlight() {
     var os = detectOs();
     document.documentElement.setAttribute("data-os", os);
-    if (os !== "android" && os !== "windows") return;
-    document.querySelectorAll("[data-platform-cta]").forEach(function (el) {
-      var nativeTarget = el.getAttribute("data-platform-cta") === os;
-      el.classList.toggle("is-native-platform", nativeTarget);
-      el.classList.toggle("btn--primary", nativeTarget);
-      el.classList.toggle("btn--ghost", !nativeTarget);
-    });
+
+    // Native CTA promotion only applies where a per-OS CTA button exists
+    // (android/windows). Apple/other visitors keep the default button styling.
+    if (os === "android" || os === "windows") {
+      document.querySelectorAll("[data-platform-cta]").forEach(function (el) {
+        var nativeTarget = el.getAttribute("data-platform-cta") === os;
+        el.classList.toggle("is-native-platform", nativeTarget);
+        el.classList.toggle("btn--primary", nativeTarget);
+        el.classList.toggle("btn--ghost", !nativeTarget);
+      });
+    }
+
+    // Highlight the visitor's platform wherever it's tagged — cards and store
+    // badges — including Apple (both the App Store and Mac App Store badges).
+    if (os === "other") return;
     document.querySelectorAll('[data-platform="' + os + '"]').forEach(function (el) {
       el.classList.add("is-native-platform");
       var chip = document.createElement("span");

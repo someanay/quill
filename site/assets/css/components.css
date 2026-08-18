@@ -273,17 +273,21 @@
 
 .bubble[data-state="recording"] .bubble-halo {
   position: absolute;
-  inset: -9px;
+  inset: -18px;
   border-radius: 50%;
-  background: transparent;
-  box-shadow: 0 0 0 0 rgba(224, 160, 58, 0.24);
+  /* A soft radial aura, not a hard ring — low-opacity gold as a box-shadow spread
+     reads as a muddy brown donut on the dark ground; a radial gradient stays gold. */
+  background: radial-gradient(circle,
+    rgba(232, 174, 78, 0.42) 28%,
+    rgba(232, 174, 78, 0.14) 52%,
+    transparent 72%);
   animation: halo-breathe 1.8s ease-in-out infinite;
   pointer-events: none;
 }
 
 @keyframes halo-breathe {
-  0%, 100% { box-shadow: 0 0 0 7px rgba(224, 160, 58, 0.28); }
-  50%      { box-shadow: 0 0 0 13px rgba(224, 160, 58, 0.10); }
+  0%, 100% { transform: scale(0.9);  opacity: 0.95; }
+  50%      { transform: scale(1.16); opacity: 0.5; }
 }
 
 .bubble[data-state="transcribing"] {
@@ -316,7 +320,7 @@
 @media (prefers-reduced-motion: reduce) {
   .bubble[data-state="recording"] .bubble-halo {
     animation: none;
-    box-shadow: 0 0 0 9px rgba(224, 160, 58, 0.22);
+    transform: scale(1.06);
   }
   .bubble[data-state="transcribing"] .glyph-spinner {
     animation: none;
@@ -711,6 +715,113 @@
   color: var(--muted);
   font-size: 0.95rem;
   line-height: 1.55;
+}
+
+/* ----------------------------------------------------------------------------
+   Nav call-to-action (desktop only; the mobile drawer carries the same link)
+---------------------------------------------------------------------------- */
+.nav-cta { white-space: nowrap; }
+
+@media (max-width: 860px) {
+  .nav-cta { display: none; }
+}
+
+/* ----------------------------------------------------------------------------
+   Platform strip — the four OSes Quill runs on, as quiet inline chips
+---------------------------------------------------------------------------- */
+.platform-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.platform-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.platform-chip svg {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-ink);
+}
+
+/* ----------------------------------------------------------------------------
+   App-store badges — honest, on-brand store cards (not the official lozenges)
+---------------------------------------------------------------------------- */
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.store-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition:
+    transform var(--dur-med) var(--ease-out),
+    box-shadow var(--dur-med) var(--ease-out),
+    border-color var(--dur-med) var(--ease-out);
+}
+
+.store-badge:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-2);
+  border-color: var(--line-strong);
+}
+
+.store-badge__icon {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.store-badge__icon svg { width: 26px; height: 26px; }
+
+.store-badge__text { display: grid; gap: 1px; }
+
+.store-badge__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.store-badge__name {
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Detected platform (site.js) — brand ring + the shared "Your device" chip */
+.store-badge.is-native-platform {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft), var(--sh-1);
+}
+
+@media (max-width: 620px) {
+  .store-grid { grid-template-columns: 1fr; }
 }
 
 /* ----------------------------------------------------------------------------
