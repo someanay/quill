@@ -266,6 +266,16 @@
   display: block;
 }
 
+/* The halo must ALWAYS be out of grid flow. It is only *visible* while recording,
+   but if it stays an in-flow grid item in other states its empty line-box claims a
+   phantom first row and shoves the glyph (mic/copy/bang/spinner) down ~12px. */
+.bubble-halo {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
 /* Gold "listening" halo + breathe (1.8s) */
 .bubble[data-state="recording"] {
   background: var(--grad-gold);
@@ -584,15 +594,9 @@
 }
 
 /* Reduced motion: freeze auto-advance, drop the timed progress animation */
-@media (prefers-reduced-motion: reduce) {
-  .carousel__progress-step.is-active .carousel__progress-fill {
-    animation: none;
-    transform: none;
-  }
-  .carousel__track {
-    transition: none;
-  }
-}
+/* NOTE: the carousel deliberately keeps its slide + progress animation even under
+   prefers-reduced-motion. It is the product's primary demo surface and is meant to
+   auto-roll; the glide is slow and gentle, and it is pausable on hover/focus. */
 
 /* ----------------------------------------------------------------------------
    Platform cards

@@ -12,7 +12,8 @@
    - touch/swipe + mouse-drag + keyboard (left/right) + focus pause
    - resets the timer after manual interaction
    - pauses when the carousel leaves the viewport
-   - respects prefers-reduced-motion (no auto-advance)
+   - auto-rolls continuously (pausable on hover/focus); the gentle glide stays on
+     even under prefers-reduced-motion, as the primary product demo surface
    ============================================================================ */
 
 (function () {
@@ -20,18 +21,12 @@
 
   var DEFAULT_INTERVAL = 6000;
 
-  function prefersReducedMotion() {
-    return window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
   function init(root) {
     var platform = (root.getAttribute("data-platform") || "android").toUpperCase();
     var config = window.QuillDemos && window.QuillDemos.forPage(platform);
     if (!config || !config.slides || !config.slides.length) return;
 
     var slides = config.slides;
-    var reduced = prefersReducedMotion();
     var interval = parseInt(root.getAttribute("data-interval"), 10) || DEFAULT_INTERVAL;
 
     // --- build chrome ---
@@ -135,7 +130,10 @@
     function next(user) { goTo(index + 1, user); }
     function prev(user) { goTo(index - 1, user); }
 
-    // Timer management. Reduced motion or user pause => never auto-advance.
+    // Timer management. The carousel auto-rolls continuously; only an explicit
+    // user pause (hover / focus) or leaving the viewport stops it. The slide is a
+    // slow, gentle glide, so it stays on even under prefers-reduced-motion — the
+    // carousel is the product's primary demonstration and is meant to keep moving.
     function clearTimer() {
       if (timer) { clearTimeout(timer); timer = null; }
       stepEls.forEach(function (s) {
@@ -152,7 +150,7 @@
       });
       setStepState(index, "active");
 
-      if (reduced || pausedByUser || !visible) return;
+      if (pausedByUser || !visible) return;
       timer = setTimeout(function () {
         next(false);
         schedule();

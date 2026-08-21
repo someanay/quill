@@ -127,6 +127,11 @@
 
 @keyframes desktop-float { 50% { transform: perspective(900px) rotateY(-3deg) rotateX(1deg) translateY(-8px); } }
 
+/* Give the hero phone the same gentle ambient float the desktop demo has, so whichever device the
+   visitor sees, the hero breathes. Reduced-motion-gated below. */
+.hero-phone { animation: hero-phone-float 5.5s ease-in-out infinite; }
+@keyframes hero-phone-float { 50% { transform: translateY(-8px); } }
+
 .hero-desktop-demo__bar {
   height: 34px;
   display: flex;
@@ -195,7 +200,7 @@ html[data-platform-preview="windows"] .hero {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-ribbon__meter i { animation: none; }
-  .hero-desktop-demo, .hero-ribbon { animation: none; }
+  .hero-desktop-demo, .hero-ribbon, .hero-phone { animation: none; }
 }
 
 /* Trust line under the hero CTAs */
@@ -362,13 +367,13 @@ html[data-platform-preview="windows"] .hero {
 /* Floating bubble + companion meter over a phone screen */
 .bubble-float {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  bottom: 74px; /* hover clear of the chat input bar (≈60px tall) — a bubble floating over the app, not on it */
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  align-items: flex-end;
+  justify-content: flex-end; /* the floating bubble + its ink-meter cluster in the lower-right corner */
+  gap: 12px;
   pointer-events: none;
   z-index: 6;
 }
