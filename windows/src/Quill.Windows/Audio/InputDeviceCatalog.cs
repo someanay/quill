@@ -3,7 +3,13 @@ using NAudio.Wave;
 namespace Quill.Windows.Audio;
 
 /// <summary>Lists the Windows WaveIn microphones Quill can capture from.</summary>
-public sealed record AudioInputDevice(string Id, string DisplayName);
+public sealed record AudioInputDevice(string Id, string DisplayName)
+{
+    // Belt-and-suspenders: any control that renders the item without DisplayMemberPath (e.g. the
+    // text box of an editable ComboBox) falls back to ToString(). Without this override that would
+    // surface the record's default "AudioInputDevice { Id = , DisplayName = Default microphone }".
+    public override string ToString() => DisplayName;
+}
 
 public static class InputDeviceCatalog
 {

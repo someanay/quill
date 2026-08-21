@@ -21,7 +21,18 @@
                       Data="M9,6 A3,3 0 0 1 15,6 V11 A3,3 0 0 1 9,11 Z M5,11 A7,7 0 0 0 19,11 M12,18 V21"/>
             </Border>
             <StackPanel Grid.Column="1" Margin="12,2,12,0">
-                <TextBlock x:Name="RibbonTitle" Text="Listening" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="RibbonTitle" Text="Listening" Foreground="White" FontSize="16" FontWeight="SemiBold"/>
+                    <Border x:Name="ClipboardBadge" Visibility="Collapsed" Background="#3348E0C0" CornerRadius="6"
+                            Padding="6,1" Margin="9,2,0,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Width="9" Height="11" Stretch="Uniform" Margin="0,0,4,0" VerticalAlignment="Center"
+                                  Stroke="#CFF7EC" StrokeThickness="1.6" StrokeLineJoin="Round"
+                                  Data="M8,3 H16 V21 H8 Z M10,3 V1.5 H14 V3"/>
+                            <TextBlock Text="CLIPBOARD" Foreground="#CFF7EC" FontSize="9" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
                 <TextBlock x:Name="RibbonDetail" Text="Ctrl + Alt + Space to finish" Foreground="#BFC3D4" FontSize="12" Margin="0,5,0,0"/>
             </StackPanel>
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">

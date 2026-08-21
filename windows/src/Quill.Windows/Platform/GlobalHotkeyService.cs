@@ -12,11 +12,20 @@ public sealed class GlobalHotkeyService : IDisposable
     private const uint ModShift = 0x0004;
     private const uint ModWin = 0x0008;
     private const uint ModNoRepeat = 0x4000;
+    private const int HoldMilliseconds = 400; // held at least this long ⇒ long-press (clipboard mode)
     private HwndSource? _source;
     private IntPtr _handle;
+    private uint _key;
+    private System.Windows.Threading.DispatcherTimer? _holdTimer;
+    private int _pressTick;
+    private bool _longFired;
     public string RegistrationFailureReason { get; private set; } = "";
 
+    /// <summary>A quick tap of the shortcut (pressed and released before the hold threshold).</summary>
     public event EventHandler? Pressed;
+
+    /// <summary>The shortcut held past <see cref="HoldMilliseconds"/> — Quill's "dictate to clipboard" gesture.</summary>
+    public event EventHandler? LongPressed;
 
     public bool Register(System.Windows.Window window, string shortcut)
     {
@@ -30,7 +39,7 @@ public sealed class GlobalHotkeyService : IDisposable
             RegistrationFailureReason = "Invalid shortcut format.";
             return false;
         }
-        if (RegisterHotKey(_handle, HotkeyId, modifiers | ModNoRepeat, key)) return true;
+        if (RegisterHotKey(_handle, HotkeyId, modifiers | ModNoRepeat, key)) { _key = key; return true; }
         RegistrationFailureReason = Marshal.GetLastWin32Error() == 1409
             ? "Occupied by another application or Windows. The owner process is not exposed by the Windows hotkey API."
             : $"Windows rejected this shortcut (error {Marshal.GetLastWin32Error()}).";
@@ -39,6 +48,7 @@ public sealed class GlobalHotkeyService : IDisposable
 
     public void Dispose()
     {
+        _holdTimer?.Stop();
         if (_handle != IntPtr.Zero) UnregisterHotKey(_handle, HotkeyId);
         _source?.RemoveHook(WndProc);
         _source = null;
@@ -50,9 +60,50 @@ public sealed class GlobalHotkeyService : IDisposable
         if (message == WmHotkey && wParam.ToInt32() == HotkeyId)
         {
             handled = true;
-            Pressed?.Invoke(this, EventArgs.Empty);
+            BeginHoldDetection();
         }
         return IntPtr.Zero;
+    }
+
+    // WM_HOTKEY (with MOD_NOREPEAT) fires once on the initial press and reveals nothing about the
+    // release, so a "hold" is invisible from it alone. After the press we poll the one configured
+    // key's physical state: released before the threshold ⇒ a tap (Pressed); still down at the
+    // threshold ⇒ a long-press (LongPressed). This preserves the privacy-preserving model — Quill
+    // reads only its own shortcut key, never a global low-level keyboard hook over every keystroke.
+    private void BeginHoldDetection()
+    {
+        _longFired = false;
+        _pressTick = Environment.TickCount;
+        _holdTimer ??= CreateHoldTimer();
+        _holdTimer.Stop();
+        _holdTimer.Start();
+    }
+
+    private System.Windows.Threading.DispatcherTimer CreateHoldTimer()
+    {
+        var timer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Input)
+        {
+            Interval = TimeSpan.FromMilliseconds(25),
+        };
+        timer.Tick += (_, _) => HoldTick();
+        return timer;
+    }
+
+    private void HoldTick()
+    {
+        var down = (GetAsyncKeyState((int)_key) & 0x8000) != 0;
+        var elapsed = Environment.TickCount - _pressTick;
+        if (!_longFired && down && elapsed >= HoldMilliseconds)
+        {
+            _longFired = true;
+            _holdTimer?.Stop();
+            LongPressed?.Invoke(this, EventArgs.Empty);
+        }
+        else if (!down)
+        {
+            _holdTimer?.Stop();
+            if (!_longFired) Pressed?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public static bool TryNormalize(string value, out string normalized)
@@ -101,4 +152,7 @@ public sealed class GlobalHotkeyService : IDisposable
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool UnregisterHotKey(IntPtr window, int id);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int virtualKey);
 }

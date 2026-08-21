@@ -23,6 +23,7 @@ public partial class DictationRibbon : Window
             _hideDelay?.Cancel();
             RibbonTitle.Text = status.Title;
             RibbonDetail.Text = status.Detail;
+            ClipboardBadge.Visibility = status.Clipboard ? Visibility.Visible : Visibility.Collapsed;
             SignalOrb.Background = status.State switch
             {
                 DictationState.Listening => (Brush)FindResource("Signal"),

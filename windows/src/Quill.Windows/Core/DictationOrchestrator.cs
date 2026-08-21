@@ -7,7 +7,7 @@ using Quill.Windows.Stt;
 
 namespace Quill.Windows.Core;
 
-public sealed record DictationStatus(DictationState State, string Title, string Detail = "", string Toast = "");
+public sealed record DictationStatus(DictationState State, string Title, string Detail = "", string Toast = "", bool Clipboard = false);
 
 public sealed class DictationOrchestrator : IDisposable
 {
@@ -94,8 +94,11 @@ public sealed class DictationOrchestrator : IDisposable
         try
         {
             _audio.Start(settings);
-            SetStatus(DictationState.Listening, "Listening", $"Press {settings.Hotkey} again to finish.",
-                diverted ? "No text field selected — this dictation will be copied to your clipboard." : "");
+            SetStatus(DictationState.Listening,
+                _clipboardOnly ? "Listening · clipboard" : "Listening",
+                _clipboardOnly ? "Speak — Quill will copy the text to your clipboard." : $"Press {settings.Hotkey} again to finish.",
+                diverted ? "No text field selected — this dictation will be copied to your clipboard." : "",
+                _clipboardOnly);
         }
         catch (Exception error)
         {
@@ -159,7 +162,8 @@ public sealed class DictationOrchestrator : IDisposable
             text = ApplyCustomWords(text, settings.CustomWords);
             SetStatus(DictationState.Inserting,
                 _clipboardOnly ? "Copying" : "Typing",
-                _clipboardOnly ? "Clipboard" : _target?.Application ?? "Focused application");
+                _clipboardOnly ? "Clipboard" : _target?.Application ?? "Focused application",
+                clipboard: _clipboardOnly);
             var result = _clipboardOnly
                 ? await CopyToClipboardAsync(text)
                 : await _injector.InsertAsync(_target ?? _injector.CaptureTarget(), text);
@@ -199,10 +203,10 @@ public sealed class DictationOrchestrator : IDisposable
         finally { _transition.Release(); }
     }
 
-    private void SetStatus(DictationState state, string title, string detail, string toast = "")
+    private void SetStatus(DictationState state, string title, string detail, string toast = "", bool clipboard = false)
     {
         _state = state;
-        StatusChanged?.Invoke(this, new DictationStatus(state, title, detail, toast));
+        StatusChanged?.Invoke(this, new DictationStatus(state, title, detail, toast, clipboard));
     }
 
     private static async Task<InjectionResult> CopyToClipboardAsync(string text)

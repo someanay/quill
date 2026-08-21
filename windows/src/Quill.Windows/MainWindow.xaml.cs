@@ -25,6 +25,7 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         Closing += OnClosing;
         _hotkey.Pressed += async (_, _) => await ViewModel.ToggleAsync();
+        _hotkey.LongPressed += async (_, _) => await ViewModel.ToggleClipboardAsync();
     }
 
     public MainViewModel ViewModel { get; }
@@ -76,7 +77,6 @@ public partial class MainWindow : Window
         ViewModel.SetHotkeyStatus("New shortcut selected - click Save settings to apply it.");
     }
     private async void ToggleDictation_Click(object sender, RoutedEventArgs e) => await ViewModel.ToggleAsync();
-    private async void ToggleClipboardDictation_Click(object sender, RoutedEventArgs e) => await ViewModel.ToggleClipboardAsync();
     private void RefreshInputDevices_Click(object sender, RoutedEventArgs e) => ViewModel.RefreshInputDevices();
     private async void ClearHistory_Click(object sender, RoutedEventArgs e) => await ViewModel.ClearHistoryAsync();
     private async void SaveKey_Click(object sender, RoutedEventArgs e) { await ViewModel.SaveKeyAsync(ApiKeyField.Password); ApiKeyField.Clear(); }

@@ -9,8 +9,11 @@ namespace Quill.Windows;
 
 public partial class App : System.Windows.Application
 {
+    private const string ShowSignalName = @"Local\Quill.Windows.Show";
     private Mutex? _singleInstance;
     private bool _ownsMutex;
+    private EventWaitHandle? _showSignal;
+    private RegisteredWaitHandle? _showSignalRegistration;
     private AppServices? _services;
     private TrayIconService? _tray;
     private DictationRibbon? _ribbon;
@@ -21,17 +24,33 @@ public partial class App : System.Windows.Application
         _singleInstance = new Mutex(true, @"Local\Quill.Windows.Singleton", out _ownsMutex);
         if (!_ownsMutex)
         {
-            // Restore an existing tray/background window. If the old process has no
-            // top-level window (for example, it is still booting), continue startup
-            // so the new launch still produces a usable window.
-            var existing = FindWindowForProcess("Quill.Windows");
-            if (existing != IntPtr.Zero)
+            // Another Quill already owns this session — often hidden in the tray because "Start Quill
+            // when I sign in" launched it with --background. Ask that instance to surface, then exit.
+            // Starting a second instance here would register the global shortcut twice, and the loser
+            // reports the shortcut as "Occupied". Retry briefly in case the owner is still booting and
+            // has not published its activation signal yet.
+            for (var attempt = 0; attempt < 15; attempt++)
             {
-                ShowWindow(existing, 9);
-                SetForegroundWindow(existing);
-                Shutdown();
-                return;
+                if (EventWaitHandle.TryOpenExisting(ShowSignalName, out var signal))
+                {
+                    signal.Set();
+                    signal.Dispose();
+                    Shutdown();
+                    return;
+                }
+                var existing = FindWindowForProcess("Quill.Windows");
+                if (existing != IntPtr.Zero)
+                {
+                    ShowWindow(existing, 9);
+                    SetForegroundWindow(existing);
+                    Shutdown();
+                    return;
+                }
+                Thread.Sleep(100);
             }
+            // The owner never answered (unusual). Do not start a second hotkey registrant; exit quietly.
+            Shutdown();
+            return;
         }
         base.OnStartup(e);
 
@@ -62,6 +81,14 @@ public partial class App : System.Windows.Application
         // Even tray-start needs an HWND: RegisterHotKey delivers WM_HOTKEY to that native handle.
         _main.Show();
         if (background) _main.Hide();
+
+        // Single-instance activation: a later launch Set()s this named event to bring us to the front
+        // (see the !_ownsMutex branch above) instead of starting a second, shortcut-conflicting instance.
+        _showSignal = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSignalName);
+        _showSignalRegistration = ThreadPool.RegisterWaitForSingleObject(
+            _showSignal,
+            (_, _) => Dispatcher.BeginInvoke(() => _main?.ShowFromTray()),
+            null, Timeout.Infinite, executeOnlyOnce: false);
     }
 
     private void ExitApplication()
@@ -76,6 +103,8 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _showSignalRegistration?.Unregister(null);
+        _showSignal?.Dispose();
         _tray?.Dispose();
         _services?.Dispose();
         if (_ownsMutex) _singleInstance?.ReleaseMutex();
