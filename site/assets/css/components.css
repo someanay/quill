@@ -454,7 +454,9 @@
 
 .carousel__track {
   display: flex;
-  transition: transform var(--dur-slow) var(--ease-out);
+  /* Explicit duration, NOT var(--dur-slow): reduced-motion zeroes that token to 0ms, which made
+     the slide snap. The carousel is the primary product demo and always glides smoothly. */
+  transition: transform 640ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 

@@ -181,11 +181,9 @@
       var p = navigator.userAgentData.platform.toLowerCase();
       if (p.indexOf("android") !== -1) return "android";
       if (p.indexOf("win") !== -1) return "windows";
-      if (p.indexOf("mac") !== -1) return "apple";
     }
     if (/android/i.test(ua)) return "android";
     if (/windows|win32|win64|wow64/i.test(ua)) return "windows";
-    if (/iphone|ipad|macintosh|mac os x/i.test(ua)) return "apple";
     return "other";
   }
 
@@ -194,7 +192,7 @@
     document.documentElement.setAttribute("data-os", os);
 
     // Native CTA promotion only applies where a per-OS CTA button exists
-    // (android/windows). Apple/other visitors keep the default button styling.
+    // (android/windows). Other visitors keep the default button styling.
     if (os === "android" || os === "windows") {
       document.querySelectorAll("[data-platform-cta]").forEach(function (el) {
         var nativeTarget = el.getAttribute("data-platform-cta") === os;
@@ -204,8 +202,7 @@
       });
     }
 
-    // Highlight the visitor's platform wherever it's tagged — cards and store
-    // badges — including Apple (both the App Store and Mac App Store badges).
+    // Highlight the visitor's platform wherever it's tagged — cards and store badges.
     if (os === "other") return;
     document.querySelectorAll('[data-platform="' + os + '"]').forEach(function (el) {
       el.classList.add("is-native-platform");

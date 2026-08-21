@@ -12,31 +12,8 @@
   isolation: isolate;
 }
 
-.hero::before,
-.hero::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  filter: blur(2px);
-  pointer-events: none;
-}
-
-.hero::before {
-  width: 520px;
-  height: 520px;
-  right: -180px;
-  top: -170px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand) 20%, transparent), transparent 68%);
-}
-
-.hero::after {
-  width: 360px;
-  height: 360px;
-  left: -220px;
-  bottom: -210px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%);
-}
+/* The hero's brand/gold glow now lives on a fixed, site-wide layer (base.css body::before)
+   so every section shares it — no hero-local glow pseudo-elements needed here. */
 
 .hero__grid {
   display: grid;
