@@ -84,21 +84,40 @@ private struct FieldFailure: Error, CustomStringConvertible {
                 let page = try makePage(kind: kind, text: before, index: String(index), output: output)
                 browser = try await open(document: page, application: application)
                 let initial = try await focused(injector: injector, bundle: bundle, text: before)
+                let native = SystemAccessibilityAccess()
+                let capabilities = "selectedTextWritable=\(native.isSettable(initial.element, kAXSelectedTextAttribute)), valueWritable=\(native.isSettable(initial.element, kAXValueAttribute))"
                 try setRange(selection, element: initial.element)
                 let target = try await focused(injector: injector, bundle: bundle, text: before, selection: selection)
-                let result = try injector.insert(payload, target: target)
+                let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
                 guard result == .confirmed, actual == expected else {
                     // Diagnostic only: never retry the write. WebKit may acknowledge an
                     // AX request before its separate web-content process updates readback.
                     try await Task.sleep(nanoseconds: 500_000_000)
                     let settled = attribute(target.element, kAXValueAttribute) as? String
-                    throw FieldFailure("result=\(result), expected=\(String(reflecting: expected)), immediate=\(String(reflecting: actual)), after500ms=\(String(reflecting: settled))")
+                    throw FieldFailure("\(capabilities), result=\(result), expected=\(String(reflecting: expected)), immediate=\(String(reflecting: actual)), after500ms=\(String(reflecting: settled))")
                 }
+                let expectedCaret = InsertionComposer.compose(existing: before, transcript: payload, selection: selection).caret
+                _ = try await focused(injector: injector, bundle: bundle, text: expected, selection: NSRange(location: expectedCaret, length: 0))
                 report.checks.append(FieldCheck(name: name, passed: true, detail: "Actual Safari AX readback confirmed \(String(reflecting: expected))."))
             } catch {
                 report.checks.append(FieldCheck(name: name, passed: false, detail: "\(error); \(observation())"))
             }
+        }
+        // Diagnose the independent full-value mechanism on a fresh document. Never
+        // resend or apply a fallback to a field whose selected-text write was accepted.
+        do {
+            let page = try makePage(kind: "textarea", text: "Fresh", index: "full-value-diagnostic", output: output)
+            browser = try await open(document: page, application: application)
+            let target = try await focused(injector: injector, bundle: bundle, text: "Fresh")
+            let native = SystemAccessibilityAccess()
+            let writable = native.isSettable(target.element, kAXValueAttribute)
+            let status = AXUIElementSetAttributeValue(target.element, kAXValueAttribute as CFString, "Fresh diagnostic ✓" as CFString)
+            try await Task.sleep(nanoseconds: 500_000_000)
+            let actual = attribute(target.element, kAXValueAttribute) as? String
+            report.checks.append(FieldCheck(name: "Safari independent full-value diagnostic", passed: status == .success && actual == "Fresh diagnostic ✓", detail: "AXValue writable=\(writable), status=\(status.rawValue), after500ms=\(String(reflecting: actual)). This is direct diagnostic AX, not a production-adapter pass."))
+        } catch {
+            report.checks.append(FieldCheck(name: "Safari independent full-value diagnostic", passed: false, detail: String(describing: error)))
         }
         do {
             let page = try makePage(kind: "password", text: "synthetic-qa-only", index: "password", output: output)
@@ -128,7 +147,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
         let selection = NSRange(location: before.utf16.count, length: 0)
         try setRange(selection, element: initial.element)
         let target = try await focused(injector: injector, bundle: bundle, text: before, selection: selection)
-        let result = try injector.insert("✓ नमस्ते 🌍", target: target)
+        let result = try await injector.insert("✓ नमस्ते 🌍", target: target)
         guard result == .confirmed, attribute(target.element, kAXValueAttribute) as? String == "Quill QA normal ✓ नमस्ते 🌍" else {
             throw FieldFailure("Real native NSTextField insertion was not confirmed.")
         }

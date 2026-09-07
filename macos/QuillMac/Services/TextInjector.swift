@@ -53,7 +53,8 @@ enum InsertionResult: Equatable { case confirmed, unconfirmed, unavailable }
         }
         return true
     }
-    func insert(_ transcript: String, target: FocusSnapshot?) throws -> InsertionResult {
+    func insert(_ transcript: String, target: FocusSnapshot?) async throws -> InsertionResult {
+        try Task.checkCancellation()
         guard let target else { return .unavailable }
         guard try matches(target) else { throw QuillError.focusChanged }
         if let text = target.originalText, let range = target.originalRange {
@@ -63,24 +64,64 @@ enum InsertionResult: Equatable { case confirmed, unconfirmed, unavailable }
             guard let text = target.originalText, let range = target.originalRange, range.location >= 0, range.length >= 0 else { return nil }
             return InsertionComposer.compose(existing: text, transcript: transcript, selection: NSRange(location: range.location, length: range.length)).text
         }()
-        // Writing the selection preserves native undo stacks in applications supporting this attribute.
+        // Writing the selection preserves native undo stacks where it is implemented.
+        // Safari/WebKit acknowledges AXSelectedText but its base implementation is a
+        // no-op. Choose the supported AXValue route before submitting any write; never
+        // resend a selected-text write merely because confirmation is late or absent.
+        let usesWebKit = ["com.apple.Safari", "com.apple.SafariTechnologyPreview"].contains(target.bundleID ?? "")
         let payload: String = {
             guard let expected, let before = target.originalText, let range = target.originalRange, range.location >= 0 else { return transcript }
             let length = expected.utf16.count - before.utf16.count + range.length
             guard length >= 0, range.location + length <= expected.utf16.count else { return transcript }
             return (expected as NSString).substring(with: NSRange(location: range.location, length: length))
         }()
-        if access.set(target.element, kAXSelectedTextAttribute, payload as CFString) {
-            return expected != nil && string(target.element, kAXValueAttribute) == expected ? .confirmed : .unconfirmed
+        if !usesWebKit, access.isSettable(target.element, kAXSelectedTextAttribute) {
+            // A failure/timeout can still represent a queued mutation. The Boolean
+            // native adapter cannot prove non-submission, so do not try another write.
+            guard access.set(target.element, kAXSelectedTextAttribute, payload as CFString) else { return .unconfirmed }
+            return await confirm(expected, target: target)
         }
         guard let text = target.originalText, let selection = target.originalRange, selection.location >= 0, selection.length >= 0 else { return .unavailable }
         let composed = InsertionComposer.compose(existing: text, transcript: transcript, selection: NSRange(location: selection.location, length: selection.length))
         guard access.isSettable(target.element, kAXValueAttribute) else { return .unavailable }
         guard try matches(target) else { throw QuillError.focusChanged }
-        guard access.set(target.element, kAXValueAttribute, composed.text as CFString) else { return .unavailable }
+        guard access.set(target.element, kAXValueAttribute, composed.text as CFString) else { return .unconfirmed }
+        let deadline = ProcessInfo.processInfo.systemUptime + 0.75
+        guard await confirm(composed.text, target: target, deadline: deadline) == .confirmed,
+              !Task.isCancelled, stillFocused(target), let currentRange = range(target.element) else { return .unconfirmed }
+        if currentRange.location == composed.caret && currentRange.length == 0 { return .confirmed }
+        // Wait for the value before placing the caret: WebKit can clamp a new end
+        // offset against the old, shorter value. Preserve unrelated user selection.
+        let unchangedSelection = currentRange.location == selection.location && currentRange.length == selection.length
+        let automaticEnd = currentRange.location == composed.text.utf16.count && currentRange.length == 0
+        guard unchangedSelection || automaticEnd, access.isSettable(target.element, kAXSelectedTextRangeAttribute) else { return .unconfirmed }
         var caret = CFRange(location: composed.caret, length: 0)
-        if let value = AXValueCreate(.cfRange, &caret) { _ = access.set(target.element, kAXSelectedTextRangeAttribute, value) }
-        return string(target.element, kAXValueAttribute) == composed.text ? .confirmed : .unconfirmed
+        guard let value = AXValueCreate(.cfRange, &caret), access.set(target.element, kAXSelectedTextRangeAttribute, value) else { return .unconfirmed }
+        return await confirm(composed.text, target: target, caret: composed.caret, deadline: deadline)
+    }
+    private func stillFocused(_ target: FocusSnapshot) -> Bool {
+        guard access.permitted, !access.secureInputActive,
+              access.frontmostApplication()?.process == target.process,
+              let current = access.focusedElement(process: target.process), CFEqual(current, target.element) else { return false }
+        return !isSensitive(current)
+    }
+    private func confirm(_ expected: String?, target: FocusSnapshot, caret: Int? = nil, deadline: TimeInterval? = nil) async -> InsertionResult {
+        guard let expected else { return .unconfirmed }
+        let deadline = deadline ?? ProcessInfo.processInfo.systemUptime + 0.75
+        while !Task.isCancelled {
+            guard stillFocused(target) else { return .unconfirmed }
+            let actual = string(target.element, kAXValueAttribute)
+            if actual == expected {
+                let currentRange = range(target.element)
+                if caret == nil || (currentRange?.location == caret && currentRange?.length == 0) { return stillFocused(target) ? .confirmed : .unconfirmed }
+            }
+            // Preserve an unrelated edit rather than waiting for it to be overwritten.
+            if let actual, actual != expected && actual != target.originalText { return .unconfirmed }
+            guard ProcessInfo.processInfo.systemUptime < deadline else { return .unconfirmed }
+            do { try await Task.sleep(nanoseconds: 25_000_000) }
+            catch { return .unconfirmed }
+        }
+        return .unconfirmed
     }
     func paste(_ transcript: String, target: FocusSnapshot?) throws -> Bool {
         guard let target, try matches(target) else { throw QuillError.focusChanged }

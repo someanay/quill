@@ -32,12 +32,19 @@ final class OnboardingUITests: XCTestCase {
                 app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(index)] + (dark ? ["--ui-dark"] : [])
                 app.launch()
                 XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
+                if index == 0 { XCTAssertFalse(app.buttons["action.continue"].exists); XCTAssertFalse(app.buttons["onboarding.welcome.cta"].exists) }
+                if index == 1 { XCTAssertTrue(app.staticTexts["onboarding.welcome.already"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
                 if index == 3 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
                 if index == 5 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
                 if index == 7 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
                 let shot = XCTAttachment(screenshot: app.screenshot())
                 shot.name = "macOS-onboarding-presentation-" + (dark ? "dark-" : "light-") + stage
                 shot.lifetime = .keepAlways; add(shot)
+                if index == 1 {
+                    app.buttons["onboarding.welcome.open"].click()
+                    XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 5))
+                    XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
+                }
                 app.terminate()
             }
         }

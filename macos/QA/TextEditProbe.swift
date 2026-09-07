@@ -90,7 +90,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
                 let initial = try await focused(injector: injector, editor: editor!, expected: before)
                 try setSelection(selection, element: initial.element)
                 let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection)
-                let result = try injector.insert(payload, target: target)
+                let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
                 guard result == .confirmed, actual == expected else {
                     throw ProbeFailure("\(name): result=\(result), expected=\(String(reflecting: expected)), actual=\(String(reflecting: actual))")
@@ -103,7 +103,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             let target = try await focused(injector: injector, editor: editor!, expected: "Hello भारत 👋🏽 end")
             try setSelection(NSRange(location: 0, length: 0), element: target.element)
             let beforeSelectionTest = attribute(target.element, kAXValueAttribute) as? String
-            try expectFocusRefusal(injector: injector, target: target)
+            try await expectFocusRefusal(injector: injector, target: target)
             guard attribute(target.element, kAXValueAttribute) as? String == beforeSelectionTest else {
                 throw ProbeFailure("Changed-selection refusal mutated TextEdit.")
             }
@@ -118,7 +118,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             if let originalRange = textTarget.originalRange {
                 try setSelection(NSRange(location: originalRange.location, length: originalRange.length), element: textTarget.element)
             }
-            try expectFocusRefusal(injector: injector, target: textTarget)
+            try await expectFocusRefusal(injector: injector, target: textTarget)
             guard attribute(textTarget.element, kAXValueAttribute) as? String == manuallyEdited else {
                 throw ProbeFailure("Content-drift refusal changed the edited text.")
             }
@@ -128,7 +128,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             guard let finder = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.finder").first,
                   finder.activate(options: [.activateIgnoringOtherApps]) else { throw ProbeFailure("Could not focus Finder for the cross-process focus-change test.") }
             try await waitUntil("Finder foreground") { NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder" }
-            try expectFocusRefusal(injector: injector, target: focusTarget)
+            try await expectFocusRefusal(injector: injector, target: focusTarget)
             guard attribute(focusTarget.element, kAXValueAttribute) as? String == manuallyEdited else {
                 throw ProbeFailure("Application-focus refusal changed TextEdit.")
             }
@@ -199,9 +199,9 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         }
     }
 
-    private static func expectFocusRefusal(injector: TextInjector, target: FocusSnapshot) throws {
+    private static func expectFocusRefusal(injector: TextInjector, target: FocusSnapshot) async throws {
         do {
-            _ = try injector.insert("MUST NOT INSERT", target: target)
+            _ = try await injector.insert("MUST NOT INSERT", target: target)
             throw ProbeFailure("A stale target was not refused.")
         } catch let error as QuillError where error == .focusChanged { return }
     }

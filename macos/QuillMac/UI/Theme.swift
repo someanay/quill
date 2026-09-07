@@ -13,6 +13,7 @@ enum Copy {
 enum QuillTheme {
     static let brand = Color(hex: 0x234DCE)
     static func brandInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xB6C9FF : 0x1A3FAF) }
+    static func liveInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xD3DFFF : 0x1A3FAF) }
     static let error = Color(hex: 0xD6453D)
     static let success = Color(hex: 0x2E9E6B)
     static func paper(_ dark: Bool) -> Color { Color(hex: dark ? 0x11141A : 0xF5F7F5) }

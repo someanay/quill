@@ -12,7 +12,13 @@ struct PendingTake: Codable, Equatable {
     var wordCapture: Bool
 }
 
-final class PendingAudioStore {
+protocol PendingTakeStoring {
+    func load() throws -> PendingTake?
+    func save(_ take: PendingTake) throws
+    func clear() throws
+}
+
+final class PendingAudioStore: PendingTakeStoring {
     private let path: URL
     private let service: String
     init(directory: URL = AppPaths.root, namespace: String? = nil) {

@@ -179,9 +179,9 @@ struct AdvancedSettings: View {
             SectionLabel(key: "settings.advanced.reset")
             Button(Copy.text("settings.advanced.reset_settings")) { reset = true }
             Button(Copy.text("settings.advanced.clear"), role: .destructive) { clear = true }
-        }.confirmationDialog(Copy.text("settings.advanced.reset_confirm_title"), isPresented: $reset) { Button(Copy.text("settings.advanced.reset_confirm_cta"), role: .destructive) { dictation.cancel(); settings.reset() } } message: { CopyText("settings.advanced.reset_confirm_body") }
+        }.confirmationDialog(Copy.text("settings.advanced.reset_confirm_title"), isPresented: $reset) { Button(Copy.text("settings.advanced.reset_confirm_cta"), role: .destructive) { guard dictation.cancel() else { return }; settings.reset() } } message: { CopyText("settings.advanced.reset_confirm_body") }
         .confirmationDialog(Copy.text("settings.advanced.clear_confirm_title"), isPresented: $clear) { Button(Copy.text("settings.advanced.clear_confirm_cta"), role: .destructive) {
-            dictation.cancel()
+            guard dictation.cancel() else { return }
             do {
                 try keys.clear(); try KeySetupDraftStore().clearAll(); history.clear(); settings.value = QuillSettings()
                 let files = try FileManager.default.contentsOfDirectory(at: AppPaths.root, includingPropertiesForKeys: nil)

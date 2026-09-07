@@ -1,6 +1,7 @@
 import XCTest
 import Combine
 import AVFoundation
+import AppKit
 import QuillCore
 @testable import QuillMac
 
@@ -30,6 +31,23 @@ private final class NativeTranscriptProtocol: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 
+private final class FailingPendingStore: PendingTakeStoring {
+    let underlying: PendingAudioStore
+    var failTranscriptSave = true
+    var failClear = false
+    var failedClears = 0
+    init(_ underlying: PendingAudioStore) { self.underlying = underlying }
+    func load() throws -> PendingTake? { try underlying.load() }
+    func save(_ take: PendingTake) throws {
+        if failTranscriptSave && take.transcript != nil { throw QuillError.storage }
+        try underlying.save(take)
+    }
+    func clear() throws {
+        if failClear { failedClears += 1; throw QuillError.storage }
+        try underlying.clear()
+    }
+}
+
 @MainActor private final class DictationFixture {
     let directory: URL
     let settings: SettingsStore
@@ -39,6 +57,8 @@ private final class NativeTranscriptProtocol: URLProtocol, @unchecked Sendable {
     let audio = TestRecording()
     var microphoneAllowed = true
     let client: ProviderClient
+    var injector: TextInjector?
+    var pendingOverride: (any PendingTakeStoring)?
     lazy var dictation = makeDictation()
     init() throws {
         let configuration = URLSessionConfiguration.ephemeral; configuration.protocolClasses = [NativeTranscriptProtocol.self]
@@ -51,11 +71,113 @@ private final class NativeTranscriptProtocol: URLProtocol, @unchecked Sendable {
         let slot = try keys.save(provider: .groq, label: "fixture", secret: "gsk_testfixture1234567890123456", status: "valid", customURL: "")
         settings.value.activeKeys["groq"] = slot.id; settings.value.onboardingComplete = true; settings.value.accessibilityConsent = true
     }
-    func makeDictation() -> Dictation { Dictation(settings: settings, keys: keys, history: history, audio: audio, client: client, pendingStore: pending, microphonePermission: { [weak self] in self?.microphoneAllowed == true }) }
+    func makeDictation() -> Dictation { Dictation(settings: settings, keys: keys, history: history, audio: audio, client: client, pendingStore: pendingOverride ?? pending, injector: injector, microphonePermission: { [weak self] in self?.microphoneAllowed == true }) }
     func dispose() { dictation.cancel(); try? keys.clear(); try? pending.clear(); try? FileManager.default.removeItem(at: directory) }
 }
 
 final class DictationTests: XCTestCase {
+    @MainActor func testFailedDiscardKeepsRecoveryBlockedUntilDeletionSucceeds() throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        try fixture.pending.save(PendingTake(audio: fixture.audio.wav, transcript: nil, settings: fixture.settings.value, duration: 1, clipboardOnly: false, wordCapture: false))
+        let failing = FailingPendingStore(fixture.pending); failing.failClear = true
+        fixture.pendingOverride = failing
+        let dictation = fixture.dictation
+        XCTAssertFalse(dictation.cancel())
+        XCTAssertEqual(dictation.state, .error); XCTAssertTrue(dictation.recoveryWarning)
+        XCTAssertEqual(dictation.message, "mac.error.pending_storage")
+        let requests = NativeTranscriptProtocol.requests
+        dictation.retry(); XCTAssertEqual(NativeTranscriptProtocol.requests, requests)
+        dictation.start(wordCapture: true); dictation.startMicTest()
+        XCTAssertEqual(fixture.audio.starts, 0); XCTAssertNotNil(try fixture.pending.load()?.audio)
+        let reopened = fixture.makeDictation()
+        reopened.start(wordCapture: true); reopened.startMicTest()
+        XCTAssertEqual(reopened.state, .error); XCTAssertEqual(fixture.audio.starts, 0)
+        XCTAssertNotNil(try fixture.pending.load()?.audio)
+        failing.failClear = false
+        XCTAssertTrue(dictation.cancel()); XCTAssertEqual(dictation.state, .idle)
+        XCTAssertNil(try fixture.pending.load())
+        dictation.start(wordCapture: true); XCTAssertEqual(fixture.audio.starts, 1)
+    }
+    @MainActor func testCopyDuringAcceptedInsertionCannotResurrectPasteState() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let editor = TestEditorAccess(); editor.mutatesSelection = false
+        fixture.injector = TextInjector(access: editor)
+        let dictation = fixture.dictation
+        dictation.start(); dictation.stop()
+        let deadline = Date().addingTimeInterval(3)
+        while editor.writes == 0 && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(editor.writes, 1); XCTAssertEqual(dictation.transcript, "um quell")
+        dictation.copyTranscript()
+        XCTAssertEqual(dictation.state, .idle); XCTAssertTrue(dictation.transcript.isEmpty)
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "um quell")
+        try await Task.sleep(nanoseconds: 850_000_000)
+        XCTAssertEqual(dictation.state, .idle); XCTAssertTrue(dictation.transcript.isEmpty)
+        XCTAssertNil(try fixture.pending.load()); XCTAssertEqual(editor.writes, 1)
+    }
+    @MainActor func testRecoveryWriteAndDeleteFailurePreventsDeliveryUntilAudioIsRetired() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let editor = TestEditorAccess(), failing = FailingPendingStore(fixture.pending)
+        fixture.injector = TextInjector(access: editor); fixture.pendingOverride = failing
+        let dictation = fixture.dictation
+        dictation.start(); failing.failClear = true; dictation.stop()
+        let deadline = Date().addingTimeInterval(3)
+        while dictation.state == .transcribing && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(dictation.state, .paste); XCTAssertEqual(dictation.transcript, "um quell")
+        XCTAssertEqual(dictation.message, "mac.error.pending_storage"); XCTAssertTrue(dictation.recoveryWarning)
+        XCTAssertEqual(editor.writes, 0); XCTAssertTrue(fixture.history.entries.isEmpty)
+        let unretired = try XCTUnwrap(fixture.pending.load())
+        XCTAssertNotNil(unretired.audio); XCTAssertNil(unretired.transcript)
+        let clipboardVersion = NSPasteboard.general.changeCount
+        dictation.copyTranscript()
+        XCTAssertEqual(NSPasteboard.general.changeCount, clipboardVersion)
+        XCTAssertEqual(dictation.state, .paste); XCTAssertEqual(dictation.transcript, "um quell")
+        XCTAssertEqual(editor.writes, 0)
+        // Recovery can resume once a transcript-only record is durable, even if
+        // cleanup still fails: relaunch can never offer already-delivered audio.
+        failing.failTranscriptSave = false
+        dictation.copyTranscript()
+        XCTAssertEqual(dictation.state, .idle); XCTAssertTrue(dictation.transcript.isEmpty)
+        XCTAssertEqual(NSPasteboard.general.string(forType: .string), "um quell")
+        XCTAssertEqual(failing.failedClears, 1); XCTAssertTrue(dictation.recoveryWarning)
+        let retired = try XCTUnwrap(fixture.pending.load())
+        XCTAssertNil(retired.audio); XCTAssertEqual(retired.transcript, "um quell")
+        let reopened = fixture.makeDictation()
+        XCTAssertEqual(reopened.state, .paste); XCTAssertEqual(reopened.transcript, "um quell")
+        let requests = NativeTranscriptProtocol.requests
+        reopened.retry(); XCTAssertEqual(NativeTranscriptProtocol.requests, requests)
+        XCTAssertEqual(editor.writes, 0)
+    }
+    @MainActor func testCancelDuringAcceptedInsertionCannotResurrectTranscriptOrPasteState() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let editor = TestEditorAccess(); editor.mutatesSelection = false
+        fixture.injector = TextInjector(access: editor)
+        let dictation = fixture.dictation
+        dictation.start(); XCTAssertEqual(dictation.state, .recording); dictation.stop()
+        let deadline = Date().addingTimeInterval(3)
+        while editor.writes == 0 && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(editor.writes, 1)
+        dictation.cancel()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(dictation.state, .idle); XCTAssertTrue(dictation.transcript.isEmpty)
+        XCTAssertNil(try fixture.pending.load()); XCTAssertEqual(editor.writes, 1)
+    }
+    @MainActor func testSuspendDuringConfirmationKeepsRecoveryWithoutStaleUITransition() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let editor = TestEditorAccess(); editor.mutatesSelection = false
+        fixture.injector = TextInjector(access: editor)
+        let dictation = fixture.dictation
+        dictation.start(); dictation.stop()
+        let deadline = Date().addingTimeInterval(3)
+        while editor.writes == 0 && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(editor.writes, 1)
+        dictation.suspend()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(dictation.state, .paste); XCTAssertEqual(dictation.message, "mac.status.unconfirmed")
+        XCTAssertEqual(try fixture.pending.load()?.transcript, "um quell"); XCTAssertEqual(editor.writes, 1)
+        dictation.start()
+        XCTAssertEqual(dictation.state, .paste); XCTAssertEqual(dictation.transcript, "um quell"); XCTAssertEqual(fixture.audio.starts, 1)
+        XCTAssertEqual(try fixture.pending.load()?.transcript, "um quell")
+    }
     @MainActor func testRouteChangeIsHandledBeforeANewMicrophoneTestCanStart() async throws {
         let fixture = try DictationFixture(); defer { fixture.dispose() }
         let dictation = fixture.dictation
