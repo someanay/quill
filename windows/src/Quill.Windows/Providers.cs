@@ -90,6 +90,15 @@ public sealed class ProviderClient : IDisposable {
   if (provider == Provider.OpenRouter) { using var json = await Send(Request(HttpMethod.Get,Providers.BaseUrl(provider,customUrl) + "/key",provider,key),provider,cancellation); if (!json.RootElement.TryGetProperty("data",out _)) throw new ProviderException("invalid_response"); }
   else _ = await Models(provider,key,customUrl,true,cancellation);
  }
+ public async Task ValidateSetupKey(Provider provider,string key,string customUrl,CancellationToken cancellation) {
+  if (!KeySetupSession.Plausible(provider,key,customUrl)) throw new ProviderException("bad_key",400);
+  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(15));
+  var url = Providers.BaseUrl(provider,customUrl) + (provider == Provider.OpenRouter ? "/key" : provider == Provider.Gemini ? "/v1beta/models" : "/models");
+  using var request = Request(HttpMethod.Get,url,provider,key);
+  try { using var response = await http.SendAsync(request,HttpCompletionOption.ResponseHeadersRead,deadline.Token); var status = (int)response.StatusCode; if (status is 400 or 401 or 403) throw new ProviderException("bad_key",status); if (!response.IsSuccessStatusCode) throw new ProviderException("provider_error",status); }
+  catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new ProviderException("timeout"); }
+  catch (HttpRequestException) { throw new ProviderException("network"); }
+ }
  public async Task<string> Cleanup(string raw, QuillSettings settings, string key, string destination, CancellationToken cancellation) {
   var p = settings.EffectiveCleanupProvider; var model = settings.EffectiveCleanupModel;
   if (model.Length == 0) return raw;

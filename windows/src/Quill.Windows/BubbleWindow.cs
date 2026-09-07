@@ -19,7 +19,7 @@ public sealed class InkMeter : FrameworkElement {
 }
 public sealed class BubbleWindow : Window {
  private readonly AppServices services; private readonly Border circle; private readonly Border halo; private readonly Grid glyph; private readonly TextBlock status; private readonly InkMeter meter; private readonly Border pill; private readonly Button cancel;
- private Point down; private Point windowDown; private bool dragging; private bool pressed; private bool holding; private readonly DispatcherTimer focusTimer;
+ private Point down; private Point windowDown; private bool dragging; private bool pressed; private bool longPressed; private CancellationTokenSource? longPress; private readonly DispatcherTimer focusTimer;
  public BubbleWindow(AppServices services) {
   this.services = services; Width = 258; Height = 110; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent; Topmost = true; ShowInTaskbar = false; ShowActivated = false;
   var grid = new Grid(); Content = grid;
@@ -31,6 +31,7 @@ public sealed class BubbleWindow : Window {
   System.Windows.Automation.AutomationProperties.SetName(circle, services.C("bubble.idle", "Start dictation")); grid.Children.Add(circle);
   cancel = new Button { Content = "×", Width = 32, Height = 32, MinHeight = 32, Padding = new(0), FontSize = 23, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new(130,0,0,0) }; System.Windows.Automation.AutomationProperties.SetName(cancel, services.C("action.cancel", "Cancel")); cancel.Click += async (_,_) => await services.Dictation.Cancel(); grid.Children.Add(cancel);
   circle.MouseLeftButtonDown += Down; circle.MouseMove += Move; circle.MouseLeftButtonUp += Up;
+  circle.LostMouseCapture += (_,_) => { pressed = false; longPress?.Cancel(); }; IsVisibleChanged += (_,_) => { if (!IsVisible) { pressed = false; longPress?.Cancel(); } };
   var menu = new ContextMenu(); AddMenu(menu,services.C("windows.tray.open","Open Quill"),services.ShowMain); AddMenu(menu,services.C("windows.bubble.clipboard","Dictate to clipboard"),async () => { await Task.Delay(200); await services.Dictation.DictateToClipboard(); }); AddMenu(menu,services.C("windows.tray.hide","Hide bubble"),services.HideBubble); AddMenu(menu,services.C("windows.bubble.discard","Discard dictation"),async () => await services.Dictation.Cancel()); circle.ContextMenu = menu;
   SourceInitialized += (_, _) => { var hwnd = new WindowInteropHelper(this).Handle; Native.SetWindowLong(hwnd, -20, Native.GetWindowLong(hwnd, -20) | 0x08000000 | 0x00000080); Position(); };
   focusTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) }; focusTimer.Tick += async (_,_) => { if (!services.Settings.Value.PinBubble && services.Dictation.State == DictationState.Idle) circle.Opacity = await services.Injector.CanType() ? 1 : 0.25; else circle.Opacity = 1; }; focusTimer.Start(); Closed += (_,_) => focusTimer.Stop(); Refresh();
@@ -40,12 +41,12 @@ public sealed class BubbleWindow : Window {
   var work = SystemParameters.WorkArea; Left = services.Settings.Value.BubbleX < 0 ? work.Right - Width : services.Settings.Value.BubbleX; Top = services.Settings.Value.BubbleY < 0 ? work.Top + work.Height / 3 : services.Settings.Value.BubbleY; Clamp(false);
  }
  private Point CursorPoint() { var cursor = System.Windows.Forms.Cursor.Position; var dpi = VisualTreeHelper.GetDpi(this); return new(cursor.X / dpi.DpiScaleX, cursor.Y / dpi.DpiScaleY); }
- private async void Down(object sender, MouseButtonEventArgs e) { down = CursorPoint(); windowDown = new(Left,Top); dragging = false; pressed = true; circle.CaptureMouse(); if (services.Settings.Value.HoldToTalk && services.Dictation.State == DictationState.Idle) { holding = true; await services.Dictation.Toggle(); } e.Handled = true; }
- private async void Move(object sender, MouseEventArgs e) { if (!pressed) return; var p = CursorPoint(); var delta = p - down; if (delta.Length > 6) { if (!dragging && holding) { holding = false; await services.Dictation.Cancel(); } dragging = true; } if (dragging) { Left = windowDown.X + delta.X; Top = windowDown.Y + delta.Y; } }
+ private async void Down(object sender, MouseButtonEventArgs e) { down = CursorPoint(); windowDown = new(Left,Top); dragging = false; pressed = true; longPressed = false; circle.CaptureMouse(); longPress?.Cancel(); longPress?.Dispose(); longPress = new(); var token = longPress.Token; e.Handled = true; try { await Task.Delay(500,token); if (pressed && !dragging && services.Dictation.State == DictationState.Idle) { longPressed = true; await services.Dictation.DictateToClipboard(); } } catch (OperationCanceledException) { } }
+ private void Move(object sender, MouseEventArgs e) { if (!pressed) return; var p = CursorPoint(); var delta = p - down; if (delta.Length > 6) { longPress?.Cancel(); dragging = true; } if (dragging) { Left = windowDown.X + delta.X; Top = windowDown.Y + delta.Y; } }
  private async void Up(object sender, MouseButtonEventArgs e) {
-  if (!pressed) return; pressed = false; circle.ReleaseMouseCapture();
+  if (!pressed) return; pressed = false; longPress?.Cancel(); circle.ReleaseMouseCapture();
   if (dragging) { var work = SystemParameters.WorkArea; if (Top + Height > work.Bottom - 28) { services.HideBubble(); services.ScheduleAutoReturn(); } else Clamp(true); }
-  else if (!services.Settings.Value.HoldToTalk || holding) await services.Dictation.Toggle(); holding = false; e.Handled = true;
+  else if (!longPressed) await services.Dictation.Toggle(); e.Handled = true;
  }
  private void Clamp(bool save) {
   var cursor = System.Windows.Forms.Cursor.Position; var area = System.Windows.Forms.Screen.FromPoint(cursor).WorkingArea; var dpi = VisualTreeHelper.GetDpi(this); var left = area.Left / dpi.DpiScaleX; var right = area.Right / dpi.DpiScaleX; var top = area.Top / dpi.DpiScaleY; var bottom = area.Bottom / dpi.DpiScaleY;

@@ -61,7 +61,7 @@ public sealed class SecretStore {
  }
  public void Activate(Provider provider,string id,string? endpoint = null) { lock (gate) { var ring = rings[provider]; if (!List(provider,endpoint).Any(k => k.Id == id)) throw new ArgumentException("Unknown key for this endpoint."); var scope = Scope(provider,endpoint); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; JsonFiles.Write(path,rings); } }
  public void Delete(Provider provider,string id) { lock (gate) { if (!rings.TryGetValue(provider,out var ring)) return; var removed = ring.Keys.FirstOrDefault(k => k.Id == id); ring.Keys.RemoveAll(k => k.Id == id); if (removed?.Endpoint is string scope && ring.ActiveByEndpoint.GetValueOrDefault(scope) == id) { var next = ring.Keys.FirstOrDefault(k => k.Endpoint == scope); if (next != null) ring.ActiveByEndpoint[scope] = next.Id; else ring.ActiveByEndpoint.Remove(scope); } if (ring.ActiveId == id) ring.ActiveId = ring.Keys.FirstOrDefault()?.Id; JsonFiles.Write(path,rings); } }
- public void Clear() { lock (gate) { rings.Clear(); if (File.Exists(path)) File.Delete(path); } }
+ public void Clear() { lock (gate) { rings.Clear(); if (File.Exists(path)) File.Delete(path); new KeySetupDraftStore(Path.GetDirectoryName(path)!).ClearAll(); } }
 }
 public sealed class HistoryStore {
  private readonly string connectionString;

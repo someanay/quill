@@ -61,13 +61,103 @@ public sealed class TextInjector : ITextInjector {
   var context = target.Context; var expected = InsertionComposer.Insert(context.Text,context.Start,context.End,text); var payloadLength = expected.Length - context.Text.Length + context.End - context.Start; var payload = expected.Substring(context.Start,payloadLength);
   current = await Capture();
   if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || current.Context != context || Native.ModifierPressed()) return false;
+  // Modern Notepad's RichEdit replaces supplementary Unicode packet input with U+FFFD.
+  // Choose a clipboard transaction before delivering anything; never retry partial input.
+  if (NativeTextPayload.NeedsClipboard(target.Application,payload)) {
+   using var clipboard = ClipboardLease.TryCreate(payload); if (clipboard == null) return false;
+   current = await Capture();
+   if (!clipboard.OwnsClipboard || current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || current.Context != context || Native.ModifierPressed()) return false;
+   if (Native.GetForegroundWindow() != target.Window) return false;
+   if (!NativeInputDispatch.QueuePaste(keys => Native.SendInput((uint)keys.Length,keys,Marshal.SizeOf<Native.INPUT>()))) return false;
+   return await Verify(target,expected);
+  }
   var inputs = new List<Native.INPUT>();
   foreach (var c in payload) { inputs.Add(Native.Unicode(c,false)); inputs.Add(Native.Unicode(c,true)); }
-  if (inputs.Count == 0 || Native.SendInput((uint)inputs.Count,inputs.ToArray(),Marshal.SizeOf<Native.INPUT>()) != inputs.Count) return false;
-  await Task.Delay(180);
-  current = await Capture(); if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId)) return false;
-  var after = current.Context?.Text;
-  return after != null && after.Replace("\r\n","\n",StringComparison.Ordinal) == expected.Replace("\r\n","\n",StringComparison.Ordinal);
+  var batch = inputs.ToArray();
+  if (inputs.Count == 0 || Native.GetForegroundWindow() != target.Window || Native.ModifierPressed() || Native.SendInput((uint)inputs.Count,batch,Marshal.SizeOf<Native.INPUT>()) != inputs.Count) return false;
+  return await Verify(target,expected);
+ }
+ private async Task<bool> Verify(FocusTarget target,string expected) {
+  for (int attempt = 0;attempt < 5;attempt++) {
+   await Task.Delay(attempt == 0 ? 180 : 100); var current = await Capture();
+   if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId)) return false;
+   if (current.Context?.Text.Replace("\r\n","\n",StringComparison.Ordinal) == expected.Replace("\r\n","\n",StringComparison.Ordinal)) return true;
+  }
+  return false;
+ }
+}
+public static class NativeTextPayload {
+ public static bool NeedsClipboard(string application,string text) => string.Equals(application,"Notepad",StringComparison.OrdinalIgnoreCase) && text.Any(char.IsSurrogate);
+}
+public static class NativeInputDispatch {
+ public static bool QueuePaste(Func<Native.INPUT[],uint> send) {
+  var queued = send([Native.Key(0x11,false),Native.Key(0x56,false),Native.Key(0x56,true),Native.Key(0x11,true)]);
+  // Never resend a paste. If only a prefix was queued, release only our unmatched keys.
+  // The caller keeps the clipboard lease alive while verifying the eventual field result.
+  if (queued == 1 || queued == 3) send([Native.Key(0x11,true)]);
+  else if (queued == 2) send([Native.Key(0x56,true),Native.Key(0x11,true)]);
+  return queued > 0;
+ }
+}
+public interface IClipboardAccess {
+ uint Sequence { get; }
+ System.Windows.IDataObject? Read();
+ object? GetData(string format);
+ void Write(System.Windows.IDataObject data);
+ void Clear();
+}
+public sealed class WindowsClipboardAccess : IClipboardAccess {
+ public uint Sequence => Native.GetClipboardSequenceNumber();
+ public System.Windows.IDataObject? Read() => System.Windows.Clipboard.GetDataObject();
+ public object? GetData(string format) => System.Windows.Clipboard.GetData(format);
+ public void Write(System.Windows.IDataObject data) => System.Windows.Clipboard.SetDataObject(data,true);
+ public void Clear() => System.Windows.Clipboard.Clear();
+}
+public sealed class ClipboardLease : IDisposable {
+ private const string Marker = "Quill.Insertion.Transaction";
+ private readonly string token = Guid.NewGuid().ToString("N");
+ private readonly System.Windows.DataObject? previous;
+ private readonly IClipboardAccess access;
+ private readonly Func<TimeSpan,Task> delay;
+ private readonly System.Windows.Threading.Dispatcher? dispatcher;
+ public Task Restoration { get; private set; } = Task.CompletedTask;
+ private bool disposed;
+ private ClipboardLease(System.Windows.DataObject? previous,IClipboardAccess access,Func<TimeSpan,Task> delay) { this.previous = previous; this.access = access; this.delay = delay; dispatcher = access is WindowsClipboardAccess ? System.Windows.Threading.Dispatcher.CurrentDispatcher : null; }
+ private static bool ExpectedFailure(Exception e) => e is COMException or System.Runtime.Serialization.SerializationException or System.IO.IOException or ArgumentException or InvalidOperationException or NotSupportedException;
+ public bool OwnsClipboard { get { try { return access.GetData(Marker) as string == token; } catch (Exception e) when (ExpectedFailure(e)) { return false; } } }
+ public static ClipboardLease? TryCreate(string text,IClipboardAccess? clipboard = null,Func<TimeSpan,Task>? retryDelay = null) {
+  var access = clipboard ?? new WindowsClipboardAccess(); ClipboardLease? lease = null;
+  try {
+   // Materialize every advertised format before replacing the clipboard, including rich text.
+   // If a source cannot render its data, leave the clipboard alone and refuse automatic paste.
+   var sequence = access.Sequence; var source = access.Read(); System.Windows.DataObject? snapshot = null;
+   if (source != null) { snapshot = new(); foreach (var format in source.GetFormats(false)) { var value = source.GetData(format,false); if (value == null) return null; if (value is System.IO.MemoryStream stream) value = new System.IO.MemoryStream(stream.ToArray()); else if (value is byte[] bytes) value = bytes.ToArray(); snapshot.SetData(format,value,false); } }
+   lease = new ClipboardLease(snapshot,access,retryDelay ?? (duration => Task.Delay(duration))); var payload = new System.Windows.DataObject(); payload.SetText(text); payload.SetData(Marker,lease.token);
+   // Windows' documented marker excludes this short-lived transport from history and sync.
+   payload.SetData("ExcludeClipboardContentFromMonitorProcessing",new System.IO.MemoryStream([0]));
+   if (access.Sequence != sequence) return null;
+   access.Write(payload); return lease;
+  } catch (Exception e) when (ExpectedFailure(e)) { lease?.Dispose(); return null; }
+ }
+ public void Dispose() {
+  if (disposed) return; disposed = true;
+  if (!TryRestore()) Restoration = RestoreLater();
+ }
+ private bool TryRestore() {
+  try {
+   if (dispatcher != null && !dispatcher.CheckAccess()) return dispatcher.Invoke(TryRestore);
+   if (access.GetData(Marker) as string != token) return true;
+   if (previous != null) access.Write(previous); else access.Clear(); return true;
+  } catch (Exception e) when (ExpectedFailure(e) || e is OperationCanceledException) { return false; }
+ }
+ private async Task RestoreLater() {
+  // Short bounded retries keep the complete original snapshot. A newer owner always wins.
+  try {
+   foreach (var milliseconds in new[] {100,400,1500}) { await delay(TimeSpan.FromMilliseconds(milliseconds)); if (TryRestore()) return; }
+   await delay(TimeSpan.FromSeconds(58));
+   void Expire() { if (access.GetData(Marker) as string == token) access.Clear(); }
+   if (dispatcher != null && !dispatcher.CheckAccess()) dispatcher.Invoke(Expire); else Expire();
+  } catch (Exception e) when (ExpectedFailure(e) || e is OperationCanceledException) { /* Clipboard contention must never affect confirmed insertion. */ }
  }
 }
 public interface IClipboardService { bool Copy(string text,bool transient = true); Task<bool> Paste(string text,ITextInjector injector); }
@@ -94,6 +184,7 @@ public static class StartupService {
  public static void Set(bool enabled) { using var key = Registry.CurrentUser.CreateSubKey(PathKey); if (enabled) key.SetValue("Quill", "\"" + Environment.ProcessPath + "\" --background"); else key.DeleteValue("Quill", false); }
 }
 public static class Native {
+ [DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
  [DllImport("user32.dll")] public static extern nint GetForegroundWindow();
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(nint hwnd, out uint processId);
  [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(nint hwnd, int id, uint modifiers, uint key);
@@ -109,5 +200,6 @@ public static class Native {
  [StructLayout(LayoutKind.Sequential)] public struct KEYBDINPUT { public ushort virtualKey; public ushort scan; public uint flags; public uint time; public nuint extra; }
  [StructLayout(LayoutKind.Sequential)] public struct MOUSEINPUT { public int x; public int y; public uint data; public uint flags; public uint time; public nuint extra; }
  public static INPUT Unicode(char c, bool up) => new() { type = 1, union = new() { keyboard = new() { scan = c, flags = 0x0004u | (up ? 0x0002u : 0) } } };
+ public static INPUT Key(ushort key,bool up) => new() { type = 1,union = new() { keyboard = new() { virtualKey = key,flags = up ? 2u : 0u } } };
  public static bool ModifierPressed() => new[] { 0x10, 0x11, 0x12, 0x5b, 0x5c }.Any(k => (GetAsyncKeyState(k) & 0x8000) != 0);
 }

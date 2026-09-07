@@ -512,6 +512,7 @@
     "windows.keys.guide": "Open your provider's key console, sign in, create a key, then copy it and return here. Provider usage may incur charges.",
     "windows.keys.key": "API key",
     "windows.keys.label": "Key label (optional)",
+    "windows.keys.other": "Other providers: OpenAI and custom",
     "windows.keys.provider": "Provider",
     "windows.keys.secure": "Keys are encrypted using your Windows account. They stay on this PC and are sent only to their selected provider. A rejected new key leaves your saved keys intact.",
     "windows.keys.validate": "Verify & save key",

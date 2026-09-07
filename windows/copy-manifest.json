@@ -3083,6 +3083,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.keys.other": {
+      "default": "Other providers: OpenAI and custom",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.keys.provider": {
       "default": "Provider",
       "placeholders": [],
