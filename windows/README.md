@@ -6,6 +6,8 @@ Fresh native Windows implementation of the current Android app. Requires Windows
 
 Extract `Quill-Windows-2.0.0-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. Alternatively, run `app/Quill.exe` directly. The self-contained package includes .NET; no runtime download is required.
 
+The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. The separately compiled `win-arm64` download targets ARM Windows PCs; it has not been executed on ARM hardware.
+
 This build is unsigned. Windows may show its normal unknown-publisher prompt. The source and SHA-256 checksum are provided for review; no signing identity is fabricated.
 
 ## Use

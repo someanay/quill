@@ -3,6 +3,8 @@ using Quill.Windows;
 using Xunit;
 namespace Quill.Windows.Tests;
 public sealed class DomainTests {
+ [Fact] public void ReaddingCustomWordReplacesExistingMappingIgnoringCase() { var words = new List<CustomWord> {new("quell","Old"),new("other","Other"),new("QUELL","Second")}; Words.Upsert(words,"  Quell "," Quill "); Assert.Equal(new[] {new CustomWord("other","Other"),new CustomWord("Quell","Quill")},words); Assert.Equal("Quill",Words.Apply("quell",words)); }
+ [Fact] public void BlankCustomWordUpsertLeavesVocabularyUnchanged() { var words = new List<CustomWord> {new("word","Word")}; Words.Upsert(words," ","value"); Words.Upsert(words,"word"," "); Assert.Equal(new[] {new CustomWord("word","Word")},words); }
  [Fact] public void GlobalShortcutMatchesDocumentedControlWindowsSpace() { Assert.True((HotkeyService.Modifiers & 0x0008) != 0); Assert.True((HotkeyService.Modifiers & 0x0002) != 0); Assert.Equal(0u,HotkeyService.Modifiers & 0x0004); }
  public static IEnumerable<object[]> AndroidCleanupCases() { using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"parity","cleanup.json"))); return json.RootElement.GetProperty("cases").EnumerateArray().Select(item => new object[] { item.GetProperty("raw").GetString()!,item.GetProperty("cleaned").GetString()!,item.GetProperty("accepted").GetBoolean() }).ToArray(); }
  [Theory][MemberData(nameof(AndroidCleanupCases))] public void CleanupMatchesAndroid(string raw,string clean,bool expected) => Assert.Equal(expected,CleanupGuard.PreservesMeaning(raw,clean));

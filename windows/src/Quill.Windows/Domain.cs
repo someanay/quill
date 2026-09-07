@@ -72,6 +72,7 @@ public sealed class QuillSettings {
 public record CustomWord(string Heard, string Replacement);
 public record HistoryEntry(long Id, DateTimeOffset Created, string Text, string Destination, long DurationMs, string Status, string Provider);
 public static class Words {
+ public static void Upsert(IList<CustomWord> words,string heard,string replacement) { heard = heard.Trim(); replacement = replacement.Trim(); if (heard.Length == 0 || replacement.Length == 0) return; for (int i = words.Count - 1;i >= 0;i--) if (string.Equals(words[i].Heard,heard,StringComparison.OrdinalIgnoreCase)) words.RemoveAt(i); words.Add(new(heard,replacement)); }
  public static string Apply(string text, IEnumerable<CustomWord> words) {
   foreach (var word in words.Where(w => !string.IsNullOrWhiteSpace(w.Heard))) text = Regex.Replace(text, @"(?<![\p{L}\p{N}])" + Regex.Escape(word.Heard.Trim()) + @"(?![\p{L}\p{N}])", _ => word.Replacement, RegexOptions.IgnoreCase);
   return text; }

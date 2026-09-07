@@ -479,6 +479,7 @@
     "windows.contacts.enabled": "Allow local contact imports",
     "windows.contacts.help": "Import a vCard file from your contacts app. Quill keeps candidate names locally; it does not retain phone numbers or email addresses. Imported names are not sent to speech or cleanup providers.",
     "windows.contacts.import": "Import contacts (.vcf)",
+    "windows.error.no_models": "Your provider returned no compatible models. Choose a different provider or enter a supported model ID.",
     "windows.history.characters": "characters",
     "windows.history.clear": "Clear all history",
     "windows.history.clear_confirm": "Permanently delete every saved dictation?",

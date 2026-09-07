@@ -29,13 +29,17 @@ jobs:
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
       - name: Verify installer integrity and safe uninstall
         run: ./windows/installer/Test-Installer.ps1
-      - name: Publish portable Windows application
-        run: dotnet publish windows/src/Quill.Windows/Quill.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows/portable
-      - name: Upload Windows application
+      - name: Package self-contained x64 application and installer
+        run: ./windows/installer/Publish-Quill.ps1 -Runtime win-x64 -SkipTests
+      - name: Cross-compile and package ARM64 application
+        run: ./windows/installer/Publish-Quill.ps1 -Runtime win-arm64 -SkipTests
+      - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
-          name: Quill-Windows-x64-portable
-          path: dist/windows/portable
+          name: Quill-Windows-packages
+          path: |
+            dist/windows/*.zip
+            dist/windows/*.zip.sha256
           retention-days: 14
       - name: Upload test results
         if: always()

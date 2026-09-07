@@ -2883,6 +2883,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.error.no_models": {
+      "default": "Your provider returned no compatible models. Choose a different provider or enter a supported model ID.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.history.characters": {
       "default": "characters",
       "placeholders": [],

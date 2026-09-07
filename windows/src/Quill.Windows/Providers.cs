@@ -20,7 +20,7 @@ public sealed class ProviderClient : IDisposable {
  }
  private async Task<JsonDocument> Send(HttpRequestMessage request, Provider provider, CancellationToken cancellation) {
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(operationTimeout);
-  try { return await SendCore(request,provider,deadline.Token); } catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new ProviderException("timeout"); } catch (HttpRequestException) { throw new ProviderException("network"); }
+  try { return await SendCore(request,provider,deadline.Token); } catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new ProviderException("timeout"); } catch (Exception e) when (e is HttpRequestException or IOException) { throw new ProviderException("network"); }
  }
  private async Task<JsonDocument> SendCore(HttpRequestMessage request, Provider provider, CancellationToken cancellation) {
   using (request) {
@@ -84,7 +84,7 @@ public sealed class ProviderClient : IDisposable {
    token = provider == Provider.Gemini && json.RootElement.TryGetProperty("nextPageToken",out var next) && next.ValueKind == JsonValueKind.String ? next.GetString() : null;
    if (!string.IsNullOrWhiteSpace(token) && (!seen.Add(token) || seen.Count >= 20)) throw new ProviderException("invalid_response");
   } while (!string.IsNullOrWhiteSpace(token));
-  return ModelCatalog.Rank(result,speech);
+  if (result.Count == 0) throw new ProviderException("no_models"); return ModelCatalog.Rank(result,speech);
  }
  public async Task ValidateKey(Provider provider, string key, string customUrl, CancellationToken cancellation) {
   if (provider == Provider.OpenRouter) { using var json = await Send(Request(HttpMethod.Get,Providers.BaseUrl(provider,customUrl) + "/key",provider,key),provider,cancellation); if (!json.RootElement.TryGetProperty("data",out _)) throw new ProviderException("invalid_response"); }

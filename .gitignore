@@ -51,6 +51,8 @@ windows/artifacts/
 **/DerivedData/
 **/*.xcodeproj/
 **/*.xcresult/
+**/*.xcarchive/
+**/ReleaseDevice/
 **/TestResults/
 /docs/OVERNIGHT_AUDIT_2026-08-18.md
 
