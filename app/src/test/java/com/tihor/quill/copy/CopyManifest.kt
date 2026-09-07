@@ -72,7 +72,7 @@ object CopyManifest {
                     putJsonObject(key) {
                         put("default", default)
                         putJsonArray("placeholders") { placeholderTokens(default).forEach { add(it) } }
-                        put("overridable", key in CopyKeys.OVERRIDABLE)
+                        put("overridable", true) // Local source editing; installed copy remains binary-only.
                         put("optionalBlank", key in CopyKeys.OPTIONAL_BLANK)
                     }
                 }

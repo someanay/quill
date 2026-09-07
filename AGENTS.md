@@ -138,22 +138,14 @@ If a milestone is too big for one pass, split into sub-tasks and run the loop pe
 
 ---
 
-## Hard rule — compliance copy is binary-only, never soft-coded or remotely overridable
+## Copy authoring: local source edits, app releases only
 
-These strings are **locked to the binary** and must **never** be soft-coded behind the Copy Catalog
-OTA layer or made remotely overridable in any form:
+User-approved policy, September 7, 2026: all copy-tool catalog strings, including
+permission rationales, privacy promises, and key-required warnings, may be edited
+locally. Preserve required text and formatting placeholders. Review compliance copy
+against actual behavior before releasing the rebuilt APK/AAB.
 
-- the accessibility **prominent-disclosure + affirmative-consent** text,
-- all **permission rationales** (mic, overlay, accessibility),
-- the **privacy / data-safety promises** (no backend for user data; key & audio stay on device),
-- the **BYOK key-required warning**.
-
-Reason (spec §2.3 / §6): these are exactly the strings (a) Google Play requires to match real
-behaviour and be present at review, and (b) an attacker controlling the copy host would most want to
-rewrite (phishing, false privacy claims). The OTA override layer **physically ignores** them via a
-hardcoded allowlist — locked keys can only ever resolve to the baked-in binary value. When the Copy
-Catalog lands (M8 foundation, M13 OTA), enforce this with the allowlist **and** a test that a bundle
-attempting to set a locked key does not change it.
-
-Everything else about the architecture (no backend for user data, BYOK, sensitive-field exclusion,
-private mode, FLAC-in-v1, 300 s session cap) lives in `spec.md`/`prd.md` — defer to those docs.
+No remote copy updates are allowed. Installed apps resolve bundled text only;
+changes reach users through a new app release. Accessibility disclosure remains in
+Android XML resources and must remain accurate and present in the release binary.
+The former compliance editing locks and OTA allowlist requirements are retired.

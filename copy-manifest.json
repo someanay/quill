@@ -214,43 +214,43 @@
     "compliance.key.required_body": {
       "default": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us.",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.key.required_title": {
       "default": "You'll need your own API key",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.privacy.promise": {
       "default": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.privacy.welcome_pill": {
       "default": "Your key, your audio - nothing through our servers",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.rationale.accessibility": {
       "default": "Quill uses accessibility only to detect the focused text field and insert your dictation. It never reads or writes password or banking fields.",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.rationale.mic": {
       "default": "Quill needs the microphone to record what you dictate. Audio is sent only to the speech provider whose key you supply, and is deleted after a successful transcription.",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "compliance.rationale.overlay": {
       "default": "The floating bubble needs permission to display over other apps. That bubble is also what lets Quill record while you're in another app.",
       "placeholders": [],
-      "overridable": false,
+      "overridable": true,
       "optionalBlank": false
     },
     "history.clear.body": {

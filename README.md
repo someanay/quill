@@ -50,7 +50,7 @@ configured speech/cleanup providers.
 
 Use the local Quill Copy Tool to save drafts and **Apply to app source**. Changes
 update `app/src/main/assets/copy/strings.default.json` and `copy-manifest.json`.
-Permission disclosures and privacy promises remain locked in the editor.
+All catalog strings are editable locally, including compliance text. Accessibility disclosure remains in Android XML resources.
 
 Build both signed artifacts with `BUILD-ANDROID.cmd`, or:
 
