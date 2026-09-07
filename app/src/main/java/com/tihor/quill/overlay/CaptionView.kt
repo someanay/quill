@@ -51,12 +51,13 @@ class CaptionView(context: Context) : View(context) {
         color = Color.WHITE
         setShadowLayer(dp(14f), 0f, dp(4f), 0x40000000)
     }
-    private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE0A03A.toInt() }
+    private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF234DCE.toInt() }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        typeface = context.resources.getFont(com.tihor.quill.R.font.ibm_plex_sans)
         textSize = dp(12f)
         isFakeBoldText = true
     }
-    private val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = dp(11f) }
+    private val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { typeface = context.resources.getFont(com.tihor.quill.R.font.ibm_plex_sans); textSize = dp(11f) }
 
     init { setLayerType(LAYER_TYPE_SOFTWARE, null) }
 
@@ -83,9 +84,9 @@ class CaptionView(context: Context) : View(context) {
     }
 
     private fun leadColor(): Int = when (mode) {
-        Mode.TRANSCRIBING, Mode.PASTE -> 0xFF3A2EA3.toInt() // brand-ink
+        Mode.TRANSCRIBING, Mode.PASTE -> 0xFF1A3FAF.toInt() // brand-ink
         Mode.ERROR, Mode.OFFLINE -> 0xFFD6453D.toInt()      // error
-        Mode.RECORDING -> 0xFF8A5A12.toInt()                // gold-deep
+        Mode.RECORDING -> 0xFF1A3FAF.toInt()                // gold-deep
     }
 
     private fun contentWidth(): Float {
@@ -136,7 +137,7 @@ class CaptionView(context: Context) : View(context) {
             val gap = dp(6f)
             val blockTop = cy - (textPaint.textSize + gap + subPaint.textSize) / 2f
             canvas.drawText(lead, left + padH, blockTop + textPaint.textSize, textPaint)
-            subPaint.color = 0xFF6E6E81.toInt() // muted
+            subPaint.color = 0xFF5C665F.toInt() // muted
             canvas.drawText(sub, left + padH, blockTop + textPaint.textSize + gap + subPaint.textSize, subPaint)
         }
     }

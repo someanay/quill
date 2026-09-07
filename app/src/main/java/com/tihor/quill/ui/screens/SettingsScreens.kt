@@ -1395,7 +1395,7 @@ fun BubbleAppearanceScreen(nav: QuillNav) {
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PreviewTile(Color(0xFFF0F1F6), copy(K.SETTINGS_BUBBLE_PREVIEW_LIGHT), Color(0xFF9A9AAC), previewSize)
+                PreviewTile(Color(0xFFF0F1F6), copy(K.SETTINGS_BUBBLE_PREVIEW_LIGHT), Color(0xFF7B867E), previewSize)
                 PreviewTile(Color(0xFF15161C), copy(K.SETTINGS_BUBBLE_PREVIEW_DARK), Color(0xFF888888), previewSize)
             }
         }
@@ -1550,12 +1550,7 @@ fun AdvancedScreen(nav: QuillNav) {
 fun AboutScreen(nav: QuillNav) {
     DetailScaffold(copy(K.SETTINGS_ABOUT_TITLE), nav) {
         Column(Modifier.fillMaxWidth().padding(top = 14.dp, bottom = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            com.tihor.quill.ui.components.PermissionIllustration(com.tihor.quill.ui.components.QuillIcons.Feather)
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Quill", // copy-exempt
-                style = MaterialTheme.typography.titleLarge.copy(fontFamily = com.tihor.quill.ui.theme.WordmarkFont),
-            )
+            com.tihor.quill.ui.components.Wordmark()
             Text(
                 copy(K.SETTINGS_ABOUT_VERSION, com.tihor.quill.BuildConfig.VERSION_NAME, com.tihor.quill.BuildConfig.VERSION_CODE),
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint,

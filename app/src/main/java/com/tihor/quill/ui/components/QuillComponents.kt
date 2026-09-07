@@ -95,38 +95,22 @@ fun Banner(
     }
 }
 
-/**
- * "Quill" wordmark (design_system.md §8.1 / §14): a brand-gradient rounded-square mark with a nib
- * glyph + the serif logotype. The only place the serif is used. (Nib drawn simply for v1; swap in the
- * board SVG later.)
- */
+/** The website wordmark, including its blue full stop. */
 @Composable
 fun Wordmark(modifier: Modifier = Modifier) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(
-                    androidx.compose.ui.graphics.Brush.linearGradient(com.tihor.quill.ui.theme.BrandGradient),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                QuillIcons.Feather,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-        Spacer(Modifier.width(10.dp))
-        Text(
-            "Quill", // copy-exempt — brand wordmark, not localizable copy
-            fontFamily = com.tihor.quill.ui.theme.WordmarkFont,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    Text(
+        text = androidx.compose.ui.text.buildAnnotatedString {
+            append("quill") // copy-exempt: brand wordmark
+            pushStyle(androidx.compose.ui.text.SpanStyle(color = if (androidx.compose.foundation.isSystemInDarkTheme()) com.tihor.quill.ui.theme.Lavender else com.tihor.quill.ui.theme.InkIndigo))
+            append(".")
+            pop()
+        },
+        modifier = modifier,
+        fontFamily = com.tihor.quill.ui.theme.WordmarkFont,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+        fontSize = androidx.compose.ui.unit.TextUnit(34f, androidx.compose.ui.unit.TextUnitType.Sp),
+        letterSpacing = androidx.compose.ui.unit.TextUnit(-2f, androidx.compose.ui.unit.TextUnitType.Sp),
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+    )
 }

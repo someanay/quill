@@ -1,3 +1,13 @@
+> September 7, 2026: The supplied Quill_Website landing page now defines Android branding.
+> IBM Plex Sans is bundled for body text, controls, and the lowercase `quill.` wordmark;
+> IBM Plex Serif is bundled for headings. Light surfaces use #F5F7F5 / #EDF0ED,
+> text #202522, secondary text #5C665F, rules #D9DED9, and cobalt #234DCE.
+> Dark surfaces follow the website's editor panel (#11141A / #171B23), with #B6C9FF accents.
+> Controls have 4dp corners, grouped content 8dp, and dialogs 16dp. Floating controls
+> remain circular for dragging and recording. Blue replaces the former gold/purple signal palette;
+> recording remains identifiable by its stop glyph, animated meter, timer, and halo.
+> The launcher uses outlined font glyphs for the full wordmark, within Android's safe zone.
+> Earlier Ink & Signal specifications below are historical where they conflict with these tokens.
 # Quill — Design System ("Ink & Signal")
 
 > Compose/Material 3 handoff for `com.tihor.quill`. This is the **visual source of truth**, paired

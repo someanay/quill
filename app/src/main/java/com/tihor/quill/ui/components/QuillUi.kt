@@ -71,7 +71,7 @@ fun QuillPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = MaterialTheme.shapes.extraSmall,
         interactionSource = interaction,
         modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
     ) { ButtonContent(text, leadingIcon) }
@@ -93,7 +93,7 @@ fun QuillTonalButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = MaterialTheme.shapes.extraSmall,
         colors = ButtonDefaults.buttonColors(containerColor = q.brandSoft, contentColor = q.brandInk),
         interactionSource = interaction,
         modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
@@ -116,7 +116,7 @@ fun QuillGhostButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = MaterialTheme.shapes.extraSmall,
         border = BorderStroke(1.dp, q.lineStrong),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = q.brandInk),
         interactionSource = interaction,
@@ -138,7 +138,7 @@ fun QuillDangerButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = CircleShape,
+        shape = MaterialTheme.shapes.extraSmall,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
@@ -205,7 +205,7 @@ fun QuillCard(
     val q = MaterialTheme.quill
     Surface(
         modifier = modifier.fillMaxWidth().animateContentSize(),
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -222,7 +222,7 @@ fun QuillListContainer(
     val q = MaterialTheme.quill
     Surface(
         modifier = modifier.fillMaxWidth().animateContentSize(),
-        shadowElevation = 1.dp,
+        shadowElevation = 0.dp,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -388,7 +388,7 @@ fun QuillBubble(
     val gradient: List<Color> = when (state) {
         BubbleState.IDLE -> BrandGradient
         BubbleState.RECORDING -> GoldGradient
-        BubbleState.BUSY -> listOf(Color(0xFF5B5BD6), Color(0xFF7E78E8))
+        BubbleState.BUSY -> listOf(Color(0xFF3E5579), Color(0xFF526F9E))
         BubbleState.ERROR -> listOf(Color(0xFFD6453D), Color(0xFFE8635B))
         BubbleState.PAUSED -> listOf(q.lineStrong, q.lineStrong)
     }

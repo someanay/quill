@@ -76,6 +76,7 @@ class BinTargetView(
     private val pillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
+        typeface = context.resources.getFont(R.font.ibm_plex_sans)
         textSize = dp(12.5f)
         isFakeBoldText = true
     }
@@ -173,7 +174,7 @@ class BinTargetView(
 
     private companion object {
         /** design_system.md §2.1 `text` (ink) and `err`. */
-        const val INK = 0xFF1C1B33.toInt()
+        const val INK = 0xFF202522.toInt()
         const val ERR = 0xFFD6453D.toInt()
 
         /** How much the target grows once the bubble is inside the dismiss zone. */

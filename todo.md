@@ -428,3 +428,8 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Retain a local copy editor, preserve existing drafts, and apply validated edits to source.
 - [x] Add APK/AAB release script with signing checks and explicit Play version parameters.
 - [ ] Physical app upgrade check: phone not connected during this pass.
+
+### Website branding (Android release polish)
+- [x] Bundle the supplied IBM Plex fonts; apply website colors, type, shapes, and wordmark across Android and overlays.
+- [x] Replace adaptive launcher artwork with the lowercase website wordmark.
+- [ ] Review the new screens and launcher on the physical phone (not connected during implementation).

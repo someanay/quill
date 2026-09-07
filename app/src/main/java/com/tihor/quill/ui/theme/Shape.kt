@@ -6,9 +6,9 @@ import androidx.compose.ui.unit.dp
 
 // design_system.md §4
 val QuillShapes = Shapes(
-    extraSmall = RoundedCornerShape(8.dp),
-    small = RoundedCornerShape(12.dp), // fields, banners
-    medium = RoundedCornerShape(22.dp), // cards, lists
-    large = RoundedCornerShape(26.dp),
-    extraLarge = RoundedCornerShape(28.dp), // dialogs, sheets
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(6.dp), // fields, banners
+    medium = RoundedCornerShape(8.dp), // cards, lists
+    large = RoundedCornerShape(12.dp),
+    extraLarge = RoundedCornerShape(16.dp), // dialogs, sheets
 )

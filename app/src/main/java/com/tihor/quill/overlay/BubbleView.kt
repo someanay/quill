@@ -130,7 +130,7 @@ class BubbleView(
         ) == 0f
 
     private var transition = 1f
-    private var fromGradient = intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())
+    private var fromGradient = intArrayOf(0xFF234DCE.toInt(), 0xFF244FD8.toInt())
     private var stateAnimator: ValueAnimator? = null
     private var pressAnimator: ValueAnimator? = null
     private var pressScale = 1f
@@ -164,14 +164,14 @@ class BubbleView(
     /** §2.4 gradient stops per state (150° linear). The resting states honour [darkTheme]. */
     private fun gradientFor(state: BubbleState): IntArray = when (state) {
         BubbleState.IDLE, BubbleState.PASTE -> restingGradient()
-        BubbleState.RECORDING -> intArrayOf(0xFFE0A03A.toInt(), 0xFFEFC069.toInt())  // Gold (live)
-        BubbleState.TRANSCRIBING -> intArrayOf(0xFF5B5BD6.toInt(), 0xFF7E78E8.toInt()) // Busy
+        BubbleState.RECORDING -> intArrayOf(0xFF234DCE.toInt(), 0xFF244FD8.toInt())  // Gold (live)
+        BubbleState.TRANSCRIBING -> intArrayOf(0xFF3E5579.toInt(), 0xFF526F9E.toInt()) // Busy
         BubbleState.ERROR -> intArrayOf(0xFFD6453D.toInt(), 0xFFE8635B.toInt())      // Error
     }
 
     private fun restingGradient(): IntArray =
-        if (darkTheme) intArrayOf(0xFF2A2A33.toInt(), 0xFF3C3C49.toInt())            // Charcoal
-        else intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())                      // Brand
+        if (darkTheme) intArrayOf(0xFF202522.toInt(), 0xFF343E37.toInt())            // Charcoal
+        else intArrayOf(0xFF234DCE.toInt(), 0xFF244FD8.toInt())                      // Brand
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         setMeasuredDimension(viewSize, viewSize)
@@ -203,7 +203,7 @@ class BubbleView(
             val phase = if (reducedMotion) 0.5f else (sin(now / 1800.0 * 2 * Math.PI) * 0.5 + 0.5).toFloat()
             val haloR = r + dp(7f) + dp(6f) * phase
             val haloAlpha = (0x47 - (0x2D * phase)).toInt().coerceIn(0x10, 0x47) // .28 → .10
-            haloPaint.color = Color.argb(haloAlpha, 0xE0, 0xA0, 0x3A)
+            haloPaint.color = Color.argb(haloAlpha, 0x23, 0x4D, 0xCE)
             canvas.drawCircle(cx, cy, haloR, haloPaint)
         }
 

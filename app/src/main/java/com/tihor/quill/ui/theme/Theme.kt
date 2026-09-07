@@ -9,11 +9,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
-// Ink & Signal scheme — design_system.md §2.3 / §14. NO dynamic colour (§2.3): Quill's identity is
-// the fixed ink-indigo + gold; wallpaper-derived colour would erase it.
+// Fixed website palette, with a dark companion based on its editor panel.
 private val LightScheme = lightColorScheme(
     primary = InkIndigo, onPrimary = Color.White,
     primaryContainer = InkIndigoSoft, onPrimaryContainer = InkIndigoText,
+    secondary = Ink2, onSecondary = Color.White,
+    secondaryContainer = PaperSunken, onSecondaryContainer = Ink,
+    surfaceTint = InkIndigo, inverseSurface = InkSurfaceDark, inverseOnSurface = TextDark,
+    surfaceContainerLowest = PaperSurface, surfaceContainerLow = Paper,
+    surfaceContainer = PaperSunken, surfaceContainerHigh = PaperSunken, surfaceContainerHighest = Line,
     background = Paper, onBackground = Ink,
     surface = PaperSurface, onSurface = Ink,
     surfaceVariant = PaperSunken, onSurfaceVariant = Muted,
@@ -25,6 +29,11 @@ private val LightScheme = lightColorScheme(
 private val DarkScheme = darkColorScheme(
     primary = InkIndigoDark, onPrimary = Color.White,
     primaryContainer = InkIndigoSoftDk, onPrimaryContainer = Lavender,
+    secondary = Text2Dark, onSecondary = InkBgDark,
+    secondaryContainer = InkSunkenDark, onSecondaryContainer = TextDark,
+    surfaceTint = Lavender, inverseSurface = Paper, inverseOnSurface = Ink,
+    surfaceContainerLowest = InkBgDark, surfaceContainerLow = InkSurfaceDark,
+    surfaceContainer = InkSunkenDark, surfaceContainerHigh = InkSunkenDark, surfaceContainerHighest = LineDark,
     background = InkBgDark, onBackground = TextDark,
     surface = InkSurfaceDark, onSurface = TextDark,
     surfaceVariant = InkSunkenDark, onSurfaceVariant = MutedDark,

@@ -2,26 +2,28 @@ package com.tihor.quill.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.tihor.quill.R
 
-/** Shared Android typography. Serif headings contrast with the system sans-serif controls. */
-val WordmarkFont: FontFamily = FontFamily.Serif
-
-/** Shared Android typography. Serif headings contrast with the system sans-serif controls. */
+// Bundled website fonts; no downloadable-font dependency.
+val PlexSans = FontFamily(Font(R.font.ibm_plex_sans))
+val PlexSerif = FontFamily(Font(R.font.ibm_plex_serif))
+val WordmarkFont = PlexSans
+private fun sans(size: Int, height: Int, weight: FontWeight = FontWeight.Normal) =
+    TextStyle(fontFamily = PlexSans, fontSize = size.sp, lineHeight = height.sp, fontWeight = weight)
+private fun serif(size: Int, height: Int) =
+    TextStyle(fontFamily = PlexSerif, fontSize = size.sp, lineHeight = height.sp,
+        fontWeight = FontWeight.Normal, letterSpacing = (-0.5).sp)
 val QuillType = Typography(
-    displaySmall = TextStyle(fontFamily = WordmarkFont, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
-    headlineSmall = TextStyle(fontFamily = WordmarkFont, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
-    titleLarge = TextStyle(fontFamily = WordmarkFont, fontSize = 24.sp, lineHeight = 30.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
-    titleMedium = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold),
-    bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Normal),
-    bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal),
-    labelLarge = TextStyle(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
-    labelMedium = TextStyle(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium),
-    labelSmall = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal),
+    displayLarge = serif(48, 56), displayMedium = serif(36, 44), displaySmall = serif(30, 38),
+    headlineLarge = serif(32, 40), headlineMedium = serif(28, 36), headlineSmall = serif(24, 32),
+    titleLarge = serif(24, 32), titleMedium = sans(17, 24, FontWeight.Medium),
+    titleSmall = sans(15, 22, FontWeight.Medium),
+    bodyLarge = sans(16, 25), bodyMedium = sans(14, 22), bodySmall = sans(12, 18),
+    labelLarge = sans(15, 20, FontWeight.Medium), labelMedium = sans(14, 20), labelSmall = sans(12, 18),
 )
-
-/** Shared Android typography. Serif headings contrast with the system sans-serif controls. */
-val EyebrowStyle = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-val SectionHeaderStyle = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+val EyebrowStyle = sans(12, 18).copy(letterSpacing = 1.sp)
+val SectionHeaderStyle = sans(13, 18, FontWeight.Medium).copy(letterSpacing = 0.3.sp)
