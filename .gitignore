@@ -54,6 +54,7 @@ windows/artifacts/
 **/*.xcarchive/
 **/ReleaseDevice/
 **/TestResults/
+**/__pycache__/
 /docs/OVERNIGHT_AUDIT_2026-08-18.md
 
 # Local source-editor lock

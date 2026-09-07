@@ -1,0 +1,43 @@
+name: macOS TextEdit integration
+
+on:
+  push:
+    paths:
+      - "macos/QA/**"
+      - "macos/scripts/test-textedit.sh"
+      - "macos/project.yml"
+      - "macos/QuillMac/Services/TextInjector.swift"
+      - "macos/QuillMac/Services/AccessibilityAccess.swift"
+      - "macos/QuillCore/**"
+      - ".github/workflows/macos-integration.yml"
+  pull_request:
+    paths: ["macos/**", ".github/workflows/macos-integration.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-textedit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  textedit:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record toolchain
+        run: xcodebuild -version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Exercise production insertion against real TextEdit
+        run: bash macos/scripts/test-textedit.sh
+      - name: Preserve actual permission and insertion evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-textedit-verification
+          path: macos/TextEditEvidence
+          if-no-files-found: warn
+          retention-days: 14

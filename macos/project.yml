@@ -81,6 +81,23 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.uitests
         GENERATE_INFOPLIST_FILE: YES
         TEST_TARGET_NAME: QuillMac
+  QuillAXProbe:
+    type: tool
+    platform: macOS
+    sources:
+      - path: QA/TextEditProbe.swift
+      - path: QuillMac/Services/TextInjector.swift
+      - path: QuillMac/Services/AccessibilityAccess.swift
+    dependencies:
+      - package: QuillCore
+      - sdk: AppKit.framework
+      - sdk: Carbon.framework
+      - sdk: ApplicationServices.framework
+    settings:
+      base:
+        PRODUCT_NAME: QuillAXProbe
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.axprobe
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   QuillMac:
     build:
@@ -89,3 +106,7 @@ schemes:
     test:
       targets: [QuillMacTests, QuillMacUITests]
       gatherCoverageData: true
+  QuillAXProbe:
+    build:
+      targets:
+        QuillAXProbe: all

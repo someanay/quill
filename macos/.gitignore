@@ -4,3 +4,5 @@ build/
 QuillCore/.build/
 QuillCore/.swiftpm/
 *.xcresult/
+AXProbeBuild/
+TextEditEvidence/
