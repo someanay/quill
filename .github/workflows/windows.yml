@@ -27,6 +27,8 @@ jobs:
         run: python scripts/verify-platform-parity.py --platform windows
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
+      - name: Verify installer integrity and safe uninstall
+        run: ./windows/installer/Test-Installer.ps1
       - name: Publish portable Windows application
         run: dotnet publish windows/src/Quill.Windows/Quill.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows/portable
       - name: Upload Windows application
@@ -40,5 +42,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-verification
-          path: dist/verification/windows-tests
+          path: |
+            dist/verification/windows-tests
+            dist/verification/installer-tests/**/results.json
           retention-days: 14

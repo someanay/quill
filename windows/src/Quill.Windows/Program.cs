@@ -38,7 +38,7 @@ public sealed class AppServices : IDisposable {
  public AppServices(string folder, bool isolated) {
   Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder); History = new(folder);
   Dictation = new(Settings, Secrets, History, Provider, Recorder, Injector, Clipboard, folder);
-  Recorder.AutoStop += () => Application.Current.Dispatcher.BeginInvoke(async () => await Dictation.Toggle());
+  Recorder.AutoStop += () => Application.Current.Dispatcher.BeginInvoke(async () => await Dictation.StopRecording());
   Dictation.Changed += () => Application.Current.Dispatcher.BeginInvoke(() => { MainWindow?.RefreshStatus(); Bubble?.Refresh(); });
   Settings.Changed += () => { Theme.Apply(Settings.Value.Theme); Bubble?.Refresh(); History.Prune(Settings.Value); };
   prune = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) }; prune.Tick += (_, _) => { try { History.Prune(Settings.Value); } catch (IOException) { } }; prune.Start();

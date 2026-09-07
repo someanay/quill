@@ -19,9 +19,11 @@ if ($RunNativeSmoke) {
 & dotnet publish $appProject -c $Configuration -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false -o $publishRoot --nologo
 if ($LASTEXITCODE -ne 0) { throw 'Windows publish failed.' }
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Install-Quill.ps1') -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Uninstall-Quill.ps1') -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Quill-Setup.cmd') -Destination $packageRoot
 Copy-Item -LiteralPath (Join-Path $nativeRoot 'README.md') -Destination (Join-Path $packageRoot 'README.txt')
 Copy-Item -LiteralPath (Join-Path $nativeRoot 'THIRD-PARTY-NOTICES.md') -Destination $packageRoot
+Copy-Item -LiteralPath (Join-Path $nativeRoot 'VERIFICATION.md') -Destination $packageRoot
 $hashLines = Get-ChildItem -LiteralPath $publishRoot -File -Recurse | Sort-Object FullName | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(),[IO.Path]::GetRelativePath($packageRoot,$_.FullName).Replace('\','/') }
 [IO.File]::WriteAllLines((Join-Path $packageRoot 'SHA256SUMS'),$hashLines,[Text.UTF8Encoding]::new($false))
 $archive = Join-Path $distRoot 'Quill-Windows-2.0.0-win-x64.zip'

@@ -5,7 +5,8 @@ using System.Windows.Automation.Text;
 using System.Windows.Interop;
 using Microsoft.Win32;
 namespace Quill.Windows;
-public record FocusTarget(nint Window, int[] RuntimeId, string Application, bool Editable, bool Sensitive);
+public record EditingContext(string Text,int Start,int End);
+public record FocusTarget(nint Window, int[] RuntimeId, string Application, bool Editable, bool Sensitive,EditingContext? Context = null);
 public interface ITextInjector { Task<FocusTarget> Capture(); Task<bool> Insert(FocusTarget target, string text); Task<bool> CanType(); }
 public sealed class TextInjector : ITextInjector {
  private static readonly SemaphoreSlim UiaSlot = new(1,1);
@@ -28,18 +29,18 @@ public sealed class TextInjector : ITextInjector {
    if (System.Text.RegularExpressions.Regex.IsMatch(name, @"password|passcode|\bpin\b|\bcvv\b|\bcvc\b|credit.?card|card.?number|social.?security", System.Text.RegularExpressions.RegexOptions.IgnoreCase)) return new(hwnd, [], app, false, true);
    bool editable = element.Current.IsEnabled && element.Current.IsKeyboardFocusable && (element.Current.ControlType == ControlType.Edit || element.Current.ControlType == ControlType.Document);
    if (element.TryGetCurrentPattern(ValuePattern.Pattern, out var value) && ((ValuePattern)value).Current.IsReadOnly) editable = false;
-   return new(hwnd, element.GetRuntimeId(), app, editable, false);
+   return new(hwnd, element.GetRuntimeId(), app, editable, false,editable ? ReadContext(element) : null);
   } catch (Exception e) when (e is ElementNotAvailableException or InvalidOperationException or System.ComponentModel.Win32Exception or ArgumentException or COMException) { return new(hwnd, [], "", false, true); }
  }
- private static string? ReadFocusedText() {
-  var element = AutomationElement.FocusedElement; if (element == null || element.Current.IsPassword) return null;
+ private static string? ReadText(AutomationElement element) {
+  if (element.Current.IsPassword) return null;
   if (element.TryGetCurrentPattern(TextPattern.Pattern,out var pattern)) return ((TextPattern)pattern).DocumentRange.GetText(200_000);
   if (element.TryGetCurrentPattern(ValuePattern.Pattern,out var value)) { var content = ((ValuePattern)value).Current.Value; return content.Length <= 200_000 ? content : null; }
   return null;
  }
- private static (string Before,string Payload,string Expected)? PrepareInsertion(string text) {
-  var element = AutomationElement.FocusedElement; if (element == null || element.Current.IsPassword) return null;
-  var current = ReadFocusedText(); if (current == null || current.Length >= 200_000) return null;
+ private static EditingContext? ReadContext(AutomationElement element) {
+  if (element.Current.IsPassword) return null;
+  var current = ReadText(element); if (current == null || current.Length >= 200_000) return null;
   int start; int end;
   if (element.TryGetCurrentPattern(TextPattern.Pattern,out var pattern)) {
    var tp = (TextPattern)pattern; var selection = tp.GetSelection(); if (selection.Length != 1) return null;
@@ -50,25 +51,23 @@ public sealed class TextInjector : ITextInjector {
    start = (int)(positions & 0xffff); end = (int)((positions >> 16) & 0xffff);
   }
   if (start < 0 || start > end || end > current.Length) return null;
-  var expected = InsertionComposer.Insert(current,start,end,text); var payloadLength = expected.Length - current.Length + end - start;
-  return (current,expected.Substring(start,payloadLength),expected);
+  return new(current,start,end);
  }
  public async Task<bool> Insert(FocusTarget target, string text) {
   var current = await Capture();
-  if (current.Sensitive || !current.Editable || target.Sensitive || !target.Editable || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || Native.ModifierPressed()) return false;
+  if (current.Sensitive || !current.Editable || target.Sensitive || !target.Editable || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || target.Context == null || current.Context != target.Context || Native.ModifierPressed()) return false;
   // Unicode input preserves the native editor's selection, undo history and existing contents.
   // No ValuePattern.SetValue of an entire field, no guessed cursor, and no focus stealing.
-  var plan = await Bounded(() => PrepareInsertion(text),null);
-  if (plan == null) return false;
+  var context = target.Context; var expected = InsertionComposer.Insert(context.Text,context.Start,context.End,text); var payloadLength = expected.Length - context.Text.Length + context.End - context.Start; var payload = expected.Substring(context.Start,payloadLength);
   current = await Capture();
-  if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || Native.ModifierPressed()) return false;
+  if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || current.Context != context || Native.ModifierPressed()) return false;
   var inputs = new List<Native.INPUT>();
-  foreach (var c in plan.Value.Payload) { inputs.Add(Native.Unicode(c,false)); inputs.Add(Native.Unicode(c,true)); }
+  foreach (var c in payload) { inputs.Add(Native.Unicode(c,false)); inputs.Add(Native.Unicode(c,true)); }
   if (inputs.Count == 0 || Native.SendInput((uint)inputs.Count,inputs.ToArray(),Marshal.SizeOf<Native.INPUT>()) != inputs.Count) return false;
   await Task.Delay(180);
   current = await Capture(); if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId)) return false;
-  var after = await Bounded(ReadFocusedText,null);
-  return after != null && after.Replace("\r\n","\n",StringComparison.Ordinal) == plan.Value.Expected.Replace("\r\n","\n",StringComparison.Ordinal);
+  var after = current.Context?.Text;
+  return after != null && after.Replace("\r\n","\n",StringComparison.Ordinal) == expected.Replace("\r\n","\n",StringComparison.Ordinal);
  }
 }
 public interface IClipboardService { bool Copy(string text,bool transient = true); Task<bool> Paste(string text,ITextInjector injector); }

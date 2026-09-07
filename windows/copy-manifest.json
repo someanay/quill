@@ -3095,8 +3095,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.models.free_only": {
+      "default": "Show known free models only",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.models.quota": {
+      "default": "Provider quotas still apply",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.models.refresh": {
       "default": "Refresh available models",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.models.unknown_price": {
+      "default": "Pricing is not confirmed. Check your provider's terms before use.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

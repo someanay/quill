@@ -50,13 +50,13 @@ public sealed class SecretStore {
   }
  }
  public void Add(Provider provider,string value,string label,string? endpoint = null) {
-  value = value.Trim(); if (value.Length < 6 || value.Any(char.IsWhiteSpace)) throw new ArgumentException("Paste the complete key without spaces.");
+  value = value.Trim(); if (value.Length < (provider == Provider.Custom ? 1 : 6) || value.Any(char.IsWhiteSpace)) throw new ArgumentException("Paste the complete key without spaces.");
   var scope = Scope(provider,endpoint); if (provider == Provider.Custom && scope == null) throw new ArgumentException("A custom key must be verified for an HTTPS endpoint.");
   lock (gate) {
    var clear = Encoding.UTF8.GetBytes(value); string cipher;
    try { cipher = Convert.ToBase64String(ProtectedData.Protect(clear, Entropy, DataProtectionScope.CurrentUser)); } finally { CryptographicOperations.ZeroMemory(clear); }
    var ring = rings.GetValueOrDefault(provider) ?? new KeyRing(); var id = Guid.NewGuid().ToString("N");
-   ring.Keys.Add(new(id,string.IsNullOrWhiteSpace(label) ? $"Key {ring.Keys.Count + 1}" : label.Trim(),cipher,value[^4..],DateTimeOffset.UtcNow,scope)); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; rings[provider] = ring; JsonFiles.Write(path,rings);
+   ring.Keys.Add(new(id,string.IsNullOrWhiteSpace(label) ? $"Key {ring.Keys.Count + 1}" : label.Trim(),cipher,value.Length > 4 ? value[^4..] : "",DateTimeOffset.UtcNow,scope)); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; rings[provider] = ring; JsonFiles.Write(path,rings);
   }
  }
  public void Activate(Provider provider,string id,string? endpoint = null) { lock (gate) { var ring = rings[provider]; if (!List(provider,endpoint).Any(k => k.Id == id)) throw new ArgumentException("Unknown key for this endpoint."); var scope = Scope(provider,endpoint); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; JsonFiles.Write(path,rings); } }
