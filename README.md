@@ -36,6 +36,9 @@ Outputs:
 - APK: `app/build/outputs/apk/release/app-release.apk`
 - Play bundle: `app/build/outputs/bundle/release/app-release.aab`
 
+Keep distributable copies in the ignored `dist/android/` directory, with SHA-256
+checksums. APKs, app bundles, and installers do not belong in the source tree.
+
 Test overlay gestures, accessibility insertion, and background recording on a physical Android device. OEM battery management can affect all three.
 
 ## Copy catalog

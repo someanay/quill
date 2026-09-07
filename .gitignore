@@ -9,6 +9,10 @@
 .cxx/
 *.apk
 *.aab
+*.exe
+*.msi
+*.apk.sha256
+*.aab.sha256
 *.keystore
 *.jks
 keystore.properties
