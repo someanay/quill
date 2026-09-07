@@ -4,7 +4,13 @@ namespace Quill.Windows.Tests;
 public sealed class TestFolder : IDisposable {
  public string Path { get; } = System.IO.Path.Combine(System.IO.Path.GetTempPath(),"Quill.NativeV2.Tests",Guid.NewGuid().ToString("N"));
  public TestFolder() => Directory.CreateDirectory(Path);
- public void Dispose() { if (Directory.Exists(Path)) Directory.Delete(Path,true); }
+ public void Dispose() {
+  var root = System.IO.Path.GetFullPath(System.IO.Path.Combine(System.IO.Path.GetTempPath(),"Quill.NativeV2.Tests")) + System.IO.Path.DirectorySeparatorChar;
+  if (!System.IO.Path.GetFullPath(Path).StartsWith(root,StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Test cleanup escaped its dedicated temporary directory.");
+  // A just-exited native WPF child can briefly leave its PNG pending in Windows' file stack.
+  // Retry only that bounded cleanup race; retain the final error instead of masking it.
+  for (var attempt = 0;attempt < 10;attempt++) { try { if (Directory.Exists(Path)) Directory.Delete(Path,true); return; } catch (IOException) when (attempt < 9) { Thread.Sleep(100); } }
+ }
 }
 public sealed class StorageTests {
  [Fact] public void CustomProviderMayUseShortValidatedCredentials() { using var f = new TestFolder(); var store = new SecretStore(f.Path); store.Add(Provider.Custom,"abc","custom","https://custom.example/v1"); Assert.Equal("abc",store.Read(Provider.Custom,"https://custom.example/v1")); }

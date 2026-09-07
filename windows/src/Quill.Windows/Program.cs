@@ -10,15 +10,15 @@ public static class Program {
   var dataArg = Array.IndexOf(args, "--data-dir");
   var folder = dataArg >= 0 && dataArg + 1 < args.Length ? Path.GetFullPath(args[dataArg + 1]) : Environment.GetEnvironmentVariable("QUILL_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Quill", "NativeV2");
   Directory.CreateDirectory(folder); bool isolated = dataArg >= 0 || Environment.GetEnvironmentVariable("QUILL_DATA_DIR") != null;
-  var mutexName = "Local\\Quill.NativeV2." + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(folder)))[..16];
-  using var mutex = new Mutex(true, mutexName, out var created);
-  if (!created) return 0;
+  using var instance = new SingleInstanceActivation(folder);
+  if (!instance.IsPrimary) { instance.RequestActivation(); return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
   AppServices? services = null;
   try {
    services = new AppServices(folder, isolated); Theme.Apply(services.Settings.Value.Theme);
    var window = new MainWindow(services); app.MainWindow = window; services.MainWindow = window;
    services.InitializeShell(window);
+   instance.Listen(() => { if (!app.Dispatcher.HasShutdownStarted) { try { app.Dispatcher.BeginInvoke(new Action(services.ShowMain)); } catch (InvalidOperationException) { /* Primary is shutting down. */ } } });
    app.DispatcherUnhandledException += (_, e) => { services.RecordCrash(e.Exception); e.Handled = true; services.Notice("unexpected_error"); };
    AppDomain.CurrentDomain.UnhandledException += (_, e) => { if (e.ExceptionObject is Exception error) services.RecordCrash(error); };
    if (!args.Contains("--background") || !services.Settings.Value.OnboardingComplete) window.Show();
