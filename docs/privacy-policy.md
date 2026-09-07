@@ -46,8 +46,7 @@ _Code: `stt/KeyValidator.kt`._
 
 Quill periodically fetches a small, **static, cryptographically signed bundle of interface text**
 (wording/translations) over a read-only HTTPS request — at app start and when the app returns to the
-foreground, if the **"Check for updated text"** setting is on (it is on by default; Settings →
-Advanced). The bundle is identical for every user and the request **contains no personal data**; as
+foreground, and approximately every six hours in the background when a network is available. Android may delay background checks to save battery. Checks are automatic. The bundle is identical for every user and the request **contains no personal data**; as
 with any web request, the content host necessarily sees standard connection metadata such as your IP
 address. Bundles are verified against a signing key built into the app, and **privacy, consent, and
 disclosure wording can never be changed this way** — that text is locked into the app binary.
@@ -124,6 +123,7 @@ _Code: `history/HistoryStore.kt`, `history/HistoryRepository.kt`._
   it on. No UI is auto-launched.
 - **Internet (`INTERNET`)** — to send audio/text to the provider you configured and to fetch the
   signed interface-text bundle.
+- **Network state (`ACCESS_NETWORK_STATE`)** — to schedule copy checks when a connection is available.
 
 Quill does **not** hold the restricted "ignore battery optimisations" permission; at most it opens
 the system battery-settings page for you to make that choice yourself.
@@ -165,3 +165,5 @@ binary and only changes via an app update, never remotely.
 ---
 _This document is not legal advice. Have counsel review before publishing — in particular the DPDPA
 section, the children's-age selection, and the controller identity._
+
+Cleanup and writing styles can use a provider and model independently of speech recognition. Available choices are Groq, OpenAI, OpenRouter, Gemini and a custom OpenAI-compatible endpoint. Text is sent directly to the selected cleanup provider using that provider's saved key; disabling cleanup skips that request. Custom transcription and cleanup share the configured custom endpoint and key.

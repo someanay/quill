@@ -5,6 +5,7 @@
     <!-- Permissions per spec.md §5. Runtime/special grants are requested in onboarding (M8);
          declared here so the scaffold reflects the full permission model from the start. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -47,6 +48,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Quill">
+
+        <service
+            android:name=".copy.ota.CopyUpdateJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

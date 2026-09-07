@@ -12,31 +12,8 @@
   isolation: isolate;
 }
 
-.hero::before,
-.hero::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  border-radius: 50%;
-  filter: blur(2px);
-  pointer-events: none;
-}
-
-.hero::before {
-  width: 520px;
-  height: 520px;
-  right: -180px;
-  top: -170px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand) 20%, transparent), transparent 68%);
-}
-
-.hero::after {
-  width: 360px;
-  height: 360px;
-  left: -220px;
-  bottom: -210px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--gold) 15%, transparent), transparent 70%);
-}
+/* The hero's brand/gold glow now lives on a fixed, site-wide layer (base.css body::before)
+   so every section shares it — no hero-local glow pseudo-elements needed here. */
 
 .hero__grid {
   display: grid;
@@ -59,6 +36,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+}
+
+/* Device detection (site.js) marks the visitor's own platform .is-native-platform
+   and promotes it to the solid brand button; pull it to the left so the detected
+   platform reads first. */
+.hero__ctas > .is-native-platform,
+.cta-band__actions > .is-native-platform {
+  order: -1;
 }
 
 /* The homepage is an actual two-platform product preview, not a generic phone hero. */
@@ -118,6 +103,11 @@
 }
 
 @keyframes desktop-float { 50% { transform: perspective(900px) rotateY(-3deg) rotateX(1deg) translateY(-8px); } }
+
+/* Give the hero phone the same gentle ambient float the desktop demo has, so whichever device the
+   visitor sees, the hero breathes. Reduced-motion-gated below. */
+.hero-phone { animation: hero-phone-float 5.5s ease-in-out infinite; }
+@keyframes hero-phone-float { 50% { transform: translateY(-8px); } }
 
 .hero-desktop-demo__bar {
   height: 34px;
@@ -187,7 +177,7 @@ html[data-platform-preview="windows"] .hero {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-ribbon__meter i { animation: none; }
-  .hero-desktop-demo, .hero-ribbon { animation: none; }
+  .hero-desktop-demo, .hero-ribbon, .hero-phone { animation: none; }
 }
 
 /* Trust line under the hero CTAs */
@@ -354,25 +344,25 @@ html[data-platform-preview="windows"] .hero {
 /* Floating bubble + companion meter over a phone screen */
 .bubble-float {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  bottom: 74px; /* hover clear of the chat input bar (≈60px tall) — a bubble floating over the app, not on it */
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
+  align-items: flex-end;
+  justify-content: flex-end; /* the floating bubble + its ink-meter cluster in the lower-right corner */
+  gap: 12px;
   pointer-events: none;
   z-index: 6;
 }
 
 /* A row of bubbles showing each state (bubble story section) */
 .bubble-states {
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(28px, 5vw, 56px);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
   justify-content: center;
-  padding: clamp(32px, 5vw, 56px);
+  align-items: start;
+  gap: clamp(18px, 4vw, 44px);
+  padding: clamp(28px, 5vw, 52px);
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r-xl);
@@ -656,6 +646,21 @@ html[data-platform-preview="windows"] .hero {
   background: var(--gold);
 }
 
+/* The ribbon meter uses plain fixed-height spans (not .ink-meter__bar), so the
+   generic ambient rule can't reach them — animate them here so the desktop
+   "Listening" carousel scene breathes like the phone scene. */
+.ribbon-mock__meter.ink-meter--ambient span {
+  animation: meter-wave 1.5s ease-in-out infinite;
+}
+.ribbon-mock__meter.ink-meter--ambient span:nth-child(2) { animation-delay: 0.16s; }
+.ribbon-mock__meter.ink-meter--ambient span:nth-child(3) { animation-delay: 0.32s; }
+.ribbon-mock__meter.ink-meter--ambient span:nth-child(4) { animation-delay: 0.48s; }
+.ribbon-mock__meter.ink-meter--ambient span:nth-child(5) { animation-delay: 0.64s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-mock__meter.ink-meter--ambient span { animation: none; }
+}
+
 /* --- Windows: setup wizard mock --- */
 .wizard-mock {
   width: min(560px, 92%);
@@ -773,15 +778,27 @@ html[data-platform-preview="windows"] .hero {
 ---------------------------------------------------------------------------- */
 .cta-band {
   border-radius: var(--r-xl);
-  padding: clamp(40px, 6vw, 72px);
+  padding: clamp(44px, 6vw, 80px);
   text-align: center;
   display: grid;
   gap: 24px;
   justify-items: center;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 140% at 50% -20%, color-mix(in srgb, var(--brand) 26%, transparent), transparent 60%),
+    linear-gradient(160deg, var(--surface-2), var(--surface));
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, var(--line));
   position: relative;
   overflow: hidden;
+}
+
+/* A hairline of gold across the top — the ink signature closing the page. */
+.cta-band::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.7;
 }
 
 .cta-band .display {
@@ -800,9 +817,9 @@ html[data-platform-preview="windows"] .hero {
   justify-content: center;
 }
 
-/* The hero is now the single platform chooser; these legacy repeats are hidden. */
-section:has(.platform-grid),
-section:has(.cta-band) { display: none; }
+/* The hero is the single platform chooser, so the mid-page Platforms repeat is
+   hidden — but the closing CTA band stays as the page's final, bolder call. */
+section:has(.platform-grid) { display: none; }
 
 /* Store badge chips (honest, non-linking when URL unknown) */
 .badge {

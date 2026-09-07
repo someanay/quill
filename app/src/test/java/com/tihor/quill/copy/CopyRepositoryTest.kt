@@ -79,7 +79,7 @@ class CopyRepositoryTest {
     @Test
     fun applyOverride_changesOverridableKey_butIgnoresComplianceKey() {
         val r = repo()
-        val complianceKey = CopyKeys.DISCLOSURE_BODY
+        val complianceKey = CopyKeys.RATIONALE_ACCESSIBILITY
         val overridableKey = CopyKeys.WELCOME_TITLE
         val bakedCompliance = r.get(complianceKey)
 

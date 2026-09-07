@@ -231,8 +231,9 @@ fun SettingsScreen(nav: QuillNav) {
             QuillListContainer {
                 QuillRow(
                     leadIcon = Icons.Rounded.GraphicEq, title = copy(K.SETTINGS_ROW_SPEECH_MODEL),
+                    subtitle = "${settings.provider.displayName} · ${shortModel(settings.sttModel)}", // copy-exempt: provider and model identifiers
                     onClick = { nav.navigate(Screen.SpeechModel) },
-                    trailing = { RowValueChevron("${settings.provider.displayName} · ${shortModel(settings.sttModel)}") },
+                    trailing = { RowChevron() },
                 )
                 RowDivider()
                 QuillRow(
@@ -362,32 +363,15 @@ fun SpeechModelScreen(nav: QuillNav) {
         }
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
-        // Paid-only models are hidden once the key-save probe confirmed this provider's key is
-        // free-tier-only — no point offering a model the key can't run.
-        val visibleModels = settings.provider.models.filter {
-            !it.paidOnly || settings.provider.id !in settings.freeTierProviders
-        }
-        if (visibleModels.isNotEmpty()) {
-            QuillListContainer {
-                visibleModels.forEachIndexed { i, model ->
-                    if (i > 0) RowDivider()
-                    ModelRow(
-                        model.id, copy(model.subtitleKey), // model ids are copy-exempt
-                        selected = settings.sttModel == model.id,
-                        onClick = { scope.launch { repo.setSttModel(model.id) } },
-                    )
-                }
-            }
-        }
-        if (settings.provider == SttProvider.CUSTOM) {
-            CustomEndpointFields(settings, repo)
-        } else if (settings.provider.freeTextModel) {
-            // OpenRouter: its catalog is huge — a free-text model id beside the recommended default.
-            FreeTextModelField(
-                value = settings.sttModel,
-                onValue = { scope.launch { repo.setSttModel(it.trim()) } },
-            )
-        }
+        com.tihor.quill.ui.components.ModelDropdown(
+            provider = settings.provider,
+            selected = settings.sttModel,
+            customBaseUrl = settings.customBaseUrl,
+            onSelect = { model -> scope.launch {
+                if (settings.provider == SttProvider.CUSTOM) repo.setCustomModel(model) else repo.setSttModel(model)
+            } },
+        )
+        if (settings.provider == SttProvider.CUSTOM) CustomEndpointFields(settings, repo)
 
         FieldLabel(copy(K.SETTINGS_SPEECH_LANGUAGE), Modifier.padding(top = 16.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -549,12 +533,18 @@ fun ApiKeysScreen(nav: QuillNav) {
             SectionHeader(copy(K.SETTINGS_KEYS_SECTION))
             stored.forEachIndexed { i, provider ->
                 if (i > 0) Spacer(Modifier.height(10.dp))
-                KeyCard(
-                    role = copy(K.SETTINGS_KEYS_ROLE_STT), provider = providerLabel(provider),
-                    masked = mask(sttKeys.get(provider).orEmpty()), roleIcon = Icons.Rounded.GraphicEq,
-                    onRemove = { sttKeys.clear(provider); revision++ },
-                    onReplace = { addingFor = provider.id },
-                )
+                sttKeys.list(provider).forEachIndexed { keyIndex, saved ->
+                    KeyCard(
+                        role = copy(K.SETTINGS_KEYS_ROLE_STT), provider = providerLabel(provider),
+                        masked = mask(saved.key), roleIcon = Icons.Rounded.Key,
+                        onRemove = { sttKeys.remove(provider, saved.id); revision++ },
+                        onReplace = { addingFor = provider.id },
+                    )
+                    TextButton(onClick = { sttKeys.select(provider, saved.id); revision++ },
+                        enabled = saved.id != sttKeys.activeId(provider)) {
+                        Text(copy(if (saved.id == sttKeys.activeId(provider)) K.KEY_ACTIVE else K.KEY_USE))
+                    }
+                }
             }
             Spacer(Modifier.height(14.dp))
             com.tihor.quill.ui.components.QuillTonalButton(
@@ -590,7 +580,7 @@ private fun ColumnScope.ApiKeyEntry(
     val scope = rememberCoroutineScope()
     var providerId by rememberSaveable { mutableStateOf(initialProvider.id) }
     val provider = SttProvider.fromId(providerId)
-    var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
+    var key by remember(providerId) { mutableStateOf("") }
     var reveal by rememberSaveable { mutableStateOf(false) }
     var state by remember { mutableStateOf(KeyEntryState.IDLE) }
     var showConsoles by rememberSaveable { mutableStateOf(false) }
@@ -654,7 +644,6 @@ private fun ColumnScope.ApiKeyEntry(
         leadingIcon = if (state == KeyEntryState.CHECKING) null else Icons.Rounded.Key,
         onClick = {
             val trimmed = key.trim()
-            sttKeys.put(provider, trimmed)
             state = KeyEntryState.CHECKING
             scope.launch {
                 val result = withContext(Dispatchers.IO) {
@@ -667,11 +656,11 @@ private fun ColumnScope.ApiKeyEntry(
                 when (result) {
                     // Valid or unverified (network/other) both persist; only a hard reject blocks.
                     KeyValidation.Valid, is KeyValidation.Unverified -> {
+                        sttKeys.add(provider, trimmed)
                         probePaidAccess(provider, trimmed, validator, settingsRepo, verified = result == KeyValidation.Valid)
                         onSaved()
                     }
                     KeyValidation.Rejected -> {
-                        sttKeys.clear(provider)
                         state = KeyEntryState.REJECTED
                     }
                 }
@@ -739,7 +728,7 @@ private fun KeyCard(
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                LinkText(copy(K.SETTINGS_KEYS_REPLACE), onClick = onReplace)
+                LinkText(copy(K.SETTINGS_KEYS_ADD), onClick = onReplace)
                 Dot()
                 // Disabled: re-validating in place needs checking/invalid card states that don't exist
                 // yet. "Replace" re-opens entry, which re-validates on save (M5). (Pass 2 / no-lies.)
@@ -823,13 +812,35 @@ fun AiCleanupScreen(nav: QuillNav) {
                 )
             }
         }
-        if (settings.provider != SttProvider.GROQ) {
-            // Decision 5: cleanup is Groq-only. With another STT provider active it uses the stored
-            // Groq key, or is silently skipped (raw transcript) when there isn't one.
-            val groqKeySaved = SttKeyStore(KeystoreSecretStore(context)).has(SttProvider.GROQ)
-            HelpText(copy(if (groqKeySaved) K.SETTINGS_CLEANUP_GROQ_KEY else K.SETTINGS_CLEANUP_GROQ_MISSING))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(copy(K.CLEANUP_AUTO), modifier = Modifier.weight(1f))
+            Switch(checked = settings.cleanupAutomatic, onCheckedChange = { scope.launch { repo.setCleanupAutomatic(it) } })
         }
-
+        HelpText(copy(K.CLEANUP_AUTO_HELP))
+        FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER), Modifier.padding(top = 16.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SttProvider.selectable().forEach { provider ->
+                QuillChip(providerLabel(provider), selected = settings.cleanupProvider == provider,
+                    onClick = { scope.launch { repo.setCleanupProvider(provider) } })
+            }
+        }
+        val cleanupKeySaved = SttKeyStore(KeystoreSecretStore(context)).has(settings.cleanupProvider)
+        if (!cleanupKeySaved) {
+            Banner(text = copy(K.SETTINGS_SPEECH_KEY_REQUIRED, providerLabel(settings.cleanupProvider)),
+                icon = Icons.Rounded.Key, kind = PillKind.ERROR)
+            TextButton(onClick = { nav.navigate(Screen.ApiKeys) }) { Text(copy(K.SETTINGS_SPEECH_KEY_REQUIRED_CTA)) }
+        }
+        if (settings.cleanupProvider == SttProvider.CUSTOM) {
+            HelpText(copy(K.SETTINGS_CLEANUP_CUSTOM))
+            var customUrl by remember(settings.customBaseUrl) { mutableStateOf(settings.customBaseUrl) }
+            OutlinedTextField(customUrl, { value -> customUrl = value }, singleLine = true,
+                label = { Text(copy(K.SETTINGS_SPEECH_CUSTOM_URL_LABEL)) }, modifier = Modifier.fillMaxWidth())
+            TextButton(onClick = { scope.launch { repo.setCustomBaseUrl(customUrl.trim()) } },
+                enabled = runCatching { com.tihor.quill.cleanup.CleanupProviders.baseUrl(SttProvider.CUSTOM, customUrl) }.isSuccess) {
+                Text(copy(K.MODELS_SAVE))
+            }
+            FreeTextModelField(value = settings.cleanupModel, onValue = { scope.launch { repo.setCleanupModel(it) } })
+        }
         SectionHeader(copy(K.SETTINGS_CLEANUP_WHAT))
         QuillCard {
             Column(Modifier.padding(16.dp)) {
@@ -849,10 +860,13 @@ fun AiCleanupScreen(nav: QuillNav) {
         }
 
         Spacer(Modifier.height(14.dp))
-        QuillListContainer {
-            // Model selection lands with the LLM cleanup pass (M10); honest placeholder until then.
-            ComingSoonRow(copy(K.SETTINGS_CLEANUP_MODEL))
-        }
+        com.tihor.quill.ui.components.ModelDropdown(
+            provider = settings.cleanupProvider,
+            customBaseUrl = settings.customBaseUrl,
+            selected = settings.cleanupModel,
+            use = com.tihor.quill.models.ModelUse.CLEANUP,
+            onSelect = { model -> scope.launch { repo.setCleanupModel(model) } },
+        )
         HelpText(copy(K.SETTINGS_CLEANUP_HELP))
     }
 }

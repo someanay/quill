@@ -3,9 +3,9 @@
      is a productivity tool, so it uses the prominent-disclosure + Play-declaration route (spec §8).
      The description below is shown by the system on the enable screen; it is binary-only copy. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeViewFocused|typeWindowStateChanged"
+    android:accessibilityEventTypes="typeViewFocused|typeViewClicked|typeViewTextSelectionChanged|typeWindowStateChanged|typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows|flagInputMethodEditor"
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_service_description"
     android:notificationTimeout="100"

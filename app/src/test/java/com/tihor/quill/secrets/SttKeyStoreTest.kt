@@ -14,6 +14,33 @@ import org.junit.Test
  */
 class SttKeyStoreTest {
 
+    @Test fun multipleKeysSurviveSwitchingRemovalAndRecreation() {
+        val backing = FakeSecretStore()
+        val keys = SttKeyStore(backing)
+        keys.put(SttProvider.GEMINI, "first")
+        val first = keys.activeId(SttProvider.GEMINI)
+        keys.add(SttProvider.GEMINI, "second")
+        val second = keys.activeId(SttProvider.GEMINI)
+        assertEquals(2, keys.list(SttProvider.GEMINI).size)
+        keys.select(SttProvider.GEMINI, first)
+        assertEquals("first", SttKeyStore(backing).get(SttProvider.GEMINI))
+        keys.remove(SttProvider.GEMINI, first)
+        assertEquals("second", keys.get(SttProvider.GEMINI))
+        keys.remove(SttProvider.GEMINI, second)
+        assertFalse(keys.has(SttProvider.GEMINI))
+        assertTrue(keys.list(SttProvider.GEMINI).isEmpty())
+    }
+
+    @Test fun duplicateKeyDoesNotCreateAnotherEntryAndClearWipesAll() {
+        val keys = SttKeyStore(FakeSecretStore())
+        keys.add(SttProvider.GROQ, "same")
+        keys.add(SttProvider.GROQ, "same")
+        assertEquals(1, keys.list(SttProvider.GROQ).size)
+        keys.add(SttProvider.GROQ, "other")
+        keys.clear(SttProvider.GROQ)
+        assertTrue(keys.list(SttProvider.GROQ).isEmpty())
+    }
+
     private class FakeSecretStore : SecretStore {
         val map = mutableMapOf<String, String>()
         override fun put(alias: String, secret: String) { map[alias] = secret }

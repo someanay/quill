@@ -18,7 +18,12 @@ internal object Placeholders {
     // %[argument_index$][flags][width][.precision]conversion  — argument_index and conversion captured.
     // Matches Java Formatter syntax closely enough to compare arg contracts; `%%` (literal percent) and
     // `%n` (line separator) consume no argument and are ignored.
-    private val SPEC = Regex("""%(?:(\d+)\$)?[-#+ 0,(]*\d*(?:\.\d+)?([a-zA-Z%])""")
+    //
+    // The space is deliberately NOT in the flag class: literal copy like "50% off" must not parse a
+    // phantom "% o" token. This keeps this signature in lock-step with the copy-authoring tool's
+    // extractor (quill-copy-tool: src/lib/placeholders.ts / publish_gate.py), whose extractor-agreement
+    // gate compares against the placeholderTestVectors this parser generates.
+    private val SPEC = Regex("""%(?:(\d+)\$)?[-#+0,(]*\d*(?:\.\d+)?([a-zA-Z%])""")
 
     /** Argument-index -> conversion char for every argument-consuming specifier in [template]. */
     fun signature(template: String): Map<Int, Char> {

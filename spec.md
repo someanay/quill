@@ -1,10 +1,6 @@
 # Quill — System Specification (spec.md)
 
-The engineering contract. The boss's web-shaped template ("backend / database / hosting /
-endpoints") is translated here into Android components, local storage, and the two external
-provider calls — because a BYOK Android app has **no backend and no hosting**. This file now also
-carries the **architecture decisions** (§2) and the **Play Store policy risk** (§8) that used to be
-separate documents.
+Android architecture, storage, provider integration, and release constraints. Historical decisions are retained below; current release checks are in [release readiness](docs/play-readiness.md).
 
 ---
 
@@ -127,7 +123,7 @@ weaponised**.
    *Every key the UI can request exists here* (CI-enforced), so a blank/missing string is impossible.
 2. **Cached remote override** — the last remote bundle that was fetched **and** passed signature +
    schema validation, persisted in app-private storage.
-3. **Live fetch** — on launch, in the background, off the main thread: GET the remote bundle; if it is
+3. **Live fetch** — on every app foreground/restart and approximately every six hours via a persisted, network-constrained Android job, off the main thread: GET the remote bundle; if it is
    newer, correctly signed, and valid, **atomically** replace the cache.
 
 At startup the app computes one **resolved catalog** = `bakedIn` overlaid by the *validated* remote
@@ -139,7 +135,7 @@ half-blank a screen — worst case the user sees the baked-in default.
 **Offline / airplane guarantee (an explicit requirement).** The remote fetch is **never on the UI
 critical path**: short timeout, silent failure (log only), and the UI builds immediately from whatever
 catalog is already resolved (cache → baked-in). A newer bundle that arrives mid-session is applied on
-the **next navigation / launch**, not swapped under a screen the user is actively reading. Cold-start
+acceptance and observed by the UI in the same session. Android may defer scheduled checks while idle or offline; a force-stopped app resumes checks when reopened. Cold-start
 in airplane mode → baked-in defaults, full UI, zero breakage.
 
 **Integrity & abuse-resistance (security detail in §6).** Remote copy is attacker-relevant: whoever
@@ -203,14 +199,12 @@ Vercel** — your stack) lets you:
   (Tink or `java.security`) → schema validate → atomic cache write → bump applied-revision.
 - Compose: a `LocalCopy` `CompositionLocal`; UI calls `copy(CopyKeys.X)` — **no string literals in
   composables** (lint/CI guard).
-- Settings: a **"Check for updated text"** toggle (default on) in Advanced; disclosed in the privacy
-  policy. Off → cache / baked-in only, no fetch.
+- Updates are automatic with no toggle. The privacy policy discloses foreground and six-hour background checks.
 
 **Privacy delta (a real change — see §6 and the README locked-decisions).** This adds exactly one
 outbound call beyond the provider calls: a GET of a **public, static, signed** file. No user data, no
 account, and **no device / install identifier** is sent; the only transmitted metadata is the
-unavoidable transport layer (IP, a generic User-Agent, app version). It is covered by the existing
-opt-in posture and the new toggle. The "no backend / local-only" claim is updated to: **no backend for
+unavoidable transport layer (IP, a generic User-Agent, app version). Automatic checks are disclosed in the privacy policy. The "no backend / local-only" claim is updated to: **no backend for
 user data; a static, signed copy bundle may be fetched read-only.**
 
 ---
@@ -388,7 +382,7 @@ the bubble before the recorder (see `todo.md` ordering).
 
 ### Node resolution & insertion (the M3 blueprint)
 
-This is the part Claude Code will get naively wrong. The naive path — grab the focused node, fire
+Grabbing the focused node and firing
 `ACTION_SET_TEXT` — fails on Compose, WebViews, and any field with existing text. The algorithm:
 
 **A. Resolve the *true* editable node — do not trust the focused node.** The node holding
@@ -603,3 +597,18 @@ CopyUpdater (launch, off-main, optional)
 No account. No user data leaves the device. Outbound calls: the provider call(s) above, plus a
 read-only GET of the public, signed copy bundle.
 ```
+
+## Independent cleanup providers (September 6, 2026)
+
+Cleanup is opt-in and has its own provider and model selection: Groq, OpenAI, OpenRouter, Gemini or a custom OpenAI-compatible server. Switching transcription does not change cleanup. Existing installations retain their Groq cleanup selection; models are remembered per cleanup provider. Keys remain provider-specific. Custom transcription and cleanup intentionally share the configured custom endpoint and key; the settings screen explains this before saving an endpoint.
+
+All three writing styles use the same cleanup prompt and meaning-preservation guard. Gemini text cleanup uses Google's documented OpenAI-compatible endpoint. OpenRouter uses an explicit model and latency-prioritized provider routing, without automatic cross-model or cross-provider-key fallback. The four-second cleanup deadline, HTTP/parse/empty/incomplete-output failures and rejected edits all preserve the raw transcript. Model catalogs filter for text-capable candidates where provider metadata is available; custom IDs remain user-configurable. Catalog membership is not proof that an account can invoke a model.
+
+Sources: https://ai.google.dev/gemini-api/docs/openai and https://openrouter.ai/docs/guides/routing/provider-selection.
+
+## Reliability follow-up: Gmail editor connection
+Gmail's compose body on the Honor exposes a focused WebView with no editable descendants; the accessibility service is enabled and bound. Android 13+ accessibility input-method support now provides a second detection/insertion path using the active editor connection. The editor package must match the foreground application, its input type must indicate an editor, and password input types remain blocked. Insertion is checked against surrounding text; unconfirmed insertion preserves a clipboard fallback. Changing the foreground app during transcription does not redirect insertion to that app. Older Android retains the node-based and clipboard paths.
+
+Cleanup now defaults on and follows the speech provider's active key and recommended model. Explicitly disabling cleanup is preserved; selecting a separate cleanup provider/model disables automatic matching. Custom servers require manual text-model selection. Multiple keys can be saved per provider, with one explicitly active key shared by that provider's transcription and cleanup. Adding/rejecting a candidate key no longer overwrites or removes a working key. Existing encrypted keys are retained; key rings are stored encrypted and excluded from backup.
+
+Reference: https://developer.android.com/reference/android/accessibilityservice/InputMethod

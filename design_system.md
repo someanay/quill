@@ -35,7 +35,8 @@ Two signature elements carry the identity; everything else stays quiet:
    and lights up with a gold halo while recording.
 
 Kin to Wispr Flow (soft, rounded, voice-centric, friendly onboarding) — but ink & gilt, not warm &
-coral. Material 3 structure throughout; the **serif wordmark** is the only editorial flourish.
+coral. Material 3 structure throughout; the **editorial serif** — on the large titles and the wordmark
+(§3.1) — is the one flourish, carrying the site's Fraunces voice.
 
 ---
 
@@ -152,11 +153,13 @@ Used on the bubble, the wordmark mark, illustration cores, and meter strokes. Al
 
 | Role | Family | Android |
 |---|---|---|
-| **UI / body / headings** | Humanist sans | **Inter** (bundle) or system default; weights 400/500/600/700 |
-| **Wordmark only** | Editorial serif | A serif close to *Iowan Old Style / Palatino* — e.g. bundle **Lora** or **Source Serif 4**, weight 600. Used **only** for the "Quill" logotype, nowhere else. |
+| **UI / body / small headings** | Humanist sans | **Inter** (bundle) or system default; weights 400/500/600/700 |
+| **Large titles + wordmark** | Editorial serif | A serif close to *Iowan Old Style / Palatino* — `WordmarkFont`, mapped to the system serif (Noto Serif) on Android, Palatino on Windows. Carries the web's **Fraunces voice** on Display Small / Headline Small / Title Large — page & step titles, the app-bar screen title, and the "Quill" logotype. |
 
-> The serif is the single editorial flourish (§1). If you reach for it anywhere but the wordmark,
-> you've over-spent the boldness budget — stop.
+> The serif is the editorial voice (§1), matched across web, Windows and Android. Keep it to the large
+> titles + wordmark — reach for it on body, labels, or card sub-headers (Title Medium and below) and
+> you've over-spent the boldness budget. **Evolved from wordmark-only** to match the site's Fraunces
+> headings (Windows commit `ab8b90a`; Android via the `WordmarkFont` type-scale wiring).
 
 ### 3.2 Type scale (device-scale targets)
 
@@ -596,13 +599,15 @@ val QuillShapes = Shapes(
 ```
 
 ### `ui/theme/Type.kt`
-Build a `Typography` from §3.2 (UI sans for everything; the serif `FontFamily` is **only** wired into
-the wordmark composable, not the type scale). Example anchors:
+Build a `Typography` from §3.2. UI sans for body/labels; the serif `WordmarkFont` (declared **before**
+`QuillType`, else the top-level val initialises to null) is wired into the three large-heading styles —
+Display Small / Headline Small / Title Large — plus the wordmark composable. Title Medium and below stay
+sans. Example anchors:
 ```kotlin
 val QuillType = Typography(
-    displaySmall  = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold,     letterSpacing = (-0.2).sp),
-    headlineSmall = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
-    titleLarge    = TextStyle(fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
+    displaySmall  = TextStyle(fontFamily = WordmarkFont, fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold,     letterSpacing = (-0.2).sp),
+    headlineSmall = TextStyle(fontFamily = WordmarkFont, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
+    titleLarge    = TextStyle(fontFamily = WordmarkFont, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.1.sp),
     titleMedium   = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold),
     bodyLarge     = TextStyle(fontSize = 16.sp, lineHeight = 24.sp, fontWeight = FontWeight.Normal),
     bodyMedium    = TextStyle(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal),
@@ -619,8 +624,8 @@ val QuillType = Typography(
 - `InkMeter(amplitude: Float, bars: Int, large: Boolean, recording: Boolean, modifier)` — per §10:
   rounded vertical strokes from a centre baseline, height = smoothed amplitude, gold/brand gradient,
   ~100 ms easing.
-- `Wordmark()` — 34 dp brand-gradient rounded-square + nib glyph + "Quill" in the serif `FontFamily`
-  (the only place the serif is used).
+- `Wordmark()` — 34 dp brand-gradient rounded-square + nib glyph + "Quill" in the serif `WordmarkFont`
+  (which also carries the large titles via the type scale — §3.1).
 
 ---
 

@@ -1,8 +1,0 @@
-<Solution>
-  <Folder Name="/src/">
-    <Project Path="src/Quill.Windows/Quill.Windows.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Quill.Windows.Tests/Quill.Windows.Tests.csproj" />
-  </Folder>
-</Solution>

@@ -1,6 +1,16 @@
 package com.tihor.quill.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -55,11 +65,15 @@ fun QuillPrimaryButton(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.75f), label = "buttonPress") // copy-exempt
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        modifier = modifier.heightIn(min = 48.dp),
+        interactionSource = interaction,
+        modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
     ) { ButtonContent(text, leadingIcon) }
 }
 
@@ -72,13 +86,17 @@ fun QuillTonalButton(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.75f), label = "buttonPress") // copy-exempt
     val q = MaterialTheme.quill
     Button(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
         colors = ButtonDefaults.buttonColors(containerColor = q.brandSoft, contentColor = q.brandInk),
-        modifier = modifier.heightIn(min = 48.dp),
+        interactionSource = interaction,
+        modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
     ) { ButtonContent(text, leadingIcon) }
 }
 
@@ -91,6 +109,9 @@ fun QuillGhostButton(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.75f), label = "buttonPress") // copy-exempt
     val q = MaterialTheme.quill
     OutlinedButton(
         onClick = onClick,
@@ -98,7 +119,8 @@ fun QuillGhostButton(
         shape = CircleShape,
         border = BorderStroke(1.dp, q.lineStrong),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = q.brandInk),
-        modifier = modifier.heightIn(min = 48.dp),
+        interactionSource = interaction,
+        modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
     ) { ButtonContent(text, leadingIcon) }
 }
 
@@ -110,6 +132,9 @@ fun QuillDangerButton(
     modifier: Modifier = Modifier.fillMaxWidth(),
     enabled: Boolean = true,
 ) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.75f), label = "buttonPress") // copy-exempt
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -118,7 +143,8 @@ fun QuillDangerButton(
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,
         ),
-        modifier = modifier.heightIn(min = 48.dp),
+        interactionSource = interaction,
+        modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
     ) { ButtonContent(text, null) }
 }
 
@@ -178,7 +204,8 @@ fun QuillCard(
 ) {
     val q = MaterialTheme.quill
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().animateContentSize(),
+        shadowElevation = 1.dp,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -194,7 +221,8 @@ fun QuillListContainer(
 ) {
     val q = MaterialTheme.quill
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().animateContentSize(),
+        shadowElevation = 1.dp,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -227,8 +255,8 @@ fun QuillRow(
         modifier = modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 54.dp)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .heightIn(min = 64.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(13.dp),
     ) {
@@ -292,7 +320,7 @@ fun QuillChip(
     enabled: Boolean = true,
 ) {
     val q = MaterialTheme.quill
-    val bg = if (selected) q.brandSoft else MaterialTheme.colorScheme.surface
+    val bg by animateColorAsState(if (selected) q.brandSoft else MaterialTheme.colorScheme.surface, label = "chipFill") // copy-exempt
     val fg = when {
         !enabled -> q.faint
         selected -> q.brandInk
@@ -304,7 +332,7 @@ fun QuillChip(
             .background(bg)
             .then(if (selected) Modifier else Modifier.border(1.dp, q.lineStrong, CircleShape))
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 32.dp)
+            .heightIn(min = 48.dp)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -364,17 +392,19 @@ fun QuillBubble(
         BubbleState.ERROR -> listOf(Color(0xFFD6453D), Color(0xFFE8635B))
         BubbleState.PAUSED -> listOf(q.lineStrong, q.lineStrong)
     }
+    val gradientStart by animateColorAsState(gradient.first(), label = "bubbleStart") // copy-exempt
+    val gradientEnd by animateColorAsState(gradient.last(), label = "bubbleEnd") // copy-exempt
     val iconTint = if (state == BubbleState.PAUSED) q.faint else Color.White
     // Light ring (the non-negotiable contrast affordance): a white disc with the gradient inset.
     Box(
-        modifier.size(size).clip(CircleShape).background(MaterialTheme.colorScheme.surface),
+        modifier.size(size).graphicsLayer { shadowElevation = 6.dp.toPx(); shape = CircleShape; clip = false }.clip(CircleShape).background(MaterialTheme.colorScheme.surface),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             Modifier
                 .size(size - 5.dp)
                 .clip(CircleShape)
-                .background(Brush.linearGradient(gradient)),
+                .background(Brush.linearGradient(listOf(gradientStart, gradientEnd))),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.46f))

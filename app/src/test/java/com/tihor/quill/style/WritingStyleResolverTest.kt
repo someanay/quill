@@ -98,7 +98,7 @@ class WritingStyleResolverTest {
 
     @Test
     fun curatedMap_hasNoBlankPackages_andEveryEntryIsAValidStyle() {
-        assertTrue("the curated map should be substantive", CuratedAppStyles.MAP.size >= 30)
+        assertTrue("the catalog must cover hundreds of packages", CuratedAppStyles.MAP.size >= 500)
         CuratedAppStyles.MAP.forEach { (pkg, style) ->
             assertTrue("blank package name in the curated map", pkg.isNotBlank())
             assertTrue("package names must be dotted ids: $pkg", pkg.contains('.'))
@@ -138,6 +138,29 @@ class WritingStyleResolverTest {
         // §5.1: a browser field could be webmail or a Reddit comment — the package can't tell us.
         assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["com.android.chrome"])
         assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["org.mozilla.firefox"])
+        assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["com.naver.whale"])
+    }
+
+    @Test
+    fun expandedCatalog_distinguishesEmailFromChatAndNotes() {
+        assertEquals(WritingStyle.FORMAL, CuratedAppStyles["net.thunderbird.android"])
+        assertEquals(WritingStyle.FORMAL, CuratedAppStyles["de.tutao.tutanota"])
+        assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["com.b44t.messenger"])
+        assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["de.niendo.ImapNotes3"])
+        assertEquals(WritingStyle.NEUTRAL, CuratedAppStyles["com.microsoft.office.officehubrow"])
+    }
+
+    @Test
+    fun everyExpandedDefault_canBeOverriddenAndReset() {
+        CuratedAppStyles.MAP.forEach { (pkg, default) ->
+            val chosen = WritingStyle.entries.first { it != default }
+            assertEquals(chosen, WritingStyleResolver.resolve(
+                pkg, mapOf(pkg to chosen), chosen, CuratedAppStyles.MAP,
+            ))
+            assertEquals(default, WritingStyleResolver.resolve(
+                pkg, emptyMap(), chosen, CuratedAppStyles.MAP,
+            ))
+        }
     }
 
     @Test

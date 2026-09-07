@@ -1,22 +1,23 @@
 {
   "schemaVersion": 1,
-  "revision": 4,
+  "revision": 7,
   "locale": "en",
-  "updatedAt": "2026-07-14T00:00:00Z",
+  "updatedAt": "2026-09-06T00:00:00Z",
   "strings": {
+    "settings.cleanup.automatic": "Match speech provider",
+    "settings.cleanup.automatic_help": "Use the speech provider's active key and a recommended cleanup model. Choosing a provider or model below switches to a separate setup. Custom servers need a text model selected manually.",
+    "settings.keys.active": "Active key",
+    "settings.keys.use": "Use this key",
     "onboarding.splash.tagline": "Dictate into any app",
-
     "onboarding.welcome.title": "Dictate into any app you use",
     "onboarding.welcome.body": "A bubble floats over every app. Tap it, speak, and your words land right where the cursor is.",
     "onboarding.welcome.cta": "Get started",
     "onboarding.welcome.already": "Already set up?",
     "onboarding.welcome.open": "Open Quill",
-
     "onboarding.key.warning.free_tier": "You bring the key — some providers (like Groq) have a free tier to start.",
     "onboarding.key.warning.usage": "Your provider may charge for usage — Quill itself is free.",
     "onboarding.key.warning.reading": "Take a moment to read this",
     "onboarding.key.warning.accept": "I understand — add my key",
-
     "onboarding.howitworks.eyebrow": "Three steps",
     "onboarding.howitworks.title": "From voice to text, on your terms",
     "onboarding.howitworks.t1": "Tap & speak",
@@ -26,7 +27,6 @@
     "onboarding.howitworks.step2": "Audio goes straight to your speech-to-text key. No middleman.",
     "onboarding.howitworks.step3": "Text drops in at the cursor — chat, email, search, notes.",
     "onboarding.howitworks.cta": "Next",
-
     "onboarding.checklist.title": "You're connected",
     "onboarding.checklist.progress": "%1$d of %2$d done",
     "onboarding.checklist.key": "Add your key",
@@ -38,7 +38,6 @@
     "onboarding.checklist.accessibility": "Type into apps",
     "onboarding.checklist.accessibility_sub": "Accessibility access",
     "onboarding.checklist.cta": "Continue",
-
     "onboarding.key.title": "Add your speech-to-text key",
     "onboarding.key.body": "Quill uses your own provider key (Groq by default). It's encrypted on this device and sent only to your provider.",
     "onboarding.key.field_label": "API key",
@@ -54,48 +53,38 @@
     "onboarding.key.guide.gemini_steps": "1. Sign in at aistudio.google.com with your Google account.\n2. Tap Get API key, then Create API key.\n3. Copy the key and paste it into Quill.\n4. The free tier works without a card — a good way to start.",
     "onboarding.key.verifying": "Checking your key…",
     "onboarding.key.valid": "Key verified",
-
     "stt.quota.toast": "API usage has run out — check your provider plan.",
-
     "key.error.invalid": "That key was rejected (401). Check you copied it fully.",
     "key.error.network": "Couldn't reach the provider. Check your connection and try again.",
-
     "onboarding.mic.title": "Allow the microphone",
     "onboarding.mic.cta": "Allow microphone",
     "onboarding.mictest.title": "Say something",
     "onboarding.mictest.body": "Let's check your mic. Speak now — you should see the strokes move.",
     "onboarding.mictest.cta": "Sounds good",
     "onboarding.mictest.heard": "Heard you loud and clear.",
-
     "onboarding.overlay.title": "Allow the floating bubble",
     "onboarding.overlay.cta": "Allow display over apps",
-
     "onboarding.accessibility.enable_title": "Turn on insert-into-apps",
     "onboarding.accessibility.enable_cta": "Open Accessibility settings",
-
     "onboarding.allset.title": "You're ready to write",
     "onboarding.allset.body": "The bubble is live. Open any app, focus a text field, and give it a try.",
     "onboarding.allset.cta": "Try your first dictation",
     "onboarding.allset.look": "Look for this in the corner of your screen.",
     "onboarding.allset.home_link": "Go to Quill home",
-
     "action.not_now": "Not now",
     "action.continue": "Continue",
     "action.back": "Back",
     "action.cancel": "Cancel",
     "status.done": "Done",
     "common.coming_soon": "Coming soon",
-
     "nav.home": "Home",
     "nav.history": "History",
     "nav.settings": "Settings",
-
     "a11y.back": "Back",
     "a11y.settings": "Settings",
     "a11y.selected": "Selected",
     "a11y.show_key": "Show key",
     "a11y.hide_key": "Hide key",
-
     "history.title": "History",
     "history.clear_all": "Clear all",
     "history.group.today": "Today",
@@ -112,7 +101,6 @@
     "history.clear.title": "Delete all history?",
     "history.clear.body": "This removes all %1$d saved dictations from this device. It can't be undone.",
     "history.clear.confirm": "Delete all",
-
     "home.banner.a11y_off_text": "Accessibility is off — tap to switch it back on.",
     "home.group.today": "Today",
     "home.today.dictations": "0 dictations",
@@ -129,7 +117,6 @@
     "home.toggle.off_title": "Quill is paused",
     "home.toggle.on_sub": "Bubble is floating & ready",
     "home.toggle.off_sub": "The bubble is hidden",
-
     "settings.title": "Settings",
     "settings.group.dictation": "Dictation",
     "settings.group.capture": "Capture & bubble",
@@ -145,7 +132,6 @@
     "settings.row.privacy": "Privacy",
     "settings.row.advanced": "Advanced",
     "settings.row.about": "About & legal",
-
     "settings.speech.title": "Speech & model",
     "settings.speech.provider": "Provider",
     "settings.speech.provider_custom": "Custom",
@@ -181,7 +167,6 @@
     "settings.speech.custom_url_hint": "https://api.example.com/v1",
     "settings.speech.custom_url_error": "Enter an https:// URL.",
     "settings.speech.custom_url_help": "Any OpenAI-compatible endpoint. Quill calls <base URL>/audio/transcriptions with your key.",
-
     "settings.keys.title": "API keys",
     "settings.keys.empty_title": "No keys yet",
     "settings.keys.empty_body": "Quill needs a speech-to-text key to transcribe. Add one to start dictating again.",
@@ -193,7 +178,6 @@
     "settings.keys.replace": "Replace",
     "settings.keys.test": "Test again",
     "settings.keys.remove": "Remove",
-
     "settings.cleanup.title": "Clean up with AI",
     "settings.cleanup.tidy_title": "Tidy my dictation",
     "settings.cleanup.tidy_sub": "Remove filler, fix punctuation",
@@ -201,10 +185,10 @@
     "settings.cleanup.before": "Before",
     "settings.cleanup.after": "After",
     "settings.cleanup.model": "Cleanup model",
-    "settings.cleanup.help": "If cleanup ever fails, your raw transcript is inserted instead — never blocked.",
+    "settings.cleanup.provider_help": "Cleanup uses the selected provider and its saved key. All three writing styles apply here. If cleanup fails or takes too long, Quill keeps your original transcript.",
+    "settings.cleanup.custom_endpoint": "Custom cleanup shares the custom endpoint and key with transcription. Saving a different URL changes both.",
     "settings.cleanup.groq_key": "Cleanup always runs on Groq — it uses your saved Groq key, not your active provider's.",
     "settings.cleanup.groq_missing": "Cleanup runs on Groq only. Without a saved Groq key it's skipped and the raw transcript is inserted.",
-
     "settings.style.title": "Writing style",
     "settings.style.intro": "Match how you write in each app — more formal at work, more relaxed with friends.",
     "settings.style.default_section": "Default for every app",
@@ -224,7 +208,6 @@
     "settings.style.needs_groq": "Cleanup runs on Groq only. Without a saved Groq key, writing style won't be applied.",
     "settings.style.words_promise": "Style only changes punctuation, capitalization and contractions. It never changes your words.",
     "settings.style.help": "Style is picked from the app you were in when you started speaking. Custom words are still applied last.",
-
     "settings.words.title": "Custom words",
     "settings.words.body": "Teach Quill names and terms it keeps mishearing. Each is matched and replaced after transcription.",
     "settings.words.empty_title": "No custom words yet",
@@ -262,7 +245,6 @@
     "settings.vocab.clear_confirm_title": "Clear imported vocabulary?",
     "settings.vocab.clear_confirm_body": "This removes every imported contact name from this device. Your custom words are not affected.",
     "settings.vocab.clear_confirm_cta": "Clear",
-
     "settings.audio.title": "Audio & recording",
     "settings.audio.start_stop": "Start & stop",
     "settings.audio.trigger": "Trigger",
@@ -278,7 +260,6 @@
     "settings.audio.format": "Upload format",
     "settings.audio.format_sub": "FLAC · smaller, lossless",
     "settings.audio.format_value": "Recommended",
-
     "settings.privacy.title": "Privacy",
     "settings.privacy.banner_title": "Nothing is collected by Quill.",
     "settings.privacy.banner_text": "Audio goes only to your provider; everything else stays on this phone.",
@@ -301,14 +282,12 @@
     "settings.privacy.permissions": "Permissions",
     "settings.privacy.mic": "Microphone",
     "settings.privacy.accessibility": "Accessibility",
-
     "settings.bubble.title": "Visual preferences",
     "settings.bubble.help": "The light ring keeps the bubble visible on any background.",
     "settings.bubble.preview_light": "Light app",
     "settings.bubble.preview_dark": "Dark app",
     "settings.bubble.size": "Size",
     "settings.bubble.theme": "Theme",
-
     "settings.advanced.title": "Advanced",
     "settings.advanced.endpoint": "Custom endpoint (base URL)",
     "settings.advanced.endpoint_help": "For any OpenAI-compatible provider. Changing this re-validates your key.",
@@ -328,7 +307,6 @@
     "settings.advanced.reset_confirm_title": "Reset settings?",
     "settings.advanced.reset_confirm_body": "Restores all preferences to their defaults. Your API key and dictation history are kept.",
     "settings.advanced.reset_confirm_cta": "Reset",
-
     "settings.about.title": "About",
     "settings.about.version": "Version %1$s · build %2$s",
     "settings.about.privacy_policy": "Privacy Policy",
@@ -336,7 +314,6 @@
     "settings.about.licenses": "Open-source licenses",
     "settings.about.feedback": "Send feedback",
     "settings.about.footer": "Made for people who'd rather talk than type.",
-
     "system.recovery.title": "Quill stopped typing into apps",
     "system.recovery.banner_text": "Your phone switched off Accessibility access — Quill can't insert text until it's back on.",
     "system.recovery.heading": "Let's switch it back on",
@@ -349,7 +326,6 @@
     "system.crash.always": "Always send reports automatically",
     "system.crash.send": "Send via…",
     "system.crash.dont_send": "Don't send",
-
     "reliability.boot.channel": "Quill reliability",
     "reliability.boot.title": "Tap to re-activate Quill",
     "reliability.boot.text": "Your phone restarted. Open Quill to bring the bubble back.",
@@ -366,7 +342,6 @@
     "settings.survival.steps": "1. Open your device's app-launch or protected-apps settings.\n2. Find Quill in the list.\n3. Allow auto-start / background activity (and set battery to Unrestricted).",
     "settings.survival.open": "Open device settings",
     "settings.survival.fallback": "Couldn't open it automatically on this device — open Settings ▸ Battery / App management and find Quill manually.",
-
     "notification.action.show": "Show Quill",
     "notification.action.stop": "Dismiss bubble",
     "notification.title.active": "Quill bubble active",
@@ -379,7 +354,6 @@
     "bubble.bin.label": "Drag here to hide",
     "bubble.bin.label_active": "Release to hide",
     "bubble.autoreturn.toast": "Quill's back. Drag the bubble to the bin to hide it again.",
-
     "carousel.home.header": "See Quill in action",
     "carousel.card.a11y": "Demo video",
     "carousel.play.a11y": "Play demo",
@@ -401,24 +375,28 @@
     "carousel.key.4.caption": "",
     "carousel.key.5.caption": "",
     "carousel.key.6.caption": "",
-
     "value.on": "On",
     "value.off": "Off",
     "value.none": "None",
     "value.granted": "Granted",
     "value.valid": "Valid",
     "value.check": "Check",
-
-    "compliance.accessibility.disclosure_title": "Allow Quill to insert dictation",
-    "compliance.accessibility.disclosure_body": "To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.",
-    "compliance.accessibility.disclosure_accept": "I understand — open Accessibility settings",
-    "compliance.accessibility.disclosure_decline": "Not now",
     "compliance.rationale.mic": "Quill needs the microphone to record what you dictate. Audio is sent only to the speech provider whose key you supply, and is deleted after a successful transcription.",
     "compliance.rationale.overlay": "The floating bubble needs permission to display over other apps. That bubble is also what lets Quill record while you're in another app.",
     "compliance.rationale.accessibility": "Quill uses accessibility only to detect the focused text field and insert your dictation. It never reads or writes password or banking fields.",
     "compliance.privacy.promise": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
     "compliance.key.required_title": "You'll need your own API key",
     "compliance.key.required_body": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us.",
-    "compliance.privacy.welcome_pill": "Your key, your audio — nothing through our servers"
+    "compliance.privacy.welcome_pill": "Your key, your audio — nothing through our servers",
+    "models.search": "Search models",
+    "models.empty": "No matching models.",
+    "models.loading": "Checking the provider’s catalog…",
+    "models.fallback": "Could not refresh. Showing saved or built-in choices.",
+    "models.fresh": "Updated from the provider.",
+    "models.refresh": "Refresh models",
+    "models.ranking": "Stable, responsive candidates appear first. Availability and cost depend on your provider account. Your selection stays unchanged when the list refreshes.",
+    "models.manual": "Enter a model ID",
+    "models.save": "Use this model",
+    "models.custom_refresh": "Tap Refresh to check this endpoint’s model list."
   }
 }

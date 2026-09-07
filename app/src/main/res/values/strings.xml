@@ -6,10 +6,10 @@
       hard rule, spec §2.3). The accessibility disclosure + the service description must match real
       behaviour, be present at Play review, and never be remotely overridable.
     -->
-    <string name="accessibility_service_description">Quill uses accessibility to detect the text field you are focused on and to insert your dictated text into it. It reads the focused field only to position and place dictation, and never reads or writes password or banking fields. Quill does not collect your data or send it to any server we operate.</string>
+    <string name="accessibility_service_description">Quill needs the Accessibility Service to type your dictation into the app you\'re using.</string>
 
-    <string name="a11y_disclosure_title">Allow Quill to insert dictation</string>
-    <string name="a11y_disclosure_body">To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.</string>
-    <string name="a11y_disclosure_accept">I understand — open Accessibility settings</string>
+    <string name="a11y_disclosure_title">@string/accessibility_service_description</string>
+    <string name="a11y_disclosure_body">Android provides no standard way for an app to detect the focused text field in another app or insert text into it without replacing your keyboard, so an accessibility service is required.\n\nQuill uses the service to find the focused editable text field, check whether it is a password field, and insert your dictation. It reads the field\'s existing text and cursor position to preserve surrounding text and confirm insertion. It also uses the current app\'s identity to apply your writing style. Password fields are excluded.\n\nQuill does not capture screen images or log keystrokes. Existing field text is processed temporarily on your device, not saved to dictation history or sent to us or your AI provider. Local Android diagnostic logs can include app and field identifiers, field hints, input types, text length and cursor positions, but not the field\'s entered text. Quill has no backend server.\n\nAfter you tap Agree, Android Settings will open. Turn on Quill under Accessibility. Do not turn on the Accessibility Shortcut.</string>
+    <string name="a11y_disclosure_accept">Agree</string>
     <string name="a11y_disclosure_decline">Not now</string>
 </resources>

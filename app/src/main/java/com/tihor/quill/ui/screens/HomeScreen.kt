@@ -264,19 +264,19 @@ private fun MasterToggleCard(on: Boolean, onToggle: (Boolean) -> Unit) {
         modifier = Modifier.padding(top = 4.dp),
     ) {
         androidx.compose.foundation.layout.Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(22.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             QuillBubble(
                 state = if (on) BubbleState.IDLE else BubbleState.PAUSED,
                 icon = if (on) Icons.Rounded.Mic else Icons.Rounded.PowerSettingsNew,
-                size = 48.dp,
+                size = 64.dp,
             )
             Column(Modifier.weight(1f)) {
                 Text(
                     if (on) copy(K.HOME_TOGGLE_ON_TITLE) else copy(K.HOME_TOGGLE_OFF_TITLE),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
                 Text(
                     if (on) copy(K.HOME_TOGGLE_ON_SUB) else copy(K.HOME_TOGGLE_OFF_SUB),

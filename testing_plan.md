@@ -34,7 +34,7 @@ injection matrix**, which is where dictation apps actually live or die.
 - [ ] Compose UI: onboarding advances only when each permission is granted
 - [ ] Compose UI: API-key screen rejects empty input and surfaces validation errors
 - [ ] **Copy Catalog — offline cold start:** with **airplane mode on**, a fresh install renders the full UI from baked-in defaults with **no blank/garbled strings**; identical to the with-network first paint
-- [ ] **Copy Catalog — OTA apply:** with the "Check for updated text" toggle **on** and a newer valid bundle served, the app fetches it and applies it on **next launch**; with the toggle **off**, no fetch occurs
+- [ ] **Copy Catalog — OTA apply:** a newer valid signed bundle is fetched on app foreground and by job 1301 approximately every six hours, then applied in the same session. Offline or rejected updates keep existing copy.
 
 > Accessibility insertion and overlay behaviour are **not** reliably unit-testable — cover them in
 > §2/§3 on real devices.
@@ -169,7 +169,7 @@ fallback.**
 - [ ] Accessibility declaration submitted + demo video uploaded
 - [ ] Data-safety form matches actual behaviour (audio → user's own provider; local transcripts;
       nothing collected by us) — **and declares the read-only, no-user-data copy-bundle GET if OTA ships in v1**
-- [ ] **Copy host live check:** `…/copy/en.json` + `.sig` serve over HTTPS, the bundle verifies against the **pinned public key**, and the private signing key exists **only** as a CI secret (not in repo/app); privacy policy mentions the copy fetch + the "Check for updated text" toggle
+- [ ] **Copy host live check:** `…/copy/en.json` + `.sig` serve over HTTPS, the bundle verifies against the **pinned public key**, and the private signing key exists **only** as a CI secret (not in repo/app); privacy policy mentions the copy fetch + automatic foreground and background checks
 - [ ] R8/minify build runs the full app without reflection/serialization breakage
 - [ ] Crash-free target ≥99.5% across the manual matrix
 
@@ -181,3 +181,19 @@ fallback.**
 3. No crash in any of the §2 edge scripts (mic revoke, no network, bad key, force-stop, reboot).
 4. Key storage verified encrypted, backup-excluded, log-clean.
 5. Play pre-launch report clean and the accessibility declaration submitted.
+
+### Automatic copy refresh (M13 follow-up)
+On the physical Honor, open Quill and verify job 1301 appears in `adb shell dumpsys jobscheduler`.
+Use `adb shell cmd jobscheduler run -f com.tihor.quill 1301` to exercise a scheduled check without waiting six hours.
+Serve a newer signed revision and confirm the UI updates in the same session. Repeat offline and with an invalid signature: existing copy must remain usable.
+Reopen repeatedly and confirm only one periodic job remains. Reboot and confirm the persisted schedule returns. After force-stop, reopen manually before expecting jobs to resume.
+Six hours is the requested cadence, not an exact alarm: Android/OEM battery management can defer it.
+
+### Independent cleanup provider verification
+Test all five provider selections with all three styles using controlled chat responses, verify provider-specific key lookup and endpoint validation, truncated output fallback, selected-model persistence and independence from transcription. Run the existing timeout, malformed response, HTTP failure, instruction-preservation, vocabulary and private-mode regressions.
+On the Honor, keep Gemini transcription selected, choose Gemini cleanup, enable cleanup and dictate an unsent test sentence in Gmail (Formal) and WhatsApp (Neutral). Temporarily override WhatsApp to Casual and repeat, then remove the override. Inspect both visible text and cleanup status diagnostics; raw transcription alone is not a styling pass. Other provider live tests require their respective saved keys and are not implied by mock-server coverage.
+
+### Gmail editor connection and multiple keys
+On Android 13+, verify Gmail compose-body detection where the accessibility tree reports only a focused WebView. Confirm actual insertion with the editor connection and visible output; repeat with selection replacement, nonempty drafts and cancellation. A changed foreground package must preserve the transcript for manual paste instead of writing into the new app. Verify password input types are blocked and Android 10–12 retain the node/clipboard fallback. This matrix is pending physical testing, not implied by compilation.
+
+Verify multiple same-provider keys can be added, selected, removed and retained across app recreation. Rejecting a new key must not erase a working key. Verify automatic cleanup follows speech provider changes, separate choices remain independent, and disabling cleanup stays disabled.

@@ -181,30 +181,41 @@
       var p = navigator.userAgentData.platform.toLowerCase();
       if (p.indexOf("android") !== -1) return "android";
       if (p.indexOf("win") !== -1) return "windows";
-      if (p.indexOf("mac") !== -1) return "apple";
     }
     if (/android/i.test(ua)) return "android";
     if (/windows|win32|win64|wow64/i.test(ua)) return "windows";
-    if (/iphone|ipad|macintosh|mac os x/i.test(ua)) return "apple";
     return "other";
   }
 
   function initPlatformHighlight() {
     var os = detectOs();
     document.documentElement.setAttribute("data-os", os);
-    if (os !== "android" && os !== "windows") return;
-    document.querySelectorAll("[data-platform-cta]").forEach(function (el) {
-      var nativeTarget = el.getAttribute("data-platform-cta") === os;
-      el.classList.toggle("is-native-platform", nativeTarget);
-      el.classList.toggle("btn--primary", nativeTarget);
-      el.classList.toggle("btn--ghost", !nativeTarget);
-    });
+
+    // Native CTA promotion only applies where a per-OS CTA button exists
+    // (android/windows). Other visitors keep the default button styling.
+    if (os === "android" || os === "windows") {
+      document.querySelectorAll("[data-platform-cta]").forEach(function (el) {
+        var nativeTarget = el.getAttribute("data-platform-cta") === os;
+        el.classList.toggle("is-native-platform", nativeTarget);
+        el.classList.toggle("btn--primary", nativeTarget);
+        el.classList.toggle("btn--ghost", !nativeTarget);
+      });
+    }
+
+    // Highlight the visitor's platform wherever it's tagged — cards and store badges.
+    if (os === "other") return;
     document.querySelectorAll('[data-platform="' + os + '"]').forEach(function (el) {
       el.classList.add("is-native-platform");
       var chip = document.createElement("span");
       chip.className = "native-chip";
       chip.textContent = "Your device";
       el.appendChild(chip);
+      // On role="img" badges the injected chip text is not announced, so fold
+      // the cue into the element's own accessible name.
+      var label = el.getAttribute("aria-label");
+      if (label && label.toLowerCase().indexOf("your device") === -1) {
+        el.setAttribute("aria-label", label + " — your device");
+      }
     });
   }
 

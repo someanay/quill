@@ -80,7 +80,7 @@ fun PermissionRevokedScreen(nav: QuillNav) {
             )
             Spacer(Modifier.height(28.dp))
             QuillPrimaryButton(copy(K.SYSTEM_RECOVERY_CTA), onClick = {
-                context.startActivity(AccessibilityUtil.settingsIntent())
+                context.startActivity(AccessibilityUtil.disclosureIntent(context))
             })
             Spacer(Modifier.height(10.dp))
             // M11: the "why" path now leads to the OEM auto-start survival guide.

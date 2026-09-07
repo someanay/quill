@@ -2,6 +2,11 @@ package com.tihor.quill.copy.ota
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -38,7 +43,9 @@ class CopyUpdater(
 ) {
 
     /** Fetch + validate + (maybe) cache a newer bundle. Safe to call on any dispatcher; never throws. */
-    suspend fun checkForUpdate(): Outcome = withContext(Dispatchers.IO) {
+    suspend fun checkForUpdate(): Outcome = updateMutex.withLock { fetchUpdate() }
+
+    private suspend fun fetchUpdate(): Outcome = withContext(Dispatchers.IO) {
         try {
             // Self-heal: if launch re-verification discarded a corrupt/tampered cache, the stored applied
             // revision/ETag are stale. Reset them so the current server revision re-downloads (otherwise
@@ -59,11 +66,14 @@ class CopyUpdater(
                     else -> {
                         val bytes = response.body?.bytes()
                             ?: return@withContext Outcome.Failed("empty body")
+                        coroutineContext.ensureActive()
                         val newEtag = response.header("ETag")
                         return@withContext accept(bytes, newEtag, applied)
                     }
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Offline, timeout, DNS, TLS — all silent. Keep cached/baked-in.
             Log.d(TAG, "copy update skipped: ${e.message}")
@@ -98,6 +108,8 @@ class CopyUpdater(
     }
 
     companion object {
+        // Foreground and scheduled fetchers share a cache and rollback watermark.
+        private val updateMutex = Mutex()
         private const val TAG = "QuillCopyUpdate"
 
         /**

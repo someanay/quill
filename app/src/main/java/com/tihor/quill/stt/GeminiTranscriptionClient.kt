@@ -55,6 +55,7 @@ class GeminiTranscriptionClient(
     @Serializable
     private data class Part(
         val text: String? = null,
+        val thought: Boolean = false,
         @SerialName("inline_data") val inlineData: InlineData? = null,
     )
 
@@ -71,10 +72,16 @@ class GeminiTranscriptionClient(
     )
 
     @Serializable
-    private data class Candidate(val content: Content? = null)
+    private data class Candidate(val content: Content? = null, val finishReason: String? = null)
 
     @Serializable
-    private data class GenerateResponse(val candidates: List<Candidate> = emptyList())
+    private data class PromptFeedback(val blockReason: String? = null)
+
+    @Serializable
+    private data class GenerateResponse(
+        val candidates: List<Candidate> = emptyList(),
+        val promptFeedback: PromptFeedback? = null,
+    )
 
     override suspend fun transcribe(
         audio: File,
@@ -136,17 +143,24 @@ class GeminiTranscriptionClient(
     private fun parse(payload: String): Result<Transcript> =
         try {
             val response = json.decodeFromString<GenerateResponse>(payload)
-            val raw = response.candidates.firstOrNull()?.content?.parts
-                ?.mapNotNull { it.text }?.joinToString("").orEmpty()
+            val candidate = response.candidates.firstOrNull()
+            val parts = candidate?.content?.parts.orEmpty()
+            val raw = parts.filterNot { it.thought }.mapNotNull { it.text }.joinToString("")
             val text = stripWrapping(raw)
-            if (text.isBlank()) {
-                // No candidates / blocked / empty transcript: typed as Parse so the UI shows the
-                // "couldn't read the response" path, never inserts nothing.
-                Result.failure(TranscriptionError.Parse(IllegalStateException("empty transcript")))
-            } else {
-                Result.success(Transcript(text))
+            val error = when {
+                response.promptFeedback?.blockReason?.let { it != "BLOCK_REASON_UNSPECIFIED" } == true ||
+                    candidate?.finishReason in BLOCKED_REASONS -> TranscriptionError.BlockedResponse()
+                candidate?.finishReason != null && candidate.finishReason != "STOP" -> TranscriptionError.IncompleteResponse()
+                text.isBlank() -> TranscriptionError.EmptyResponse()
+                else -> null
+            }
+            if (error == null) Result.success(Transcript(text)) else {
+                // Only counts and locally defined categories; never log provider text or payloads.
+                Log.w(TAG, "Gemini response: candidates=${response.candidates.size}, parts=${parts.size}, textParts=${parts.count { !it.thought && !it.text.isNullOrBlank() }}, category=${error.javaClass.simpleName}")
+                Result.failure(error)
             }
         } catch (e: Exception) {
+            Log.w(TAG, "Gemini response: invalid structure")
             Result.failure(TranscriptionError.Parse(e))
         }
 
@@ -161,6 +175,7 @@ class GeminiTranscriptionClient(
 
     companion object {
         private const val TAG = "Quill.Stt"
+        private val BLOCKED_REASONS = setOf("SAFETY", "RECITATION", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "IMAGE_SAFETY")
         private val JSON_MEDIA = "application/json".toMediaType()
 
         const val BASE_URL = "https://generativelanguage.googleapis.com"

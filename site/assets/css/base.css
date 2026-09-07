@@ -9,13 +9,9 @@
 }
 
 html {
-  color-scheme: light;
+  color-scheme: dark;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-}
-
-html[data-theme="dark"] {
-  color-scheme: dark;
 }
 
 /* Theme transition — applied only once the user has interacted with the toggle,
@@ -43,6 +39,20 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Ambient background — the hero's glow lifted to a fixed, full-viewport layer so the
+   exact same treatment carries across every section of the site, not just the hero.
+   Fixed to the viewport (not the page) so it stays consistent no matter how far you scroll. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(760px 640px at 87% -8%, color-mix(in srgb, var(--brand) 18%, transparent), transparent 60%),
+    radial-gradient(600px 520px at -12% 106%, color-mix(in srgb, var(--gold) 12%, transparent), transparent 62%);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -116,18 +126,36 @@ a:focus-visible,
   border-radius: 1px;
 }
 
-/* Display & heading scale */
+/* Display & heading scale.
+   Fraunces (an old-style, ink-trap serif) carries the big statements — the
+   editorial "ink" voice — while Inter keeps the working subheads and UI legible.
+   Optical sizing lets the display sizes bloom high-contrast; opsz is set inline. */
 .display {
-  font-size: clamp(2.35rem, 5.4vw, 4rem);
-  line-height: 1.05;
-  letter-spacing: -0.022em;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.021em;
+  font-weight: 600;
 }
 
 .heading-xl {
-  font-size: clamp(1.9rem, 3.6vw, 2.85rem);
-  line-height: 1.12;
-  letter-spacing: -0.018em;
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: clamp(2rem, 3.8vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.016em;
+  font-weight: 600;
+}
+
+/* Gold ink accent — one keyword per statement, only where it means
+   "the ink your voice becomes". Italic Fraunces, never a decorative highlight. */
+.display em,
+.heading-xl em,
+.ink-accent {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--gold);
 }
 
 .heading-lg {

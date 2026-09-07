@@ -28,10 +28,10 @@ import com.tihor.quill.ui.theme.quill
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
-        text = text.uppercase(),
+        text = text,
         style = SectionHeaderStyle,
         color = MaterialTheme.quill.muted,
-        modifier = modifier.padding(top = 18.dp, bottom = 8.dp),
+        modifier = modifier.padding(start = 4.dp, top = 24.dp, bottom = 10.dp),
     )
 }
 

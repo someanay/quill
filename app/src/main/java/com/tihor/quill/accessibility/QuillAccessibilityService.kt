@@ -6,8 +6,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import android.os.Build
+import android.view.inputmethod.EditorInfo
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import androidx.core.content.ContextCompat
 import com.tihor.quill.BuildConfig
 import com.tihor.quill.settings.SettingsRepository
@@ -53,11 +56,15 @@ class QuillAccessibilityService : AccessibilityService() {
         when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_FOCUSED,
             AccessibilityEvent.TYPE_VIEW_CLICKED,
+            AccessibilityEvent.TYPE_VIEW_TEXT_SELECTION_CHANGED,
             -> updateFocusedEditable(event)
 
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                focusedEditable = null // left the field / switched app — drop the stale node
-                updateSensitive(false)
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                // Keyboard, dialogs and overlays also emit window events. Resolve the current
+                // application field instead of treating each event as leaving the app.
+                focusedEditable = currentInputFocus()
+                updateSensitive(focusedEditable?.let(::isSensitive) == true)
             }
         }
     }
@@ -87,12 +94,28 @@ class QuillAccessibilityService : AccessibilityService() {
      * in debug builds, from the adb broadcast trigger. Resolves focus *now* rather than from a
      * stored node, since the bubble is `FLAG_NOT_FOCUSABLE` and doesn't move input focus.
      */
-    fun injectText(text: String): InsertResult {
+    fun injectText(text: String, expectedPackage: String? = null): InsertResult {
+        if (expectedPackage != null && focusedPackageName() != expectedPackage) return InsertResult.NoEditableField
         // Prefer the node captured from focus events (reliable for WebViews); refresh it for current
         // text/selection. Fall back to findFocus only if we have no tracked field.
-        val tracked = focusedEditable?.also { runCatching { it.refresh() } }
-        val focus = tracked ?: currentInputFocus()
+        val focus = currentInputFocus()
         if (focus == null) {
+            val editor = activeEditor()
+            if (editor != null) {
+                if (editorSensitive(editor)) return InsertResult.RefusedSensitive
+                if (Build.VERSION.SDK_INT >= 33) {
+                    val connection = inputMethod?.currentInputConnection
+                    if (connection != null) {
+                        return runCatching {
+                            connection.commitText(text, 1, null)
+                            val surrounding = connection.getSurroundingText(text.length.coerceAtMost(16000), 0, 0)
+                            val confirmed = surrounding?.text?.toString()?.endsWith(text) == true
+                            Log.i(TAG, "Editor connection insertion confirmed=$confirmed")
+                            if (confirmed) InsertResult.Success else InsertResult.NoEditableField
+                        }.getOrDefault(InsertResult.NoEditableField)
+                    }
+                }
+            }
             Log.i(TAG, "injectText: no focused field.")
             return InsertResult.NoEditableField
         }
@@ -103,21 +126,49 @@ class QuillAccessibilityService : AccessibilityService() {
 
     /** Perform the user-initiated clipboard paste into the focused field (Tap-to-Paste rung). */
     fun pasteIntoFocused(): Boolean {
-        val focus = focusedEditable?.also { runCatching { it.refresh() } } ?: currentInputFocus()
+        val focus = currentInputFocus()
         return focus != null && injector.paste(focus)
     }
 
     /** Package of the currently focused editable field (M9 history "target app"); null if none. */
-    fun focusedPackageName(): String? = focusedEditable?.packageName?.toString()
+    fun focusedPackageName(): String? = currentInputFocus()?.packageName?.toString() ?: activeEditor()?.packageName
 
     /** True if an editable text field is focused right now — used to warn before recording starts. */
     fun isEditableFocused(): Boolean {
-        val tracked = focusedEditable?.also { runCatching { it.refresh() } }
-        return (tracked ?: currentInputFocus())?.isEditable == true
+        val focus = currentInputFocus()
+        focusedEditable = focus
+        val editor = activeEditor()
+        updateSensitive(focus?.let(::isSensitive) == true || editor?.let(::editorSensitive) == true)
+        return focus != null || editor != null
     }
 
-    private fun currentInputFocus(): AccessibilityNodeInfo? =
-        runCatching { findFocus(AccessibilityNodeInfo.FOCUS_INPUT) }.getOrNull()
+    /** API 33+ exposes editors such as Gmail's body even when their WebView has no editable node. */
+    private fun activeEditor(): EditorInfo? {
+        if (Build.VERSION.SDK_INT < 33) return null
+        val method = inputMethod ?: return null
+        if (!method.currentInputStarted || method.currentInputConnection == null) return null
+        val editor = method.currentInputEditorInfo ?: return null
+        val foreground = windows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION && (it.isActive || it.isFocused) }
+            .maxByOrNull { it.layer }?.root?.packageName?.toString() ?: rootInActiveWindow?.packageName?.toString()
+        return editor.takeIf { it.inputType != 0 && it.packageName == foreground }
+    }
+
+    private fun editorSensitive(editor: EditorInfo): Boolean = SensitiveFieldClassifier.isSensitive(
+        SensitiveFieldClassifier.EditableFieldInfo(false, editor.inputType, null, editor.packageName),
+    )
+
+    private fun currentInputFocus(): AccessibilityNodeInfo? = runCatching {
+        // Only the current application window may provide a target. Never choose a field
+        // in the keyboard, floating overlay, or an inactive app behind a dialog.
+        val applicationWindows = windows.filter {
+            it.type == AccessibilityWindowInfo.TYPE_APPLICATION && (it.isFocused || it.isActive)
+        }.sortedByDescending { it.layer }
+        val root = applicationWindows.firstOrNull()?.root
+        if (root != null) return@runCatching EditableNodeResolver.findInputTarget(root)
+        // Some OEMs omit the window list. The active root is the only safe fallback;
+        // do not revive a cached node whose focus or window may have changed.
+        EditableNodeResolver.findInputTarget(rootInActiveWindow)
+    }.getOrNull()
 
     private fun isSensitive(node: AccessibilityNodeInfo): Boolean =
         SensitiveFieldClassifier.isSensitive(

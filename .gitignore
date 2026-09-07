@@ -30,3 +30,21 @@ windows/**/bin/
 windows/**/obj/
 windows/.vs/
 windows/artifacts/
+
+# Built app artifacts (apk/exe) produced on request — not tracked
+/dist/
+
+# Local development tools and notes
+.claude/
+.kotlin/
+/AGENT_MEMORY_ADDENDUM.md
+/AGENT_ONBOARDING.md
+/PROJECT_HANDOFF.md
+/CLAUDE.md
+
+# Paused ports, retained locally during the Android release
+/windows/
+/macos/
+/ios/
+/.github/workflows/apple.yml
+/docs/OVERNIGHT_AUDIT_2026-08-18.md
