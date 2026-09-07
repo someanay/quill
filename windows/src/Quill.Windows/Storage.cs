@@ -24,36 +24,43 @@ public sealed class SettingsStore {
  public event Action? Changed;
  public SettingsStore(string folder) { path = Path.Combine(folder, "settings.json"); Value = JsonFiles.Read(path, () => new QuillSettings()); Value.Validate(); }
  public void Save() { Value.Validate(); JsonFiles.Write(path, Value); Changed?.Invoke(); }
+ public void SetProvider(Provider provider) { Value.Provider = provider; Value.SpeechModel = provider == Provider.Custom ? Value.CustomModel : Providers.Get(provider).SpeechModel; Save(); }
+ public void SetCleanupAutomatic(bool automatic) { if (!automatic && Value.CleanupAutomatic) { Value.CleanupProvider = Value.Provider; Value.CleanupModel = Providers.Get(Value.Provider).CleanupModel; } Value.CleanupAutomatic = automatic; if (automatic) Value.CleanupEnabled = true; Save(); }
+ public void SetCleanupEnabled(bool enabled) { Value.CleanupEnabled = enabled; if (enabled && Value.CleanupAutomatic && !Providers.HasFreeCleanup(Value.Provider)) { Value.CleanupAutomatic = false; Value.CleanupProvider = Value.Provider; Value.CleanupModel = Providers.Get(Value.Provider).CleanupModel; } Save(); }
+ public void SetCleanupProvider(Provider provider) { Value.CleanupAutomatic = false; Value.CleanupModels[Value.CleanupProvider] = Value.CleanupModel; Value.CleanupProvider = provider; Value.CleanupModel = Value.CleanupModels.GetValueOrDefault(provider) ?? Providers.Get(provider).CleanupModel; Save(); }
+ public void SetCleanupModel(string model) { if (Value.CleanupAutomatic) Value.CleanupProvider = Value.Provider; Value.CleanupAutomatic = false; Value.CleanupModel = model.Trim(); Save(); }
  public void Reset(bool all = false) { var complete = Value.OnboardingComplete; var consent = Value.InjectionConsent; Value = new() { OnboardingComplete = !all && complete, InjectionConsent = !all && consent }; Save(); }
 }
-public record SavedKey(string Id, string Label, string Ciphertext, string LastFour, DateTimeOffset Created);
-public sealed class KeyRing { public List<SavedKey> Keys { get; set; } = []; public string? ActiveId { get; set; } }
+public record SavedKey(string Id,string Label,string Ciphertext,string LastFour,DateTimeOffset Created,string? Endpoint = null);
+public sealed class KeyRing { public List<SavedKey> Keys { get; set; } = []; public string? ActiveId { get; set; } public Dictionary<string,string> ActiveByEndpoint { get; set; } = []; }
 public sealed class SecretStore {
  private readonly string path;
  private readonly object gate = new();
  private Dictionary<Provider, KeyRing> rings;
  private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Quill.Windows.v2/provider-keys");
  public SecretStore(string folder) { path = Path.Combine(folder, "keys.dpapi.json"); rings = JsonFiles.Read(path, () => new Dictionary<Provider, KeyRing>()); }
- public IReadOnlyList<SavedKey> List(Provider provider) { lock (gate) return rings.GetValueOrDefault(provider)?.Keys.ToArray() ?? []; }
- public string? ActiveId(Provider provider) { lock (gate) return rings.GetValueOrDefault(provider)?.ActiveId; }
- public string? Read(Provider provider) {
+ private static string? Scope(Provider provider,string? endpoint) { if (provider != Provider.Custom) return null; try { return Providers.ValidateEndpoint(endpoint ?? ""); } catch (ArgumentException) { return null; } }
+ public IReadOnlyList<SavedKey> List(Provider provider,string? endpoint = null) { lock (gate) { var scope = Scope(provider,endpoint); return rings.GetValueOrDefault(provider)?.Keys.Where(k => provider != Provider.Custom || scope != null && k.Endpoint == scope).ToArray() ?? []; } }
+ public string? ActiveId(Provider provider,string? endpoint = null) { lock (gate) { var ring = rings.GetValueOrDefault(provider); var scope = Scope(provider,endpoint); return provider == Provider.Custom ? scope == null ? null : ring?.ActiveByEndpoint.GetValueOrDefault(scope) : ring?.ActiveId; } }
+ public string? Read(Provider provider,string? endpoint = null) {
   lock (gate) {
-   var ring = rings.GetValueOrDefault(provider); var key = ring?.Keys.FirstOrDefault(k => k.Id == ring.ActiveId); if (key == null) return null;
+   var id = ActiveId(provider,endpoint); var key = List(provider,endpoint).FirstOrDefault(k => k.Id == id); if (key == null) return null;
    byte[] clear = ProtectedData.Unprotect(Convert.FromBase64String(key.Ciphertext), Entropy, DataProtectionScope.CurrentUser);
    try { return Encoding.UTF8.GetString(clear); } finally { CryptographicOperations.ZeroMemory(clear); }
   }
  }
- public void Add(Provider provider, string value, string label) {
+ public void Add(Provider provider,string value,string label,string? endpoint = null) {
   value = value.Trim(); if (value.Length < 6 || value.Any(char.IsWhiteSpace)) throw new ArgumentException("Paste the complete key without spaces.");
+  var scope = Scope(provider,endpoint); if (provider == Provider.Custom && scope == null) throw new ArgumentException("A custom key must be verified for an HTTPS endpoint.");
   lock (gate) {
    var clear = Encoding.UTF8.GetBytes(value); string cipher;
    try { cipher = Convert.ToBase64String(ProtectedData.Protect(clear, Entropy, DataProtectionScope.CurrentUser)); } finally { CryptographicOperations.ZeroMemory(clear); }
    var ring = rings.GetValueOrDefault(provider) ?? new KeyRing(); var id = Guid.NewGuid().ToString("N");
-   ring.Keys.Add(new(id, string.IsNullOrWhiteSpace(label) ? $"Key {ring.Keys.Count + 1}" : label.Trim(), cipher, value[^4..], DateTimeOffset.UtcNow)); ring.ActiveId = id; rings[provider] = ring; JsonFiles.Write(path, rings);
+   ring.Keys.Add(new(id,string.IsNullOrWhiteSpace(label) ? $"Key {ring.Keys.Count + 1}" : label.Trim(),cipher,value[^4..],DateTimeOffset.UtcNow,scope)); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; rings[provider] = ring; JsonFiles.Write(path,rings);
   }
  }
- public void Activate(Provider provider, string id) { lock (gate) { var ring = rings[provider]; if (!ring.Keys.Any(k => k.Id == id)) throw new ArgumentException("Unknown key."); ring.ActiveId = id; JsonFiles.Write(path, rings); } }
- public void Delete(Provider provider, string id) { lock (gate) { if (!rings.TryGetValue(provider, out var ring)) return; ring.Keys.RemoveAll(k => k.Id == id); if (ring.ActiveId == id) ring.ActiveId = ring.Keys.FirstOrDefault()?.Id; JsonFiles.Write(path, rings); } }
+ public void Activate(Provider provider,string id,string? endpoint = null) { lock (gate) { var ring = rings[provider]; if (!List(provider,endpoint).Any(k => k.Id == id)) throw new ArgumentException("Unknown key for this endpoint."); var scope = Scope(provider,endpoint); if (scope != null) ring.ActiveByEndpoint[scope] = id; else ring.ActiveId = id; JsonFiles.Write(path,rings); } }
+ public void Delete(Provider provider,string id) { lock (gate) { if (!rings.TryGetValue(provider,out var ring)) return; var removed = ring.Keys.FirstOrDefault(k => k.Id == id); ring.Keys.RemoveAll(k => k.Id == id); if (removed?.Endpoint is string scope && ring.ActiveByEndpoint.GetValueOrDefault(scope) == id) { var next = ring.Keys.FirstOrDefault(k => k.Endpoint == scope); if (next != null) ring.ActiveByEndpoint[scope] = next.Id; else ring.ActiveByEndpoint.Remove(scope); } if (ring.ActiveId == id) ring.ActiveId = ring.Keys.FirstOrDefault()?.Id; JsonFiles.Write(path,rings); } }
  public void Clear() { lock (gate) { rings.Clear(); if (File.Exists(path)) File.Delete(path); } }
 }
 public sealed class HistoryStore {

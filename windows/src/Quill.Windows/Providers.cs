@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 namespace Quill.Windows;
 public sealed class ProviderException(string code, int status = 0) : Exception(code) { public string Code { get; } = code; public int Status { get; } = status; }
-public record ModelOption(string Id, bool Free = false);
+public record ModelOption(string Id,bool Free = false,bool Paid = false,long Created = 0,string? Name = null);
 public sealed class ProviderClient : IDisposable {
  private readonly HttpClient http;
  public const string RomanizePrompt = "The speaker mixes English and Hindi (Hinglish) and writes Hindi words in Roman/Latin script. Example: Aaj ka plan kya hai? Let's meet kal, theek hai.";
@@ -59,7 +59,7 @@ public sealed class ProviderClient : IDisposable {
   }
   using var json = await Send(request, p, cancellation); string text;
   try { text = p == Provider.Gemini ? GeminiText(json.RootElement) : json.RootElement.GetProperty("text").GetString() ?? ""; }
-  catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException) { throw new ProviderException("invalid_response"); }
+  catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException) { throw new ProviderException("invalid_response"); }
   text = p == Provider.Gemini ? StripWrapping(text) : text.Trim();
   if (string.IsNullOrWhiteSpace(text)) throw new ProviderException("empty_transcript"); return text;
  }
@@ -70,26 +70,17 @@ public sealed class ProviderClient : IDisposable {
   return string.Join("",candidate.GetProperty("content").GetProperty("parts").EnumerateArray().Where(p => !p.TryGetProperty("thought",out var t) || t.ValueKind != JsonValueKind.True).Where(p => p.TryGetProperty("text",out _)).Select(p => p.GetProperty("text").GetString()));
  }
  public static string StripWrapping(string text) { text = text.Trim(); text = Regex.Replace(text, @"\A```(?:text)?\s*|\s*```\z", "", RegexOptions.IgnoreCase); return Regex.Replace(text, @"\A(?:transcript|transcription):\s*", "", RegexOptions.IgnoreCase).Trim(); }
- public async Task<List<ModelOption>> Models(Provider provider, string key, string customUrl, bool speech, CancellationToken cancellation) {
-  var result = new List<ModelOption>(); string? token = null; var pages = 0;
+ public async Task<List<ModelOption>> Models(Provider provider,string key,string customUrl,bool speech,CancellationToken cancellation) {
+  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(12));
+  var result = new List<ModelOption>(); var seen = new HashSet<string>(); string? token = null;
   do {
-   var url = Providers.BaseUrl(provider, customUrl) + (provider == Provider.Gemini ? "/v1beta/models?pageSize=1000" + (token == null ? "" : "&pageToken=" + Uri.EscapeDataString(token)) : "/models");
-   using var json = await Send(Request(HttpMethod.Get, url, provider, key), provider, cancellation);
-   var root = json.RootElement; var property = provider == Provider.Gemini ? "models" : "data";
-   if (!root.TryGetProperty(property, out var models) || models.ValueKind != JsonValueKind.Array) throw new ProviderException("invalid_response");
-   foreach (var item in models.EnumerateArray()) {
-    if (!item.TryGetProperty(provider == Provider.Gemini ? "name" : "id", out var name)) continue;
-    var id = name.GetString()?.Replace("models/", "", StringComparison.Ordinal) ?? ""; if (id.Length == 0) continue;
-    bool supported = provider switch {
-     Provider.Groq or Provider.OpenAI => speech ? id.Contains("whisper") || id.Contains("transcribe") && !id.Contains("diarize") : !new[] { "whisper", "transcribe", "tts", "embedding", "image", "moderation" }.Any(id.Contains),
-     Provider.Gemini => item.TryGetProperty("supportedGenerationMethods", out var methods) && methods.EnumerateArray().Any(m => m.GetString() == "generateContent") && !new[] { "live", "image", "tts", "robotics", "embedding" }.Any(id.Contains),
-     Provider.OpenRouter => speech ? id.Contains("whisper") || id.Contains("transcribe") || id.Contains("voxtral") : !id.Contains("whisper") && !id.Contains("transcribe"),
-     _ => true };
-    if (supported) result.Add(new(id, provider == Provider.Groq || id.EndsWith(":free") || id == "openrouter/free" || provider == Provider.Gemini && id.Contains("flash")));
-   }
-   token = provider == Provider.Gemini && root.TryGetProperty("nextPageToken", out var next) ? next.GetString() : null;
-  } while (!string.IsNullOrWhiteSpace(token) && ++pages < 10);
-  return result.DistinctBy(m => m.Id).OrderByDescending(m => m.Free).ThenBy(m => m.Id).ToList();
+   var url = Providers.BaseUrl(provider,customUrl) + (provider == Provider.Gemini ? "/v1beta/models?pageSize=1000" + (token == null ? "" : "&pageToken=" + Uri.EscapeDataString(token)) : "/models" + (provider == Provider.OpenRouter && speech ? "?output_modalities=transcription" : ""));
+   var request = provider == Provider.OpenRouter && string.IsNullOrWhiteSpace(key) ? new HttpRequestMessage(HttpMethod.Get,url) : Request(HttpMethod.Get,url,provider,key);
+   using var json = await Send(request,provider,deadline.Token); result.AddRange(ModelCatalog.Parse(json.RootElement,provider,speech));
+   token = provider == Provider.Gemini && json.RootElement.TryGetProperty("nextPageToken",out var next) && next.ValueKind == JsonValueKind.String ? next.GetString() : null;
+   if (!string.IsNullOrWhiteSpace(token) && (!seen.Add(token) || seen.Count >= 20)) throw new ProviderException("invalid_response");
+  } while (!string.IsNullOrWhiteSpace(token));
+  return ModelCatalog.Rank(result,speech);
  }
  public async Task ValidateKey(Provider provider, string key, string customUrl, CancellationToken cancellation) {
   if (provider == Provider.OpenRouter) { using var json = await Send(Request(HttpMethod.Get,Providers.BaseUrl(provider,customUrl) + "/auth/key",provider,key),provider,cancellation); if (!json.RootElement.TryGetProperty("data",out _)) throw new ProviderException("invalid_response"); }
@@ -104,7 +95,7 @@ public sealed class ProviderClient : IDisposable {
   request.Content = JsonContent.Create(new { model, temperature = 0, messages = new[] { new { role = "system", content = CleanupGuard.Prompt(settings.StyleFor(destination)) }, new { role = "user", content = raw } } });
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(4));
   try { using var json = await Send(request, p, deadline.Token); var choice = json.RootElement.GetProperty("choices")[0]; if (choice.TryGetProperty("finish_reason",out var finish) && finish.GetString() is string reason && reason != "stop") return raw; var text = choice.GetProperty("message").GetProperty("content").GetString()?.Trim() ?? ""; return CleanupGuard.PreservesMeaning(raw,text) ? text : raw; }
-  catch (Exception e) when (e is ProviderException or JsonException or KeyNotFoundException or InvalidOperationException or OperationCanceledException && !cancellation.IsCancellationRequested) { return raw; }
+  catch (Exception e) when (e is ProviderException or JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or OperationCanceledException && !cancellation.IsCancellationRequested) { return raw; }
  }
  public void Dispose() => http.Dispose();
 }

@@ -1,0 +1,44 @@
+name: Windows build and test
+
+on:
+  push:
+    paths: ["windows/**", "tests/parity/**", "scripts/verify-platform-parity.py", "scripts/check-copy-usage.py", ".github/workflows/windows.yml"]
+  pull_request:
+    paths: ["windows/**", "tests/parity/**", ".github/workflows/windows.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Verify bundled copy and fonts
+        run: python scripts/verify-platform-parity.py --platform windows
+      - name: Build and test Windows app
+        run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
+      - name: Publish portable Windows application
+        run: dotnet publish windows/src/Quill.Windows/Quill.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows/portable
+      - name: Upload Windows application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-Windows-x64-portable
+          path: dist/windows/portable
+          retention-days: 14
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-verification
+          path: dist/verification/windows-tests
+          retention-days: 14

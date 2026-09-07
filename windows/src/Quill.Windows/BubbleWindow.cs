@@ -14,7 +14,7 @@ public sealed class InkMeter : FrameworkElement {
  public void Update(double rms, bool recording) { Rms = rms; Recording = recording; history[index++ % history.Length] = Math.Min(1, Math.Sqrt(rms / 12000)); InvalidateVisual(); }
  protected override void OnRender(DrawingContext dc) {
   base.OnRender(dc); double width = Math.Min(5, ActualWidth / (Bars * 1.7)); double gap = width * 0.75; double start = (ActualWidth - Bars * (width + gap)) / 2;
-  for (int i = 0; i < Bars; i++) { var amplitude = history[(index - Bars + i + history.Length * 10) % history.Length]; var h = Recording ? Math.Max(5, amplitude * ActualHeight * 0.9) : 5; if (!SystemParameters.ClientAreaAnimation) h = Recording ? Math.Min(h, ActualHeight / 3) : 5; dc.DrawRoundedRectangle(Theme.Hex(Recording ? "#E0A03A" : "#D3D6E2"), null, new Rect(start + i * (width + gap), (ActualHeight - h) / 2, width, h), 3,3); }
+  for (int i = 0; i < Bars; i++) { var amplitude = history[(index - Bars + i + history.Length * 10) % history.Length]; var h = Recording ? Math.Max(5, amplitude * ActualHeight * 0.9) : 5; if (!SystemParameters.ClientAreaAnimation) h = Recording ? Math.Min(h, ActualHeight / 3) : 5; dc.DrawRoundedRectangle(Theme.Hex(Recording ? "#234DCE" : "#CBD2CC"), null, new Rect(start + i * (width + gap), (ActualHeight - h) / 2, width,h),3,3); }
  }
 }
 public sealed class BubbleWindow : Window {
@@ -25,13 +25,13 @@ public sealed class BubbleWindow : Window {
   var grid = new Grid(); Content = grid;
   var caption = new StackPanel(); status = new TextBlock { FontSize = 12, TextAlignment = TextAlignment.Center }; status.SetResourceReference(TextBlock.ForegroundProperty, "GoldDeep"); meter = new InkMeter { Height = 25, Width = 60, Bars = 6 }; caption.Children.Add(meter); caption.Children.Add(status);
   pill = new Border { Child = caption, CornerRadius = new(14), Padding = new Thickness(12,8,12,8), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Width = 155, BorderThickness = new Thickness(1) }; pill.SetResourceReference(Border.BackgroundProperty, "Surface"); pill.SetResourceReference(Border.BorderBrushProperty, "Line"); grid.Children.Add(pill);
-  halo = new Border { Width = 82, Height = 82, CornerRadius = new(100), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new(0,0,8,0), Background = Theme.Hex("#38E0A03A") }; grid.Children.Add(halo);
+  halo = new Border { Width = 82, Height = 82, CornerRadius = new(100), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new(0,0,8,0), Background = Theme.Hex("#38234DCE") }; grid.Children.Add(halo);
   glyph = new Grid { Width = 28, Height = 30 };
   circle = new Border { Width = 56, Height = 56, CornerRadius = new(100), BorderBrush = Theme.Hex("#EBFFFFFF"), BorderThickness = new Thickness(2.5), Child = glyph, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new(0,0,21,0), Cursor = System.Windows.Input.Cursors.Hand, Effect = new DropShadowEffect { Color = Color.FromRgb(28,27,51), BlurRadius = 24, ShadowDepth = 6, Opacity = .34 } };
   System.Windows.Automation.AutomationProperties.SetName(circle, services.C("bubble.idle", "Start dictation")); grid.Children.Add(circle);
   cancel = new Button { Content = "×", Width = 32, Height = 32, MinHeight = 32, Padding = new(0), FontSize = 23, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, Margin = new(130,0,0,0) }; System.Windows.Automation.AutomationProperties.SetName(cancel, services.C("action.cancel", "Cancel")); cancel.Click += async (_,_) => await services.Dictation.Cancel(); grid.Children.Add(cancel);
   circle.MouseLeftButtonDown += Down; circle.MouseMove += Move; circle.MouseLeftButtonUp += Up;
-  var menu = new ContextMenu(); AddMenu(menu, services.C("windows.tray.open", "Open Quill"), services.ShowMain); AddMenu(menu, services.C("windows.tray.hide", "Hide bubble"), services.HideBubble); AddMenu(menu, services.C("windows.bubble.discard", "Discard dictation"), async () => await services.Dictation.Cancel()); circle.ContextMenu = menu;
+  var menu = new ContextMenu(); AddMenu(menu,services.C("windows.tray.open","Open Quill"),services.ShowMain); AddMenu(menu,services.C("windows.bubble.clipboard","Dictate to clipboard"),async () => { await Task.Delay(200); await services.Dictation.DictateToClipboard(); }); AddMenu(menu,services.C("windows.tray.hide","Hide bubble"),services.HideBubble); AddMenu(menu,services.C("windows.bubble.discard","Discard dictation"),async () => await services.Dictation.Cancel()); circle.ContextMenu = menu;
   SourceInitialized += (_, _) => { var hwnd = new WindowInteropHelper(this).Handle; Native.SetWindowLong(hwnd, -20, Native.GetWindowLong(hwnd, -20) | 0x08000000 | 0x00000080); Position(); };
   focusTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) }; focusTimer.Tick += async (_,_) => { if (!services.Settings.Value.PinBubble && services.Dictation.State == DictationState.Idle) circle.Opacity = await services.Injector.CanType() ? 1 : 0.25; else circle.Opacity = 1; }; focusTimer.Start(); Closed += (_,_) => focusTimer.Stop(); Refresh();
  }
@@ -54,7 +54,7 @@ public sealed class BubbleWindow : Window {
  }
  public void Refresh() {
   var s = services.Dictation.State; bool recording = s == DictationState.Recording; var size = services.Settings.Value.BubbleSize switch { "Small" => 48, "Large" => 68, _ => 56 }; circle.Width = size; circle.Height = size;
-  var first = recording ? "#E0A03A" : s == DictationState.Error ? "#D6453D" : s == DictationState.Transcribing ? "#5B5BD6" : "#4A3FD0"; var second = recording ? "#EFC069" : s == DictationState.Error ? "#E8635B" : "#6A5BEA";
+  var first = s == DictationState.Error ? "#D6453D" : s == DictationState.Transcribing ? "#3E5579" : "#234DCE"; var second = s == DictationState.Error ? "#E8635B" : s == DictationState.Transcribing ? "#526F9E" : "#244FD8";
   circle.Background = new LinearGradientBrush(Theme.Hex(first).Color, Theme.Hex(second).Color, 45); halo.Visibility = recording ? Visibility.Visible : Visibility.Collapsed;
   if (recording && SystemParameters.ClientAreaAnimation && halo.HasAnimatedProperties == false) halo.BeginAnimation(OpacityProperty, new DoubleAnimation(.25,.8,TimeSpan.FromSeconds(.9)) { AutoReverse = true, RepeatBehavior = RepeatBehavior.Forever }); else if (!recording) halo.BeginAnimation(OpacityProperty, null);
   glyph.Children.Clear();

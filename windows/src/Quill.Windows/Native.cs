@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Automation;
+using System.Windows.Automation.Text;
 using System.Windows.Interop;
 using Microsoft.Win32;
 namespace Quill.Windows;
@@ -36,22 +37,38 @@ public sealed class TextInjector : ITextInjector {
   if (element.TryGetCurrentPattern(ValuePattern.Pattern,out var value)) { var content = ((ValuePattern)value).Current.Value; return content.Length <= 200_000 ? content : null; }
   return null;
  }
+ private static (string Before,string Payload,string Expected)? PrepareInsertion(string text) {
+  var element = AutomationElement.FocusedElement; if (element == null || element.Current.IsPassword) return null;
+  var current = ReadFocusedText(); if (current == null || current.Length >= 200_000) return null;
+  int start; int end;
+  if (element.TryGetCurrentPattern(TextPattern.Pattern,out var pattern)) {
+   var tp = (TextPattern)pattern; var selection = tp.GetSelection(); if (selection.Length != 1) return null;
+   var prefix = tp.DocumentRange.Clone(); prefix.MoveEndpointByRange(TextPatternRangeEndpoint.End,selection[0],TextPatternRangeEndpoint.Start); start = prefix.GetText(200_000).Length; end = start + selection[0].GetText(200_000).Length;
+  } else {
+   var hwnd = (nint)element.Current.NativeWindowHandle; var className = new System.Text.StringBuilder(128); Native.GetClassName(hwnd,className,128);
+   if (!className.ToString().Contains("edit",StringComparison.OrdinalIgnoreCase) || current.Length >= 65535 || Native.SendMessageTimeout(hwnd,0x00B0,0,0,0x0002,300,out var positions) == 0) return null;
+   start = (int)(positions & 0xffff); end = (int)((positions >> 16) & 0xffff);
+  }
+  if (start < 0 || start > end || end > current.Length) return null;
+  var expected = InsertionComposer.Insert(current,start,end,text); var payloadLength = expected.Length - current.Length + end - start;
+  return (current,expected.Substring(start,payloadLength),expected);
+ }
  public async Task<bool> Insert(FocusTarget target, string text) {
   var current = await Capture();
   if (current.Sensitive || !current.Editable || target.Sensitive || !target.Editable || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || Native.ModifierPressed()) return false;
   // Unicode input preserves the native editor's selection, undo history and existing contents.
   // No ValuePattern.SetValue of an entire field, no guessed cursor, and no focus stealing.
-  var before = await Bounded(ReadFocusedText,null);
-  if (before == null) return false;
+  var plan = await Bounded(() => PrepareInsertion(text),null);
+  if (plan == null) return false;
   current = await Capture();
   if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId) || Native.ModifierPressed()) return false;
   var inputs = new List<Native.INPUT>();
-  foreach (var c in text) { inputs.Add(Native.Unicode(c, false)); inputs.Add(Native.Unicode(c, true)); }
+  foreach (var c in plan.Value.Payload) { inputs.Add(Native.Unicode(c,false)); inputs.Add(Native.Unicode(c,true)); }
   if (inputs.Count == 0 || Native.SendInput((uint)inputs.Count,inputs.ToArray(),Marshal.SizeOf<Native.INPUT>()) != inputs.Count) return false;
   await Task.Delay(180);
   current = await Capture(); if (current.Sensitive || current.Window != target.Window || !current.RuntimeId.SequenceEqual(target.RuntimeId)) return false;
   var after = await Bounded(ReadFocusedText,null);
-  return after != null && after != before && after.Replace("\r\n","\n",StringComparison.Ordinal).Contains(text.Replace("\r\n","\n",StringComparison.Ordinal),StringComparison.Ordinal);
+  return after != null && after.Replace("\r\n","\n",StringComparison.Ordinal) == plan.Value.Expected.Replace("\r\n","\n",StringComparison.Ordinal);
  }
 }
 public interface IClipboardService { bool Copy(string text,bool transient = true); Task<bool> Paste(string text,ITextInjector injector); }
@@ -66,8 +83,10 @@ public sealed class ClipboardService : IClipboardService {
  public async Task<bool> Paste(string text,ITextInjector injector) { var target = await injector.Capture(); if (!target.Editable || target.Sensitive || Native.ModifierPressed()) return false; return await injector.Insert(target,text); }
 }
 public sealed class HotkeyService : IDisposable {
- private HwndSource? source; private const int Id = 0x514c; public event Action? Pressed; public bool Registered { get; private set; }
- public HotkeyService(nint hwnd) { source = HwndSource.FromHwnd(hwnd); source?.AddHook(Hook); Registered = Native.RegisterHotKey(hwnd, Id, 0x4000 | 0x0002 | 0x0004, 0x20); }
+ private HwndSource? source; private const int Id = 0x514c; public event Action? Pressed; public bool Registered { get; private set; } public string Label { get; private set; } = "Ctrl + Win + Space"; public int RegistrationError { get; private set; }
+ public const uint Modifiers = 0x4000 | 0x0002 | 0x0008;
+ public static readonly IReadOnlyList<(string Label,uint Modifiers)> Bindings = new[] { ("Ctrl + Win + Space",Modifiers),("Ctrl + Alt + Space",0x4000U | 0x0002U | 0x0001U),("Ctrl + Shift + Space",0x4000U | 0x0002U | 0x0004U) };
+ public HotkeyService(nint hwnd,string preferred = "Ctrl + Win + Space") { source = HwndSource.FromHwnd(hwnd); source?.AddHook(Hook); foreach (var binding in Bindings.OrderByDescending(b => b.Label == preferred)) { if (Native.RegisterHotKey(hwnd,Id,binding.Modifiers,0x20)) { Registered = true; Label = binding.Label; break; } RegistrationError = Marshal.GetLastWin32Error(); } }
  private nint Hook(nint hwnd, int message, nint wparam, nint lparam, ref bool handled) { if (message == 0x0312 && wparam == Id) { handled = true; Pressed?.Invoke(); } return 0; }
  public void Dispose() { if (source != null) { Native.UnregisterHotKey(source.Handle, Id); source.RemoveHook(Hook); source = null; } }
 }
@@ -78,9 +97,11 @@ public static class StartupService {
 public static class Native {
  [DllImport("user32.dll")] public static extern nint GetForegroundWindow();
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(nint hwnd, out uint processId);
- [DllImport("user32.dll")] public static extern bool RegisterHotKey(nint hwnd, int id, uint modifiers, uint key);
+ [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(nint hwnd, int id, uint modifiers, uint key);
  [DllImport("user32.dll")] public static extern bool UnregisterHotKey(nint hwnd, int id);
  [DllImport("user32.dll")] public static extern short GetAsyncKeyState(int key);
+ [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern int GetClassName(nint hwnd,System.Text.StringBuilder name,int count);
+ [DllImport("user32.dll",CharSet=CharSet.Unicode)] public static extern nint SendMessageTimeout(nint hwnd,uint message,nuint wparam,nint lparam,uint flags,uint timeout,out nuint result);
  [DllImport("user32.dll")] public static extern uint SendInput(uint count, INPUT[] inputs, int size);
  [DllImport("user32.dll", EntryPoint="GetWindowLongPtrW")] public static extern nint GetWindowLong(nint hwnd, int index);
  [DllImport("user32.dll", EntryPoint="SetWindowLongPtrW")] public static extern nint SetWindowLong(nint hwnd, int index, nint value);

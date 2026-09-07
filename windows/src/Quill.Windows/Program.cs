@@ -24,7 +24,7 @@ public static class Program {
    if (!args.Contains("--background") || !services.Settings.Value.OnboardingComplete) window.Show();
    if (services.Settings.Value.OnboardingComplete && services.Settings.Value.BubbleActive && services.Settings.Value.BubbleVisible) services.ShowBubble();
    app.Run(); return 0;
-  } catch (Exception e) { services?.RecordCrash(e); MessageBox.Show("Quill could not start. Check that its files are intact and your local storage is available.", "Quill"); return 1; }
+  } catch (Exception e) { services?.RecordCrash(e); if (isolated) File.WriteAllText(Path.Combine(folder,"startup-failure.txt"),e.ToString()); MessageBox.Show("Quill could not start. Check that its files are intact and your local storage is available.","Quill"); return 1; }
   finally { services?.Dispose(); }
  }
 }
@@ -34,7 +34,7 @@ public sealed class AppServices : IDisposable {
  public ProviderClient Provider { get; } = new(); public ClipboardService Clipboard { get; } = new(); public ITextInjector Injector { get; } = new TextInjector();
  public AudioRecorder Recorder { get; } = new(); public DictationController Dictation { get; }
  public MainWindow? MainWindow { get; set; } public BubbleWindow? Bubble { get; private set; }
- private System.Windows.Forms.NotifyIcon? tray; private HotkeyService? hotkey; private readonly DispatcherTimer prune; private CancellationTokenSource? autoReturn; public bool HotkeyAvailable => hotkey?.Registered == true;
+ private System.Windows.Forms.NotifyIcon? tray; private HotkeyService? hotkey; private readonly DispatcherTimer prune; private CancellationTokenSource? autoReturn; public bool HotkeyAvailable => hotkey?.Registered == true; public bool HotkeyChecked => hotkey != null; public string HotkeyLabel => hotkey?.Label ?? Settings.Value.DictationShortcut;
  public AppServices(string folder, bool isolated) {
   Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder); History = new(folder);
   Dictation = new(Settings, Secrets, History, Provider, Recorder, Injector, Clipboard, folder);
@@ -45,7 +45,8 @@ public sealed class AppServices : IDisposable {
  }
  public string C(string key, string fallback, params object[] args) => Copy.All.ContainsKey(key) ? Copy.Get(key, args) : fallback;
  public void InitializeShell(MainWindow window) {
-  var handle = new WindowInteropHelper(window).EnsureHandle(); hotkey = new(handle); hotkey.Pressed += () => Application.Current.Dispatcher.BeginInvoke(async () => { await Task.Delay(130); await Dictation.Toggle(); });
+  UpdateHotkey(window);
+  if (!HotkeyAvailable) window.SetNotice(C("windows.home.hotkey_conflict","The keyboard shortcut is already in use by another app. The bubble and tray controls are available."));
   tray = new System.Windows.Forms.NotifyIcon { Text = "Quill", Icon = MakeIcon(), Visible = true };
   var menu = new System.Windows.Forms.ContextMenuStrip();
   menu.Items.Add(C("windows.tray.open", "Open Quill"), null, (_, _) => ShowMain());
@@ -55,12 +56,8 @@ public sealed class AppServices : IDisposable {
   menu.Items.Add(C("windows.tray.quit", "Quit Quill"), null, async (_, _) => { await Dictation.Cancel(); Application.Current.Shutdown(); });
   tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowMain();
  }
- private static System.Drawing.Icon MakeIcon() {
-  using var bitmap = new System.Drawing.Bitmap(32,32); using var g = System.Drawing.Graphics.FromImage(bitmap); g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; g.Clear(System.Drawing.Color.Transparent);
-  using var fill = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(74,63,208)); g.FillEllipse(fill, 1,1,30,30); using var pen = new System.Drawing.Pen(System.Drawing.Color.White, 2); g.DrawLine(pen, 11,23,23,7); g.DrawLine(pen, 11,23,12,15); g.DrawLine(pen, 11,23,19,20);
-  var handle = bitmap.GetHicon(); try { return (System.Drawing.Icon)System.Drawing.Icon.FromHandle(handle).Clone(); } finally { DestroyIcon(handle); }
- }
- [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool DestroyIcon(nint handle);
+ public void UpdateHotkey(MainWindow window) { hotkey?.Dispose(); hotkey = new(new WindowInteropHelper(window).EnsureHandle(),Settings.Value.DictationShortcut); hotkey.Pressed += () => Application.Current.Dispatcher.BeginInvoke(async () => { await Task.Delay(130); await Dictation.Toggle(); }); if (Isolated) File.WriteAllText(Path.Combine(Folder,"hotkey-check.json"),System.Text.Json.JsonSerializer.Serialize(new { preferred = Settings.Value.DictationShortcut,actual = hotkey.Label,registered = hotkey.Registered,error = hotkey.RegistrationError })); window.RefreshStatus(); }
+ private static System.Drawing.Icon MakeIcon() => new(Path.Combine(AppContext.BaseDirectory,"Assets","quill.ico"));
  public void ShowMain() { if (MainWindow == null) return; MainWindow.Show(); MainWindow.WindowState = WindowState.Normal; MainWindow.Activate(); }
  public void ShowBubble(bool persist = true) { if (persist) { Settings.Value.BubbleActive = true; Settings.Value.BubbleVisible = true; Settings.Save(); } Bubble ??= new(this); Bubble.Show(); Bubble.Refresh(); MainWindow?.RefreshStatus(); }
  public void HideBubble() { autoReturn?.Cancel(); Settings.Value.BubbleVisible = false; Settings.Save(); Bubble?.Hide(); MainWindow?.RefreshStatus(); }

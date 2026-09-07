@@ -2663,6 +2663,14 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.advanced.active_shortcut": {
+      "default": "Active shortcut: %1$s. If Windows or another app reserves your preferred shortcut, Quill uses an available alternative.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.advanced.clear": {
       "default": "Clear all Quill data",
       "placeholders": [],
@@ -2681,6 +2689,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.advanced.permissions": {
+      "default": "Quill runs at your normal Windows permission level. Elevated apps and secure Windows screens can block insertion; clipboard fallback remains available.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.advanced.reset": {
       "default": "Reset settings to default",
       "placeholders": [],
@@ -2695,6 +2709,12 @@
     },
     "windows.advanced.setup": {
       "default": "Review setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.advanced.shortcut": {
+      "default": "Preferred dictation shortcut",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2729,14 +2749,32 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.audio.start_test": {
+      "default": "Start microphone test",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.audio.stop_test": {
+      "default": "Stop microphone test",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.audio.test": {
       "default": "Start / stop microphone test",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
+    "windows.bubble.clipboard": {
+      "default": "Dictate to clipboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "windows.bubble.contrast": {
-      "default": "The white contrast ring and soft shadow keep the bubble visible over light and dark apps. Recording turns it gold. Windows reduced-motion settings control animation.",
+      "default": "The white contrast ring and soft shadow keep the bubble visible over light and dark apps. A live meter and halo indicate recording. Windows reduced-motion settings control animation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2824,6 +2862,12 @@
       "placeholders": [
         "%1$d"
       ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.contacts.enabled": {
+      "default": "Allow local contact imports",
+      "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
@@ -2949,6 +2993,20 @@
     },
     "windows.home.show": {
       "default": "Show Quill bubble",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.home.tip_shortcut": {
+      "default": "Right-click for clipboard dictation. Press %1$s to start or stop.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.home.tip_text": {
+      "default": "Right-click for clipboard dictation. Press Ctrl + Win + Space to start or stop.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3344,7 +3402,7 @@
       "optionalBlank": false
     },
     "windows.style.help": {
-      "default": "Style applies through AI cleanup. Email and document apps default to Formal; messaging apps default to Casual. Your choices below take priority.",
+      "default": "Style applies through AI cleanup. Email, document, Slack and Teams apps default to Formal. WhatsApp, Telegram and Signal use Neutral; Discord uses Casual. Your choices below take priority.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

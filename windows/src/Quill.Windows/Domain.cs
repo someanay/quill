@@ -18,6 +18,7 @@ public static class Providers {
  public static bool HasFreeCleanup(Provider p) => p is Provider.Groq or Provider.OpenRouter or Provider.Gemini;
 }
 public sealed class QuillSettings {
+ public string DictationShortcut { get; set; } = "Ctrl + Win + Space";
  public Provider Provider { get; set; } = Provider.Groq;
  public string SpeechModel { get; set; } = "whisper-large-v3-turbo";
  public string CustomBaseUrl { get; set; } = "";
@@ -27,6 +28,7 @@ public sealed class QuillSettings {
  public bool CleanupAutomatic { get; set; } = true;
  public Provider CleanupProvider { get; set; } = Provider.Groq;
  public string CleanupModel { get; set; } = "llama-3.3-70b-versatile";
+ public Dictionary<Provider,string> CleanupModels { get; set; } = [];
  public WritingStyle DefaultStyle { get; set; }
  public Dictionary<string, WritingStyle> AppStyles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
  public bool PrivateMode { get; set; }
@@ -62,10 +64,10 @@ public sealed class QuillSettings {
   if (new[] { "whatsapp", "telegram", "signal", "messages", "chrome", "msedge", "firefox", "brave", "opera", "notepad", "onenote" }.Contains(id)) return WritingStyle.Neutral;
   return DefaultStyle; }
  public void Validate() {
-  SessionCapSeconds = Math.Clamp(SessionCapSeconds, 30, 300);
+  SessionCapSeconds = Math.Clamp(SessionCapSeconds, 60, 300);
   if (!new[] { 0, 60, 1440, 10080, 43200 }.Contains(HistoryRetentionMinutes)) HistoryRetentionMinutes = 60;
   if (string.IsNullOrWhiteSpace(SpeechModel) && Provider != Provider.Custom) SpeechModel = Providers.Get(Provider).SpeechModel;
-  CustomWords ??= []; ContactNames ??= []; AppStyles ??= new(); FreeTierProviders ??= []; }
+  CustomWords ??= []; ContactNames ??= []; AppStyles ??= new(); FreeTierProviders ??= []; CleanupModels ??= []; }
 }
 public record CustomWord(string Heard, string Replacement);
 public record HistoryEntry(long Id, DateTimeOffset Created, string Text, string Destination, long DurationMs, string Status, string Provider);
@@ -84,8 +86,9 @@ public sealed class SilenceDetector {
 }
 public static class InsertionComposer {
  public static string Insert(string current, int start, int end, string text) {
-  start = Math.Clamp(start, 0, current.Length); end = Math.Clamp(end, start, current.Length);
-  var prefix = start > 0 && text.Length > 0 && char.IsLetterOrDigit(current[start - 1]) && char.IsLetterOrDigit(text[0]) ? " " : "";
-  var suffix = end < current.Length && text.Length > 0 && char.IsLetterOrDigit(current[end]) && char.IsLetterOrDigit(text[^1]) ? " " : "";
-  return current[..start] + prefix + text + suffix + current[end..]; }
+  start = Math.Clamp(start,0,current.Length); end = Math.Clamp(end,0,current.Length); if (start > end) (start,end) = (end,start);
+  var prefix = start == current.Length && end == start && start > 0 && text.Length > 0 && !char.IsWhiteSpace(current[start - 1]) && !char.IsWhiteSpace(text[0]) ? " " : "";
+  // Windows UIA supplies an actual caret; preserve content at position zero instead of applying
+  // Android's placeholder workaround (which intentionally replaces that Android field).
+  return current[..start] + prefix + text + current[end..]; }
 }

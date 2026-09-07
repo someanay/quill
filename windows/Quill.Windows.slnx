@@ -1,1 +1,1 @@
-<Solution><Project Path="src/Quill.Windows/Quill.Windows.csproj"/><Project Path="tests/Quill.Windows.Tests/Quill.Windows.Tests.csproj"/></Solution>
+<Solution><Project Path="src/Quill.Windows/Quill.Windows.csproj"/><Project Path="tests/Quill.Windows.Tests/Quill.Windows.Tests.csproj"/><Project Path="tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj"/></Solution>

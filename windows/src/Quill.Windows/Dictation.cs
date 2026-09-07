@@ -10,6 +10,8 @@ public sealed class DictationController : IDisposable {
  public string Error { get; private set; } = "";
  public long ElapsedMs { get; private set; }
  public double Rms { get; private set; }
+ private bool nextClipboardOnly; private bool clipboardOnly;
+ public Task DictateToClipboard() { if (State == DictationState.Idle) nextClipboardOnly = true; return Toggle(); }
  public event Action? Changed;
  public DictationController(SettingsStore settings, SecretStore secrets, HistoryStore history, ProviderClient provider, IAudioRecorder recorder, ITextInjector injector, IClipboardService clipboard, string folder) {
   this.settings = settings; this.secrets = secrets; this.history = history; this.provider = provider; this.recorder = recorder; this.injector = injector; this.clipboard = clipboard; pendingPath = Path.Combine(folder, "pending-audio.dpapi");
@@ -29,10 +31,11 @@ public sealed class DictationController : IDisposable {
   finally { gate.Release(); }
  }
  private async Task Start() {
+  clipboardOnly = nextClipboardOnly; nextClipboardOnly = false;
   if (!settings.Value.OnboardingComplete || !settings.Value.InjectionConsent) throw new ProviderException("setup_required");
   target = await injector.Capture(); if (target.Sensitive) throw new ProviderException("sensitive_field");
   sessionSettings = JsonSerializer.Deserialize<QuillSettings>(JsonSerializer.Serialize(settings.Value))!;
-  if (string.IsNullOrWhiteSpace(secrets.Read(sessionSettings.Provider))) throw new ProviderException("key_missing");
+  if (string.IsNullOrWhiteSpace(secrets.Read(sessionSettings.Provider,sessionSettings.CustomBaseUrl))) throw new ProviderException("key_missing");
   cancellation?.Dispose(); cancellation = new(); LastText = ""; ElapsedMs = 0; Rms = 0;
   recorder.Start(sessionSettings); Set(DictationState.Recording);
  }
@@ -49,11 +52,11 @@ public sealed class DictationController : IDisposable {
   var take = pending ?? throw new InvalidOperationException(); var s = sessionSettings ?? settings.Value; var token = cancellation?.Token ?? CancellationToken.None;
   if (take.Wav.Length < 3244) { ClearPending(); throw new ProviderException("empty_recording"); }
   Set(DictationState.Transcribing);
-  var raw = await provider.Transcribe(take.Wav, s, secrets.Read(s.Provider) ?? "", token); token.ThrowIfCancellationRequested();
+  var raw = await provider.Transcribe(take.Wav,s,secrets.Read(s.Provider,s.CustomBaseUrl) ?? "",token); token.ThrowIfCancellationRequested();
   var text = raw;
-  if (s.UseCleanup) { var key = secrets.Read(s.EffectiveCleanupProvider); if (!string.IsNullOrWhiteSpace(key)) text = await provider.Cleanup(raw, s, key, target?.Application ?? "", token); }
+  if (s.UseCleanup) { try { var key = secrets.Read(s.EffectiveCleanupProvider,s.CustomBaseUrl); if (!string.IsNullOrWhiteSpace(key)) text = await provider.Cleanup(raw,s,key,target?.Application ?? "",token); } catch (Exception e) when (e is not OperationCanceledException) { text = raw; } }
   token.ThrowIfCancellationRequested(); text = Words.Apply(text, s.CustomWords); LastText = text;
-  var inserted = target != null && await injector.Insert(target,text);
+  var inserted = !clipboardOnly && target != null && await injector.Insert(target,text);
   if (!inserted) clipboard.Copy(text);
   // A session that began private stays private; toggling private during a request also prevents saving.
   s.PrivateMode |= settings.Value.PrivateMode;

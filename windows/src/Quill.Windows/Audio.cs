@@ -31,7 +31,8 @@ public sealed class AudioRecorder : IAudioRecorder {
   };
   input.RecordingStopped += (_, e) => {
    clock.Stop(); byte[] bytes; lock (gate) bytes = pcm?.ToArray() ?? []; captureError = e.Exception;
-   if (captureError != null) stopped.TrySetException(new ProviderException("microphone_error")); else stopped.TrySetResult(new(Wav(bytes), clock.ElapsedMilliseconds));
+   if (captureError != null && bytes.Length < 3200) stopped.TrySetException(new ProviderException("microphone_error")); else stopped.TrySetResult(new(Wav(bytes),clock.ElapsedMilliseconds));
+   if (captureError != null) AutoStop?.Invoke();
   };
   try { input.StartRecording(); } catch { input.Dispose(); input = null; pcm.Dispose(); pcm = null; throw new ProviderException("microphone_denied"); }
  }
