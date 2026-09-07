@@ -23,7 +23,6 @@ internal fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified
             Text(copy(K.KEY_BODY), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
             Spacer(Modifier.height(8.dp))
             ProviderKeyAccordion(secretStore, onSaved = onVerified)
-            HelpText(copy(K.PRIVACY_PROMISE))
         }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "revision": 10,
+  "revision": 11,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -831,7 +831,7 @@
       "optionalBlank": false
     },
     "onboarding.key.body": {
-      "default": "A key is a private code from an AI service. It lets Quill send your voice directly to that service and receive text over an encrypted connection. Never share your key with anyone.",
+      "default": "A key is a long private code from an AI service. It lets Quill send your voice to the AI & get text back over an encrypted connection. Never share your key with anyone.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -843,7 +843,7 @@
       "optionalBlank": false
     },
     "onboarding.key.choose": {
-      "default": "Choose one provider",
+      "default": "Choose any 1 of the following",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -873,7 +873,7 @@
       "optionalBlank": false
     },
     "onboarding.key.easy": {
-      "default": "Quick setup",
+      "default": "Google Gemini (Big Free Usage, Easy Process)",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -891,7 +891,7 @@
       "optionalBlank": false
     },
     "onboarding.key.format_help": {
-      "default": "Paste the complete key, beginning like %1$s. Do not paste a masked key or a web address.",
+      "default": "Enter a complete key starting with %1$s.",
       "placeholders": [
         "%1$s"
       ],
@@ -905,19 +905,19 @@
       "optionalBlank": false
     },
     "onboarding.key.free_options": {
-      "default": "Free options",
+      "default": "OpenRouter (Free options, Longer Process)",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.gemini_steps": {
-      "default": "Open Google AI Studio using the button below. Sign in with your Google account.\nIf the welcome agreement appears, read the terms and check the first, required checkbox if you agree and meet its requirements. The email updates checkbox is optional. Tap Continue.\nOn API Keys, find your default key and tap its copy icon (two overlapping sheets). If no key appears, tap Create API key and follow the project prompts.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
+      "default": "Click https://aistudio.google.com/api-keys to open browser\n[For New Users] Accept Agreement & Click Continue\nClick the Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "Open Groq using the button below. Create an account or sign in.\nOpen API Keys, then choose Create API Key.\nGive it a name you will recognize, such as Quill. Select No Expiration if you want it to keep working until you revoke it. Create the key.\nTap the copy button beside your new key. Keep it private.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
+      "default": "Click https://console.groq.com/home to open browser\nCreate a Groq account\nClick on API Keys near the top right\nClick on \"Create API Key\"\nChoose any name you like. For example \"Quill\".\nKeep No Expiration.\nClick the Copy button\nCome back to Quill. Paste the copied key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -937,7 +937,7 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "Open OpenRouter using the button below. Sign up or sign in.\nIf asked how you plan to use OpenRouter, choose Individual for your personal account.\nIf a new key is shown, tap its copy icon. Otherwise open Keys in your account menu, choose Create Key, name it Quill, and copy the new key.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
+      "default": "Click https://openrouter.ai/sign-up to open browser\nSign up for OpenRouter.\nChoose Individual.\nClick Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -951,7 +951,7 @@
       "optionalBlank": false
     },
     "onboarding.key.more_steps": {
-      "default": "A few more steps",
+      "default": "Groq (Big Free Usage, Longer Process)",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -981,7 +981,7 @@
       "optionalBlank": false
     },
     "onboarding.key.save_provider": {
-      "default": "Save %1$s API key securely",
+      "default": "Save %1$s API Key Securely",
       "placeholders": [
         "%1$s"
       ],
@@ -989,7 +989,7 @@
       "optionalBlank": false
     },
     "onboarding.key.step": {
-      "default": "Step 1 of 4",
+      "default": "Step (1 of 4)",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

@@ -2,7 +2,7 @@
 
 Onboarding and Settings > Speech & Model share one accordion for Gemini, Groq and OpenRouter. Gemini opens first; a user can open a different provider or collapse all three. Existing OpenAI and custom-provider configurations remain readable, but OpenAI is no longer an option when adding a key.
 
-Each provider includes numbered instructions, a reading acknowledgement before opening its website, a masked field with Paste and reveal controls, and its own Save action. Saving a verified key opens the setup checklist directly during onboarding. The former explanation screen is removed.
+Each provider includes numbered instructions, a website link in the first step, a masked field with Paste and reveal controls, and its own Save action. Saving a verified key opens the setup checklist directly during onboarding. The former explanation screen is removed.
 
 The checklist identifies the connected provider. Its Allow microphone button requests Android permission directly, with no intervening introduction screen. Granting permission opens the mic test. Denial stays on the checklist with retry or app-settings recovery. Notification permission is requested separately after the user finishes the mic test, so it cannot delay the microphone-granted transition.
 

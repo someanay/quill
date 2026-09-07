@@ -333,6 +333,7 @@ fun SpeechModelScreen(nav: QuillNav) {
     DetailScaffold(copy(K.SETTINGS_SPEECH_TITLE), nav) {
         com.tihor.quill.ui.components.ProviderKeyAccordion(
             secretStore = remember { KeystoreSecretStore(context) }, onSaved = {},
+            prefillSavedKey = true,
         )
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))

@@ -120,7 +120,6 @@ fun ModelDropdown(
             else Icon(Icons.Rounded.Refresh, contentDescription = copy(K.MODELS_REFRESH))
         }
     }
-    HelpText(copy(K.MODELS_RANKING))
     if (provider != SttProvider.CUSTOM) {
         TextButton(onClick = { manual = !manual }) { Text(copy(K.MODELS_MANUAL)) }
         if (manual) {

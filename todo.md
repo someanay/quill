@@ -436,7 +436,7 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 
 ### M8 follow-up: provider key onboarding redesign
 - [x] Share a three-provider accordion across onboarding, Speech & Model and key entry; remove OpenAI from new-key choices.
-- [x] Inline numbered guides, reading acknowledgement, explicit Paste, reveal and per-provider Save.
+- [x] Inline numbered guides with website links, explicit Paste, reveal and per-provider Save.
 - [x] Preserve encrypted drafts and accordion state; authenticate keys without sending audio or spending model tokens.
 - [x] Open the setup checklist directly after a verified key saves.
 - [x] Prefer free model candidates and label free tiers, paid models and previews; automatic cleanup requires a known free option.
@@ -451,3 +451,10 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] 392 unit tests, Android lint and signed APK/AAB checks pass for version 1.0.4 (code 5).
 - [x] Sync the companion copy editor's manifest and pending draft base; preserve all 13 pending edits and pass editor checks.
 - [ ] Physical permission-dialog, mic-test and Back-navigation checks: no connected device during implementation.
+
+### M8 follow-up: match the supplied wireframes
+- [x] Remove added acknowledgement, browser button, subtitles and repeated explanatory text.
+- [x] Restore the supplied numbered steps and compact provider headers in onboarding and Settings.
+- [x] Keep encrypted drafts, automatic validation, clipboard controls and direct checklist navigation.
+- [x] Build signed version 1.0.5 (code 6); preserve all 13 copy drafts and sync the editor.
+- [ ] Physical visual comparison: no connected phone.

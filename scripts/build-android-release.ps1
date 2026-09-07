@@ -1,6 +1,6 @@
 param(
-    [ValidateRange(1,2100000000)][int]$VersionCode = 5,
-    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]*$')][string]$VersionName = '1.0.4',
+    [ValidateRange(1,2100000000)][int]$VersionCode = 6,
+    [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]*$')][string]$VersionName = '1.0.5',
     [switch]$ApplyCopy,
     [string]$CopyToolPath = (Join-Path $env:USERPROFILE 'quill-copy-tool')
 )
