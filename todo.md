@@ -470,3 +470,9 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Keep accessibility disclosure before opening system accessibility settings.
 - [ ] Physical shortcut and return-status checks: no connected phone.
 - [x] Version 1.0.7 (code 8): 392 tests, lint and signed APK/AAB checks pass.
+
+### Onboarding disclaimer polish
+- [x] Keep the disclaimer outside the page crossfade so dismissal retains one welcome screen.
+- [x] Remove the separate key-help link and use a single guided setup action.
+- [ ] Physical dismissal animation check: phone not connected.
+- [x] Version 1.0.8 (code 9): 392 tests, lint and signed APK/AAB checks pass.

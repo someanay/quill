@@ -221,15 +221,14 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         onFinish()
     }
 
-    androidx.compose.animation.Crossfade(targetState = step, label = "onboardingTransition") { shownStep -> // copy-exempt
+    // A dialog owns a separate window. Keep it outside the page transition so dismissal
+    // does not crossfade two welcome screens while retaining the outgoing dialog window.
+    val page = if (step == Step.KEY_WARNING) Step.WELCOME else step
+    androidx.compose.animation.Crossfade(targetState = page, label = "onboardingTransition") { shownStep -> // copy-exempt
     when (shownStep) {
         Step.SPLASH -> SplashStep(onDone = { step = Step.WELCOME })
         Step.WELCOME -> WelcomeStep(onBack = ::back, onNext = { step = Step.KEY_WARNING }, onOpen = ::finishOnboarding)
-        Step.KEY_WARNING -> {
-            // Dialog over a dimmed Welcome (board A2b/A2c): the scrim does the dimming.
-            WelcomeStep(onBack = ::back, onNext = {}, onOpen = {})
-            KeyWarningDialog(onAccept = { step = Step.ADD_KEY }, onDismiss = { step = Step.WELCOME })
-        }
+        Step.KEY_WARNING -> Unit // Rendered separately from the page transition below.
         Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.CHECKLIST })
         Step.CHECKLIST -> ChecklistStep(::back, context, hasMic, micDenied, micAction, !permissionPending, onNext = {
             when (microphoneSetupAction(microphoneGranted(), micDenied,
@@ -258,6 +257,9 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         Step.ACC_ENABLE -> AccessibilityEnableStep(::back, onOpen = { accLauncher.launch(AccessibilityUtil.disclosureIntent(context)) })
         Step.ALL_SET -> AllSetStep(onFinish = ::finishOnboarding, onHome = ::finishOnboarding)
     }
+    }
+    if (step == Step.KEY_WARNING) {
+        KeyWarningDialog(onAccept = { step = Step.ADD_KEY }, onDismiss = { step = Step.WELCOME })
     }
 }
 
@@ -380,11 +382,6 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
     val progress = remember { Animatable(0f) }
     LaunchedEffect(Unit) { progress.animateTo(1f, tween(3000)) }
     val ready = progress.value >= 1f
-    var showConsoles by remember { mutableStateOf(false) }
-    if (showConsoles) {
-        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
-    }
-
     Dialog(onDismissRequest = onDismiss) {
         QuillCard {
             Column(Modifier.padding(20.dp)) {
@@ -420,15 +417,7 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 } else {
-                    // Match the label: open the all-providers console chooser (like AddKeyStep's
-                    // sibling link), rather than just advancing. "Accept" below is what proceeds.
-                    TextButton(
-                        onClick = { showConsoles = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
-                    }
-                    QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept, leadingIcon = Icons.Rounded.Check)
+                    QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept)
                     Spacer(Modifier.height(10.dp))
                     QuillGhostButton(copy(K.ACTION_NOT_NOW), onClick = onDismiss)
                 }

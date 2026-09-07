@@ -1,5 +1,5 @@
 {
-  "revision": 13,
+  "revision": 14,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -1037,7 +1037,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "I understand - add my key",
+      "default": "Help me get & add a key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

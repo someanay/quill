@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 13,
+  "revision": 14,
   "locale": "en",
   "updatedAt": "2026-09-07T18:43:07.865Z",
   "strings": {
@@ -22,7 +22,7 @@
     "onboarding.key.warning.free_tier": "You bring the key - some providers (like Groq) have a free tier to start.",
     "onboarding.key.warning.usage": "Your provider may charge for usage - Quill itself is free.",
     "onboarding.key.warning.reading": "Take a moment to read this",
-    "onboarding.key.warning.accept": "I understand - add my key",
+    "onboarding.key.warning.accept": "Help me get & add a key",
     "onboarding.howitworks.eyebrow": "Three steps",
     "onboarding.howitworks.title": "From voice to text, on your terms",
     "onboarding.howitworks.t1": "Tap & speak",
