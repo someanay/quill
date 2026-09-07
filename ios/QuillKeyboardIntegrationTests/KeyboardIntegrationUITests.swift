@@ -62,6 +62,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         waitForExpectations(timeout: 7)
         tap(next, in: host)
         tap(host.buttons["key.provider.groq"], in: host)
+        XCTAssertTrue(host.buttons["key.provider.groq"].isSelected)
         let key = host.secureTextFields["API key"]
         tap(key, in: host); key.typeText("gsk_quill_ui_fixture0000000000")
         XCTAssertTrue(host.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))

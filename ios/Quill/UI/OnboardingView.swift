@@ -172,6 +172,7 @@ struct OnboardingView: View {
             Text(model.c("ios.onboarding.ready_body")).foregroundStyle(Q.muted)
             QCard { HStack(spacing: 12) { RecordingBubble(size: 40); Text(model.c("ios.onboarding.bubble_look")).font(Q.sans(14)).foregroundStyle(Q.muted) } }
             QButton(title: model.c("onboarding.allset.cta")) { model.settings.onboardingComplete = true; model.tab = 0 }.accessibilityIdentifier("onboarding.finish")
+            Button(model.c("onboarding.allset.home_link")) { model.settings.onboardingComplete = true; model.tab = 0 }.frame(maxWidth: .infinity, minHeight: 48)
         }
     }
 }

@@ -37,7 +37,7 @@ private struct GuidedKeyRows: View {
                                 Text(model.c(KeySetupPolicy.titleKey(provider))).font(Q.sans(14)).multilineTextAlignment(.leading)
                                 Spacer(minLength: 4)
                                 Image(systemName: setup.expanded == provider ? "chevron.up" : "chevron.down")
-                            }.foregroundStyle(Q.ink).frame(minHeight: 48)
+                            }.foregroundStyle(Q.ink).frame(minHeight: 48).contentShape(Rectangle())
                         }.buttonStyle(.plain).disabled(setup.phase == .saving)
                             .accessibilityIdentifier("key.provider.\(provider.rawValue)")
                             .accessibilityValue(model.c(setup.expanded == provider ? "onboarding.key.expanded" : "onboarding.key.collapsed"))

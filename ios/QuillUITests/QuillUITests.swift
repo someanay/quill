@@ -106,6 +106,7 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["key.provider.gemini"].isSelected)
         tap(app.buttons["key.provider.groq"], in: app)
+        XCTAssertTrue(app.buttons["key.provider.groq"].isSelected, "The whole provider row, including its center, must expand the requested provider.")
         let key = app.secureTextFields["API key"]
         tap(key, in: app); key.typeText("gsk_quill_ui_fixture0000000000")
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
