@@ -85,18 +85,76 @@ public enum RequestBuilder {
     }
 }
 
-private final class NoRedirects: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+private final class BoundedTransfer: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private let configuration: URLSessionConfiguration
+    private let lock = NSLock()
+    private let limit = 4 * 1024 * 1024
+    private var continuation: CheckedContinuation<(Data, URLResponse), Error>?
+    private var session: URLSession?
+    private var task: URLSessionDataTask?
+    private var response: URLResponse?
+    private var bytes = Data()
+    private var cancelled = false
+    init(configuration: URLSessionConfiguration) { self.configuration = configuration }
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                lock.lock()
+                if cancelled { lock.unlock(); continuation.resume(throwing: CancellationError()); return }
+                self.continuation = continuation
+                let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+                self.session = session
+                let task = session.dataTask(with: request); self.task = task
+                task.resume(); lock.unlock()
+            }
+        } onCancel: {
+            self.lock.lock(); self.cancelled = true; self.lock.unlock()
+            self.finish(.failure(CancellationError()))
+        }
+    }
+    private func finish(_ result: Result<(Data, URLResponse), Error>) {
+        lock.lock()
+        let continuation = self.continuation, session = self.session
+        self.continuation = nil; self.session = nil; task = nil; response = nil; bytes.removeAll()
+        lock.unlock()
+        continuation?.resume(with: result)
+        session?.invalidateAndCancel()
+    }
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse, completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        guard response.expectedContentLength <= Int64(limit) else { completionHandler(.cancel); finish(.failure(QuillError.responseTooLarge)); return }
+        lock.lock(); self.response = response; let active = continuation != nil; lock.unlock()
+        completionHandler(active ? .allow : .cancel)
+    }
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        lock.lock()
+        guard continuation != nil else { lock.unlock(); return }
+        guard data.count <= limit - bytes.count else { lock.unlock(); finish(.failure(QuillError.responseTooLarge)); return }
+        bytes.append(data); lock.unlock()
+    }
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error { finish(.failure(error)); return }
+        lock.lock(); let response = self.response, bytes = self.bytes; lock.unlock()
+        if let response { finish(.success((bytes, response))) } else { finish(.failure(QuillError.network)) }
+    }
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
 }
 public final class ProviderClient: @unchecked Sendable {
-    private let session: URLSession
+    private let configuration: URLSessionConfiguration
     public init(session: URLSession? = nil) {
-        if let session { self.session = session }
-        else { let config = URLSessionConfiguration.ephemeral; config.urlCache = nil; config.httpCookieStorage = nil; config.requestCachePolicy = .reloadIgnoringLocalCacheData; config.timeoutIntervalForRequest = 30; config.timeoutIntervalForResource = 90; self.session = URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil) }
+        if let session { configuration = session.configuration }
+        else { let config = URLSessionConfiguration.ephemeral; config.urlCache = nil; config.httpCookieStorage = nil; config.requestCachePolicy = .reloadIgnoringLocalCacheData; config.timeoutIntervalForRequest = 30; config.timeoutIntervalForResource = 90; configuration = config }
     }
     public func send(_ request: URLRequest, provider: Provider) async throws -> Data {
         do {
-            let (data, response) = try await session.data(for: request)
+            // URLRequest.timeoutInterval is an inactivity timeout. Race the complete
+            // resource transfer against a wall-clock deadline, including drip-fed bodies.
+            let (data, response) = try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
+                group.addTask { [configuration] in try await BoundedTransfer(configuration: configuration).data(for: request) }
+                group.addTask { try await Task.sleep(nanoseconds: UInt64(max(0.001, request.timeoutInterval) * 1_000_000_000)); throw QuillError.timeout }
+                defer { group.cancelAll() }
+                guard let result = try await group.next() else { throw CancellationError() }
+                return result
+            }
             try Task.checkCancellation()
             guard data.count <= 4 * 1024 * 1024 else { throw QuillError.responseTooLarge }
             guard let http = response as? HTTPURLResponse else { throw QuillError.network }
@@ -142,6 +200,7 @@ public final class ProviderClient: @unchecked Sendable {
         catch { return raw }
     }
     public func models(provider: Provider, use: ModelUse, baseURL: String, key: String) async throws -> [ModelOption] {
+        let started = Date()
         let base = try Endpoint.validated(provider == .custom ? baseURL : provider.baseURL)
         var components = URLComponents(url: base.appendingPathComponent(provider == .gemini ? "v1beta/models" : "models"), resolvingAgainstBaseURL: false)!
         var result: [ModelOption] = [], seen: Set<String> = [], token: String?
@@ -151,11 +210,13 @@ public final class ProviderClient: @unchecked Sendable {
             if provider == .openrouter && use == .dictation { query.append(URLQueryItem(name: "output_modalities", value: "transcription")) }
             if let token { query.append(URLQueryItem(name: "pageToken", value: token)) }
             components.queryItems = query.isEmpty ? nil : query
-            var request = URLRequest(url: components.url!); request.timeoutInterval = 12
+            let remaining = 12 - Date().timeIntervalSince(started)
+            guard remaining > 0 else { throw QuillError.timeout }
+            var request = URLRequest(url: components.url!); request.timeoutInterval = remaining
             if !key.isEmpty { request.setValue(provider == .gemini ? key : "Bearer " + key, forHTTPHeaderField: provider == .gemini ? "x-goog-api-key" : "Authorization") }
             let data = try await send(request, provider: provider)
             let page = try ModelCatalog.parse(data: data, provider: provider, use: use)
-            result += page.models; token = page.next
+            result += page.models; token = page.next.flatMap { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : $0 }
             if let token { guard seen.insert(token).inserted, seen.count < 20 else { throw QuillError.emptyTranscript } }
         } while token != nil
         guard !result.isEmpty else { throw QuillError.emptyTranscript }

@@ -125,6 +125,16 @@ jobs:
               codesign -d --entitlements :- "$APP"
             fi
           done
+      - name: Archive iOS Release for physical devices
+        if: success() && matrix.platform == 'ios'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive -project Quill.xcodeproj -scheme Quill -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath ReleaseDevice \
+            -archivePath Quill-unsigned.xcarchive CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee release-build.log
+          ditto -c -k --sequesterRsrc --keepParent Quill-unsigned.xcarchive Quill-iOS-device-unsigned.zip
       - name: Capture iOS simulator
         if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
         env:
@@ -151,6 +161,7 @@ jobs:
           retention-days: 14
           path: |
             ${{ matrix.platform }}/native-build.log
+            ${{ matrix.platform }}/release-build.log
             ${{ matrix.platform }}/TestResults.xcresult
             ${{ matrix.platform }}/RecordingResults.xcresult
             ${{ matrix.platform }}/recording-test.log
@@ -160,6 +171,16 @@ jobs:
             ${{ matrix.platform }}/ipad-screenshots
             ${{ matrix.platform }}/simulator.png
             ${{ matrix.platform }}/screenshots
+      - name: Upload screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-screenshots
+          retention-days: 14
+          path: |
+            ${{ matrix.platform }}/screenshots
+            ${{ matrix.platform }}/ipad-screenshots
+            ${{ matrix.platform }}/recording-screenshots
       - name: Package iOS simulator build
         if: always() && matrix.platform == 'ios'
         run: |
@@ -173,6 +194,13 @@ jobs:
           name: Quill-iOS-simulator
           path: ios/Quill-iOS-simulator.zip
           if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload unsigned iOS device archive
+        if: success() && matrix.platform == 'ios'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-iOS-device-unsigned
+          path: ios/Quill-iOS-device-unsigned.zip
           retention-days: 14
       - name: Build and package universal macOS release
         if: success() && matrix.platform == 'macos'

@@ -57,4 +57,19 @@ import AVFoundation
         defer { recorder.cancel(); try? FileManager.default.removeItem(at: file) }
         XCTAssertFalse(recorder.isRecording); XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
     }
+    func testOldInterruptionCannotStopImmediateNewRecording() async throws {
+        let recorder = try makeRecorder()
+        var interruptedFiles: [URL] = []
+        recorder.onInterruption = { if let file = recorder.stop() { interruptedFiles.append(file) } }
+        defer { recorder.cancel(); for file in interruptedFiles { try? FileManager.default.removeItem(at: file) } }
+        NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(), userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+        // Restart synchronously before the main actor can run any queued notification task.
+        if let old = recorder.stop() { interruptedFiles.append(old) }
+        try recorder.start(capSeconds: 30, microphoneTest: true)
+        let newFile = try XCTUnwrap(recorder.fileURL)
+        try await Task.sleep(nanoseconds: 180_000_000)
+        XCTAssertTrue(recorder.isRecording)
+        XCTAssertEqual(recorder.fileURL, newFile)
+        XCTAssertEqual(interruptedFiles.count, 1)
+    }
 }

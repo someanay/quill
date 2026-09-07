@@ -104,11 +104,19 @@ import QuillCore
     func testKeyboardCompactWidthInLightAndDark() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let keyboard = harness(TextProxyFixture(), HandoffFixture())
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 420))
+            window.overrideUserInterfaceStyle = style
+            window.rootViewController = keyboard; window.isHidden = false
             keyboard.overrideUserInterfaceStyle = style
+            defer { window.isHidden = true; window.rootViewController = nil }
+            XCTAssertEqual(keyboard.traitCollection.userInterfaceStyle, style)
             let size = keyboard.view.systemLayoutSizeFitting(CGSize(width: 320, height: 0), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
             XCTAssertLessThan(size.height, 550)
             keyboard.view.frame = CGRect(origin: .zero, size: size)
             keyboard.view.setNeedsLayout(); keyboard.view.layoutIfNeeded()
+            var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+            keyboard.view.backgroundColor?.resolvedColor(with: keyboard.traitCollection).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            if style == .dark { XCTAssertLessThan(red, 0.1) } else { XCTAssertGreaterThan(red, 0.9) }
             let button = try insert(keyboard)
             XCTAssertTrue(keyboard.view.bounds.contains(button.convert(button.bounds, to: keyboard.view)))
             let screenshot = UIGraphicsImageRenderer(size: size).image { context in keyboard.view.layer.render(in: context.cgContext) }

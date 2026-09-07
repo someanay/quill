@@ -46,6 +46,14 @@ final class PolicyTests: XCTestCase {
         XCTAssertEqual(TextPipeline.finish(raw: "quill um", cleaned: "Quill.", words: [CustomWord(heard: "quill", replacement: "QUILL")]), "QUILL.")
         XCTAssertEqual(TextPipeline.finish(raw: "type my email", cleaned: "I will write your email", words: []), "type my email")
     }
+    func testAddingExistingWordReplacesCaseInsensitiveEntryWithoutTruncation() {
+        let initial = [CustomWord(heard: "Quill", replacement: "old"), CustomWord(heard: "cat", replacement: "Cat")]
+        let replacement = String(repeating: "x", count: 250)
+        let updated = WordSubstitutions.upsert(initial, heard: " quill ", replacement: " " + replacement + " ")
+        XCTAssertEqual(updated.map(\.heard), ["cat", "quill"])
+        XCTAssertEqual(updated.last?.replacement, replacement)
+        XCTAssertEqual(WordSubstitutions.upsert(updated, heard: " ", replacement: "ignored"), updated)
+    }
     func testSilenceAndCap() {
         var detector = SilenceDetector()
         XCTAssertFalse(detector.feed(rms: 0, elapsed: 1))

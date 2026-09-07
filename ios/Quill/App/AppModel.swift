@@ -32,6 +32,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     private var snapshot: QuillSettings?
     private var snapshotWords: [CustomWord] = []
     private var generation = UUID()
+    private var modelCatalogGeneration = UUID()
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     private var testingMicrophone = false
     private var voiceSampleMode = false
@@ -78,24 +79,29 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         catch { errorKey = QuillError.storage.copyKey }
     }
     func report(_ error: Error) { errorKey = (error as? QuillError ?? .storage).copyKey }
-    func selectProvider(_ provider: Provider) { settings.selectProvider(provider); modelChoices = [] }
+    func invalidateModelChoices() { modelCatalogGeneration = UUID(); modelChoices = []; loadingModels = false }
+    func selectProvider(_ provider: Provider) { settings.selectProvider(provider); invalidateModelChoices() }
     func selectCleanupProvider(_ provider: Provider) {
         settings.selectCleanupProvider(provider)
-        modelChoices = []
+        invalidateModelChoices()
     }
-    func verifyAndSaveKey(provider: Provider, secret: String, label: String) async -> Bool {
+    func verifyAndSaveKey(provider: Provider, secret: String, label: String, activateSpeechProvider: Bool = false) async -> Bool {
         guard !keyValidationRunning else { return false }
         keyValidationRunning = true; defer { keyValidationRunning = false }
         do {
             let config = try ProviderConfiguration(provider: provider, customBaseURL: settings.customBaseURL, model: provider == .custom ? settings.customModel : provider.defaultModel)
             let trimmed = secret.trimmingCharacters(in: .whitespacesAndNewlines)
             try await providerAPI.validate(config, key: trimmed)
+            let choices = activateSpeechProvider ? ((try? await providerAPI.models(config, key: trimmed, cleanup: false)) ?? []) : []
             try Task.checkCancellation()
             // Do not save a custom key against an endpoint changed while validation was in flight.
             guard config.endpoint == (try endpoint(provider)) else { throw QuillError.invalidEndpoint }
             try vault.save(trimmed, provider: provider, endpoint: config.endpoint, label: label)
             keys = vault.keys; notice = c("onboarding.key.valid")
-            if !hasActiveKey { selectProvider(provider) }
+            if activateSpeechProvider {
+                selectProvider(provider)
+                if let preferred = choices.first(where: \.isFree) { settings.model = preferred.id }
+            }
             return true
         } catch is CancellationError { return false }
         catch { report(error); return false }
@@ -111,15 +117,24 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func refreshModels(cleanup: Bool) async {
         guard !loadingModels else { return }
-        loadingModels = true; defer { loadingModels = false }
+        let token = modelCatalogGeneration
+        loadingModels = true; defer { if token == modelCatalogGeneration { loadingModels = false } }
         do {
             let provider = cleanup ? settings.effectiveCleanupProvider : settings.provider
             let model = cleanup ? settings.effectiveCleanupModel : settings.model
             let config = try ProviderConfiguration(provider: provider, customBaseURL: settings.customBaseURL, model: model)
-            let key = try vault.secret(provider, endpoint: config.endpoint)
-            modelChoices = try await providerAPI.models(config, key: key, cleanup: cleanup)
+            let key: String
+            if provider == .openrouter { key = (try? vault.secret(provider, endpoint: config.endpoint)) ?? "" }
+            else { key = try vault.secret(provider, endpoint: config.endpoint) }
+            let choices = try await providerAPI.models(config, key: key, cleanup: cleanup)
+            try Task.checkCancellation()
+            guard token == modelCatalogGeneration,
+                  provider == (cleanup ? settings.effectiveCleanupProvider : settings.provider),
+                  config.endpoint == (try endpoint(provider)) else { return }
+            modelChoices = choices
             if modelChoices.isEmpty { notice = c("ios.models.empty") }
-        } catch { report(error) }
+        } catch is CancellationError { }
+        catch { if token == modelCatalogGeneration { report(error) } }
     }
     func requestMicrophone() async {
         microphoneGranted = await AudioRecorder.requestPermission()
@@ -148,7 +163,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
             discardRetry(); result = ""; errorKey = nil; notice = nil
             snapshot = settings; snapshotWords = words; generation = UUID()
             voiceSampleMode = voiceSample
-            try recorder.start(capSeconds: settings.sessionCapSeconds)
+            try recorder.start(capSeconds: voiceSample ? 8 : settings.sessionCapSeconds)
             retainedAudio = recorder.fileURL
             try persistPendingRecording()
             phase = .recording
@@ -178,7 +193,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         operation?.cancel(); let token = generation
         phase = .transcribing
         backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "Finish dictation") { [weak self] in
-            Task { @MainActor in self?.processingExpired() }
+            Task { @MainActor in self?.processingExpired(generation: token) }
         }
         let backgroundIdentifier = backgroundTask
         operation = Task { [weak self] in
@@ -222,7 +237,8 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         do { try persistPendingRecording() } catch { report(error) }
         phase = .failed; errorKey = QuillError.interrupted.copyKey
     }
-    private func processingExpired() {
+    private func processingExpired(generation expected: UUID) {
+        guard generation == expected, [.transcribing, .cleaning].contains(phase) else { return }
         operation?.cancel(); generation = UUID(); phase = .failed; errorKey = QuillError.interrupted.copyKey
         endBackgroundTask()
     }
@@ -266,7 +282,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     func addWord(heard: String, replacement: String) {
         let heard = heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement = replacement.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !heard.isEmpty, !replacement.isEmpty else { return }
-        words.append(CustomWord(heard: String(heard.prefix(200)), replacement: String(replacement.prefix(200))))
+        words = WordSubstitutions.upsert(words, heard: heard, replacement: replacement)
         saveWords()
     }
     func importContacts() async {

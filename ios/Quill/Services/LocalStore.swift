@@ -89,7 +89,8 @@ struct KeychainFailure: Error, LocalizedError {
             kSecAttrSynchronizable as String: false, kSecValueData as String: Data(secret.utf8)]
         let status = SecItemAdd(query as CFDictionary, nil)
         guard status == errSecSuccess else { throw KeychainFailure(status: status) }
-        let record = SavedKey(id: id, label: label.isEmpty ? provider.title : String(label.prefix(60)), provider: provider, endpoint: endpoint, suffix: String(secret.suffix(4)), createdAt: Date())
+        let trimmedLabel = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        let record = SavedKey(id: id, label: trimmedLabel.isEmpty ? provider.title : trimmedLabel, provider: provider, endpoint: endpoint, suffix: String(secret.suffix(4)), createdAt: Date())
         keys.append(record); selected[provider.rawValue] = id
         do { try persist() }
         catch { try? delete(record); throw error }

@@ -33,6 +33,12 @@ public struct SilenceDetector: Sendable {
 }
 
 public enum WordSubstitutions {
+    public static func upsert(_ words: [CustomWord], heard: String, replacement: String) -> [CustomWord] {
+        let heard = heard.trimmingCharacters(in: .whitespacesAndNewlines)
+        let replacement = replacement.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !heard.isEmpty, !replacement.isEmpty else { return words }
+        return words.filter { $0.heard.caseInsensitiveCompare(heard) != .orderedSame } + [CustomWord(heard: heard, replacement: replacement)]
+    }
     public static func apply(_ text: String, _ words: [CustomWord]) -> String {
         words.reduce(text) { value, word in
             let heard = word.heard.trimmingCharacters(in: .whitespacesAndNewlines)

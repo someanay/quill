@@ -5,6 +5,14 @@ import FoundationNetworking
 #endif
 
 final class QuillCoreTests: XCTestCase {
+    func testBubbleDismissMatchesAndroidVisibleBottomThresholds() {
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: 211), 0)
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: 210), 0)
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: 141), 0.5)
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: 72), 1)
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: -20), 1)
+        XCTAssertEqual(BubbleDismissGeometry.proximity(bottomDistance: 73, threshold: 72, approach: 72), 0)
+    }
     func testSettingsDefaultAndAutomaticCleanup() throws {
         var settings = QuillSettings()
         XCTAssertEqual(settings.provider, .groq); XCTAssertEqual(settings.speechModel, "whisper-large-v3-turbo")
@@ -56,6 +64,13 @@ final class QuillCoreTests: XCTestCase {
         let words = [CustomWord(heard: "cat", replacement: "$5\\pet"), CustomWord(heard: "tihor", replacement: "Tihor")]
         XCTAssertEqual(WordSubstitutions.apply("CAT category tihor", words: words), "$5\\pet category Tihor")
         XCTAssertEqual(WordSubstitutions.apply("अना अनाय", words: [CustomWord(heard: "अना", replacement: "Anay")]), "Anay अनाय")
+    }
+    func testCustomWordsUpsertCaseInsensitiveTrimAndAppendWithoutTruncation() {
+        let first = CustomWord(heard: "Quell", replacement: "old"), second = CustomWord(heard: "other", replacement: "Other")
+        let long = String(repeating: "word", count: 80)
+        let result = WordSubstitutions.upsert([first, second], word: CustomWord(heard: "  qUeLl \n", replacement: " \(long)  "))
+        XCTAssertEqual(result.count, 2); XCTAssertEqual(result.first?.id, second.id); XCTAssertEqual(result.last?.heard, "qUeLl"); XCTAssertEqual(result.last?.replacement, long)
+        XCTAssertEqual(WordSubstitutions.upsert(result, word: CustomWord(heard: " ", replacement: "invalid")), result)
     }
     func testInsertionPreservesUnicodeAndSelections() {
         let a = InsertionComposer.compose(existing: "Hello 🌎", transcript: "again", selection: NSRange(location: 8, length: 0))

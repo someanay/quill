@@ -3,11 +3,11 @@ import QuillCore
 
 struct HomeView: View {
     @EnvironmentObject private var model: AppModel
+    private var today: [HistoryEntry] { model.history.filter { Calendar.current.isDateInToday($0.date) } }
+    private var todayWords: Int { today.reduce(0) { $0 + $1.text.split(whereSeparator: \.isWhitespace).count } }
     var body: some View {
         QPage {
             Wordmark().padding(.vertical, 8)
-            QHeading(title: model.c("ios.home.title"))
-            Text(model.c("ios.home.subtitle")).foregroundStyle(Q.muted)
             if !model.microphoneGranted {
                 QBanner(text: model.c("ios.mic.blocked"), icon: "mic.slash", error: true)
                 QButton(title: model.c("onboarding.mic.cta")) { Task { await model.requestMicrophone() } }
@@ -26,23 +26,21 @@ struct HomeView: View {
                 }
             }
             if let notice = model.notice { QBanner(text: notice, icon: "checkmark.circle").accessibilityAddTraits(.updatesFrequently) }
+            QSection(title: model.c("home.group.today"))
             QCard {
-                VStack(spacing: 12) {
-                    HStack { Text(model.c("settings.privacy.private_mode")); Spacer(); Toggle(model.c("settings.privacy.private_mode"), isOn: Binding(get: { model.settings.privateMode }, set: model.setPrivateMode)).labelsHidden() }
+                VStack(spacing: 10) {
+                    QRow(title: model.c("ios.home.dictations_count", String(today.count)), subtitle: model.c("ios.home.words_count", String(todayWords)), icon: "waveform", chevron: false)
                     Divider()
-                    NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.speech.title"), subtitle: model.settings.provider.title + " · " + model.settings.model, icon: "waveform") }
-                    Divider()
-                    NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), subtitle: model.c("ios.keyboard.home_help"), icon: "keyboard") }
+                    Button { model.tab = 1 } label: {
+                        QRow(title: model.c("home.today.last_used"), subtitle: model.history.first.map { $0.date.formatted(date: .abbreviated, time: .shortened) } ?? model.c("ios.home.no_last_used"), icon: "clock")
+                    }.buttonStyle(.plain)
                 }
             }
-            QSection(title: model.c("ios.home.recent"))
-            if model.history.isEmpty { QBanner(text: model.c("ios.home.no_history"), icon: "clock") }
-            else {
-                ForEach(model.history.prefix(3)) { entry in
-                    QCard { VStack(alignment: .leading, spacing: 8) { Text(entry.text).lineLimit(3).privacySensitive(); Text(entry.date, style: .relative).font(Q.sans(12)).foregroundStyle(Q.muted) } }
-                }
-            }
-        }.toolbar(.hidden, for: .navigationBar)
+            QSection(title: model.c("home.group.tip"))
+            NavigationLink { KeyboardHelpView() } label: {
+                QBanner(title: model.c("ios.home.tip_title"), text: model.c("ios.home.tip_body"))
+            }.buttonStyle(.plain)
+        }.toolbar(.hidden, for: .navigationBar).onAppear { model.refreshHistory() }
     }
 }
 
@@ -52,14 +50,19 @@ struct DictationControls: View {
     var body: some View {
         QCard {
             VStack(spacing: 14) {
-                Button {
-                    if model.phase == .recording { model.stopAndTranscribe() }
-                    else if !model.busy { Task { await model.start() } }
-                } label: { RecordingBubble(phase: model.phase, size: model.settings.bubbleSize == "Small" ? 56 : model.settings.bubbleSize == "Large" ? 88 : 72) }
-                    .buttonStyle(.plain).disabled(model.phase == .transcribing || model.phase == .cleaning || model.canRetry)
-                    .accessibilityLabel(model.c(model.phase == .recording ? "ios.recording.stop" : "ios.recording.start"))
-                    .accessibilityIdentifier("dictation.record")
-                Text(model.c("ios.phase.\(model.phase.rawValue)")).font(Q.sans(17)).fontWeight(.medium).accessibilityAddTraits(.updatesFrequently)
+                HStack(spacing: 14) {
+                    Button {
+                        if model.phase == .recording { model.stopAndTranscribe() }
+                        else if !model.busy { Task { await model.start() } }
+                    } label: { RecordingBubble(phase: model.phase, size: model.settings.bubbleSize == "Small" ? 56 : model.settings.bubbleSize == "Large" ? 88 : 64) }
+                        .buttonStyle(.plain).disabled(model.phase == .transcribing || model.phase == .cleaning || model.canRetry)
+                        .accessibilityLabel(model.c(model.phase == .recording ? "ios.recording.stop" : "ios.recording.start"))
+                        .accessibilityIdentifier("dictation.record")
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(model.c("ios.phase.\(model.phase.rawValue)")).font(Q.serif(24)).accessibilityAddTraits(.updatesFrequently)
+                        Text(model.c("ios.home.subtitle")).font(Q.sans(12)).foregroundStyle(Q.muted)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }
                 if model.phase == .recording {
                     InkMeter(amplitude: recorder.amplitude)
                     Text(String(format: "%d:%02d", Int(recorder.elapsed) / 60, Int(recorder.elapsed) % 60)).monospacedDigit().foregroundStyle(Q.brandInk)
@@ -70,7 +73,7 @@ struct DictationControls: View {
                     QButton(title: model.c("ios.recording.retry"), icon: "arrow.clockwise") { model.retry() }
                     Text(model.c("ios.recording.retry_retention")).font(Q.sans(12)).foregroundStyle(Q.muted)
                 }
-            }.frame(maxWidth: .infinity).padding(.vertical, 18)
+            }.frame(maxWidth: .infinity).padding(.vertical, 6)
         }
     }
 }

@@ -15,6 +15,7 @@ import QuillCore
     private var startedAt: TimeInterval = 0
     private var cap: Double = 300
     private var testMode = false
+    private var captureID = UUID()
     private var interruptionObserver: NSObjectProtocol?
     private var routeObserver: NSObjectProtocol?
     var fileURL: URL? { recorder?.url }
@@ -26,11 +27,13 @@ import QuillCore
         super.init()
         interruptionObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { [weak self] notification in
             guard let value = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt, value == AVAudioSession.InterruptionType.began.rawValue else { return }
-            Task { @MainActor in guard let self, self.isRecording else { return }; self.onInterruption?() }
+            // Delivery is explicitly on the main queue. Handle this capture now, rather than
+            // queuing a task that could interrupt a different recording after a quick restart.
+            MainActor.assumeIsolated { guard let self, self.isRecording else { return }; self.onInterruption?() }
         }
         routeObserver = NotificationCenter.default.addObserver(forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main) { [weak self] notification in
             guard let reason = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt, reason == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue else { return }
-            Task { @MainActor in guard let self, self.isRecording else { return }; self.onInterruption?() }
+            MainActor.assumeIsolated { guard let self, self.isRecording else { return }; self.onInterruption?() }
         }
     }
     deinit {
@@ -58,7 +61,8 @@ import QuillCore
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUnlessOpen], ofItemAtPath: path.path)
             recorder = audio; detector = SilenceDetector(); elapsed = 0; amplitude = 0; warning = false
             cap = Double(capSeconds); testMode = microphoneTest; startedAt = ProcessInfo.processInfo.systemUptime; isRecording = true
-            timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick() } }
+            captureID = UUID(); let expectedCapture = captureID
+            timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick(capture: expectedCapture) } }
         } catch {
             attemptedRecorder?.stop()
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
@@ -66,8 +70,8 @@ import QuillCore
             throw QuillError.audio
         }
     }
-    private func tick() {
-        guard isRecording, let recorder else { return }
+    private func tick(capture expectedCapture: UUID) {
+        guard captureID == expectedCapture, isRecording, let recorder else { return }
         recorder.updateMeters()
         elapsed = ProcessInfo.processInfo.systemUptime - startedAt
         let normalized = pow(10, Double(recorder.averagePower(forChannel: 0)) / 20)
@@ -80,7 +84,7 @@ import QuillCore
     }
     @discardableResult func stop() -> URL? {
         let url = recorder?.url
-        timer?.invalidate(); timer = nil; recorder?.stop(); recorder = nil
+        captureID = UUID(); timer?.invalidate(); timer = nil; recorder?.stop(); recorder = nil
         isRecording = false; amplitude = 0; warning = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         return url

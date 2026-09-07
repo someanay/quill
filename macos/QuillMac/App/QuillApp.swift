@@ -50,7 +50,7 @@ import QuillCore
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showMain(); return true }
-    func applicationWillTerminate(_ notification: Notification) { dictation.cancel(); crashReports.finish() }
+    func applicationWillTerminate(_ notification: Notification) { dictation.prepareForTermination(); crashReports.finish() }
     @objc func showMain() { mainWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     @objc private func toggleRecording() { dictation.toggle() }
     @objc private func toggleBubble() { NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = true; settings.value.bubbleVisible.toggle() }

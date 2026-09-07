@@ -154,8 +154,13 @@ public struct KeyboardHandoff: Codable, Equatable, Sendable {
 
 public struct ModelOption: Codable, Hashable, Identifiable, Sendable {
     public var id: String
+    public var name: String
     public var isFree: Bool
-    public init(_ id: String, isFree: Bool = false) { self.id = id; self.isFree = isFree }
+    public var isPaid: Bool
+    public var created: Double
+    public init(_ id: String, name: String? = nil, isFree: Bool = false, isPaid: Bool = false, created: Double = 0) {
+        self.id = id; self.name = name ?? id; self.isFree = isFree; self.isPaid = isPaid; self.created = created
+    }
 }
 
 public enum QuillError: Error, Equatable, LocalizedError, Sendable {

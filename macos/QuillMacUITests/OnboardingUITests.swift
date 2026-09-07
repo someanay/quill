@@ -1,6 +1,15 @@
 import XCTest
 
 final class OnboardingUITests: XCTestCase {
+    private func reveal(_ row: XCUIElement, in app: XCUIApplication) {
+        let scroll = app.scrollViews.firstMatch
+        for _ in 0..<10 {
+            let viewport = scroll.frame.insetBy(dx: 0, dy: 6)
+            if row.exists && row.frame.height > 0 && viewport.contains(row.frame) { return }
+            scroll.scroll(byDeltaX: 0, deltaY: -200)
+        }
+        XCTAssertTrue(scroll.frame.contains(row.frame), "Settings row must be inside the visible scroll viewport")
+    }
     func testFirstRunWarningAndKeyFlow() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
         let started = app.buttons["onboarding.welcome.cta"]
@@ -39,7 +48,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
         for page in ["speech", "keys", "cleanup", "style", "words", "vocab", "audio", "bubble", "privacy", "advanced", "about"] {
             let row = app.buttons["settings." + page]
-            for _ in 0..<8 where !row.isHittable { app.scrollViews.firstMatch.scroll(byDeltaX: 0, deltaY: -240) }
+            reveal(row, in: app)
             XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
             XCTAssertTrue(app.staticTexts["settings.page." + page].waitForExistence(timeout: 6))
             let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-dark-" + page; shot.lifetime = .keepAlways; add(shot)
@@ -59,7 +68,7 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["word-delete"].firstMatch.click(); XCTAssertFalse(app.staticTexts["tihor"].exists)
         app.buttons["settings-back"].click()
         let privacy = app.buttons["settings.privacy"]
-        for _ in 0..<8 where !privacy.isHittable { app.scrollViews.firstMatch.scroll(byDeltaX: 0, deltaY: -240) }
+        reveal(privacy, in: app)
         XCTAssertTrue(privacy.isHittable); privacy.click()
         let toggle = app.descendants(matching: .any)["privacy-private-mode"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5)); toggle.click()

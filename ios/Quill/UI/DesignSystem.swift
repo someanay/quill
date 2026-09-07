@@ -52,7 +52,7 @@ struct QButton: View {
             HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center) }
                 .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 18).padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 48)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
-                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.largeRadius))
+                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
         }.buttonStyle(.plain)
     }
 }
@@ -87,6 +87,7 @@ struct QRow: View {
     var subtitle: String? = nil
     var icon: String = "circle"
     var value: String? = nil
+    var chevron = true
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon).font(.system(size: 19)).foregroundStyle(Q.brandInk).frame(width: 40, height: 40).background(Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.cardRadius)).accessibilityHidden(true)
@@ -96,7 +97,7 @@ struct QRow: View {
             }
             Spacer(minLength: 6)
             if let value { Text(value).font(Q.sans(13)).foregroundStyle(Q.muted) }
-            Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Q.muted).accessibilityHidden(true)
+            if chevron { Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Q.muted).accessibilityHidden(true) }
         }.padding(.vertical, 5).frame(minHeight: 48)
     }
 }

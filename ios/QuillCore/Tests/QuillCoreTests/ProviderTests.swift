@@ -53,6 +53,21 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(r.timeoutInterval, 4)
         XCTAssertTrue(String(data: r.httpBody!, encoding: .utf8)!.contains("DICTATED TEXT"))
     }
+    func testKeyValidationUsesCurrentAndroidOpenRouterEndpoint() throws {
+        let config = try ProviderConfiguration(provider: .openrouter, model: Provider.openrouter.defaultModel)
+        let request = try ProviderRequests.validation(config, key: "synthetic-key")
+        XCTAssertEqual(request.url?.absoluteString, "https://openrouter.ai/api/v1/key")
+        XCTAssertEqual(request.timeoutInterval, 15)
+        XCTAssertNil(request.httpBody)
+    }
+    func testValidationAcceptsSuccessfulEmptyBodyAndRejectsBadRequestLikeAndroid() async throws {
+        let config = try ProviderConfiguration(provider: .groq, model: Provider.groq.defaultModel)
+        let valid = ProviderAPI(transport: StubTransport(result: HTTPResult(data: Data(), status: 204)))
+        try await valid.validate(config, key: "synthetic-key")
+        let invalid = ProviderAPI(transport: StubTransport(result: HTTPResult(data: Data(), status: 400)))
+        do { try await invalid.validate(config, key: "synthetic-key"); XCTFail("Bad-request validation accepted") }
+        catch { XCTAssertEqual(error as? QuillError, .invalidKey) }
+    }
     func testHTTPErrorClassification() {
         for (code, error) in [(401, QuillError.invalidKey), (403, .invalidKey), (402, .quota), (429, .rateLimit), (503, .provider(503)), (302, .provider(302))] {
             XCTAssertThrowsError(try ProviderAPI.check(HTTPResult(data: Data(), status: code))) { XCTAssertEqual($0 as? QuillError, error) }

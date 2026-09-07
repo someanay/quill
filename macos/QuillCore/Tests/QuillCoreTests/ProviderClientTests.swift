@@ -22,6 +22,39 @@ private final class StubProtocol: URLProtocol, @unchecked Sendable {
     override func stopLoading() {}
 }
 
+private final class DripProtocol: URLProtocol, @unchecked Sendable {
+    private let lock = NSLock()
+    private var timer: DispatchSourceTimer?
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type":"application/json"])!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        let source = DispatchSource.makeTimerSource()
+        source.schedule(deadline: .now(), repeating: .milliseconds(50))
+        source.setEventHandler { [weak self] in
+            guard let self else { return }
+            self.lock.lock(); defer { self.lock.unlock() }
+            guard self.timer != nil else { return }
+            self.client?.urlProtocol(self, didLoad: Data(" ".utf8))
+        }
+        lock.lock(); timer = source; lock.unlock(); source.resume()
+    }
+    override func stopLoading() { lock.lock(); timer?.cancel(); timer = nil; lock.unlock() }
+}
+
+private final class OversizedStreamProtocol: URLProtocol, @unchecked Sendable {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(repeating: 32, count: 4 * 1024 * 1024 + 1))
+        // No completion: the byte cap must cancel an ongoing chunked transfer.
+    }
+    override func stopLoading() {}
+}
+
 final class ProviderClientTests: XCTestCase {
     private func client(_ responder: @escaping (URLRequest) throws -> (Int, Data)) -> ProviderClient {
         StubProtocol.lock.lock(); StubProtocol.responder = responder; StubProtocol.lock.unlock()
@@ -73,6 +106,13 @@ final class ProviderClientTests: XCTestCase {
         let invalid = try await client.clean("type my email", provider: .custom, model: "cleanup-model", baseURL: "http://example.com", key: "test", style: .neutral)
         XCTAssertEqual(invalid, "type my email")
     }
+    func testDripFedCleanupHasFourSecondTotalDeadline() async throws {
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [DripProtocol.self]
+        let client = ProviderClient(session: URLSession(configuration: config)), started = Date()
+        let result = try await client.clean("Keep these words", provider: .groq, model: "model", baseURL: "", key: "test", style: .neutral)
+        XCTAssertEqual(result, "Keep these words")
+        XCTAssertGreaterThan(Date().timeIntervalSince(started), 3.5); XCTAssertLessThan(Date().timeIntervalSince(started), 8)
+    }
     func testCleanupResponseGuardAndFinishReason() async throws {
         for (text, finish, expected) in [("Type my email.", "stop", "Type my email."), ("I am ready to type your email.", "stop", "type my email"), ("Type my email.", "length", "type my email")] {
             let client = client { request in
@@ -101,6 +141,31 @@ final class ProviderClientTests: XCTestCase {
         }
         let models = try await client.models(provider: .gemini, use: .dictation, baseURL: "", key: "google-test")
         XCTAssertEqual(models.map(\.id), ["gemini-3.5-flash-lite"])
+    }
+    func testCatalogRejectsRepeatedTokensAndMoreThanTwentyPages() async throws {
+        for repeats in [true, false] {
+            var calls = 0
+            let client = client { _ in
+                calls += 1
+                return (200, try JSONSerialization.data(withJSONObject: ["models":[["name":"models/gemini-flash", "supportedGenerationMethods":["generateContent"]]], "nextPageToken": repeats ? "same" : String(calls)]))
+            }
+            do { _ = try await client.models(provider: .gemini, use: .dictation, baseURL: "", key: "test"); XCTFail("Expected bounded pagination rejection") }
+            catch { XCTAssertEqual(error as? QuillError, .emptyTranscript) }
+            XCTAssertEqual(calls, repeats ? 2 : 20)
+        }
+    }
+    func testProviderResponseAboveFourMiBIsRejectedBeforeParsing() async throws {
+        let client = client { _ in (200, Data(repeating: 32, count: 4 * 1024 * 1024 + 1)) }
+        do { _ = try await client.models(provider: .groq, use: .dictation, baseURL: "", key: "test"); XCTFail("Expected oversized response rejection") }
+        catch { XCTAssertEqual(error as? QuillError, .responseTooLarge) }
+    }
+    func testOversizedStreamIsCancelledBeforeItFinishes() async throws {
+        let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [OversizedStreamProtocol.self]
+        let client = ProviderClient(session: URLSession(configuration: config)), started = Date()
+        var request = URLRequest(url: URL(string: "https://example.com/models")!); request.timeoutInterval = 10
+        do { _ = try await client.send(request, provider: .groq); XCTFail("Expected in-flight byte limit") }
+        catch { XCTAssertEqual(error as? QuillError, .responseTooLarge) }
+        XCTAssertLessThan(Date().timeIntervalSince(started), 3)
     }
     func testGeminiMissingFinishAndBlockedOrIncompleteOutput() throws {
         let normal = Data("{\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hello\"},{\"text\":\" world\"}]}}]}".utf8)

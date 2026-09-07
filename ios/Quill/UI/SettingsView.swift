@@ -1,4 +1,5 @@
 import SwiftUI
+import Contacts
 import QuillCore
 
 struct SettingsView: View {
@@ -78,18 +79,18 @@ struct ModelPickerView: View {
     private var choices: [ModelOption] {
         let fallback = cleanup ? [provider.defaultCleanupModel] : provider.speechModels
         var result = model.modelChoices
-        for id in fallback + [selection.wrappedValue] where !id.isEmpty && !result.contains(where: { $0.id == id }) { result.append(ModelOption(id)) }
+        for id in fallback + [selection.wrappedValue] where !id.isEmpty && !result.contains(where: { $0.id == id }) { result.append(ModelOption(id, isFree: ModelCatalog.knownFree(provider, id))) }
         return result
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             QSection(title: model.c(cleanup ? "settings.cleanup.model" : "settings.speech.model"))
             QCard {
-                Picker(model.c("settings.speech.model"), selection: selection) { ForEach(choices) { option in Text(option.id + (option.isFree ? " · " + model.c("onboarding.key.console_free") : "")).tag(option.id) } }.pickerStyle(.menu)
+                Picker(model.c("settings.speech.model"), selection: selection) { ForEach(choices) { option in Text(option.name + (option.isFree ? " · " + model.c("onboarding.key.console_free") : "")).tag(option.id) } }.pickerStyle(.menu)
             }
             QField(title: model.c("settings.speech.model_field_label"), text: selection)
             QButton(title: model.loadingModels ? model.c("ios.models.loading") : model.c("ios.models.refresh"), icon: "arrow.clockwise", secondary: true) { Task { await model.refreshModels(cleanup: cleanup) } }.disabled(model.loadingModels)
-        }.onDisappear { model.modelChoices = [] }
+        }.onDisappear { model.invalidateModelChoices() }
     }
 }
 
@@ -216,18 +217,30 @@ struct CustomWordsView: View {
 
 struct ContactsView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var importing = false
     @State private var clear = false
+    @State private var permissionDenied = Self.contactsDenied
+    private static var contactsDenied: Bool {
+        let permission = CNContactStore.authorizationStatus(for: .contacts)
+        return permission == .denied || permission == .restricted
+    }
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.vocab.title")).accessibilityIdentifier("screen.contacts")
             QBanner(text: model.c("settings.vocab.body"), icon: "person.crop.rectangle")
-            QButton(title: model.c(importing ? "settings.vocab.importing" : "settings.vocab.import"), icon: "person.badge.plus") { importing = true; Task { await model.importContacts(); importing = false } }.disabled(importing)
+            if permissionDenied {
+                QBanner(text: model.c("settings.vocab.permission_needed"), icon: "person.crop.rectangle", error: true)
+                QButton(title: model.c("settings.vocab.open_settings"), secondary: true) { openSettings() }
+            }
+            QButton(title: model.c(importing ? "settings.vocab.importing" : "settings.vocab.import"), icon: "person.badge.plus") { importing = true; Task { await model.importContacts(); importing = false; permissionDenied = Self.contactsDenied } }.disabled(importing)
             Text(model.c("settings.vocab.imported", String(model.contactNames.count))).foregroundStyle(Q.muted)
             if !model.contactNames.isEmpty {
                 QCard { LazyVStack(alignment: .leading, spacing: 12) { ForEach(model.contactNames, id: \.self) { Text($0).privacySensitive(); Divider() } } }
                 QButton(title: model.c("settings.vocab.clear"), secondary: true) { clear = true }
             }
-        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar).confirmationDialog(model.c("settings.vocab.clear_confirm_title"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("settings.vocab.clear_confirm_cta"), role: .destructive) { model.clearContacts() } }
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+            .onChange(of: scenePhase) { _, phase in if phase == .active { permissionDenied = Self.contactsDenied } }
+            .confirmationDialog(model.c("settings.vocab.clear_confirm_title"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("settings.vocab.clear_confirm_cta"), role: .destructive) { model.clearContacts() } }
     }
 }

@@ -101,4 +101,37 @@ private actor ScriptedProvider: HTTPTransport {
         try await wait(model, phase: .ready)
         XCTAssertEqual(model.voiceWordResult, "clod code"); XCTAssertTrue(store.data.isEmpty); XCTAssertEqual(model.result, "")
     }
+    func testSavingAdditionalProviderKeyDoesNotRedirectSpeechSettings() async throws {
+        let model = AppModel(providerAPI: ProviderAPI(transport: ScriptedProvider([(200, "{}")])) , historyStore: PipelineHistory())
+        model.cancel(); model.settings = QuillSettings(); model.settings.selectProvider(.gemini)
+        let saved = await model.verifyAndSaveKey(provider: .groq, secret: "synthetic-key", label: "Additional key")
+        XCTAssertTrue(saved); XCTAssertEqual(model.settings.provider, .gemini)
+        keyIDs.append(try XCTUnwrap(model.vault.active(.groq, endpoint: Provider.groq.baseURL)))
+    }
+    func testOnboardingSelectsPreferredKnownFreeModelFromCatalog() async throws {
+        let body = #"{"models":[{"name":"models/gemini-3.8-flash","supportedGenerationMethods":["generateContent"]},{"name":"models/gemini-3.1-flash-lite","supportedGenerationMethods":["generateContent"]}]}"#
+        let model = AppModel(providerAPI: ProviderAPI(transport: ScriptedProvider([(200, "{}"), (200, body)])), historyStore: PipelineHistory())
+        model.cancel(); model.settings = QuillSettings()
+        let saved = await model.verifyAndSaveKey(provider: .gemini, secret: "synthetic-key", label: "Setup", activateSpeechProvider: true)
+        XCTAssertTrue(saved); XCTAssertEqual(model.settings.provider, .gemini)
+        XCTAssertEqual(model.settings.model, "gemini-3.8-flash")
+        keyIDs.append(try XCTUnwrap(model.vault.active(.gemini, endpoint: Provider.gemini.baseURL)))
+    }
+    func testCatalogRefreshNeverOverridesSavedModelSelection() async throws {
+        let model = try makeModel(ScriptedProvider([(200, #"{"data":[{"id":"whisper-large-v3-turbo"}]}"#)]))
+        model.settings.model = "saved-private-whisper"
+        await model.refreshModels(cleanup: false)
+        XCTAssertEqual(model.settings.model, "saved-private-whisper")
+        XCTAssertEqual(model.modelChoices.map(\.id), ["whisper-large-v3-turbo"])
+    }
+    func testLateCatalogResponseCannotPopulateAnotherProvider() async throws {
+        let model = try makeModel(ScriptedProvider([(200, #"{"data":[{"id":"whisper-large-v3-turbo"}]}"#)], delay: 100_000_000))
+        let refresh = Task { await model.refreshModels(cleanup: false) }
+        try await Task.sleep(nanoseconds: 20_000_000)
+        model.selectProvider(.gemini)
+        await refresh.value
+        XCTAssertEqual(model.settings.provider, .gemini)
+        XCTAssertTrue(model.modelChoices.isEmpty)
+        XCTAssertFalse(model.loadingModels)
+    }
 }

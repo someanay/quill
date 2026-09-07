@@ -84,8 +84,10 @@ enum InsertionResult: Equatable { case confirmed, unconfirmed, unavailable }
     }
     func paste(_ transcript: String, target: FocusSnapshot?) throws -> Bool {
         guard let target, try matches(target) else { throw QuillError.focusChanged }
-        ClipboardLease.write(transcript, expires: true)
+        guard ClipboardLease.write(transcript, expires: true) else { return false }
+        let clipboardChange = NSPasteboard.general.changeCount
         guard try matches(target) else { throw QuillError.focusChanged }
+        guard NSPasteboard.general.changeCount == clipboardChange else { return false }
         guard let source = CGEventSource(stateID: .hidSystemState), let down = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true), let up = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false) else { return false }
         down.flags = .maskCommand; up.flags = .maskCommand; down.post(tap: .cghidEventTap); up.post(tap: .cghidEventTap)
         return true
@@ -94,12 +96,13 @@ enum InsertionResult: Equatable { case confirmed, unconfirmed, unavailable }
 
 @MainActor enum ClipboardLease {
     private static var clearTask: Task<Void,Never>?
-    static func write(_ text: String, expires: Bool = false) {
+    @discardableResult static func write(_ text: String, expires: Bool = false) -> Bool {
         clearTask?.cancel()
         let clipboard = NSPasteboard.general
-        clipboard.clearContents(); clipboard.setString(text, forType: .string)
-        guard expires else { return }
+        clipboard.clearContents(); guard clipboard.setString(text, forType: .string) else { return false }
+        guard expires else { return true }
         let change = clipboard.changeCount
         clearTask = Task { try? await Task.sleep(nanoseconds: 60_000_000_000); guard !Task.isCancelled, clipboard.changeCount == change else { return }; clipboard.clearContents() }
+        return true
     }
 }

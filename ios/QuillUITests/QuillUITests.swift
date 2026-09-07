@@ -16,11 +16,18 @@ final class QuillUITests: XCTestCase {
     private func capture(_ app: XCUIApplication, _ name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
     }
+    private func settingsTab(_ app: XCUIApplication) -> XCUIElement {
+        let phoneTab = app.tabBars.buttons["Settings"]
+        if phoneTab.exists { return phoneTab }
+        // iPad's native floating tab strip exposes nested buttons, not a TabBar.
+        // Both observed nodes have the same frame; firstMatch avoids ambiguity.
+        return app.buttons.matching(identifier: "gearshape").matching(NSPredicate(format: "label == %@", "Settings")).firstMatch
+    }
     private func openHome(arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
         tap(app.buttons["Open Quill"], in: app)
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout: 10))
+        XCTAssertTrue(settingsTab(app).waitForExistence(timeout: 10))
         return app
     }
     func testWelcomeAndKeyWarning() throws {
@@ -38,7 +45,7 @@ final class QuillUITests: XCTestCase {
     }
     func testHomeSettingsPrivacyAndKeyboardHelp() throws {
         let app = openHome()
-        app.tabBars.buttons["Settings"].tap()
+        settingsTab(app).tap()
         tap(app.buttons["settings.speech"], in: app)
         let language = app.staticTexts["speech.language.section"]
         for _ in 0..<4 { if language.exists && language.isHittable { break }; app.swipeUp() }
@@ -51,7 +58,7 @@ final class QuillUITests: XCTestCase {
     }
     func testSettingsScreensAndDarkAppearance() throws {
         let app = openHome()
-        app.tabBars.buttons["Settings"].tap()
+        settingsTab(app).tap()
         tap(app.buttons["settings.visual"], in: app)
         app.buttons["Dark"].tap()
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "ios-dark-appearance"; shot.lifetime = .keepAlways; add(shot)
@@ -86,7 +93,7 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
     }
     func testEverySettingsDetailScreen() throws {
-        let app = openHome(); app.tabBars.buttons["Settings"].tap()
+        let app = openHome(); settingsTab(app).tap()
         for section in ["speech", "keys", "cleanup", "style", "words", "contacts", "audio", "visual", "keyboard", "privacy", "advanced", "about"] {
             tap(app.buttons["settings." + section], in: app)
             XCTAssertTrue(app.staticTexts["screen." + section].waitForExistence(timeout: 5), section)
@@ -97,7 +104,7 @@ final class QuillUITests: XCTestCase {
     }
     func testLargerTextDarkSettingsAndLandscapeLayout() throws {
         let app = openHome(arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
-        app.tabBars.buttons["Settings"].tap()
+        settingsTab(app).tap()
         tap(app.buttons["settings.visual"], in: app)
         tap(app.buttons["Dark"], in: app); capture(app, "ios-large-text-dark")
         XCTAssertTrue(app.buttons["Match system"].exists)

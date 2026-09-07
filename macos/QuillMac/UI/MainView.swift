@@ -11,6 +11,7 @@ struct MainView: View {
     @State private var tab = "home"
     var body: some View {
         VStack(spacing: 0) {
+            if dictation.recoveryWarning { CopyText("mac.error.pending_storage").font(QuillTheme.sans(13)).foregroundStyle(QuillTheme.error).padding(12).fixedSize(horizontal: false, vertical: true) }
             if settings.value.onboardingComplete {
                 Group {
                     switch tab {

@@ -1,5 +1,12 @@
 import Foundation
 
+public enum BubbleDismissGeometry {
+    public static func proximity(bottomDistance: Double, threshold: Double = 72, approach: Double = 210) -> Double {
+        guard approach > threshold else { return bottomDistance <= threshold ? 1 : 0 }
+        return min(1, max(0, (approach - bottomDistance) / (approach - threshold)))
+    }
+}
+
 public struct SilenceDetector: Sendable {
     public var threshold = 600.0
     public var quietWindow = 3.5
@@ -55,6 +62,11 @@ public enum ContactVocabulary {
     }
 }
 public enum WordSubstitutions {
+    public static func upsert(_ words: [CustomWord], word: CustomWord) -> [CustomWord] {
+        let clean = CustomWord(id: word.id, heard: word.heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement: word.replacement.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard !clean.heard.isEmpty, !clean.replacement.isEmpty else { return words }
+        return words.filter { $0.id != clean.id && $0.heard.caseInsensitiveCompare(clean.heard) != .orderedSame } + [clean]
+    }
     public static func apply(_ text: String, words: [CustomWord]) -> String {
         words.reduce(text) { output, word in
             let heard = word.heard.trimmingCharacters(in: .whitespacesAndNewlines)

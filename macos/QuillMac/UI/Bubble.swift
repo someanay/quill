@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import Combine
+import QuillCore
 
 struct BubbleFace: View {
     var state: DictationState
@@ -65,6 +66,7 @@ final class BubblePanel: NSPanel {
     private let dictation: Dictation
     private var panel: BubblePanel?
     private var companion: BubblePanel?
+    private var bin: BubblePanel?
     private var view: BubbleHitView?
     private var subscriptions = Set<AnyCancellable>()
     private var returnTask: Task<Void,Never>?
@@ -79,7 +81,7 @@ final class BubblePanel: NSPanel {
     func refresh() {
         guard !AppPaths.testMode else { return }
         if settings.value.bubbleVisible { hiddenByDrag = false; returnTask?.cancel() }
-        guard settings.value.bubbleActive && settings.value.bubbleVisible else { panel?.orderOut(nil); companion?.orderOut(nil); return }
+        guard settings.value.bubbleActive && settings.value.bubbleVisible else { panel?.orderOut(nil); companion?.orderOut(nil); bin?.orderOut(nil); return }
         if panel == nil { makePanel() }
         let dark = settings.value.appTheme == "Dark" || (settings.value.appTheme == "Match system" && NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
         view?.rootView = BubbleFace(state: dictation.state, diameter: settings.value.bubbleDiameter, amplitude: dictation.level, dark: dark)
@@ -95,21 +97,35 @@ final class BubblePanel: NSPanel {
         view.setAccessibilityRole(.button); view.setAccessibilityElement(true)
         view.clicked = { [weak self] in self?.dictation.toggle() }
         view.longPressed = { [weak self] in guard let self else { return }; if self.dictation.state == .recording { self.dictation.stop() } else { self.dictation.start(toClipboard: true) } }
-        view.dragged = { [weak self] point in guard let self else { return }; self.panel?.setFrameOrigin(NSPoint(x: point.x - 48, y: point.y - 48)); self.positionCompanion() }
+        view.dragged = { [weak self] point in guard let self else { return }; self.panel?.setFrameOrigin(NSPoint(x: point.x - 48, y: point.y - 48)); self.positionCompanion(); self.showBin(at: point) }
         view.dragEnded = { [weak self] in self?.finishDrag() }
         panel.contentView = view; self.panel = panel; self.view = view
         if let screen = NSScreen.main { panel.setFrameOrigin(NSPoint(x: screen.visibleFrame.maxX - 100, y: screen.visibleFrame.minY + screen.visibleFrame.height * 0.6)) }
     }
     private func finishDrag() {
+        bin?.orderOut(nil)
         guard let panel, let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main else { return }
-        if NSEvent.mouseLocation.y < screen.visibleFrame.minY + 72 {
-            dictation.cancel(); hiddenByDrag = true; settings.value.bubbleVisible = false
+        let bottomDistance = panel.frame.midY - settings.value.bubbleDiameter / 2 - screen.visibleFrame.minY
+        if BubbleDismissGeometry.proximity(bottomDistance: bottomDistance) == 1 {
+            hiddenByDrag = true; settings.value.bubbleVisible = false
             returnTask?.cancel(); returnTask = Task { try? await Task.sleep(nanoseconds: 600_000_000_000); guard !Task.isCancelled, hiddenByDrag, settings.value.bubbleActive else { return }; settings.value.bubbleVisible = true }
         } else {
             let frame = screen.visibleFrame
             let x = panel.frame.midX < frame.midX ? frame.minX : frame.maxX - panel.frame.width
             panel.setFrameOrigin(NSPoint(x: x, y: min(frame.maxY - panel.frame.height, max(frame.minY, panel.frame.minY)))); positionCompanion()
         }
+    }
+    private func showBin(at point: NSPoint) {
+        guard let panel, let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }) ?? NSScreen.main else { return }
+        let progress = BubbleDismissGeometry.proximity(bottomDistance: panel.frame.midY - settings.value.bubbleDiameter / 2 - screen.visibleFrame.minY)
+        guard progress > 0 else { bin?.orderOut(nil); return }
+        if bin == nil {
+            let target = BubblePanel(contentRect: NSRect(x: 0, y: 0, width: 210, height: 125), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            target.isOpaque = false; target.backgroundColor = .clear; target.level = .floating; target.ignoresMouseEvents = true; target.hidesOnDeactivate = false
+            target.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; bin = target
+        }
+        bin?.contentView = NSHostingView(rootView: BubbleBin(progress: progress))
+        bin?.setFrameOrigin(NSPoint(x: screen.visibleFrame.midX - 105, y: screen.visibleFrame.minY + 22)); bin?.orderFrontRegardless()
     }
     private func showCompanion() {
         if companion == nil {
@@ -123,6 +139,19 @@ final class BubblePanel: NSPanel {
         guard let panel, let companion, let screen = panel.screen ?? NSScreen.main else { return }
         let right = panel.frame.midX < screen.visibleFrame.midX
         companion.setFrameOrigin(NSPoint(x: right ? panel.frame.maxX : panel.frame.minX - companion.frame.width, y: min(screen.visibleFrame.maxY - companion.frame.height, max(screen.visibleFrame.minY, panel.frame.midY - companion.frame.height / 2))))
+    }
+}
+
+struct BubbleBin: View {
+    var progress: Double
+    @Environment(\.accessibilityReduceMotion) private var reduced
+    var body: some View {
+        VStack(spacing: 9) {
+            Image(systemName: "trash").font(.system(size: 26, weight: .medium)).frame(width: 60, height: 60)
+                .background(progress == 1 ? QuillTheme.error : Color(hex: 0x202522), in: Circle()).overlay(Circle().strokeBorder(.white, lineWidth: 2))
+            CopyText(progress == 1 ? "bubble.bin.label_active" : "bubble.bin.label").font(QuillTheme.sans(12.5)).fontWeight(.semibold).padding(.horizontal, 11).padding(.vertical, 5).background(Color(hex: 0x202522), in: Capsule())
+        }.foregroundStyle(.white).shadow(color: .black.opacity(0.25), radius: 8, y: 3).opacity(progress)
+        .scaleEffect(reduced ? 1 : 0.8 + progress * 0.2).padding(10).allowsHitTesting(false)
     }
 }
 

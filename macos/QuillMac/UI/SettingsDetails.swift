@@ -55,21 +55,21 @@ struct WordsSettings: View {
                 HStack {
                     Button(Copy.text(capturing && dictation.state == .recording ? "mac.dictation.stop" : "settings.words.record")) {
                         if capturing && dictation.state == .recording { dictation.stop() }
-                        else { dictation.start(wordCapture: true); capturing = dictation.state == .recording; dictation.onWordCaptured = { text in heard = text; capturing = false } }
+                        else { dictation.start(wordCapture: true); capturing = dictation.state == .recording; if capturing { dictation.onWordCaptured = { text in heard = text; capturing = false } } }
                     }.disabled(dictation.state == .transcribing)
                     if capturing { InkMeter(amplitude: dictation.level, bars: 6).frame(height: 34) }
                 }
                 TextField(Copy.text("settings.words.replacement_label"), text: $replacement).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-replacement")
                 QuillButton(key: "settings.words.save") {
                     let word = CustomWord(id: editing ?? UUID(), heard: heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement: replacement.trimmingCharacters(in: .whitespacesAndNewlines))
-                    if let index = settings.value.words.firstIndex(where: { $0.id == editing }) { settings.value.words[index] = word } else { settings.value.words.append(word) }
+                    settings.value.words = WordSubstitutions.upsert(settings.value.words, word: word)
                     heard = ""; replacement = ""; editing = nil
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
                 QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
             }
-        }.onDisappear { if capturing { dictation.cancel() } }
+        }.onDisappear { if capturing { dictation.onWordCaptured = nil; dictation.suspend(); capturing = false } }
     }
 }
 

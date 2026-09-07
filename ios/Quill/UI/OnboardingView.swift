@@ -73,7 +73,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             QHeading(title: model.c("onboarding.key.title"))
             Text(model.c("onboarding.key.body")).foregroundStyle(Q.muted)
-            KeyEditor(onSaved: { model.settings.onboardingStep = 3 })
+            KeyEditor(activateSpeechProvider: true, onSaved: { model.settings.onboardingStep = 3 })
             if model.hasActiveKey { QButton(title: model.c("action.continue")) { model.settings.onboardingStep = 3 } }
         }
     }
@@ -166,6 +166,7 @@ func openSettings() { if let url = URL(string: UIApplication.openSettingsURLStri
 
 struct KeyEditor: View {
     @EnvironmentObject private var model: AppModel
+    var activateSpeechProvider = false
     var onSaved: () -> Void = {}
     @State private var provider: Provider = .groq
     @State private var secret = ""
@@ -192,7 +193,7 @@ struct KeyEditor: View {
                             }.padding(.leading, 14).background(Q.sunken, in: RoundedRectangle(cornerRadius: Q.fieldRadius))
                             QButton(title: model.keyValidationRunning ? model.c("onboarding.key.verifying") : model.c("onboarding.key.cta")) {
                                 let candidate = secret, chosen = provider
-                                Task { if await model.verifyAndSaveKey(provider: chosen, secret: candidate, label: label) { model.selectProvider(chosen); secret = ""; onSaved() } }
+                                Task { if await model.verifyAndSaveKey(provider: chosen, secret: candidate, label: label, activateSpeechProvider: activateSpeechProvider) { secret = ""; onSaved() } }
                             }.disabled(secret.isEmpty || model.keyValidationRunning).accessibilityIdentifier("onboarding.key.verify")
                             if provider.consoleURL != nil {
                                 Button(model.c("onboarding.key.where_link")) { showGuide = true }.frame(minHeight: 48)
