@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material3.MaterialTheme
@@ -28,11 +30,8 @@ import com.tihor.quill.settings.SttProvider
 import com.tihor.quill.ui.theme.quill
 
 /**
- * "Where do I get a key?" chooser: lists every selectable provider that has a key console (Groq,
- * OpenAI, OpenRouter, Gemini — Custom has none), tags free tiers, and on tap shows that provider's
- * step-by-step "get your key" guide before opening its console in the browser. Shared by onboarding
- * (AddKeyStep, KeyWarningDialog) and settings (ApiKeysScreen, ApiKeyEntry) so the answer to "where?"
- * is always all providers, not just the selected one.
+ * Provider help for Gemini, Groq and OpenRouter. Uses the same numbered instructions and reading
+ * acknowledgement as inline key setup, with room to scroll on smaller screens.
  */
 @Composable
 fun KeyConsoleDialog(onDismiss: () -> Unit) {
@@ -45,7 +44,7 @@ fun KeyConsoleDialog(onDismiss: () -> Unit) {
     }
     Dialog(onDismissRequest = onDismiss) {
         QuillCard {
-            Column(Modifier.padding(20.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
                 val guide = guideFor
                 if (guide == null) {
                     ProviderList(
@@ -80,15 +79,15 @@ private fun ProviderList(onPick: (SttProvider, String) -> Unit, onDismiss: () ->
     )
     Spacer(Modifier.height(14.dp))
     QuillListContainer {
-        val consoles = SttProvider.selectable().mapNotNull { p -> p.keyConsoleUrl?.let { p to it } }
+        val consoles = keySetupProviders.mapNotNull { p -> p.keyConsoleUrl?.let { p to it } }
         consoles.forEachIndexed { i, (provider, url) ->
             if (i > 0) RowDivider()
             QuillRow(
                 title = provider.displayName, // copy-exempt (proper nouns)
                 onClick = { onPick(provider, url) },
                 trailing = {
-                    if (provider.keyConsoleFree) {
-                        StatusPill(copy(K.KEY_CONSOLE_FREE), PillKind.OK)
+                    if (provider in keySetupProviders) {
+                        StatusPill(copy(if (provider == SttProvider.OPENROUTER) K.KEY_FREE_OPTIONS else K.KEY_CONSOLE_FREE), PillKind.OK)
                         Spacer(Modifier.width(8.dp))
                     }
                     RowChevron()
@@ -113,9 +112,7 @@ private fun KeyGuide(provider: SttProvider, onOpen: () -> Unit, onBack: () -> Un
         StatusPill(copy(K.KEY_CONSOLE_FREE), PillKind.OK)
     }
     Spacer(Modifier.height(10.dp))
-    provider.keyGuideStepsKey?.let { Text(copy(it), style = MaterialTheme.typography.bodyMedium) }
-    Spacer(Modifier.height(16.dp))
-    QuillPrimaryButton(copy(K.KEY_GUIDE_OPEN, provider.displayName), onClick = onOpen)
+    ProviderKeyInstructions(provider)
     Spacer(Modifier.height(6.dp))
     TextButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
         Text(copy(K.ACTION_BACK))

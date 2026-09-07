@@ -18,6 +18,25 @@ import org.robolectric.annotation.Config
 @Config(sdk = [34])
 class SettingsRepositoryTest {
 
+    @Test fun automaticCleanupRequiresKnownFreeOptionAndRespectsExplicitOff() = runTest {
+        val r = repo()
+        r.clear()
+        r.setProvider(SttProvider.OPENAI)
+        assertFalse(r.settings.first().cleanupEnabled)
+        r.setProvider(SttProvider.CUSTOM)
+        assertFalse(r.settings.first().cleanupEnabled)
+        r.setProvider(SttProvider.OPENROUTER)
+        assertTrue(r.settings.first().cleanupEnabled)
+        assertEquals("openrouter/free", r.settings.first().cleanupModel)
+        r.setCleanupEnabled(false)
+        r.setProvider(SttProvider.GEMINI)
+        assertFalse(r.settings.first().cleanupEnabled)
+        r.setProvider(SttProvider.OPENAI)
+        r.setCleanupEnabled(true)
+        assertTrue(r.settings.first().cleanupEnabled)
+        assertFalse(r.settings.first().cleanupAutomatic)
+    }
+
     private fun repo() = SettingsRepository(RuntimeEnvironment.getApplication())
 
     // Robolectric caches the DataStore singleton across methods in a class, so reset to a known clean

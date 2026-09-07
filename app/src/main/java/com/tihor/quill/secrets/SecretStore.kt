@@ -34,17 +34,26 @@ class KeystoreSecretStore(context: Context) : SecretStore {
     private val dir = File(context.filesDir, "secrets").apply { mkdirs() }
 
     override fun put(alias: String, secret: String) {
-        File(dir, fileName(alias)).writeBytes(AesGcmCipher.encrypt(secretKey(), secret))
+        val ciphertext = AesGcmCipher.encrypt(secretKey(), secret)
+        val file = android.util.AtomicFile(File(dir, fileName(alias)))
+        val stream = file.startWrite()
+        try {
+            stream.write(ciphertext)
+            file.finishWrite(stream)
+        } catch (error: Exception) {
+            file.failWrite(stream)
+            throw error
+        }
     }
 
     override fun get(alias: String): String? {
         val file = File(dir, fileName(alias))
         if (!file.exists()) return null
-        return runCatching { AesGcmCipher.decrypt(secretKey(), file.readBytes()) }.getOrNull()
+        return runCatching { AesGcmCipher.decrypt(secretKey(), android.util.AtomicFile(file).readFully()) }.getOrNull()
     }
 
     override fun clear(alias: String) {
-        File(dir, fileName(alias)).delete()
+        android.util.AtomicFile(File(dir, fileName(alias))).delete()
     }
 
     override fun contains(alias: String): Boolean = File(dir, fileName(alias)).exists()

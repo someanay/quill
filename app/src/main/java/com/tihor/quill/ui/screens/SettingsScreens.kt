@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -142,6 +143,7 @@ private fun DetailScaffold(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 16.dp),
@@ -329,38 +331,9 @@ fun SpeechModelScreen(nav: QuillNav) {
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
     DetailScaffold(copy(K.SETTINGS_SPEECH_TITLE), nav) {
-        FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER), Modifier.padding(top = 8.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SttProvider.selectable().forEach { p ->
-                QuillChip(
-                    providerLabel(p),
-                    selected = settings.provider == p,
-                    onClick = { scope.launch { repo.setProvider(p) } },
-                )
-            }
-        }
-        if (settings.provider == SttProvider.GEMINI) {
-            // Decision 4d: honest expectations — Gemini is a chat model prompted to transcribe.
-            HelpText(copy(K.SETTINGS_SPEECH_GEMINI_CAVEAT))
-        }
-
-        // No stored key for the selected provider → clear "key required" state routing to key entry.
-        if (!sttKeys.has(settings.provider)) {
-            Spacer(Modifier.height(10.dp))
-            Banner(
-                text = copy(K.SETTINGS_SPEECH_KEY_REQUIRED, providerLabel(settings.provider)),
-                icon = Icons.Rounded.Key, kind = PillKind.ERROR,
-            )
-            Spacer(Modifier.height(8.dp))
-            com.tihor.quill.ui.components.QuillTonalButton(
-                copy(K.SETTINGS_SPEECH_KEY_REQUIRED_CTA),
-                onClick = { nav.navigate(Screen.ApiKeys) },
-                leadingIcon = Icons.Rounded.Key,
-            )
-        }
+        com.tihor.quill.ui.components.ProviderKeyAccordion(
+            secretStore = remember { KeystoreSecretStore(context) }, onSaved = {},
+        )
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
         com.tihor.quill.ui.components.ModelDropdown(
@@ -472,7 +445,6 @@ private fun CustomEndpointFields(settings: QuillSettings, repo: SettingsReposito
 // C3 — API keys
 // ============================================================================
 
-private enum class KeyEntryState { IDLE, CHECKING, REJECTED }
 
 @Composable
 fun ApiKeysScreen(nav: QuillNav) {
@@ -559,12 +531,7 @@ fun ApiKeysScreen(nav: QuillNav) {
     }
 }
 
-/**
- * Inline BYOK key entry, mirroring onboarding's AddKeyStep: pick the provider the key is for, type
- * the key, verify it against **that provider** with a tiny silent clip, and persist it to that
- * provider's own Keystore alias (decision 3). A bad key blocks; a network/other failure saves anyway
- * as "unverified" so the user isn't stuck offline.
- */
+/** Shared provider setup; only authenticated keys can be saved. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ColumnScope.ApiKeyEntry(
@@ -573,131 +540,12 @@ private fun ColumnScope.ApiKeyEntry(
     onCancel: () -> Unit,
 ) {
     val context = LocalContext.current
-    val sttKeys = remember { SttKeyStore(KeystoreSecretStore(context)) }
-    val settingsRepo = remember { SettingsRepository(context) }
-    val settings by settingsRepo.settings.collectAsState(initial = QuillSettings())
-    val validator = remember { KeyValidator(context.cacheDir) }
-    val scope = rememberCoroutineScope()
-    var providerId by rememberSaveable { mutableStateOf(initialProvider.id) }
-    val provider = SttProvider.fromId(providerId)
-    var key by remember(providerId) { mutableStateOf("") }
-    var reveal by rememberSaveable { mutableStateOf(false) }
-    var state by remember { mutableStateOf(KeyEntryState.IDLE) }
-    var showConsoles by rememberSaveable { mutableStateOf(false) }
-    if (showConsoles) {
-        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
-    }
-
-    Spacer(Modifier.height(8.dp))
-    FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SttProvider.selectable().forEach { p ->
-            QuillChip(
-                providerLabel(p),
-                selected = provider == p,
-                onClick = { providerId = p.id; state = KeyEntryState.IDLE },
-            )
-        }
-    }
-    Spacer(Modifier.height(16.dp))
-
-    FieldLabel(copy(K.KEY_FIELD_LABEL))
-    OutlinedTextField(
-        value = key,
-        onValueChange = { key = it; state = KeyEntryState.IDLE },
-        singleLine = true,
-        isError = state == KeyEntryState.REJECTED,
-        placeholder = { Text(provider.keyMask, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
-        leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
-        trailingIcon = {
-            IconButton(onClick = { reveal = !reveal }) {
-                Icon(
-                    if (reveal) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                    contentDescription = if (reveal) copy(K.A11Y_HIDE_KEY) else copy(K.A11Y_SHOW_KEY),
-                )
-            }
-        },
-        visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(),
-        textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-        keyboardOptions = KeyboardOptions.Default,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier.fillMaxWidth(),
+    com.tihor.quill.ui.components.ProviderKeyAccordion(
+        secretStore = remember { KeystoreSecretStore(context) },
+        onSaved = onSaved, initialProvider = initialProvider, activateSpeechProvider = false,
     )
-
-    if (state == KeyEntryState.REJECTED) {
-        HelpText(copy(K.KEY_ERROR_INVALID), bad = true)
-    } else if (provider.keyConsoleUrl != null) { // hidden for Custom — the endpoint is the user's own
-        Spacer(Modifier.height(6.dp))
-        // Opens the all-providers console chooser, not just the selected provider's page.
-        TextButton(onClick = { showConsoles = true }) {
-            Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
-        }
-    }
-
-    Spacer(Modifier.height(16.dp))
-    com.tihor.quill.ui.components.QuillPrimaryButton(
-        text = if (state == KeyEntryState.CHECKING) copy(K.KEY_VERIFYING) else copy(K.KEY_CTA),
-        enabled = key.isNotBlank() && state != KeyEntryState.CHECKING,
-        leadingIcon = if (state == KeyEntryState.CHECKING) null else Icons.Rounded.Key,
-        onClick = {
-            val trimmed = key.trim()
-            state = KeyEntryState.CHECKING
-            scope.launch {
-                val result = withContext(Dispatchers.IO) {
-                    validator.validate(
-                        provider, trimmed,
-                        model = if (provider == SttProvider.CUSTOM) settings.customModel else provider.defaultModel,
-                        customBaseUrl = settings.customBaseUrl.takeIf { provider == SttProvider.CUSTOM },
-                    )
-                }
-                when (result) {
-                    // Valid or unverified (network/other) both persist; only a hard reject blocks.
-                    KeyValidation.Valid, is KeyValidation.Unverified -> {
-                        sttKeys.add(provider, trimmed)
-                        probePaidAccess(provider, trimmed, validator, settingsRepo, verified = result == KeyValidation.Valid)
-                        onSaved()
-                    }
-                    KeyValidation.Rejected -> {
-                        state = KeyEntryState.REJECTED
-                    }
-                }
-            }
-        },
-        modifier = Modifier.fillMaxWidth(),
-    )
-    if (state == KeyEntryState.CHECKING) {
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.quill.brandInk)
-        }
-    } else {
-        Spacer(Modifier.height(6.dp))
-        TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(copy(K.ACTION_CANCEL)) }
-    }
-    HelpText(copy(K.SETTINGS_KEYS_HELP))
+    TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(copy(K.ACTION_CANCEL)) }
 }
-
-/**
- * After a key saves, probe whether it can use the provider's paid-only models (Gemini's
- * pro-preview) and persist the verdict so the model picker hides what the key can't run. Skipped
- * when the key itself couldn't be verified (offline) — the probe would be equally inconclusive.
- */
-private suspend fun probePaidAccess(
-    provider: SttProvider,
-    key: String,
-    validator: KeyValidator,
-    settingsRepo: SettingsRepository,
-    verified: Boolean,
-) {
-    if (!verified) return
-    val paidModel = provider.models.firstOrNull { it.paidOnly }?.id ?: return
-    withContext(Dispatchers.IO) { validator.hasPaidAccess(provider, key, paidModel) }
-        ?.let { has -> settingsRepo.setFreeTierOnly(provider, freeOnly = !has) }
-}
-
 @Composable
 private fun KeyCard(
     role: String,

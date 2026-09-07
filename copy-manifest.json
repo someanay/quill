@@ -1,5 +1,5 @@
 {
-  "revision": 8,
+  "revision": 9,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -519,6 +519,18 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "models.free": {
+      "default": "Free",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.free_tier": {
+      "default": "Free tier - limits apply",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "models.fresh": {
       "default": "Updated from the provider.",
       "placeholders": [],
@@ -537,8 +549,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "models.paid": {
+      "default": "Paid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.paid_plan": {
+      "default": "Paid plan required",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.preview": {
+      "default": "Preview - may change",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "models.ranking": {
-      "default": "Stable, responsive candidates appear first. Availability and cost depend on your provider account. Your selection stays unchanged when the list refreshes.",
+      "default": "Free compatible models appear first, followed by dictation or cleanup candidates. Free-tier quotas apply; check your provider plan. Preview models can change or disappear.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -694,7 +724,7 @@
       "optionalBlank": false
     },
     "onboarding.checklist.key_sub": {
-      "default": "Groq · connected",
+      "default": "Key saved securely",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -793,7 +823,25 @@
       "optionalBlank": false
     },
     "onboarding.key.body": {
-      "default": "Quill uses your own provider key (Groq by default). It's encrypted on this device and sent only to your provider.",
+      "default": "A key is a private code from an AI service. It lets Quill send your voice directly to that service and receive text over an encrypted connection. Never share your key with anyone.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.browser_error": {
+      "default": "The browser could not open. Try again after choosing a default browser in Android settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.choose": {
+      "default": "Choose one provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.collapsed": {
+      "default": "Collapsed",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -816,20 +864,52 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.key.easy": {
+      "default": "Quick setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.expanded": {
+      "default": "Expanded",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.key.field_label": {
       "default": "API key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.key.format_help": {
+      "default": "Paste the complete key, beginning like %1$s. Do not paste a masked key or a web address.",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.free_note": {
+      "default": "Free-tier limits apply. Paid accounts may be billed under their plan. Quill checks your key without sending audio; successful dictation also depends on your model access and available quota.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.free_options": {
+      "default": "Free options",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.key.guide.gemini_steps": {
-      "default": "1. Sign in at aistudio.google.com with your Google account.\n2. Tap Get API key, then Create API key.\n3. Copy the key and paste it into Quill.\n4. The free tier works without a card - a good way to start.",
+      "default": "Open Google AI Studio using the button below. Sign in with your Google account.\nIf the welcome agreement appears, read the terms and check the first, required checkbox if you agree and meet its requirements. The email updates checkbox is optional. Tap Continue.\nOn API Keys, find your default key and tap its copy icon (two overlapping sheets). If no key appears, tap Create API key and follow the project prompts.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "1. Sign in at console.groq.com - Google, GitHub, or email works.\n2. Open API Keys and tap Create API Key.\n3. Give it a name (e.g. Quill) and create it.\n4. Copy the key right away - it's shown only once - then paste it into Quill.",
+      "default": "Open Groq using the button below. Create an account or sign in.\nOpen API Keys, then choose Create API Key.\nGive it a name you will recognize, such as Quill. Select No Expiration if you want it to keep working until you revoke it. Create the key.\nTap the copy button beside your new key. Keep it private.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -849,7 +929,7 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "1. Sign in at openrouter.ai - Google, GitHub, or email works.\n2. Open Keys and tap Create Key.\n3. Name it, create it, and copy the key - then paste it into Quill.\n4. Add a little credit, or pick a model tagged \"free\" in Quill's model list.",
+      "default": "Open OpenRouter using the button below. Sign up or sign in.\nIf asked how you plan to use OpenRouter, choose Individual for your personal account.\nIf a new key is shown, tap its copy icon. Otherwise open Keys in your account menu, choose Create Key, name it Quill, and copy the new key.\nReturn to Quill. Tap Paste below, wait for the green check, then save your key.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -862,13 +942,81 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.key.more_steps": {
+      "default": "A few more steps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.paste": {
+      "default": "Paste",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.read_steps": {
+      "default": "I have read the steps. I will return to Quill to paste my key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.retry": {
+      "default": "Check again",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.router_note": {
+      "default": "Free cleanup models are available. Speech transcription may require credits. Quill prefers a free compatible speech model when the live catalog offers one. Checking your key does not spend model credits.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.save_provider": {
+      "default": "Save %1$s API key securely",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.step": {
+      "default": "Step 1 of 4",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.storage_error": {
+      "default": "We could not save your key securely. Keep this screen open and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.key.title": {
-      "default": "Add your speech-to-text key",
+      "default": "Add your key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.unverified": {
+      "default": "We could not reach the provider to check this key. Your draft is kept securely. Check your connection, then try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.use_saved": {
+      "default": "Use my saved key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.valid": {
+      "default": "Key verified",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.verified": {
       "default": "Key verified",
       "placeholders": [],
       "overridable": true,
@@ -1310,7 +1458,7 @@
       "optionalBlank": false
     },
     "settings.cleanup.automatic_help": {
-      "default": "Use the speech provider's active key and a recommended cleanup model. Choosing a provider or model below switches to a separate setup. Custom servers need a text model selected manually.",
+      "default": "Use the speech provider's active key with a known free cleanup option. Automatic cleanup stays off when no free option is known. Free-tier quotas apply. Choosing a separate provider or model below is a manual choice and may cost money.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

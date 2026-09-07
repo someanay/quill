@@ -24,7 +24,10 @@ object AppDataReset {
         styles: WritingStyleStore,
         vocab: ContactsVocabularyStore,
     ) {
-        SttProvider.entries.forEach { secretStore.clear(SttKeyStore.alias(it)) } // per-provider STT keys
+        SttProvider.entries.forEach {
+            SttKeyStore(secretStore).clear(it)
+            com.tihor.quill.secrets.KeySetupDrafts(secretStore).clear(it)
+        }
         secretStore.clear(SecretStore.ALIAS_STT_KEY) // legacy single-slot key (pre-migration installs)
         secretStore.clear(SecretStore.ALIAS_LLM_KEY)
         settings.clear()

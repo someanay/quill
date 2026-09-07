@@ -202,3 +202,6 @@ On the Honor, keep Gemini transcription selected, choose Gemini cleanup, enable 
 On Android 13+, verify Gmail compose-body detection where the accessibility tree reports only a focused WebView. Confirm actual insertion with the editor connection and visible output; repeat with selection replacement, nonempty drafts and cancellation. A changed foreground package must preserve the transcript for manual paste instead of writing into the new app. Verify password input types are blocked and Android 10–12 retain the node/clipboard fallback. This matrix is pending physical testing, not implied by compilation.
 
 Verify multiple same-provider keys can be added, selected, removed and retained across app recreation. Rejecting a new key must not erase a working key. Verify automatic cleanup follows speech provider changes, separate choices remain independent, and disabling cleanup stays disabled.
+# API key onboarding follow-up
+
+The provider accordion, clipboard, browser-return, process-recreation and model-label manual checks are listed in [key setup](docs/key-setup.md). Run these on the physical phone before Play submission. Authentication checks do not prove model quota or successful dictation.

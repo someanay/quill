@@ -136,7 +136,9 @@ class SettingsRepository(private val context: Context) {
             customBaseUrl = p[Keys.CUSTOM_BASE_URL].orEmpty(),
             customModel = p[Keys.CUSTOM_MODEL].orEmpty(),
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
-            cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: true,
+            cleanupEnabled = if (p[Keys.CLEANUP_AUTO] != false)
+                p[Keys.CLEANUP_ENABLED] != false && com.tihor.quill.models.FreeModelPolicy.cleanup(provider) != null
+                else p[Keys.CLEANUP_ENABLED] ?: (com.tihor.quill.models.FreeModelPolicy.cleanup(SttProvider.fromId(p[Keys.CLEANUP_PROVIDER])) != null),
             cleanupAutomatic = p[Keys.CLEANUP_AUTO] ?: true,
             cleanupProvider = if (p[Keys.CLEANUP_AUTO] != false) provider else SttProvider.fromId(p[Keys.CLEANUP_PROVIDER]),
             cleanupModel = if (p[Keys.CLEANUP_AUTO] != false) com.tihor.quill.cleanup.CleanupProviders.defaultModel(provider)
@@ -209,7 +211,16 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setCleanupEnabled(enabled: Boolean) =
-        context.settingsDataStore.edit { it[Keys.CLEANUP_ENABLED] = enabled }
+        context.settingsDataStore.edit {
+            it[Keys.CLEANUP_ENABLED] = enabled
+            val provider = SttProvider.fromId(it[Keys.PROVIDER])
+            if (enabled && it[Keys.CLEANUP_AUTO] != false && com.tihor.quill.models.FreeModelPolicy.cleanup(provider) == null) {
+                // A deliberate toggle can opt into paid cleanup; automatic mode never does.
+                it[Keys.CLEANUP_AUTO] = false
+                it[Keys.CLEANUP_PROVIDER] = provider.id
+                it[Keys.CLEANUP_MODEL] = com.tihor.quill.cleanup.CleanupProviders.defaultModel(provider)
+            }
+        }
 
     /** Persist the global writing-style default (the resolver's last tier). Stored as [WritingStyle.id]. */
     suspend fun setWritingStyleDefault(style: WritingStyle) =

@@ -25,8 +25,8 @@ android {
         applicationId = "com.tihor.quill"
         minSdk = 29
         targetSdk = 36
-        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 3
-        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.2"
+        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 4
+        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

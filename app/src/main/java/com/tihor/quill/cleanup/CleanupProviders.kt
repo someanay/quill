@@ -8,7 +8,7 @@ object CleanupProviders {
     fun defaultModel(provider: SttProvider): String = when (provider) {
         SttProvider.GROQ -> CleanupClient.MODEL
         SttProvider.OPENAI -> "gpt-4o-mini"
-        SttProvider.OPENROUTER -> "openai/gpt-4o-mini"
+        SttProvider.OPENROUTER -> "openrouter/free"
         SttProvider.GEMINI -> "gemini-3.5-flash-lite"
         SttProvider.CUSTOM -> ""
     }

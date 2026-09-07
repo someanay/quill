@@ -433,3 +433,13 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Bundle the supplied IBM Plex fonts; apply website colors, type, shapes, and wordmark across Android and overlays.
 - [x] Replace adaptive launcher artwork with the lowercase website wordmark.
 - [ ] Review the new screens and launcher on the physical phone (not connected during implementation).
+
+### M8 follow-up: provider key onboarding redesign
+- [x] Share a three-provider accordion across onboarding, Speech & Model and key entry; remove OpenAI from new-key choices.
+- [x] Inline numbered guides, reading acknowledgement, explicit Paste, reveal and per-provider Save.
+- [x] Preserve encrypted drafts and accordion state; authenticate keys without sending audio or spending model tokens.
+- [x] Open the setup checklist directly after a verified key saves.
+- [x] Prefer free model candidates and label free tiers, paid models and previews; automatic cleanup requires a known free option.
+- [x] Export all new copy to the local editor and preserve its pending drafts.
+- [x] Unit tests, Android lint and signed APK/AAB checks pass for version 1.0.3 (code 4).
+- [ ] Physical UI and process-recreation checks from [key setup](docs/key-setup.md): no connected phone during this pass.

@@ -14,14 +14,16 @@ class ModelCatalogCache(directory: File, identity: String) {
         Json.parseToJsonElement(file.readText()).jsonArray.map { entry ->
             val item = entry.jsonObject
             ModelOption(item.getValue("id").jsonPrimitive.content, item.getValue("name").jsonPrimitive.content,
-                item.getValue("created").jsonPrimitive.long)
+                item.getValue("created").jsonPrimitive.long, item["isFree"]?.jsonPrimitive?.booleanOrNull ?: false,
+                item["isPaid"]?.jsonPrimitive?.booleanOrNull ?: false)
         }
     }.getOrDefault(emptyList())
 
     fun write(models: List<ModelOption>) {
         val content = buildJsonArray {
             models.forEach { model -> add(buildJsonObject {
-                put("id", model.id); put("name", model.name); put("created", model.created)
+                put("id", model.id); put("name", model.name); put("created", model.created); put("isFree", model.isFree)
+                put("isPaid", model.isPaid)
             }) }
         }.toString()
         val temporary = File(file.path + ".tmp")

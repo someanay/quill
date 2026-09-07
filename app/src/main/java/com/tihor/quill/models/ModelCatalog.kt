@@ -12,7 +12,7 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 enum class ModelUse { DICTATION, CLEANUP }
-data class ModelOption(val id: String, val name: String = id, val created: Long = 0)
+data class ModelOption(val id: String, val name: String = id, val created: Long = 0, val isFree: Boolean = false, val isPaid: Boolean = false)
 data class ModelPage(val models: List<ModelOption>, val nextPage: String? = null)
 
 /** Provider catalogs are suggestions, never a reason to silently replace a saved selection. */
@@ -84,14 +84,22 @@ object ModelCatalog {
             }
             if (!compatible || (row["active"] as? JsonPrimitive)?.booleanOrNull == false) null
             else ModelOption(id, (row["displayName"] ?: row["name"])?.jsonPrimitive?.contentOrNull ?: id,
-                (row["created"] as? JsonPrimitive)?.longOrNull ?: 0)
+                (row["created"] as? JsonPrimitive)?.longOrNull ?: 0,
+                (row["pricing"] as? JsonObject)?.let { price ->
+                    val mandatory = listOf("prompt", "completion")
+                    mandatory.all { (price[it] as? JsonPrimitive)?.contentOrNull?.toBigDecimalOrNull()?.signum() == 0 } &&
+                        price.values.all { (it as? JsonPrimitive)?.contentOrNull?.toBigDecimalOrNull()?.signum() == 0 }
+                } ?: FreeModelPolicy.knownFree(provider, id),
+                (row["pricing"] as? JsonObject)?.values?.any {
+                    ((it as? JsonPrimitive)?.contentOrNull?.toBigDecimalOrNull()?.signum() ?: 0) > 0
+                } == true || provider == SttProvider.OPENAI || provider.models.any { it.id == id && it.paidOnly })
         }
         return ModelPage(rank(models, use), (root["nextPageToken"] as? JsonPrimitive)?.contentOrNull?.takeIf { it.isNotBlank() })
     }
 
     /** Suitability for short dictation/cleanup first; release recency breaks ties. No quality benchmark implied. */
     fun rank(models: List<ModelOption>, use: ModelUse): List<ModelOption> = models.distinctBy { it.id }
-        .sortedWith(compareBy<ModelOption> {
+        .sortedWith(compareByDescending<ModelOption> { it.isFree }.thenBy {
             val id = it.id.lowercase()
             (if (listOf("preview", "experimental", "exp-", "reasoning").any { word -> word in id }) 20 else 0) +
                 (if (use == ModelUse.DICTATION && listOf("turbo", "mini", "flash").any { word -> word in id }) 0

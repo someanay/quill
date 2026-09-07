@@ -128,7 +128,7 @@ class OnboardingActivity : ComponentActivity() {
 }
 
 private enum class Step {
-    SPLASH, WELCOME, KEY_WARNING, ADD_KEY, HOW_IT_WORKS, CHECKLIST,
+    SPLASH, WELCOME, KEY_WARNING, ADD_KEY, CHECKLIST,
     MIC, MIC_TEST, OVERLAY, ACC_ENABLE, ALL_SET,
 }
 
@@ -139,15 +139,14 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
     val settings = remember { SettingsRepository(context) }
     val scope = rememberCoroutineScope()
 
-    var step by remember { mutableStateOf(Step.SPLASH) }
+    var step by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Step.SPLASH) }
 
     fun back() {
         step = when (step) {
             Step.WELCOME -> Step.SPLASH
             Step.KEY_WARNING -> Step.WELCOME
             Step.ADD_KEY -> Step.KEY_WARNING
-            Step.HOW_IT_WORKS -> Step.ADD_KEY
-            Step.CHECKLIST -> Step.HOW_IT_WORKS
+            Step.CHECKLIST -> Step.ADD_KEY
             Step.MIC -> Step.CHECKLIST
             Step.MIC_TEST -> Step.MIC
             Step.OVERLAY -> Step.MIC_TEST
@@ -207,8 +206,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
             WelcomeStep(onBack = ::back, onNext = {}, onOpen = {})
             KeyWarningDialog(onAccept = { step = Step.ADD_KEY }, onDismiss = { step = Step.WELCOME })
         }
-        Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.HOW_IT_WORKS })
-        Step.HOW_IT_WORKS -> HowItWorksStep(::back, onNext = { step = Step.CHECKLIST })
+        Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.CHECKLIST })
         Step.CHECKLIST -> ChecklistStep(::back, context, onNext = { step = Step.MIC })
         Step.MIC -> MicStep(::back, onAllow = {
             val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -274,7 +272,7 @@ private fun CenteredStep(
 
 /** Top-aligned scrollable body with a bottom-anchored CTA — the form frames (key entry, etc.). */
 @Composable
-private fun FormStep(
+internal fun FormStep(
     onBack: (() -> Unit)?,
     primaryLabel: String,
     onPrimary: () -> Unit,
@@ -406,175 +404,6 @@ private fun BulletRow(icon: ImageVector, tint: androidx.compose.ui.graphics.Colo
     Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(17.dp))
         Text(text, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.muted)
-    }
-}
-
-private enum class AddKeyState { IDLE, CHECKING, VALID, REJECTED, UNVERIFIED }
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun AddKeyStep(onBack: () -> Unit, secretStore: SecretStore, onVerified: () -> Unit) {
-    val context = LocalContext.current
-    val sttKeys = remember { SttKeyStore(secretStore) }
-    val settingsRepo = remember { SettingsRepository(context) }
-    val validator = remember { KeyValidator(context.cacheDir) }
-    val scope = rememberCoroutineScope()
-    var providerId by remember { mutableStateOf(SttProvider.DEFAULT.id) }
-    val provider = SttProvider.fromId(providerId)
-    var key by remember(providerId) { mutableStateOf(sttKeys.get(provider).orEmpty()) }
-    var reveal by remember { mutableStateOf(false) }
-    var state by remember { mutableStateOf(AddKeyState.IDLE) }
-    var showConsoles by remember { mutableStateOf(false) }
-    if (showConsoles) {
-        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
-    }
-
-    FormStep(
-        onBack = onBack,
-        primaryLabel = if (state == AddKeyState.CHECKING) copy(K.KEY_VERIFYING) else copy(K.KEY_CTA),
-        primaryEnabled = key.isNotBlank() && state != AddKeyState.CHECKING,
-        onPrimary = {
-            // Per-provider slot (decision 3), validated against the provider the key is FOR.
-            sttKeys.put(provider, key.trim())
-            state = AddKeyState.CHECKING
-            scope.launch {
-                val result = withContext(Dispatchers.IO) { validator.validate(provider, key.trim()) }
-                when (result) {
-                    KeyValidation.Valid -> {
-                        settingsRepo.setProvider(provider) // the onboarded key's provider becomes active
-                        // Probe paid-only access (Gemini pro-preview) so the model picker only
-                        // lists what this key can actually run; inconclusive → leave unchanged.
-                        provider.models.firstOrNull { it.paidOnly }?.let { paid ->
-                            withContext(Dispatchers.IO) { validator.hasPaidAccess(provider, key.trim(), paid.id) }
-                                ?.let { has -> settingsRepo.setFreeTierOnly(provider, freeOnly = !has) }
-                        }
-                        state = AddKeyState.VALID
-                        onVerified()
-                    }
-                    KeyValidation.Rejected -> {
-                        sttKeys.clear(provider)
-                        state = AddKeyState.REJECTED
-                    }
-                    is KeyValidation.Unverified -> {
-                        settingsRepo.setProvider(provider)
-                        state = AddKeyState.UNVERIFIED
-                        onVerified()
-                    }
-                }
-            }
-        },
-    ) {
-        Spacer(Modifier.height(4.dp))
-        Text(copy(K.KEY_TITLE), style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(6.dp))
-        Text(copy(K.KEY_BODY), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
-        Spacer(Modifier.height(16.dp))
-
-        FieldLabel(copy(K.SETTINGS_SPEECH_PROVIDER))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            // Custom is settings-only (it needs a base URL + model configured first).
-            SttProvider.selectable().filter { it != SttProvider.CUSTOM }.forEach { p ->
-                QuillChip(
-                    p.displayName, // copy-exempt (proper nouns)
-                    selected = provider == p,
-                    onClick = { providerId = p.id; state = AddKeyState.IDLE },
-                )
-            }
-        }
-        if (provider == SttProvider.GEMINI) {
-            // Decision 4d: honest expectations — Gemini may paraphrase spoken commands.
-            HelpText(copy(K.SETTINGS_SPEECH_GEMINI_CAVEAT))
-        }
-        Spacer(Modifier.height(16.dp))
-
-        FieldLabel(copy(K.KEY_FIELD_LABEL))
-        OutlinedTextField(
-            value = key,
-            onValueChange = { key = it; state = AddKeyState.IDLE },
-            singleLine = true,
-            isError = state == AddKeyState.REJECTED,
-            placeholder = { Text(provider.keyMask, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)) },
-            leadingIcon = { Icon(Icons.Rounded.Key, contentDescription = null) },
-            trailingIcon = {
-                IconButton(onClick = { reveal = !reveal }) {
-                    Icon(
-                        if (reveal) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
-                        contentDescription = if (reveal) copy(K.A11Y_HIDE_KEY) else copy(K.A11Y_SHOW_KEY),
-                    )
-                }
-            },
-            visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(),
-            textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
-            keyboardOptions = KeyboardOptions.Default,
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        when (state) {
-            AddKeyState.CHECKING -> {
-                Spacer(Modifier.height(14.dp))
-                QuillCard(border = MaterialTheme.quill.brandSoft) {
-                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = MaterialTheme.quill.brandInk)
-                        Text(copy(K.KEY_VERIFYING), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.brandInk)
-                    }
-                }
-            }
-            AddKeyState.REJECTED -> {
-                HelpText(copy(K.KEY_ERROR_INVALID), bad = true)
-                Spacer(Modifier.height(12.dp))
-                Banner(text = copy(K.PRIVACY_PROMISE), icon = Icons.Rounded.Info, kind = PillKind.INFO)
-            }
-            else -> {
-                if (provider.keyConsoleUrl != null) {
-                    Spacer(Modifier.height(6.dp))
-                    // Opens the all-providers console chooser, not just the selected provider's page.
-                    TextButton(onClick = { showConsoles = true }) {
-                        Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
-                    }
-                }
-            }
-        }
-        // Optional demo clips for the key step (e.g. copying a key from a provider console). Empty
-        // asset folder → renders nothing; FormStep keeps the Save & verify CTA pinned below.
-        DemoCarousel(CarouselSurface.ONBOARDING_KEY, modifier = Modifier.padding(top = 20.dp))
-    }
-}
-
-@Composable
-private fun HowItWorksStep(onBack: () -> Unit, onNext: () -> Unit) {
-    FormStep(onBack = onBack, primaryLabel = copy(K.HOWITWORKS_CTA), onPrimary = onNext) {
-        Spacer(Modifier.height(4.dp))
-        Text(
-            copy(K.HOWITWORKS_EYEBROW).uppercase(),
-            style = com.tihor.quill.ui.theme.EyebrowStyle,
-            color = MaterialTheme.quill.brandInk,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(copy(K.HOWITWORKS_TITLE), style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(18.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            StepCard(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.HOWITWORKS_T1), copy(K.HOWITWORKS_STEP1))
-            StepCard(Icons.Rounded.Key, LeadIconVariant.BRAND, copy(K.HOWITWORKS_T2), copy(K.HOWITWORKS_STEP2))
-            StepCard(Icons.Rounded.Create, LeadIconVariant.BRAND, copy(K.HOWITWORKS_T3), copy(K.HOWITWORKS_STEP3))
-        }
-    }
-}
-
-@Composable
-private fun StepCard(icon: ImageVector, variant: LeadIconVariant, title: String, body: String) {
-    QuillCard {
-        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(13.dp)) {
-            LeadIcon(icon, variant)
-            Column {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(3.dp))
-                Text(body, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.muted)
-            }
-        }
     }
 }
 

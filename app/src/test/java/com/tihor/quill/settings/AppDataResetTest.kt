@@ -57,6 +57,13 @@ class AppDataResetTest {
             put(SecretStore.ALIAS_LLM_KEY, "sk-llm")
         }
         val settings = SettingsRepository(app)
+        val keys = com.tihor.quill.secrets.SttKeyStore(secrets)
+        val drafts = com.tihor.quill.secrets.KeySetupDrafts(secrets)
+        SttProvider.entries.forEach {
+            keys.add(it, "saved-${it.id}")
+            keys.add(it, "second-${it.id}")
+            drafts.write(it, "unfinished-${it.id}")
+        }
         val history = HistoryRepository(app)
         val words = CustomWordsStore(app)
         val styles = WritingStyleStore(app)
@@ -72,7 +79,7 @@ class AppDataResetTest {
         vocab.replaceAll(listOf("Rohit Tikmany", "Rohit", "Tikmany"))
 
         // Sanity: populated before the wipe.
-        assertTrue(secrets.contains(SecretStore.ALIAS_STT_KEY))
+        assertTrue(keys.has(SttProvider.GROQ)) // Reading the ring migrates the legacy alias.
         assertEquals(1, history.all().size)
         assertEquals(1, words.words.first().size)
         assertEquals(1, styles.overrides.first().size)
@@ -83,6 +90,10 @@ class AppDataResetTest {
         // Keys gone.
         assertFalse(secrets.contains(SecretStore.ALIAS_STT_KEY))
         assertFalse(secrets.contains(SecretStore.ALIAS_LLM_KEY))
+        SttProvider.entries.forEach {
+            assertTrue(keys.list(it).isEmpty())
+            assertEquals("", drafts.read(it))
+        }
         // Settings back to defaults (full wipe, incl. onboarding).
         val s = settings.settings.first()
         assertFalse(s.privateMode)

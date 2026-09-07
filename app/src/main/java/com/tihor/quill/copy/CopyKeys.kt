@@ -4,10 +4,35 @@ package com.tihor.quill.copy
  * Typed copy keys (spec §2.3). Every user-facing string is read by one of these from the Copy
  * Catalog — no string literals in composables (CI guard enforces it).
  *
- * Compliance keys are excluded from source-editor changes. Every string is bundled
+ * Source-editor changes are included only in a rebuilt app release. Every string is bundled
  * in the APK; no remote override mechanism exists.
  */
 object CopyKeys {
+    const val MODELS_PAID = "models.paid"
+    const val KEY_STEP = "onboarding.key.step"
+    const val KEY_CHOOSE = "onboarding.key.choose"
+    const val KEY_EXPANDED = "onboarding.key.expanded"
+    const val KEY_COLLAPSED = "onboarding.key.collapsed"
+    const val KEY_EASY = "onboarding.key.easy"
+    const val KEY_MORE_STEPS = "onboarding.key.more_steps"
+    const val KEY_FREE_OPTIONS = "onboarding.key.free_options"
+    const val KEY_FREE_NOTE = "onboarding.key.free_note"
+    const val KEY_ROUTER_NOTE = "onboarding.key.router_note"
+    const val KEY_PASTE = "onboarding.key.paste"
+    const val KEY_VERIFIED = "onboarding.key.verified"
+    const val KEY_FORMAT_HELP = "onboarding.key.format_help"
+    const val KEY_UNVERIFIED = "onboarding.key.unverified"
+    const val KEY_RETRY = "onboarding.key.retry"
+    const val KEY_SAVE_PROVIDER = "onboarding.key.save_provider"
+    const val KEY_STORAGE_ERROR = "onboarding.key.storage_error"
+    const val KEY_READ_STEPS = "onboarding.key.read_steps"
+    const val KEY_BROWSER_ERROR = "onboarding.key.browser_error"
+    const val KEY_USE_SAVED = "onboarding.key.use_saved"
+    const val MODELS_FREE = "models.free"
+    const val MODELS_FREE_TIER = "models.free_tier"
+    const val MODELS_PAID_PLAN = "models.paid_plan"
+    const val MODELS_PREVIEW = "models.preview"
+
     // --- Onboarding (overridable) ---
     const val SPLASH_TAGLINE = "onboarding.splash.tagline"
     const val WELCOME_TITLE = "onboarding.welcome.title"
@@ -490,7 +515,8 @@ object CopyKeys {
             CHECKLIST_TITLE, CHECKLIST_PROGRESS,
             CHECKLIST_KEY, CHECKLIST_KEY_SUB, CHECKLIST_MIC, CHECKLIST_MIC_SUB,
             CHECKLIST_OVERLAY, CHECKLIST_OVERLAY_SUB, CHECKLIST_ACCESSIBILITY, CHECKLIST_ACC_SUB, CHECKLIST_CTA,
-            KEY_TITLE, KEY_BODY, KEY_FIELD_LABEL, KEY_CTA, KEY_WHERE, KEY_CONSOLE_BODY, KEY_CONSOLE_FREE,
+            KEY_STEP, KEY_CHOOSE, KEY_EXPANDED, KEY_COLLAPSED, KEY_EASY, KEY_MORE_STEPS, KEY_FREE_OPTIONS, KEY_FREE_NOTE, KEY_ROUTER_NOTE, KEY_PASTE, KEY_VERIFIED, KEY_FORMAT_HELP, KEY_UNVERIFIED, KEY_RETRY, KEY_SAVE_PROVIDER, KEY_STORAGE_ERROR, KEY_READ_STEPS, KEY_BROWSER_ERROR, KEY_USE_SAVED, MODELS_FREE, MODELS_FREE_TIER, MODELS_PAID_PLAN, MODELS_PREVIEW,
+            MODELS_PAID, KEY_TITLE, KEY_BODY, KEY_FIELD_LABEL, KEY_CTA, KEY_WHERE, KEY_CONSOLE_BODY, KEY_CONSOLE_FREE,
             KEY_GUIDE_TITLE, KEY_GUIDE_OPEN, KEY_GUIDE_GROQ_STEPS, KEY_GUIDE_OPENAI_STEPS,
             KEY_GUIDE_OPENROUTER_STEPS, KEY_GUIDE_GEMINI_STEPS,
             KEY_VERIFYING, KEY_VALID, KEY_ERROR_INVALID, KEY_ERROR_NETWORK,
