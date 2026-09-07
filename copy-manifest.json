@@ -1,5 +1,5 @@
 {
-  "revision": 9,
+  "revision": 10,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -762,6 +762,14 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.checklist.provider_connected": {
+      "default": "%1$s connected",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.checklist.title": {
       "default": "You're connected",
       "placeholders": [],
@@ -1058,8 +1066,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.mic.blocked": {
+      "default": "Microphone access is off. Open Quill's app settings, choose Permissions, then allow Microphone. Return here to test it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.mic.cta": {
       "default": "Allow microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.denied": {
+      "default": "Microphone access is needed to record your voice. Tap Allow microphone to try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.open_settings": {
+      "default": "Open microphone settings",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

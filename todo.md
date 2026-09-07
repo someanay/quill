@@ -443,3 +443,11 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Export all new copy to the local editor and preserve its pending drafts.
 - [x] Unit tests, Android lint and signed APK/AAB checks pass for version 1.0.3 (code 4).
 - [ ] Physical UI and process-recreation checks from [key setup](docs/key-setup.md): no connected phone during this pass.
+
+### M8 follow-up: shared onboarding document
+- [x] Review the document's text and seven screenshots against the current implementation; [record item-by-item results](docs/onboarding-document-review.md).
+- [x] Request microphone permission directly from the checklist, then open the mic test on grant; remove the microphone priming screen.
+- [x] Preserve denial recovery and show the actual connected provider in the checklist.
+- [x] 392 unit tests, Android lint and signed APK/AAB checks pass for version 1.0.4 (code 5).
+- [x] Sync the companion copy editor's manifest and pending draft base; preserve all 13 pending edits and pass editor checks.
+- [ ] Physical permission-dialog, mic-test and Back-navigation checks: no connected device during implementation.

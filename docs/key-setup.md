@@ -4,6 +4,8 @@ Onboarding and Settings > Speech & Model share one accordion for Gemini, Groq an
 
 Each provider includes numbered instructions, a reading acknowledgement before opening its website, a masked field with Paste and reveal controls, and its own Save action. Saving a verified key opens the setup checklist directly during onboarding. The former explanation screen is removed.
 
+The checklist identifies the connected provider. Its Allow microphone button requests Android permission directly, with no intervening introduction screen. Granting permission opens the mic test. Denial stays on the checklist with retry or app-settings recovery. Notification permission is requested separately after the user finishes the mic test, so it cannot delay the microphone-granted transition.
+
 Clipboard availability uses metadata. Quill reads clipboard text only when Paste is tapped. Unfinished keys are stored through Android Keystore encryption, separately from active keys, and writes are atomic. Accordion selection and onboarding state survive recreation. Clearing all app data removes key rings and unfinished drafts too.
 
 Local checks reject incomplete, masked and wrong-provider keys. After a short typing debounce, Quill checks authentication using a provider GET endpoint. OpenRouter uses its authenticated `/api/v1/key` endpoint because its model catalog is public. No transcription or cleanup request is made for this check. A green check confirms authentication, not available quota or access to every model. Temporary errors retain the encrypted draft and offer retry.
@@ -26,3 +28,4 @@ Physical device checks remain pending because no phone was connected during impl
 6. Repeat in Speech & Model and API Keys. Add a second key and confirm the first remains available.
 7. Open both model dropdowns. Check price/preview labels, selected-model captions, refresh and offline fallback.
 8. Check narrow screens, large text and the visible keyboard. Verify the final Save button remains reachable.
+9. On the checklist, tap Allow microphone. Verify the system prompt opens on that screen and granting it opens the mic test immediately. Deny once and retry, deny permanently and recover through app settings, then repeat with permission already granted. Back from the mic test must return to the checklist. Notification denial must not block setup.

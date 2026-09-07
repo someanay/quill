@@ -54,6 +54,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -129,7 +130,7 @@ class OnboardingActivity : ComponentActivity() {
 
 private enum class Step {
     SPLASH, WELCOME, KEY_WARNING, ADD_KEY, CHECKLIST,
-    MIC, MIC_TEST, OVERLAY, ACC_ENABLE, ALL_SET,
+    MIC_TEST, OVERLAY, ACC_ENABLE, ALL_SET,
 }
 
 @Composable
@@ -140,6 +141,22 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     var step by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Step.SPLASH) }
+    val activity = androidx.activity.compose.LocalActivity.current
+    var micDenied by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    var permissionPending by remember { mutableStateOf(false) }
+    fun microphoneGranted() = androidx.core.content.ContextCompat.checkSelfPermission(context,
+        Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    var hasMic by remember { mutableStateOf(microphoneGranted()) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) hasMic = microphoneGranted()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    val micAction = microphoneSetupAction(hasMic, micDenied,
+        activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == true)
 
     fun back() {
         step = when (step) {
@@ -147,8 +164,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
             Step.KEY_WARNING -> Step.WELCOME
             Step.ADD_KEY -> Step.KEY_WARNING
             Step.CHECKLIST -> Step.ADD_KEY
-            Step.MIC -> Step.CHECKLIST
-            Step.MIC_TEST -> Step.MIC
+            Step.MIC_TEST -> Step.CHECKLIST
             Step.OVERLAY -> Step.MIC_TEST
             Step.ACC_ENABLE -> Step.OVERLAY
             Step.ALL_SET -> Step.ACC_ENABLE
@@ -156,12 +172,20 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         }
     }
 
-    // Request the mic and (Android 13+) POST_NOTIFICATIONS together: the latter is needed for the FGS
-    // notification + its "Show Quill" summon action. Advance on the mic grant; notifications are
-    // best-effort (the Home toggle is the synced fallback if denied).
-    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-        if (result[Manifest.permission.RECORD_AUDIO] == true) step = Step.MIC_TEST
+    // The checklist requests the microphone directly. Notifications are requested after the mic test.
+    val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        permissionPending = false
+        hasMic = granted
+        micDenied = !granted
+        if (granted) step = Step.MIC_TEST
     }
+    val micSettingsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        permissionPending = false
+        hasMic = microphoneGranted()
+        micDenied = !hasMic
+        if (hasMic) step = Step.MIC_TEST
+    }
+    val notificationsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val overlayLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (OverlayPermission.isGranted(context)) step = Step.ACC_ENABLE
     }
@@ -207,16 +231,29 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
             KeyWarningDialog(onAccept = { step = Step.ADD_KEY }, onDismiss = { step = Step.WELCOME })
         }
         Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.CHECKLIST })
-        Step.CHECKLIST -> ChecklistStep(::back, context, onNext = { step = Step.MIC })
-        Step.MIC -> MicStep(::back, onAllow = {
-            val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                arrayOf(Manifest.permission.RECORD_AUDIO)
+        Step.CHECKLIST -> ChecklistStep(::back, context, hasMic, micDenied, micAction, !permissionPending, onNext = {
+            when (microphoneSetupAction(microphoneGranted(), micDenied,
+                activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == true)) {
+                MicrophoneSetupAction.TEST_MIC -> step = Step.MIC_TEST
+                MicrophoneSetupAction.REQUEST_PERMISSION -> {
+                    permissionPending = true
+                    micLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }
+                MicrophoneSetupAction.OPEN_SETTINGS -> {
+                    permissionPending = true
+                    micSettingsLauncher.launch(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:${context.packageName}")))
+                }
             }
-            micLauncher.launch(perms)
         })
-        Step.MIC_TEST -> MicTestStep(::back, onNext = { step = Step.OVERLAY })
+        Step.MIC_TEST -> MicTestStep(::back, onNext = {
+            step = Step.OVERLAY
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        })
         Step.OVERLAY -> OverlayStep(::back, onAllow = { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) })
         Step.ACC_ENABLE -> AccessibilityEnableStep(::back, onOpen = { accLauncher.launch(AccessibilityUtil.disclosureIntent(context)) })
         Step.ALL_SET -> AllSetStep(onFinish = ::finishOnboarding, onHome = ::finishOnboarding)
@@ -408,15 +445,20 @@ private fun BulletRow(icon: ImageVector, tint: androidx.compose.ui.graphics.Colo
 }
 
 @Composable
-private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, onNext: () -> Unit) {
-    val hasMic = androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-        android.content.pm.PackageManager.PERMISSION_GRANTED
+private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, hasMic: Boolean,
+    micDenied: Boolean, micAction: MicrophoneSetupAction, primaryEnabled: Boolean, onNext: () -> Unit) {
+    val settings = remember { SettingsRepository(context) }
+    val currentSettings by settings.settings.collectAsState(initial = null)
     val hasOverlay = OverlayPermission.isGranted(context)
     val hasAcc = AccessibilityUtil.isServiceEnabled(context)
     val done = listOf(true, hasMic, hasOverlay, hasAcc)
     val doneCount = done.count { it }
 
-    FormStep(onBack = onBack, primaryLabel = copy(K.CHECKLIST_CTA), onPrimary = onNext) {
+    FormStep(onBack = onBack, primaryLabel = copy(when (micAction) {
+        MicrophoneSetupAction.TEST_MIC -> K.CHECKLIST_CTA
+        MicrophoneSetupAction.REQUEST_PERMISSION -> K.MIC_CTA
+        MicrophoneSetupAction.OPEN_SETTINGS -> K.MIC_OPEN_SETTINGS
+    }), primaryEnabled = primaryEnabled, onPrimary = onNext) {
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(copy(K.CHECKLIST_TITLE), style = MaterialTheme.typography.titleLarge)
@@ -424,7 +466,9 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
         }
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
-            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY), copy(K.CHECKLIST_KEY_SUB), done[0])
+            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY),
+                currentSettings?.let { copy(K.CHECKLIST_PROVIDER_CONNECTED, it.provider.displayName) }
+                    ?: copy(K.CHECKLIST_KEY_SUB), done[0])
             RowDivider()
             ChecklistRow(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.CHECKLIST_MIC), copy(K.CHECKLIST_MIC_SUB), done[1])
             RowDivider()
@@ -433,6 +477,10 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
             ChecklistRow(Icons.Rounded.AccessibilityNew, LeadIconVariant.PLAIN, copy(K.CHECKLIST_ACCESSIBILITY), copy(K.CHECKLIST_ACC_SUB), done[3])
         }
         Spacer(Modifier.height(16.dp))
+        if (micDenied && !hasMic) {
+            HelpText(copy(if (micAction == MicrophoneSetupAction.OPEN_SETTINGS) K.MIC_BLOCKED else K.MIC_DENIED), bad = true)
+            Spacer(Modifier.height(12.dp))
+        }
         LinearProgressIndicator(
             progress = { doneCount / done.size.toFloat() },
             color = MaterialTheme.colorScheme.primary,
@@ -462,18 +510,6 @@ private fun ChecklistRow(
                 Box(Modifier.size(6.dp).clip(androidx.compose.foundation.shape.CircleShape).background(MaterialTheme.quill.lineStrong))
             }
         },
-    )
-}
-
-@Composable
-private fun MicStep(onBack: () -> Unit, onAllow: () -> Unit) {
-    CenteredStep(
-        onBack = onBack,
-        illustration = { PermissionIllustration(Icons.Rounded.Mic, variant = IllustrationVariant.GOLD) },
-        title = copy(K.MIC_TITLE),
-        body = copy(K.RATIONALE_MIC),
-        primaryLabel = copy(K.MIC_CTA),
-        onPrimary = onAllow,
     )
 }
 

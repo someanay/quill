@@ -1,9 +1,13 @@
 {
   "schemaVersion": 1,
-  "revision": 9,
+  "revision": 10,
   "locale": "en",
   "updatedAt": "2026-09-07T00:00:00Z",
   "strings": {
+    "onboarding.checklist.provider_connected": "%1$s connected",
+    "onboarding.mic.open_settings": "Open microphone settings",
+    "onboarding.mic.denied": "Microphone access is needed to record your voice. Tap Allow microphone to try again.",
+    "onboarding.mic.blocked": "Microphone access is off. Open Quill's app settings, choose Permissions, then allow Microphone. Return here to test it.",
     "models.paid": "Paid",
     "settings.cleanup.automatic": "Match speech provider",
     "settings.cleanup.automatic_help": "Use the speech provider's active key with a known free cleanup option. Automatic cleanup stays off when no free option is known. Free-tier quotas apply. Choosing a separate provider or model below is a manual choice and may cost money.",
