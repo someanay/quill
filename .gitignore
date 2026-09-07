@@ -46,11 +46,11 @@ windows/artifacts/
 /PROJECT_HANDOFF.md
 /CLAUDE.md
 
-# Paused ports, retained locally during the Android release
-/windows/
-/macos/
-/ios/
-/.github/workflows/apple.yml
+# Native platform build products
+**/.build/
+**/DerivedData/
+**/*.xcodeproj/
+**/*.xcresult/
 /docs/OVERNIGHT_AUDIT_2026-08-18.md
 
 # Local source-editor lock

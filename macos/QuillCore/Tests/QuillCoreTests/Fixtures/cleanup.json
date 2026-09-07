@@ -1,0 +1,982 @@
+{
+  "reference": "app/src/main/java/com/tihor/quill/cleanup/CleanupGuard.kt",
+  "sourceSha256": "8d60afe38101e0d14d447964f1da1bec33558f8b11e6dec6f9af9bde4881fda6",
+  "description": "Android regression tests plus every Android contraction in both directions. Native apps must use the same acceptance decision.",
+  "cases": [
+    {
+      "raw": "type my email",
+      "cleaned": "I'm ready to type your email",
+      "accepted": false
+    },
+    {
+      "raw": "um so i think we should uh meet tomorrow",
+      "cleaned": "So I think we should meet tomorrow.",
+      "accepted": true
+    },
+    {
+      "raw": "send this message",
+      "cleaned": "Send this message.",
+      "accepted": true
+    },
+    {
+      "raw": "what time is it",
+      "cleaned": "What time is it?",
+      "accepted": true
+    },
+    {
+      "raw": "delete everything",
+      "cleaned": "Delete everything.",
+      "accepted": true
+    },
+    {
+      "raw": "send this message",
+      "cleaned": "Okay, I'll send this message now.",
+      "accepted": false
+    },
+    {
+      "raw": "what time is it",
+      "cleaned": "It's 3 PM.",
+      "accepted": false
+    },
+    {
+      "raw": "delete everything",
+      "cleaned": "I can't delete everything for you.",
+      "accepted": false
+    },
+    {
+      "raw": "remind me",
+      "cleaned": "Sure, I'll remind you. What would you like me to remind you about, and when?",
+      "accepted": false
+    },
+    {
+      "raw": "dont worry",
+      "cleaned": "Do not worry.",
+      "accepted": true
+    },
+    {
+      "raw": "i cant make it wont be there",
+      "cleaned": "I can not make it. I will not be there.",
+      "accepted": true
+    },
+    {
+      "raw": "its fine and thats ok",
+      "cleaned": "It is fine, and that is ok.",
+      "accepted": true
+    },
+    {
+      "raw": "I do not think so.",
+      "cleaned": "i dont think so",
+      "accepted": true
+    },
+    {
+      "raw": "It is not going to work.",
+      "cleaned": "its not going to work",
+      "accepted": true
+    },
+    {
+      "raw": "We are running late, I am afraid.",
+      "cleaned": "were running late im afraid",
+      "accepted": true
+    },
+    {
+      "raw": "you're right",
+      "cleaned": "You are right.",
+      "accepted": true
+    },
+    {
+      "raw": "You are right.",
+      "cleaned": "youre right",
+      "accepted": true
+    },
+    {
+      "raw": "what time is it",
+      "cleaned": "It's currently 3pm",
+      "accepted": false
+    },
+    {
+      "raw": "whats the weather",
+      "cleaned": "The weather today is sunny and warm.",
+      "accepted": false
+    },
+    {
+      "raw": "remind me to call mum",
+      "cleaned": "I've set a reminder for you to call your mum.",
+      "accepted": false
+    },
+    {
+      "raw": "so i went to the shop this morning and picked up some milk and bread and then i walked back home through the park because the weather was really nice",
+      "cleaned": "I went to the shop.",
+      "accepted": false
+    },
+    {
+      "raw": "meet me at five",
+      "cleaned": "Meet me at five. Meet me at five. Meet me at five.",
+      "accepted": false
+    },
+    {
+      "raw": "no no no thats wrong",
+      "cleaned": "No, no, no, that is wrong.",
+      "accepted": true
+    },
+    {
+      "raw": "um so like you know i think uh we should probably meet tomorrow",
+      "cleaned": "So I think we should probably meet tomorrow.",
+      "accepted": true
+    },
+    {
+      "raw": "hello world how are you",
+      "cleaned": "Hello world, how are you?",
+      "accepted": true
+    },
+    {
+      "raw": "kal main office nahi aaunga",
+      "cleaned": "Kal main office nahi aaunga.",
+      "accepted": true
+    },
+    {
+      "raw": "",
+      "cleaned": "Hello.",
+      "accepted": false
+    },
+    {
+      "raw": "hello",
+      "cleaned": "",
+      "accepted": false
+    },
+    {
+      "raw": "   ",
+      "cleaned": "   ",
+      "accepted": false
+    },
+    {
+      "raw": "can't",
+      "cleaned": "can not",
+      "accepted": true
+    },
+    {
+      "raw": "can not",
+      "cleaned": "can't",
+      "accepted": true
+    },
+    {
+      "raw": "cant",
+      "cleaned": "can not",
+      "accepted": true
+    },
+    {
+      "raw": "can not",
+      "cleaned": "cant",
+      "accepted": true
+    },
+    {
+      "raw": "cannot",
+      "cleaned": "can not",
+      "accepted": true
+    },
+    {
+      "raw": "can not",
+      "cleaned": "cannot",
+      "accepted": true
+    },
+    {
+      "raw": "won't",
+      "cleaned": "will not",
+      "accepted": true
+    },
+    {
+      "raw": "will not",
+      "cleaned": "won't",
+      "accepted": true
+    },
+    {
+      "raw": "wont",
+      "cleaned": "will not",
+      "accepted": true
+    },
+    {
+      "raw": "will not",
+      "cleaned": "wont",
+      "accepted": true
+    },
+    {
+      "raw": "shan't",
+      "cleaned": "shall not",
+      "accepted": true
+    },
+    {
+      "raw": "shall not",
+      "cleaned": "shan't",
+      "accepted": true
+    },
+    {
+      "raw": "don't",
+      "cleaned": "do not",
+      "accepted": true
+    },
+    {
+      "raw": "do not",
+      "cleaned": "don't",
+      "accepted": true
+    },
+    {
+      "raw": "dont",
+      "cleaned": "do not",
+      "accepted": true
+    },
+    {
+      "raw": "do not",
+      "cleaned": "dont",
+      "accepted": true
+    },
+    {
+      "raw": "doesn't",
+      "cleaned": "does not",
+      "accepted": true
+    },
+    {
+      "raw": "does not",
+      "cleaned": "doesn't",
+      "accepted": true
+    },
+    {
+      "raw": "doesnt",
+      "cleaned": "does not",
+      "accepted": true
+    },
+    {
+      "raw": "does not",
+      "cleaned": "doesnt",
+      "accepted": true
+    },
+    {
+      "raw": "didn't",
+      "cleaned": "did not",
+      "accepted": true
+    },
+    {
+      "raw": "did not",
+      "cleaned": "didn't",
+      "accepted": true
+    },
+    {
+      "raw": "didnt",
+      "cleaned": "did not",
+      "accepted": true
+    },
+    {
+      "raw": "did not",
+      "cleaned": "didnt",
+      "accepted": true
+    },
+    {
+      "raw": "isn't",
+      "cleaned": "is not",
+      "accepted": true
+    },
+    {
+      "raw": "is not",
+      "cleaned": "isn't",
+      "accepted": true
+    },
+    {
+      "raw": "isnt",
+      "cleaned": "is not",
+      "accepted": true
+    },
+    {
+      "raw": "is not",
+      "cleaned": "isnt",
+      "accepted": true
+    },
+    {
+      "raw": "aren't",
+      "cleaned": "are not",
+      "accepted": true
+    },
+    {
+      "raw": "are not",
+      "cleaned": "aren't",
+      "accepted": true
+    },
+    {
+      "raw": "arent",
+      "cleaned": "are not",
+      "accepted": true
+    },
+    {
+      "raw": "are not",
+      "cleaned": "arent",
+      "accepted": true
+    },
+    {
+      "raw": "wasn't",
+      "cleaned": "was not",
+      "accepted": true
+    },
+    {
+      "raw": "was not",
+      "cleaned": "wasn't",
+      "accepted": true
+    },
+    {
+      "raw": "wasnt",
+      "cleaned": "was not",
+      "accepted": true
+    },
+    {
+      "raw": "was not",
+      "cleaned": "wasnt",
+      "accepted": true
+    },
+    {
+      "raw": "weren't",
+      "cleaned": "were not",
+      "accepted": true
+    },
+    {
+      "raw": "were not",
+      "cleaned": "weren't",
+      "accepted": true
+    },
+    {
+      "raw": "werent",
+      "cleaned": "were not",
+      "accepted": true
+    },
+    {
+      "raw": "were not",
+      "cleaned": "werent",
+      "accepted": true
+    },
+    {
+      "raw": "hasn't",
+      "cleaned": "has not",
+      "accepted": true
+    },
+    {
+      "raw": "has not",
+      "cleaned": "hasn't",
+      "accepted": true
+    },
+    {
+      "raw": "hasnt",
+      "cleaned": "has not",
+      "accepted": true
+    },
+    {
+      "raw": "has not",
+      "cleaned": "hasnt",
+      "accepted": true
+    },
+    {
+      "raw": "haven't",
+      "cleaned": "have not",
+      "accepted": true
+    },
+    {
+      "raw": "have not",
+      "cleaned": "haven't",
+      "accepted": true
+    },
+    {
+      "raw": "havent",
+      "cleaned": "have not",
+      "accepted": true
+    },
+    {
+      "raw": "have not",
+      "cleaned": "havent",
+      "accepted": true
+    },
+    {
+      "raw": "hadn't",
+      "cleaned": "had not",
+      "accepted": true
+    },
+    {
+      "raw": "had not",
+      "cleaned": "hadn't",
+      "accepted": true
+    },
+    {
+      "raw": "hadnt",
+      "cleaned": "had not",
+      "accepted": true
+    },
+    {
+      "raw": "had not",
+      "cleaned": "hadnt",
+      "accepted": true
+    },
+    {
+      "raw": "couldn't",
+      "cleaned": "could not",
+      "accepted": true
+    },
+    {
+      "raw": "could not",
+      "cleaned": "couldn't",
+      "accepted": true
+    },
+    {
+      "raw": "couldnt",
+      "cleaned": "could not",
+      "accepted": true
+    },
+    {
+      "raw": "could not",
+      "cleaned": "couldnt",
+      "accepted": true
+    },
+    {
+      "raw": "wouldn't",
+      "cleaned": "would not",
+      "accepted": true
+    },
+    {
+      "raw": "would not",
+      "cleaned": "wouldn't",
+      "accepted": true
+    },
+    {
+      "raw": "wouldnt",
+      "cleaned": "would not",
+      "accepted": true
+    },
+    {
+      "raw": "would not",
+      "cleaned": "wouldnt",
+      "accepted": true
+    },
+    {
+      "raw": "shouldn't",
+      "cleaned": "should not",
+      "accepted": true
+    },
+    {
+      "raw": "should not",
+      "cleaned": "shouldn't",
+      "accepted": true
+    },
+    {
+      "raw": "shouldnt",
+      "cleaned": "should not",
+      "accepted": true
+    },
+    {
+      "raw": "should not",
+      "cleaned": "shouldnt",
+      "accepted": true
+    },
+    {
+      "raw": "mustn't",
+      "cleaned": "must not",
+      "accepted": true
+    },
+    {
+      "raw": "must not",
+      "cleaned": "mustn't",
+      "accepted": true
+    },
+    {
+      "raw": "mustnt",
+      "cleaned": "must not",
+      "accepted": true
+    },
+    {
+      "raw": "must not",
+      "cleaned": "mustnt",
+      "accepted": true
+    },
+    {
+      "raw": "needn't",
+      "cleaned": "need not",
+      "accepted": true
+    },
+    {
+      "raw": "need not",
+      "cleaned": "needn't",
+      "accepted": true
+    },
+    {
+      "raw": "neednt",
+      "cleaned": "need not",
+      "accepted": true
+    },
+    {
+      "raw": "need not",
+      "cleaned": "neednt",
+      "accepted": true
+    },
+    {
+      "raw": "i'm",
+      "cleaned": "i am",
+      "accepted": true
+    },
+    {
+      "raw": "i am",
+      "cleaned": "i'm",
+      "accepted": true
+    },
+    {
+      "raw": "im",
+      "cleaned": "i am",
+      "accepted": true
+    },
+    {
+      "raw": "i am",
+      "cleaned": "im",
+      "accepted": true
+    },
+    {
+      "raw": "i've",
+      "cleaned": "i have",
+      "accepted": true
+    },
+    {
+      "raw": "i have",
+      "cleaned": "i've",
+      "accepted": true
+    },
+    {
+      "raw": "ive",
+      "cleaned": "i have",
+      "accepted": true
+    },
+    {
+      "raw": "i have",
+      "cleaned": "ive",
+      "accepted": true
+    },
+    {
+      "raw": "i'll",
+      "cleaned": "i will",
+      "accepted": true
+    },
+    {
+      "raw": "i will",
+      "cleaned": "i'll",
+      "accepted": true
+    },
+    {
+      "raw": "ill",
+      "cleaned": "i will",
+      "accepted": true
+    },
+    {
+      "raw": "i will",
+      "cleaned": "ill",
+      "accepted": true
+    },
+    {
+      "raw": "i'd",
+      "cleaned": "i would",
+      "accepted": true
+    },
+    {
+      "raw": "i would",
+      "cleaned": "i'd",
+      "accepted": true
+    },
+    {
+      "raw": "id",
+      "cleaned": "i would",
+      "accepted": true
+    },
+    {
+      "raw": "i would",
+      "cleaned": "id",
+      "accepted": true
+    },
+    {
+      "raw": "you're",
+      "cleaned": "you are",
+      "accepted": true
+    },
+    {
+      "raw": "you are",
+      "cleaned": "you're",
+      "accepted": true
+    },
+    {
+      "raw": "youre",
+      "cleaned": "you are",
+      "accepted": true
+    },
+    {
+      "raw": "you are",
+      "cleaned": "youre",
+      "accepted": true
+    },
+    {
+      "raw": "you've",
+      "cleaned": "you have",
+      "accepted": true
+    },
+    {
+      "raw": "you have",
+      "cleaned": "you've",
+      "accepted": true
+    },
+    {
+      "raw": "youve",
+      "cleaned": "you have",
+      "accepted": true
+    },
+    {
+      "raw": "you have",
+      "cleaned": "youve",
+      "accepted": true
+    },
+    {
+      "raw": "you'll",
+      "cleaned": "you will",
+      "accepted": true
+    },
+    {
+      "raw": "you will",
+      "cleaned": "you'll",
+      "accepted": true
+    },
+    {
+      "raw": "youll",
+      "cleaned": "you will",
+      "accepted": true
+    },
+    {
+      "raw": "you will",
+      "cleaned": "youll",
+      "accepted": true
+    },
+    {
+      "raw": "you'd",
+      "cleaned": "you would",
+      "accepted": true
+    },
+    {
+      "raw": "you would",
+      "cleaned": "you'd",
+      "accepted": true
+    },
+    {
+      "raw": "youd",
+      "cleaned": "you would",
+      "accepted": true
+    },
+    {
+      "raw": "you would",
+      "cleaned": "youd",
+      "accepted": true
+    },
+    {
+      "raw": "we're",
+      "cleaned": "we are",
+      "accepted": true
+    },
+    {
+      "raw": "we are",
+      "cleaned": "we're",
+      "accepted": true
+    },
+    {
+      "raw": "were",
+      "cleaned": "we are",
+      "accepted": true
+    },
+    {
+      "raw": "we are",
+      "cleaned": "were",
+      "accepted": true
+    },
+    {
+      "raw": "we've",
+      "cleaned": "we have",
+      "accepted": true
+    },
+    {
+      "raw": "we have",
+      "cleaned": "we've",
+      "accepted": true
+    },
+    {
+      "raw": "weve",
+      "cleaned": "we have",
+      "accepted": true
+    },
+    {
+      "raw": "we have",
+      "cleaned": "weve",
+      "accepted": true
+    },
+    {
+      "raw": "we'll",
+      "cleaned": "we will",
+      "accepted": true
+    },
+    {
+      "raw": "we will",
+      "cleaned": "we'll",
+      "accepted": true
+    },
+    {
+      "raw": "we'd",
+      "cleaned": "we would",
+      "accepted": true
+    },
+    {
+      "raw": "we would",
+      "cleaned": "we'd",
+      "accepted": true
+    },
+    {
+      "raw": "they're",
+      "cleaned": "they are",
+      "accepted": true
+    },
+    {
+      "raw": "they are",
+      "cleaned": "they're",
+      "accepted": true
+    },
+    {
+      "raw": "theyre",
+      "cleaned": "they are",
+      "accepted": true
+    },
+    {
+      "raw": "they are",
+      "cleaned": "theyre",
+      "accepted": true
+    },
+    {
+      "raw": "they've",
+      "cleaned": "they have",
+      "accepted": true
+    },
+    {
+      "raw": "they have",
+      "cleaned": "they've",
+      "accepted": true
+    },
+    {
+      "raw": "theyve",
+      "cleaned": "they have",
+      "accepted": true
+    },
+    {
+      "raw": "they have",
+      "cleaned": "theyve",
+      "accepted": true
+    },
+    {
+      "raw": "they'll",
+      "cleaned": "they will",
+      "accepted": true
+    },
+    {
+      "raw": "they will",
+      "cleaned": "they'll",
+      "accepted": true
+    },
+    {
+      "raw": "theyll",
+      "cleaned": "they will",
+      "accepted": true
+    },
+    {
+      "raw": "they will",
+      "cleaned": "theyll",
+      "accepted": true
+    },
+    {
+      "raw": "they'd",
+      "cleaned": "they would",
+      "accepted": true
+    },
+    {
+      "raw": "they would",
+      "cleaned": "they'd",
+      "accepted": true
+    },
+    {
+      "raw": "he's",
+      "cleaned": "he is",
+      "accepted": true
+    },
+    {
+      "raw": "he is",
+      "cleaned": "he's",
+      "accepted": true
+    },
+    {
+      "raw": "hes",
+      "cleaned": "he is",
+      "accepted": true
+    },
+    {
+      "raw": "he is",
+      "cleaned": "hes",
+      "accepted": true
+    },
+    {
+      "raw": "she's",
+      "cleaned": "she is",
+      "accepted": true
+    },
+    {
+      "raw": "she is",
+      "cleaned": "she's",
+      "accepted": true
+    },
+    {
+      "raw": "shes",
+      "cleaned": "she is",
+      "accepted": true
+    },
+    {
+      "raw": "she is",
+      "cleaned": "shes",
+      "accepted": true
+    },
+    {
+      "raw": "it's",
+      "cleaned": "it is",
+      "accepted": true
+    },
+    {
+      "raw": "it is",
+      "cleaned": "it's",
+      "accepted": true
+    },
+    {
+      "raw": "its",
+      "cleaned": "it is",
+      "accepted": true
+    },
+    {
+      "raw": "it is",
+      "cleaned": "its",
+      "accepted": true
+    },
+    {
+      "raw": "that's",
+      "cleaned": "that is",
+      "accepted": true
+    },
+    {
+      "raw": "that is",
+      "cleaned": "that's",
+      "accepted": true
+    },
+    {
+      "raw": "thats",
+      "cleaned": "that is",
+      "accepted": true
+    },
+    {
+      "raw": "that is",
+      "cleaned": "thats",
+      "accepted": true
+    },
+    {
+      "raw": "there's",
+      "cleaned": "there is",
+      "accepted": true
+    },
+    {
+      "raw": "there is",
+      "cleaned": "there's",
+      "accepted": true
+    },
+    {
+      "raw": "theres",
+      "cleaned": "there is",
+      "accepted": true
+    },
+    {
+      "raw": "there is",
+      "cleaned": "theres",
+      "accepted": true
+    },
+    {
+      "raw": "here's",
+      "cleaned": "here is",
+      "accepted": true
+    },
+    {
+      "raw": "here is",
+      "cleaned": "here's",
+      "accepted": true
+    },
+    {
+      "raw": "heres",
+      "cleaned": "here is",
+      "accepted": true
+    },
+    {
+      "raw": "here is",
+      "cleaned": "heres",
+      "accepted": true
+    },
+    {
+      "raw": "what's",
+      "cleaned": "what is",
+      "accepted": true
+    },
+    {
+      "raw": "what is",
+      "cleaned": "what's",
+      "accepted": true
+    },
+    {
+      "raw": "whats",
+      "cleaned": "what is",
+      "accepted": true
+    },
+    {
+      "raw": "what is",
+      "cleaned": "whats",
+      "accepted": true
+    },
+    {
+      "raw": "who's",
+      "cleaned": "who is",
+      "accepted": true
+    },
+    {
+      "raw": "who is",
+      "cleaned": "who's",
+      "accepted": true
+    },
+    {
+      "raw": "whos",
+      "cleaned": "who is",
+      "accepted": true
+    },
+    {
+      "raw": "who is",
+      "cleaned": "whos",
+      "accepted": true
+    },
+    {
+      "raw": "let's",
+      "cleaned": "let us",
+      "accepted": true
+    },
+    {
+      "raw": "let us",
+      "cleaned": "let's",
+      "accepted": true
+    },
+    {
+      "raw": "lets",
+      "cleaned": "let us",
+      "accepted": true
+    },
+    {
+      "raw": "let us",
+      "cleaned": "lets",
+      "accepted": true
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+name: Apple build and test
+
+on:
+  push:
+    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", ".github/workflows/apple.yml"]
+  pull_request:
+    paths: ["macos/**", "ios/**", ".github/workflows/apple.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apple-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apple:
+    name: ${{ matrix.platform }} native build and tests
+    runs-on: macos-15
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            project: QuillMac
+            scheme: QuillMac
+          - platform: ios
+            project: Quill
+            scheme: Quill
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record Apple toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Test portable provider and policy core on Apple
+        working-directory: ${{ matrix.platform }}
+        run: swift test --package-path QuillCore
+      - name: Generate native project
+        working-directory: ${{ matrix.platform }}
+        run: xcodegen generate
+      - name: Pick native test destination
+        id: destination
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          if [ "$PLATFORM" = macos ]; then
+            echo 'value=platform=macOS' >> "$GITHUB_OUTPUT"
+          else
+            UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+            test -n "$UDID"
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            echo "value=id=$UDID" >> "$GITHUB_OUTPUT"
+            echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build and test native app
+        working-directory: ${{ matrix.platform }}
+        env:
+          PROJECT: ${{ matrix.project }}
+          SCHEME: ${{ matrix.scheme }}
+          DESTINATION: ${{ steps.destination.outputs.value }}
+        run: |
+          set -o pipefail
+          xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
+            -destination "$DESTINATION" -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee native-build.log
+      - name: Capture iOS simulator
+        if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: xcrun simctl io "$UDID" screenshot ios/simulator.png
+      - name: Upload native logs and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-verification
+          retention-days: 14
+          path: |
+            ${{ matrix.platform }}/native-build.log
+            ${{ matrix.platform }}/TestResults.xcresult
+            ${{ matrix.platform }}/simulator.png
+      - name: Package unsigned macOS build
+        if: success() && matrix.platform == 'macos'
+        run: ditto -c -k --sequesterRsrc --keepParent macos/DerivedData/Build/Products/Debug/Quill.app macos/QuillMac-unsigned.zip
+      - name: Upload macOS app for verification
+        if: success() && matrix.platform == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuillMac-unsigned
+          path: macos/QuillMac-unsigned.zip
+          retention-days: 14

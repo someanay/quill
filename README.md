@@ -1,4 +1,4 @@
-# Quill for Android
+# Quill
 
 Voice dictation with your own API key. Tap the floating bubble, speak, and Quill inserts the transcript into a supported text field without switching keyboards.
 
@@ -6,7 +6,7 @@ Recordings go directly to your chosen speech provider. Optional cleanup uses you
 
 ## Status
 
-Android is the only release target. Version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. See [release readiness](docs/play-readiness.md).
+Android version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. Fresh native Windows, macOS and iOS implementations are being built from Android's current behavior and design. See [platform rebuild and verification](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS requires a host-app recording and keyboard handoff workflow because its system APIs differ.
 
 ## Features
 

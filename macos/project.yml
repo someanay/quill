@@ -1,0 +1,75 @@
+name: QuillMac
+options:
+  bundleIdPrefix: com.tihor.quill
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+packages:
+  QuillCore:
+    path: QuillCore
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  QuillMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: QuillMac
+        excludes: [Resources, "App/Info.plist", "App/QuillMac.entitlements"]
+    resources:
+      - path: QuillMac/Resources/copy
+        type: folder
+      - path: QuillMac/Resources/fonts
+        type: folder
+    dependencies:
+      - package: QuillCore
+      - sdk: libsqlite3.tbd
+      - sdk: Carbon.framework
+      - sdk: ApplicationServices.framework
+      - sdk: AVFoundation.framework
+      - sdk: Contacts.framework
+      - sdk: Security.framework
+      - sdk: ServiceManagement.framework
+    settings:
+      base:
+        PRODUCT_NAME: Quill
+        PRODUCT_MODULE_NAME: QuillMac
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac
+        INFOPLIST_FILE: QuillMac/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: QuillMac/App/QuillMac.entitlements
+  QuillMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [QuillMacTests]
+    dependencies:
+      - target: QuillMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Quill.app/Contents/MacOS/Quill"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  QuillMacUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources: [QuillMacUITests]
+    dependencies:
+      - target: QuillMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: QuillMac
+schemes:
+  QuillMac:
+    build:
+      targets:
+        QuillMac: all
+    test:
+      targets: [QuillMacTests, QuillMacUITests]
+      gatherCoverageData: true

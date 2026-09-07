@@ -1,5 +1,18 @@
 # Quill — Implementation Checklist (todo.md)
 
+## M14 — Native platform rebuild (authorized September 8, 2026)
+
+The owner superseded Android-only scope and requested complete fresh Windows, macOS and iOS implementations plus copy-tool support, with continuous work across implementation/test passes. Track the new initiative in [platform rebuild](docs/platform-rebuild.md); earlier Android milestone history remains below.
+
+- [x] Map current Android behavior, navigation, bundled copy and visual tokens.
+- [x] Verify Android baseline build, unit tests and lint.
+- [ ] Replace Windows draft, build/test and verify native interactions.
+- [ ] Replace macOS draft, build/test on a Mac runner and verify native interactions.
+- [ ] Replace iOS draft, build/test host and keyboard on an Apple simulator; track unavoidable OS differences.
+- [ ] Expand local Copy Studio to all four platforms and verify independent edits.
+- [ ] Complete failure/cancellation/privacy/key-storage and cross-app test matrices; record exact evidence and remaining hardware/account gates.
+
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.
