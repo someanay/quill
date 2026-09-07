@@ -98,6 +98,36 @@ targets:
         PRODUCT_NAME: QuillAXProbe
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.axprobe
         GENERATE_INFOPLIST_FILE: YES
+  QuillFieldProbe:
+    type: tool
+    platform: macOS
+    sources:
+      - path: QA/FieldProbe.swift
+      - path: QuillMac/Services/TextInjector.swift
+      - path: QuillMac/Services/AccessibilityAccess.swift
+    dependencies:
+      - package: QuillCore
+      - sdk: AppKit.framework
+      - sdk: Carbon.framework
+      - sdk: ApplicationServices.framework
+    settings:
+      base:
+        PRODUCT_NAME: QuillFieldProbe
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.fieldprobe
+        GENERATE_INFOPLIST_FILE: YES
+  QuillAXFixture:
+    type: application
+    platform: macOS
+    sources:
+      - path: QA/FieldFixture.swift
+    dependencies:
+      - sdk: AppKit.framework
+    settings:
+      base:
+        PRODUCT_NAME: QuillAXFixture
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.fields
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
 schemes:
   QuillMac:
     build:
@@ -110,3 +140,8 @@ schemes:
     build:
       targets:
         QuillAXProbe: all
+  QuillFieldProbe:
+    build:
+      targets:
+        QuillFieldProbe: all
+        QuillAXFixture: all

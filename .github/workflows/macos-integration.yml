@@ -1,10 +1,11 @@
-name: macOS TextEdit integration
+name: macOS editor integration
 
 on:
   push:
     paths:
       - "macos/QA/**"
       - "macos/scripts/test-textedit.sh"
+      - "macos/scripts/test-fields.sh"
       - "macos/project.yml"
       - "macos/QuillMac/Services/TextInjector.swift"
       - "macos/QuillMac/Services/AccessibilityAccess.swift"
@@ -39,5 +40,24 @@ jobs:
         with:
           name: macos-textedit-verification
           path: macos/TextEditEvidence
+          if-no-files-found: warn
+          retention-days: 14
+  browser-and-secure-fields:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record toolchain
+        run: xcodebuild -version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Exercise production insertion against Safari and native secure fields
+        run: bash macos/scripts/test-fields.sh
+      - name: Preserve browser and secure-field evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-fields-verification
+          path: macos/FieldEvidence
           if-no-files-found: warn
           retention-days: 14

@@ -6,3 +6,5 @@ QuillCore/.swiftpm/
 *.xcresult/
 AXProbeBuild/
 TextEditEvidence/
+FieldProbeBuild/
+FieldEvidence/
