@@ -458,3 +458,9 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Keep encrypted drafts, automatic validation, clipboard controls and direct checklist navigation.
 - [x] Build signed version 1.0.5 (code 6); preserve all 13 copy drafts and sync the editor.
 - [ ] Physical visual comparison: no connected phone.
+
+### M8 follow-up: apply all pending copy
+- [x] Recheck the onboarding document and retain the approved accordion.
+- [x] Apply all 13 pending copy-tool edits to bundled revision 12; zero pending drafts remain.
+- [ ] Physical UI checks: phone connection required.
+- [x] Version 1.0.6 (code 7): 392 tests, lint and signing pass; verify revision 12 copy inside both APK and AAB.

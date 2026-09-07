@@ -343,10 +343,11 @@ private fun StepBar(onBack: (() -> Unit)?, body: @Composable (Modifier) -> Unit)
 private fun SplashStep(onDone: () -> Unit) {
     LaunchedEffect(Unit) { kotlinx.coroutines.delay(1200); onDone() }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Wordmark()
             Spacer(Modifier.height(12.dp))
-            Text(copy(K.SPLASH_TAGLINE), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
+            Text(copy(K.SPLASH_TAGLINE), style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.quill.muted, textAlign = TextAlign.Center)
         }
     }
 }

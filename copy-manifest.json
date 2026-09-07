@@ -1,5 +1,5 @@
 {
-  "revision": 11,
+  "revision": 12,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -298,7 +298,7 @@
       "optionalBlank": false
     },
     "history.empty.on_body": {
-      "default": "Once you start dictating, your transcripts show up here - saved on this phone only.",
+      "default": "Your dictation transcripts show up here. Saved on this phone only.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -400,13 +400,13 @@
       "optionalBlank": false
     },
     "home.tip.text": {
-      "default": "Drop it anywhere along the edge.",
+      "default": "Long-press to dictate to the clipboard",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "home.tip.title": {
-      "default": "Long-press the bubble to move it.",
+      "default": "Touch the bubble to move and drop anywhere.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -430,7 +430,7 @@
       "optionalBlank": false
     },
     "home.today.last_used_sub": {
-      "default": "Not yet - tap the bubble in any app",
+      "default": "Not yet - tap the bubble to dictate in any app.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1133,7 +1133,7 @@
       "optionalBlank": false
     },
     "onboarding.splash.tagline": {
-      "default": "Dictate into any app",
+      "default": "Speak, instead of typing, in any app. Quill is 100% free & 100% private.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1145,7 +1145,7 @@
       "optionalBlank": false
     },
     "onboarding.welcome.body": {
-      "default": "A bubble floats over every app. Tap it, speak, and your words land right where the cursor is.",
+      "default": "A small bubble floats over the screen. Tap it & speak. Your words appear where your cursor is.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1163,7 +1163,7 @@
       "optionalBlank": false
     },
     "onboarding.welcome.title": {
-      "default": "Dictate into any app you use",
+      "default": "Speak, instead of typing, in any app. For free.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1193,7 +1193,7 @@
       "optionalBlank": false
     },
     "settings.about.footer": {
-      "default": "Made for people who'd rather talk than type.",
+      "default": "Made for the speakers, not the typers.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1780,7 +1780,7 @@
       "optionalBlank": false
     },
     "settings.privacy.title": {
-      "default": "Privacy",
+      "default": "Privacy and History",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1834,7 +1834,7 @@
       "optionalBlank": false
     },
     "settings.row.privacy": {
-      "default": "Privacy",
+      "default": "Privacy and History",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

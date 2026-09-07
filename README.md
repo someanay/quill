@@ -6,7 +6,7 @@ Recordings go directly to your chosen speech provider. Optional cleanup uses you
 
 ## Status
 
-Android is the only release target. Version 1.0.5 builds as a signed APK and AAB; final device testing and Google Play submission are pending. See [release readiness](docs/play-readiness.md).
+Android is the only release target. Version 1.0.6 builds as a signed APK and AAB; final device testing and Google Play submission are pending. See [release readiness](docs/play-readiness.md).
 
 ## Features
 
@@ -55,9 +55,9 @@ All catalog strings are editable locally, including compliance text. Accessibili
 Build both signed artifacts with `BUILD-ANDROID.cmd`, or:
 
 ```powershell
-./scripts/build-android-release.ps1 -VersionCode 6 -VersionName 1.0.5
+./scripts/build-android-release.ps1 -VersionCode 7 -VersionName 1.0.6
 # To apply the copy tool's pending drafts before building:
-./scripts/build-android-release.ps1 -ApplyCopy -VersionCode 7 -VersionName 1.0.6
+./scripts/build-android-release.ps1 -ApplyCopy -VersionCode 8 -VersionName 1.0.7
 ```
 
 The script validates copy, runs tests/lint, verifies signatures, and writes APK/AAB
