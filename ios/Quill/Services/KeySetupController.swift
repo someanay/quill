@@ -56,6 +56,7 @@ private struct KeySetupPreferences: Codable { let expanded: String }
     private let prefillSavedKey: Bool
     private let debounce: UInt64
     private var work: Task<Void, Never>?
+    private var saveWork: Task<Bool, Never>?
     private var generation = UUID()
     private var verifiedCandidate: String?
 
@@ -73,7 +74,7 @@ private struct KeySetupPreferences: Codable { let expanded: String }
             } catch { storageError = true }
         }
     }
-    deinit { work?.cancel() }
+    deinit { work?.cancel(); saveWork?.cancel() }
     var canSave: Bool { phase == .verified && expanded.flatMap { drafts[$0] }?.trimmingCharacters(in: .whitespacesAndNewlines) == verifiedCandidate }
     func toggle(_ provider: Provider) {
         guard phase != .saving else { return }
@@ -87,7 +88,10 @@ private struct KeySetupPreferences: Codable { let expanded: String }
         do { try store.write(text, provider: provider); storageError = false } catch { storageError = true }
         scheduleValidation()
     }
-    func stopValidation() { generation = UUID(); work?.cancel(); work = nil; verifiedCandidate = nil; if phase != .saving { phase = .idle } }
+    func stopValidation() {
+        generation = UUID(); work?.cancel(); work = nil; saveWork?.cancel(); saveWork = nil
+        verifiedCandidate = nil; phase = .idle
+    }
     func scheduleValidation() {
         stopValidation()
         guard let provider = expanded, let value = drafts[provider], KeySetupPolicy.plausible(provider, value) else { return }
@@ -111,8 +115,14 @@ private struct KeySetupPreferences: Codable { let expanded: String }
     }
     func save() async -> Bool {
         guard canSave, let provider = expanded, let candidate = verifiedCandidate else { return false }
-        phase = .saving
-        let saved = await model.verifyAndSaveKey(provider: provider, secret: candidate, label: "", activateSpeechProvider: activateSpeechProvider)
+        phase = .saving; let token = generation
+        let operation = Task { [model, activateSpeechProvider] in
+            await model.verifyAndSaveKey(provider: provider, secret: candidate, label: "", activateSpeechProvider: activateSpeechProvider)
+        }
+        saveWork = operation
+        let saved = await withTaskCancellationHandler(operation: { await operation.value }, onCancel: { operation.cancel() })
+        guard token == generation, !Task.isCancelled else { return false }
+        saveWork = nil
         guard saved else { phase = .unverified; return false }
         do {
             try store.clear(provider); storageError = false

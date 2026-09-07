@@ -29,11 +29,11 @@ struct HomeView: View {
             QSection(title: model.c("home.group.today")).accessibilityIdentifier("home.today")
             QCard {
                 VStack(spacing: 10) {
-                    QRow(title: model.c("ios.home.dictations_count", String(today.count)), subtitle: model.c("ios.home.words_count", String(todayWords)), icon: "waveform", chevron: false)
+                    QRow(title: model.c("ios.home.dictations_count", String(today.count)), subtitle: model.c("ios.home.words_count", String(todayWords)), icon: "waveform", chevron: false).accessibilityElement(children: .combine).accessibilityIdentifier("home.today.count")
                     Divider()
                     Button { model.tab = 1 } label: {
                         QRow(title: model.c("home.today.last_used"), subtitle: model.history.first.map { $0.date.formatted(date: .abbreviated, time: .shortened) } ?? model.c("ios.home.no_last_used"), icon: "clock")
-                    }.buttonStyle(.plain)
+                    }.buttonStyle(.plain).accessibilityIdentifier("home.today.last_used")
                 }
             }
             QSection(title: model.c("home.group.tip"))

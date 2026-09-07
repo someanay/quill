@@ -14,9 +14,17 @@ private actor KeySetupTransport: HTTPTransport {
     private(set) var requests = 0
     let status: Int
     let simulateStale: Bool
-    init(status: Int = 200, simulateStale: Bool = false) { self.status = status; self.simulateStale = simulateStale }
+    let slowSave: Bool
+    init(status: Int = 200, simulateStale: Bool = false, slowSave: Bool = false) { self.status = status; self.simulateStale = simulateStale; self.slowSave = slowSave }
     func send(_ request: URLRequest) async throws -> HTTPResult {
         requests += 1
+        if slowSave && requests == 2 {
+            return await withCheckedContinuation { continuation in
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.15) {
+                    continuation.resume(returning: HTTPResult(data: Data(), status: 200))
+                }
+            }
+        }
         if simulateStale {
             let old = request.value(forHTTPHeaderField: "Authorization")?.contains("old") == true
             // Deliberately ignore task cancellation to test the controller's generation guard.
@@ -122,6 +130,20 @@ private actor KeySetupTransport: HTTPTransport {
         XCTAssertNotEqual(try vault.read(.gemini), candidate)
         try vault.write("", provider: .groq); XCTAssertEqual(try vault.read(.groq), "")
         XCTAssertFalse(try vault.read(.gemini).isEmpty)
+    }
+    func testLeavingDuringSlowSaveCancelsBeforeKeyOrProviderCommit() async throws {
+        let transport = KeySetupTransport(slowSave: true), model = AppModel(providerAPI: ProviderAPI(transport: transport)), memory = MemoryKeyDrafts()
+        model.settings = QuillSettings(); model.settings.selectProvider(.gemini)
+        let original = model.settings, originalKeys = model.vault.keys
+        let setup = controller(model, store: memory, activate: true); setup.toggle(.groq); setup.update(candidate, provider: .groq)
+        try await wait(setup, .verified)
+        let saving = Task { await setup.save() }
+        for _ in 0..<100 { if await transport.requests >= 2 { break }; try await Task.sleep(nanoseconds: 5_000_000) }
+        setup.stopValidation()
+        let saved = await saving.value
+        XCTAssertFalse(saved); XCTAssertEqual(setup.phase, .idle)
+        XCTAssertEqual(model.settings, original); XCTAssertEqual(model.vault.keys, originalKeys)
+        XCTAssertEqual(memory.values[.groq], candidate)
     }
     func testDraftStorageFailureIsVisibleAndKeepsEditableValue() {
         let memory = MemoryKeyDrafts(); memory.fail = true

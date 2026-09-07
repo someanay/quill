@@ -121,11 +121,17 @@ final class QuillUITests: XCTestCase {
     }
     func testLargerTextDarkSettingsAndLandscapeLayout() throws {
         let app = openHome(arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        for _ in 0..<5 { if app.buttons["dictation.record"].isHittable { break }; app.swipeUp() }
         XCTAssertTrue(app.buttons["dictation.record"].isHittable)
         capture(app, "ios-large-text-home")
         let today = app.staticTexts["home.today"]
         for _ in 0..<5 { if today.exists && today.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(today.exists); XCTAssertTrue(today.isHittable)
+        for identifier in ["home.today.count", "home.today.last_used"] {
+            let row = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
+            for _ in 0..<5 { if row.exists && row.isHittable { break }; app.swipeUp() }
+            XCTAssertTrue(row.exists); XCTAssertTrue(row.isHittable)
+        }
         capture(app, "ios-large-text-home-today")
         settingsTab(app).tap()
         tap(app.buttons["settings.visual"], in: app)
