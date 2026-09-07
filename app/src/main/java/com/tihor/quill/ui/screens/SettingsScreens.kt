@@ -285,6 +285,8 @@ fun SettingsScreen(nav: QuillNav) {
                 )
             }
 
+            SystemSettingsLinks()
+
             SectionHeader(copy(K.SETTINGS_GROUP_PRIVACY))
             QuillListContainer {
                 QuillRow(
@@ -1146,11 +1148,6 @@ fun PrivacyScreen(nav: QuillNav) {
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
-    val micGranted = androidx.core.content.ContextCompat.checkSelfPermission(
-        context, android.Manifest.permission.RECORD_AUDIO,
-    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    val a11yOn = AccessibilityUtil.isServiceEnabled(context)
-
     DetailScaffold(copy(K.SETTINGS_PRIVACY_TITLE), nav) {
         Spacer(Modifier.height(8.dp))
         Banner(
@@ -1202,19 +1199,7 @@ fun PrivacyScreen(nav: QuillNav) {
         }
         HelpText(copy(K.SETTINGS_PRIVACY_DIAG_HELP))
 
-        SectionHeader(copy(K.SETTINGS_PRIVACY_PERMISSIONS))
-        QuillListContainer {
-            QuillRow(
-                leadIcon = Icons.Rounded.Mic, leadVariant = LeadIconVariant.PLAIN, title = copy(K.SETTINGS_PRIVACY_MIC),
-                trailing = { StatusPill(if (micGranted) copy(K.VALUE_GRANTED) else copy(K.VALUE_OFF), if (micGranted) PillKind.OK else PillKind.ERROR) },
-            )
-            RowDivider()
-            QuillRow(
-                leadIcon = Icons.Rounded.AccessibilityNew,
-                leadVariant = LeadIconVariant.PLAIN, title = copy(K.SETTINGS_PRIVACY_ACCESSIBILITY),
-                trailing = { StatusPill(if (a11yOn) copy(K.VALUE_ON) else copy(K.VALUE_OFF), if (a11yOn) PillKind.OK else PillKind.ERROR) },
-            )
-        }
+        SystemSettingsLinks()
     }
 }
 
@@ -1456,5 +1441,60 @@ fun ConfirmDialog(
                 }
             }
         }
+    }
+}
+
+
+/** System settings shortcuts shared by the settings index and privacy screen. */
+@Composable
+private fun SystemSettingsLinks() {
+    val context = LocalContext.current
+    var refresh by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) refresh++
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    val mic = remember(refresh) {
+        androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+    }
+    val accessibility = remember(refresh) { AccessibilityUtil.isServiceEnabled(context) }
+    val overlay = remember(refresh) { com.tihor.quill.overlay.OverlayPermission.isGranted(context) }
+    val notifications = remember(refresh) { androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled() }
+    val battery = remember(refresh) { BatteryOptimization.isExempt(context) }
+    fun open(intent: Intent) {
+        try { context.startActivity(intent) }
+        catch (_: android.content.ActivityNotFoundException) {
+            context.startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:" + context.packageName)))
+        }
+    }
+    SectionHeader(copy(K.SETTINGS_PRIVACY_PERMISSIONS))
+    QuillListContainer {
+        QuillRow(title = copy(K.SETTINGS_PRIVACY_ACCESSIBILITY), leadIcon = Icons.Rounded.AccessibilityNew,
+            onClick = { open(AccessibilityUtil.disclosureIntent(context)) },
+            trailing = { RowValueChevron(copy(if (accessibility) K.VALUE_ON else K.VALUE_OFF)) })
+        RowDivider()
+        QuillRow(title = copy(K.CHECKLIST_OVERLAY_SUB), leadIcon = Icons.Rounded.PictureInPicture,
+            onClick = { open(com.tihor.quill.overlay.OverlayPermission.settingsIntent(context)) },
+            trailing = { RowValueChevron(copy(if (overlay) K.VALUE_GRANTED else K.VALUE_OFF)) })
+        RowDivider()
+        QuillRow(title = copy(K.SETTINGS_PRIVACY_MIC), leadIcon = Icons.Rounded.Mic,
+            onClick = { open(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:" + context.packageName))) },
+            trailing = { RowValueChevron(copy(if (mic) K.VALUE_GRANTED else K.VALUE_OFF)) })
+        RowDivider()
+        QuillRow(title = copy(K.SETTINGS_NOTIFICATIONS), leadIcon = Icons.Rounded.Info,
+            onClick = { open(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, context.packageName)) },
+            trailing = { RowValueChevron(copy(if (notifications) K.VALUE_ON else K.VALUE_OFF)) })
+        RowDivider()
+        QuillRow(title = copy(K.SETTINGS_ADVANCED_BATTERY), leadIcon = Icons.Rounded.Settings,
+            onClick = { open(BatteryOptimization.settingsIntent()) },
+            trailing = { RowValueChevron(copy(if (battery) K.VALUE_GRANTED else K.VALUE_CHECK)) })
     }
 }

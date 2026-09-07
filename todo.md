@@ -464,3 +464,9 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Apply all 13 pending copy-tool edits to bundled revision 12; zero pending drafts remain.
 - [ ] Physical UI checks: phone connection required.
 - [x] Version 1.0.6 (code 7): 392 tests, lint and signing pass; verify revision 12 copy inside both APK and AAB.
+
+### Settings permission shortcuts
+- [x] Add tappable system settings rows to Settings and Privacy, with status refreshed on return.
+- [x] Keep accessibility disclosure before opening system accessibility settings.
+- [ ] Physical shortcut and return-status checks: no connected phone.
+- [x] Version 1.0.7 (code 8): 392 tests, lint and signed APK/AAB checks pass.

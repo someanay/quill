@@ -1,5 +1,5 @@
 {
-  "revision": 12,
+  "revision": 13,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -1649,6 +1649,12 @@
     },
     "settings.keys.use": {
       "default": "Use this key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.permissions.notifications": {
+      "default": "Notifications",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

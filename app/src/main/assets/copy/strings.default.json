@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 12,
+  "revision": 13,
   "locale": "en",
   "updatedAt": "2026-09-07T18:43:07.865Z",
   "strings": {
@@ -425,6 +425,7 @@
     "models.free": "Free",
     "models.free_tier": "Free tier - limits apply",
     "models.paid_plan": "Paid plan required",
-    "models.preview": "Preview - may change"
+    "models.preview": "Preview - may change",
+    "settings.permissions.notifications": "Notifications"
   }
 }
