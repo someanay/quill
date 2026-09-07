@@ -43,6 +43,7 @@ jobs:
         working-directory: ${{ matrix.platform }}
         run: swift test --package-path QuillCore
       - name: Generate native project
+        id: project
         working-directory: ${{ matrix.platform }}
         run: xcodegen generate
       - name: Pick native test destination
@@ -126,7 +127,10 @@ jobs:
             fi
           done
       - name: Archive iOS Release for physical devices
-        if: success() && matrix.platform == 'ios'
+        id: device_archive
+        # Build evidence is useful even when a separate UI assertion failed.
+        # This does not change or suppress the test step's failure.
+        if: always() && !cancelled() && matrix.platform == 'ios' && steps.project.outcome == 'success'
         working-directory: ios
         run: |
           set -o pipefail
@@ -196,18 +200,19 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload unsigned iOS device archive
-        if: success() && matrix.platform == 'ios'
+        if: always() && matrix.platform == 'ios' && steps.device_archive.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Quill-iOS-device-unsigned
           path: ios/Quill-iOS-device-unsigned.zip
           retention-days: 14
       - name: Build and package universal macOS release
-        if: success() && matrix.platform == 'macos'
+        id: mac_release
+        if: always() && !cancelled() && matrix.platform == 'macos' && steps.project.outcome == 'success'
         working-directory: macos
         run: bash scripts/build-release.sh
       - name: Upload macOS app for verification
-        if: success() && matrix.platform == 'macos'
+        if: always() && matrix.platform == 'macos' && steps.mac_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: Quill-macOS-universal
