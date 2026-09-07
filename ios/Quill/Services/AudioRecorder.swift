@@ -42,15 +42,17 @@ import QuillCore
         guard !isRecording, Self.permission == .granted else { throw QuillError.audio }
         try AppFiles.prepare()
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
-        try session.setPreferredSampleRate(16_000)
-        try session.setActive(true)
-        // Match Android handset-microphone capture; the hardware input can run at another rate,
-        // but AVAudioRecorder converts the written PCM stream to provider-compatible 16 kHz mono.
-        if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) { try session.setPreferredInput(builtIn) }
         let path = AppFiles.audio.appendingPathComponent(UUID().uuidString + ".wav")
+        var attemptedRecorder: AVAudioRecorder?
         do {
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
+            try session.setPreferredSampleRate(16_000)
+            try session.setActive(true)
+            // Match Android handset-microphone capture; the hardware input can run at another rate,
+            // but AVAudioRecorder converts the written PCM stream to provider-compatible 16 kHz mono.
+            if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) { try session.setPreferredInput(builtIn) }
             let audio = try AVAudioRecorder(url: path, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 16_000, AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false])
+            attemptedRecorder = audio
             audio.delegate = self; audio.isMeteringEnabled = true
             guard audio.prepareToRecord(), audio.record() else { throw QuillError.audio }
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUnlessOpen], ofItemAtPath: path.path)
@@ -58,6 +60,7 @@ import QuillCore
             cap = Double(capSeconds); testMode = microphoneTest; startedAt = ProcessInfo.processInfo.systemUptime; isRecording = true
             timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick() } }
         } catch {
+            attemptedRecorder?.stop()
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
             try? FileManager.default.removeItem(at: path)
             throw QuillError.audio
@@ -83,5 +86,11 @@ import QuillCore
         return url
     }
     func cancel() { if let url = stop() { try? FileManager.default.removeItem(at: url) } }
-    nonisolated func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) { Task { @MainActor [weak self] in self?.onInterruption?() } }
+    nonisolated func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {
+        let failedFile = recorder.url
+        Task { @MainActor [weak self] in
+            guard let self, self.isRecording, self.fileURL == failedFile else { return }
+            self.onInterruption?()
+        }
+    }
 }

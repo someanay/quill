@@ -128,7 +128,7 @@ struct KeyboardHelpView: View {
     @State private var testText = ""
     var body: some View {
         QPage {
-            QHeading(title: model.c("ios.keyboard.setup_title"))
+            QHeading(title: model.c("ios.keyboard.setup_title")).accessibilityIdentifier("screen.keyboard")
             Text(model.c("ios.keyboard.setup_steps"))
             QBanner(title: model.c("ios.keyboard.full_access_title"), text: model.c("ios.keyboard.full_access_body"), icon: "lock.shield")
             QButton(title: model.c("ios.settings.open")) { openSettings() }

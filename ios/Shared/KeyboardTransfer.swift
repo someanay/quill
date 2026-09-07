@@ -21,6 +21,10 @@ enum KeyboardTransfer {
 /// and stale-transfer handling in an isolated folder without touching a user's pending transfer.
 struct CoordinatedHandoffStore {
     let url: URL
+    private let writeFile: (Data, URL, Data.WritingOptions) throws -> Void
+    init(url: URL, writeFile: @escaping (Data, URL, Data.WritingOptions) throws -> Void = { data, target, options in try data.write(to: target, options: options) }) {
+        self.url = url; self.writeFile = writeFile
+    }
     func publish(_ text: String) throws {
         let handoff = KeyboardHandoff(text: text)
         guard handoff.isValid() else { throw QuillError.noSpeech }
@@ -31,7 +35,7 @@ struct CoordinatedHandoffStore {
         var coordinationError: NSError?
         var writeError: Error?
         NSFileCoordinator(filePresenter: nil).coordinate(writingItemAt: url, options: .forReplacing, error: &coordinationError) { target in
-            do { try data.write(to: target, options: [.atomic, .completeFileProtection]) }
+            do { try writeFile(data, target, [.atomic, .completeFileProtection]) }
             catch { writeError = error }
         }
         if let coordinationError { throw coordinationError }

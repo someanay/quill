@@ -1,4 +1,5 @@
 import XCTest
+import AVFoundation
 import QuillCore
 @testable import QuillMac
 
@@ -19,6 +20,25 @@ final class NativeTests: XCTestCase {
         XCTAssertNotNil(Bundle.main.url(forResource: "ibm_plex_serif", withExtension: "ttf", subdirectory: "fonts"))
     }
     func testNoRemoteCopyURL() { XCTAssertFalse(Copy.catalog.strings.keys.contains("copy.remote_url")) }
+    func testNativeAudioConverterResamplesStereoToProviderPCM() throws {
+        let inputFormat = try XCTUnwrap(AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 48000, channels: 2, interleaved: false))
+        let outputFormat = try XCTUnwrap(AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true))
+        let converter = try XCTUnwrap(AVAudioConverter(from: inputFormat, to: outputFormat))
+        let input = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: inputFormat, frameCapacity: 48000)); input.frameLength = 48000
+        let channels = try XCTUnwrap(input.floatChannelData)
+        for index in 0..<48000 {
+            let sample = Float(sin(Double(index) * 2 * .pi * 440 / 48000) * 0.25)
+            channels[0][index] = sample; channels[1][index] = sample
+        }
+        let output = try XCTUnwrap(AudioCapture.convert(input, using: converter))
+        XCTAssertEqual(output.format.sampleRate, 16000); XCTAssertEqual(output.format.channelCount, 1)
+        XCTAssertGreaterThan(output.frameLength, 15000); XCTAssertLessThanOrEqual(output.frameLength, 16032)
+        let samples = try XCTUnwrap(output.int16ChannelData?[0])
+        let rms = sqrt((0..<Int(output.frameLength)).reduce(0.0) { $0 + pow(Double(samples[$1]), 2) } / Double(output.frameLength))
+        XCTAssertGreaterThan(rms, 5000); XCTAssertLessThan(rms, 6500)
+        let pcm = Data(bytes: samples, count: Int(output.frameLength) * 2)
+        XCTAssertEqual(WAV.encode(pcm: pcm).count, pcm.count + 44)
+    }
     @MainActor func testDiagnosticsOnlyContainsAllowlistedState() {
         let report = Diagnostics.report()
         XCTAssertTrue(report.contains("OS:")); XCTAssertTrue(report.contains("Architecture:"))

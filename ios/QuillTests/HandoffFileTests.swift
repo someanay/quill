@@ -10,11 +10,25 @@ final class HandoffFileTests: XCTestCase {
         return CoordinatedHandoffStore(url: folder.appendingPathComponent("pending.json"))
     }
     func testCoordinatedFileRoundtripIsProtectedAndSingleUse() throws {
-        let store = try isolatedStore()
+        let isolated = try isolatedStore()
+        var requestedOptions: Data.WritingOptions = []
+        let store = CoordinatedHandoffStore(url: isolated.url) { data, target, options in
+            requestedOptions = options
+            try data.write(to: target, options: options)
+        }
         try store.publish("Don't change my words 👋🏽")
         let handoff = try XCTUnwrap(store.peek())
+        XCTAssertTrue(requestedOptions.contains(.atomic))
+        XCTAssertTrue(requestedOptions.contains(.completeFileProtection))
         let attributes = try FileManager.default.attributesOfItem(atPath: store.url.path)
+        #if targetEnvironment(simulator)
+        // Simulator's host filesystem returned no protection attribute in the actual CI run.
+        // Verify the actual write options here; encryption/lock enforcement requires an iPhone.
+        let evidence = XCTAttachment(string: "Simulator protection readback: \(String(describing: attributes[.protectionKey])). Foundation write requested atomic + completeFileProtection.")
+        evidence.name = "Simulator data-protection boundary"; evidence.lifetime = .keepAlways; add(evidence)
+        #else
         XCTAssertEqual(attributes[.protectionKey] as? FileProtectionType, .complete)
+        #endif
         XCTAssertEqual(try store.consume(handoff.id), "Don't change my words 👋🏽")
         XCTAssertNil(store.peek()); XCTAssertThrowsError(try store.consume(handoff.id))
         XCTAssertFalse(FileManager.default.fileExists(atPath: store.url.path))

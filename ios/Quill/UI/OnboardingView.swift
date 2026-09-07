@@ -80,7 +80,7 @@ struct OnboardingView: View {
     private var checklist: some View {
         VStack(alignment: .leading, spacing: 18) {
             PermissionIllustration(icon: "checkmark").frame(maxWidth: .infinity).padding(.top, 24)
-            QHeading(title: model.c("onboarding.checklist.title"))
+            QHeading(title: model.c("onboarding.checklist.title")).accessibilityIdentifier("onboarding.checklist")
             QCard {
                 VStack {
                     QRow(title: model.c("onboarding.checklist.key"), subtitle: model.c("onboarding.checklist.provider_connected", model.settings.provider.title), icon: "key.fill", value: model.c("status.done"))
@@ -93,25 +93,25 @@ struct OnboardingView: View {
             QBanner(text: model.c("ios.mic.rationale"), icon: "mic")
             QButton(title: model.microphoneGranted ? model.c("onboarding.mictest.title") : model.c("onboarding.mic.cta")) {
                 Task { if !model.microphoneGranted { await model.requestMicrophone() }; if model.microphoneGranted { model.settings.onboardingStep = 4 } }
-            }
+            }.accessibilityIdentifier("onboarding.permission")
             Button(model.c("onboarding.mic.open_settings")) { openSettings() }.frame(minHeight: 48)
         }
     }
     private var microphone: some View {
         VStack(spacing: 20) {
             PermissionIllustration(icon: "mic").padding(.top, 30)
-            QHeading(title: model.c("onboarding.mictest.title"))
+            QHeading(title: model.c("onboarding.mictest.title")).accessibilityIdentifier("onboarding.microphone")
             Text(model.c("onboarding.mictest.body")).foregroundStyle(Q.muted)
             MicTestPanel(recorder: model.recorder)
             MicTestControls(recorder: model.recorder)
             QBanner(text: model.c("ios.mic.test_private"), icon: "lock")
-            QButton(title: model.c("onboarding.mictest.cta"), secondary: true) { model.stopMicTest(); model.settings.onboardingStep = 5 }
+            QButton(title: model.c("onboarding.mictest.cta"), secondary: true) { model.stopMicTest(); model.settings.onboardingStep = 5 }.accessibilityIdentifier("onboarding.microphone.next")
         }.task { await model.startMicTest() }.onDisappear { model.stopMicTest() }
     }
     private var recordingExplainer: some View {
         VStack(alignment: .leading, spacing: 20) {
             PermissionIllustration(icon: "waveform").frame(maxWidth: .infinity).padding(.top, 24)
-            QHeading(title: model.c("ios.onboarding.record_title"))
+            QHeading(title: model.c("ios.onboarding.record_title")).accessibilityIdentifier("onboarding.record")
             Text(model.c("ios.onboarding.record_body"))
             QCard {
                 VStack(alignment: .leading, spacing: 15) {
@@ -121,28 +121,28 @@ struct OnboardingView: View {
                 }
             }
             QBanner(text: model.c("ios.onboarding.overlay_limit"))
-            QButton(title: model.c("action.continue")) { model.settings.onboardingStep = 6 }
+            QButton(title: model.c("action.continue")) { model.settings.onboardingStep = 6 }.accessibilityIdentifier("onboarding.record.next")
         }
     }
     private var keyboard: some View {
         VStack(alignment: .leading, spacing: 20) {
             PermissionIllustration(icon: "keyboard").frame(maxWidth: .infinity).padding(.top, 24)
-            QHeading(title: model.c("ios.keyboard.setup_title"))
+            QHeading(title: model.c("ios.keyboard.setup_title")).accessibilityIdentifier("onboarding.keyboard")
             Text(model.c("ios.keyboard.setup_steps"))
             QBanner(title: model.c("ios.keyboard.full_access_title"), text: model.c("ios.keyboard.full_access_body"), icon: "lock.shield")
             QButton(title: model.c("ios.settings.open")) { openSettings() }
             TextField(model.c("ios.keyboard.test_field"), text: $keyboardTestText).textFieldStyle(.roundedBorder).frame(minHeight: 48)
             QButton(title: model.c("ios.keyboard.setup_done"), secondary: true) { model.settings.keyboardSetupAcknowledged = true; model.settings.onboardingStep = 7 }
-            Button(model.c("action.not_now")) { model.settings.onboardingStep = 7 }.frame(minHeight: 48)
+            Button(model.c("action.not_now")) { model.settings.onboardingStep = 7 }.frame(minHeight: 48).accessibilityIdentifier("onboarding.keyboard.later")
         }
     }
     private var ready: some View {
         VStack(spacing: 22) {
             PermissionIllustration(icon: "checkmark").padding(.top, 45)
-            QHeading(title: model.c("onboarding.allset.title"))
+            QHeading(title: model.c("onboarding.allset.title")).accessibilityIdentifier("onboarding.ready")
             Text(model.c("ios.onboarding.ready_body")).foregroundStyle(Q.muted)
             RecordingBubble()
-            QButton(title: model.c("onboarding.allset.cta")) { model.settings.onboardingComplete = true; model.tab = 0 }
+            QButton(title: model.c("onboarding.allset.cta")) { model.settings.onboardingComplete = true; model.tab = 0 }.accessibilityIdentifier("onboarding.finish")
         }
     }
 }
@@ -193,7 +193,7 @@ struct KeyEditor: View {
                             QButton(title: model.keyValidationRunning ? model.c("onboarding.key.verifying") : model.c("onboarding.key.cta")) {
                                 let candidate = secret, chosen = provider
                                 Task { if await model.verifyAndSaveKey(provider: chosen, secret: candidate, label: label) { model.selectProvider(chosen); secret = ""; onSaved() } }
-                            }.disabled(secret.isEmpty || model.keyValidationRunning)
+                            }.disabled(secret.isEmpty || model.keyValidationRunning).accessibilityIdentifier("onboarding.key.verify")
                             if provider.consoleURL != nil {
                                 Button(model.c("onboarding.key.where_link")) { showGuide = true }.frame(minHeight: 48)
                             }

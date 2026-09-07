@@ -11,14 +11,15 @@ struct FocusSnapshot {
     let originalText: String?
     let originalRange: CFRange?
 }
-enum InsertionResult { case confirmed, unconfirmed, unavailable }
+enum InsertionResult: Equatable { case confirmed, unconfirmed, unavailable }
 
 @MainActor final class TextInjector {
+    private let access: AccessibilityAccess
+    init(access: AccessibilityAccess? = nil) { self.access = access ?? SystemAccessibilityAccess() }
     static var permitted: Bool { AXIsProcessTrusted() }
     static func requestPermission() { _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String:true] as CFDictionary) }
     private func attribute(_ element: AXUIElement, _ name: String) -> CFTypeRef? {
-        var result: CFTypeRef?
-        return AXUIElementCopyAttributeValue(element, name as CFString, &result) == .success ? result : nil
+        access.attribute(element, name)
     }
     private func string(_ element: AXUIElement, _ name: String) -> String? { attribute(element, name) as? String }
     private func range(_ element: AXUIElement) -> CFRange? {
@@ -26,37 +27,38 @@ enum InsertionResult { case confirmed, unconfirmed, unavailable }
         var range = CFRange(); guard AXValueGetValue(value as! AXValue, .cfRange, &range) else { return nil }; return range
     }
     private func isSensitive(_ element: AXUIElement) -> Bool {
-        if IsSecureEventInputEnabled() { return true }
+        if access.secureInputActive { return true }
         let subrole = string(element, kAXSubroleAttribute)?.lowercased() ?? ""
         let role = string(element, kAXRoleAttribute)?.lowercased() ?? ""
         return subrole.contains("secure") || subrole.contains("password") || role.contains("secure")
     }
     func snapshot() throws -> FocusSnapshot? {
-        guard Self.permitted else { throw QuillError.noAccessibility }
-        guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != ProcessInfo.processInfo.processIdentifier else { return nil }
-        let root = AXUIElementCreateApplication(app.processIdentifier)
-        guard let value = attribute(root, kAXFocusedUIElementAttribute), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
-        let element = value as! AXUIElement
+        guard access.permitted else { throw QuillError.noAccessibility }
+        guard let app = access.frontmostApplication(), app.process != ProcessInfo.processInfo.processIdentifier else { return nil }
+        guard let element = access.focusedElement(process: app.process) else { return nil }
         guard !isSensitive(element) else { throw QuillError.sensitiveField }
-        var selectedSettable: DarwinBoolean = false, valueSettable: DarwinBoolean = false
-        _ = AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &selectedSettable)
-        _ = AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &valueSettable)
+        let selectedSettable = access.isSettable(element, kAXSelectedTextAttribute), valueSettable = access.isSettable(element, kAXValueAttribute)
         let role = string(element, kAXRoleAttribute) ?? ""
         let text = string(element, kAXValueAttribute)
-        guard selectedSettable.boolValue || (valueSettable.boolValue && text != nil) || [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role) else { return nil }
-        return FocusSnapshot(element: element, process: app.processIdentifier, bundleID: app.bundleIdentifier, appName: app.localizedName ?? "", originalText: text, originalRange: range(element))
+        guard selectedSettable || (valueSettable && text != nil) || [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role) else { return nil }
+        return FocusSnapshot(element: element, process: app.process, bundleID: app.bundleID, appName: app.name, originalText: text, originalRange: range(element))
     }
     private func matches(_ target: FocusSnapshot) throws -> Bool {
-        guard Self.permitted else { throw QuillError.noAccessibility }
+        guard access.permitted else { throw QuillError.noAccessibility }
         guard !isSensitive(target.element) else { throw QuillError.sensitiveField }
         guard let current = try snapshot(), current.process == target.process, CFEqual(current.element, target.element) else { return false }
         if let text = target.originalText, string(target.element, kAXValueAttribute) != text { return false }
-        if let before = target.originalRange, let now = range(target.element), before.location != now.location || before.length != now.length { return false }
+        if let before = target.originalRange {
+            guard let now = range(target.element), before.location == now.location, before.length == now.length else { return false }
+        }
         return true
     }
     func insert(_ transcript: String, target: FocusSnapshot?) throws -> InsertionResult {
         guard let target else { return .unavailable }
         guard try matches(target) else { throw QuillError.focusChanged }
+        if let text = target.originalText, let range = target.originalRange {
+            guard range.location >= 0, range.length >= 0, range.location <= text.utf16.count, range.length <= text.utf16.count - range.location else { throw QuillError.focusChanged }
+        }
         let expected: String? = {
             guard let text = target.originalText, let range = target.originalRange, range.location >= 0, range.length >= 0 else { return nil }
             return InsertionComposer.compose(existing: text, transcript: transcript, selection: NSRange(location: range.location, length: range.length)).text
@@ -68,16 +70,16 @@ enum InsertionResult { case confirmed, unconfirmed, unavailable }
             guard length >= 0, range.location + length <= expected.utf16.count else { return transcript }
             return (expected as NSString).substring(with: NSRange(location: range.location, length: length))
         }()
-        if AXUIElementSetAttributeValue(target.element, kAXSelectedTextAttribute as CFString, payload as CFString) == .success {
+        if access.set(target.element, kAXSelectedTextAttribute, payload as CFString) {
             return expected != nil && string(target.element, kAXValueAttribute) == expected ? .confirmed : .unconfirmed
         }
         guard let text = target.originalText, let selection = target.originalRange, selection.location >= 0, selection.length >= 0 else { return .unavailable }
         let composed = InsertionComposer.compose(existing: text, transcript: transcript, selection: NSRange(location: selection.location, length: selection.length))
-        var settable: DarwinBoolean = false
-        guard AXUIElementIsAttributeSettable(target.element, kAXValueAttribute as CFString, &settable) == .success, settable.boolValue else { return .unavailable }
-        guard AXUIElementSetAttributeValue(target.element, kAXValueAttribute as CFString, composed.text as CFString) == .success else { return .unavailable }
+        guard access.isSettable(target.element, kAXValueAttribute) else { return .unavailable }
+        guard try matches(target) else { throw QuillError.focusChanged }
+        guard access.set(target.element, kAXValueAttribute, composed.text as CFString) else { return .unavailable }
         var caret = CFRange(location: composed.caret, length: 0)
-        if let value = AXValueCreate(.cfRange, &caret) { _ = AXUIElementSetAttributeValue(target.element, kAXSelectedTextRangeAttribute as CFString, value) }
+        if let value = AXValueCreate(.cfRange, &caret) { _ = access.set(target.element, kAXSelectedTextRangeAttribute, value) }
         return string(target.element, kAXValueAttribute) == composed.text ? .confirmed : .unconfirmed
     }
     func paste(_ transcript: String, target: FocusSnapshot?) throws -> Bool {

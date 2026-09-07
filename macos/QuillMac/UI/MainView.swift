@@ -57,7 +57,7 @@ struct HomeView: View {
                 }
                 QuillCard {
                     HStack(spacing: 14) {
-                        BubbleFace(state: .idle, diameter: 64).frame(width: 72, height: 80)
+                        BubbleFace(state: .idle, diameter: 64, dark: scheme == .dark).frame(width: 72, height: 80)
                         Toggle(isOn: Binding(get: { bubbleOn }, set: { NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = true; settings.value.bubbleVisible = $0 })) {
                             VStack(alignment: .leading, spacing: 5) { CopyText(bubbleOn ? "home.toggle.on_title" : "home.toggle.off_title").font(QuillTheme.serif(24)); HelpText(key: bubbleOn ? "home.toggle.on_sub" : "home.toggle.off_sub") }
                         }.toggleStyle(.switch)

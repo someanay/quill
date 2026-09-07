@@ -14,6 +14,16 @@ final class AudioCapture: @unchecked Sendable {
     var onAutoStop: (@Sendable () -> Void)?
     static var permitted: Bool { AVCaptureDevice.authorizationStatus(for: .audio) == .authorized }
     static func requestPermission() async -> Bool { await AVCaptureDevice.requestAccess(for: .audio) }
+    static func convert(_ buffer: AVAudioPCMBuffer, using converter: AVAudioConverter) -> AVAudioPCMBuffer? {
+        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * converter.outputFormat.sampleRate / buffer.format.sampleRate + 32)
+        guard let converted = AVAudioPCMBuffer(pcmFormat: converter.outputFormat, frameCapacity: capacity) else { return nil }
+        var supplied = false, error: NSError?
+        let status = converter.convert(to: converted, error: &error) { _, flag in
+            if supplied { flag.pointee = .noDataNow; return nil }; supplied = true; flag.pointee = .haveData; return buffer
+        }
+        guard status != .error, error == nil, converted.frameLength > 0 else { return nil }
+        return converted
+    }
     func start(cap: Int) throws {
         guard Self.permitted else { throw QuillError.noMicrophone }
         let input = engine.inputNode
@@ -22,13 +32,7 @@ final class AudioCapture: @unchecked Sendable {
         lock.lock(); pcm = Data(); detector = SilenceDetector(); started = Date(); running = true; stoppedAutomatically = false; lock.unlock()
         input.installTap(onBus: 0, bufferSize: 2048, format: source) { [weak self] buffer, _ in
             guard let self else { return }
-            let capacity = AVAudioFrameCount(Double(buffer.frameLength) * 16000 / source.sampleRate + 32)
-            guard let converted = AVAudioPCMBuffer(pcmFormat: target, frameCapacity: capacity) else { return }
-            var supplied = false, error: NSError?
-            let status = converter.convert(to: converted, error: &error) { _, flag in
-                if supplied { flag.pointee = .noDataNow; return nil }; supplied = true; flag.pointee = .haveData; return buffer
-            }
-            guard status != .error, error == nil, let samples = converted.int16ChannelData?[0], converted.frameLength > 0 else { return }
+            guard let converted = Self.convert(buffer, using: converter), let samples = converted.int16ChannelData?[0] else { return }
             let count = Int(converted.frameLength)
             let sum = (0..<count).reduce(0.0) { $0 + pow(Double(samples[$1]), 2) }, rms = sqrt(sum / Double(count))
             self.lock.lock()

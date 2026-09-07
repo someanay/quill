@@ -147,10 +147,11 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         do { if settings.value.bootRestore && settings.value.onboardingComplete { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
         catch { message = "mac.error.login" }
     }
-    func importContacts() async {
+    func importContacts() async -> Bool {
+        message = ""
         do {
             let store = CNContactStore()
-            guard try await store.requestAccess(for: .contacts) else { message = "mac.error.contacts"; return }
+            guard try await store.requestAccess(for: .contacts) else { message = "mac.error.contacts"; return false }
             let request = CNContactFetchRequest(keysToFetch: [CNContactGivenNameKey as CNKeyDescriptor, CNContactFamilyNameKey as CNKeyDescriptor])
             var names: Set<String> = []
             try store.enumerateContacts(with: request) { contact, _ in
@@ -158,7 +159,8 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
                 if !name.isEmpty { names.insert(name) }
             }
             settings.value.contactNames = ContactVocabulary.extract(names.sorted())
-        } catch { message = "mac.error.contacts" }
+            return true
+        } catch { message = "mac.error.contacts"; return false }
     }
 }
 extension Notification.Name { static let quillExplicitVisibility = Notification.Name("QuillExplicitVisibility") }

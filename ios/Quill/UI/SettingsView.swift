@@ -10,27 +10,27 @@ struct SettingsView: View {
             QCard {
                 VStack {
                     NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.row.speech_model"), icon: "waveform", value: model.settings.provider.title) }.accessibilityIdentifier("settings.speech"); Divider()
-                    NavigationLink { APIKeysView() } label: { QRow(title: model.c("settings.row.api_keys"), icon: "key", value: String(model.keys.count)) }; Divider()
-                    NavigationLink { CleanupSettingsView() } label: { QRow(title: model.c("settings.row.cleanup"), icon: "sparkles") }; Divider()
-                    NavigationLink { WritingStyleView() } label: { QRow(title: model.c("settings.row.writing_style"), icon: "textformat", value: model.c("settings.style.\(model.settings.writingStyle.rawValue)")) }; Divider()
-                    NavigationLink { CustomWordsView() } label: { QRow(title: model.c("settings.row.custom_words"), icon: "text.book.closed", value: String(model.words.count)) }; Divider()
-                    NavigationLink { ContactsView() } label: { QRow(title: model.c("settings.row.contacts_vocab"), icon: "person.crop.rectangle", value: String(model.contactNames.count)) }
+                    NavigationLink { APIKeysView() } label: { QRow(title: model.c("settings.row.api_keys"), icon: "key", value: String(model.keys.count)) }.accessibilityIdentifier("settings.keys"); Divider()
+                    NavigationLink { CleanupSettingsView() } label: { QRow(title: model.c("settings.row.cleanup"), icon: "sparkles") }.accessibilityIdentifier("settings.cleanup"); Divider()
+                    NavigationLink { WritingStyleView() } label: { QRow(title: model.c("settings.row.writing_style"), icon: "textformat", value: model.c("settings.style.\(model.settings.writingStyle.rawValue)")) }.accessibilityIdentifier("settings.style"); Divider()
+                    NavigationLink { CustomWordsView() } label: { QRow(title: model.c("settings.row.custom_words"), icon: "text.book.closed", value: String(model.words.count)) }.accessibilityIdentifier("settings.words"); Divider()
+                    NavigationLink { ContactsView() } label: { QRow(title: model.c("settings.row.contacts_vocab"), icon: "person.crop.rectangle", value: String(model.contactNames.count)) }.accessibilityIdentifier("settings.contacts")
                 }
             }
             QSection(title: model.c("settings.group.capture"))
             QCard {
                 VStack {
-                    NavigationLink { AudioSettingsView() } label: { QRow(title: model.c("settings.row.audio"), icon: "mic") }; Divider()
+                    NavigationLink { AudioSettingsView() } label: { QRow(title: model.c("settings.row.audio"), icon: "mic") }.accessibilityIdentifier("settings.audio"); Divider()
                     NavigationLink { VisualSettingsView() } label: { QRow(title: model.c("settings.row.bubble"), icon: "paintpalette") }.accessibilityIdentifier("settings.visual"); Divider()
-                    NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), icon: "keyboard") }
+                    NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), icon: "keyboard") }.accessibilityIdentifier("settings.keyboard")
                 }
             }
             QSection(title: model.c("settings.group.privacy"))
             QCard {
                 VStack {
                     NavigationLink { PrivacySettingsView() } label: { QRow(title: model.c("settings.row.privacy"), icon: "lock.shield") }.accessibilityIdentifier("settings.privacy"); Divider()
-                    NavigationLink { AdvancedSettingsView() } label: { QRow(title: model.c("settings.row.advanced"), icon: "slider.horizontal.3") }; Divider()
-                    NavigationLink { AboutView() } label: { QRow(title: model.c("settings.row.about"), icon: "info.circle") }
+                    NavigationLink { AdvancedSettingsView() } label: { QRow(title: model.c("settings.row.advanced"), icon: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced"); Divider()
+                    NavigationLink { AboutView() } label: { QRow(title: model.c("settings.row.about"), icon: "info.circle") }.accessibilityIdentifier("settings.about")
                 }
             }
         }.toolbar(.hidden, for: .navigationBar)
@@ -41,7 +41,7 @@ struct SpeechSettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.speech.title"))
+            QHeading(title: model.c("settings.speech.title")).accessibilityIdentifier("screen.speech")
             QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.provider }, set: model.selectProvider)) { ForEach(Provider.allCases) { Text($0.title).tag($0) } }.pickerStyle(.menu) }
             if model.settings.provider == .custom {
                 QField(title: model.c("settings.speech.custom_url_label"), text: $model.settings.customBaseURL)
@@ -71,7 +71,7 @@ struct ModelPickerView: View {
     private var provider: Provider { cleanup ? model.settings.effectiveCleanupProvider : model.settings.provider }
     private var selection: Binding<String> {
         Binding(get: { cleanup ? model.settings.effectiveCleanupModel : model.settings.model }, set: { value in
-            if cleanup { model.settings.cleanupProvider = model.settings.effectiveCleanupProvider; model.settings.cleanupAutomatic = false; model.settings.cleanupModel = value }
+            if cleanup { model.settings.setCleanupModel(value) }
             else { model.settings.model = value; if provider == .custom { model.settings.customModel = value } }
         })
     }
@@ -99,7 +99,7 @@ struct APIKeysView: View {
     @State private var showRemove = false
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.keys.title"))
+            QHeading(title: model.c("settings.keys.title")).accessibilityIdentifier("screen.keys")
             QBanner(text: model.c("ios.keys.security"), icon: "lock.shield")
             if !model.keys.isEmpty {
                 QSection(title: model.c("settings.keys.section"))
@@ -133,10 +133,10 @@ struct CleanupSettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.cleanup.title"))
-            QCard { Toggle(model.c("settings.cleanup.tidy_title"), isOn: $model.settings.cleanupEnabled).frame(minHeight: 48) }
+            QHeading(title: model.c("settings.cleanup.title")).accessibilityIdentifier("screen.cleanup")
+            QCard { Toggle(model.c("settings.cleanup.tidy_title"), isOn: Binding(get: { model.settings.effectiveCleanupEnabled }, set: { model.settings.setCleanupEnabled($0) })).frame(minHeight: 48) }
             QBanner(text: model.c("settings.cleanup.provider_help"), icon: "sparkles")
-            QCard { Toggle(model.c("settings.cleanup.automatic"), isOn: $model.settings.cleanupAutomatic).frame(minHeight: 48) }
+            QCard { Toggle(model.c("settings.cleanup.automatic"), isOn: Binding(get: { model.settings.cleanupAutomatic }, set: { model.settings.setCleanupAutomatic($0) })).frame(minHeight: 48) }
             Text(model.c("settings.cleanup.automatic_help")).font(Q.sans(13)).foregroundStyle(Q.muted)
             QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.effectiveCleanupProvider }, set: model.selectCleanupProvider)) { ForEach(Provider.allCases) { Text($0.title).tag($0) } }.pickerStyle(.menu) }
             ModelPickerView(cleanup: true)
@@ -159,7 +159,7 @@ struct WritingStyleView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.style.title"))
+            QHeading(title: model.c("settings.style.title")).accessibilityIdentifier("screen.style")
             Text(model.c("ios.style.body")).foregroundStyle(Q.muted)
             ForEach(WritingStyle.allCases) { style in
                 Button { model.settings.writingStyle = style } label: {
@@ -185,7 +185,7 @@ struct CustomWordsView: View {
     @State private var replacement = ""
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.words.title"))
+            QHeading(title: model.c("settings.words.title")).accessibilityIdentifier("screen.words")
             Text(model.c("settings.words.body")).foregroundStyle(Q.muted)
             QButton(title: model.c("settings.words.add"), icon: "plus") { heard = ""; replacement = ""; adding = true }
             if model.words.isEmpty { QBanner(text: model.c("settings.words.empty_title"), icon: "text.book.closed") }
@@ -220,7 +220,7 @@ struct ContactsView: View {
     @State private var clear = false
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.vocab.title"))
+            QHeading(title: model.c("settings.vocab.title")).accessibilityIdentifier("screen.contacts")
             QBanner(text: model.c("settings.vocab.body"), icon: "person.crop.rectangle")
             QButton(title: model.c(importing ? "settings.vocab.importing" : "settings.vocab.import"), icon: "person.badge.plus") { importing = true; Task { await model.importContacts(); importing = false } }.disabled(importing)
             Text(model.c("settings.vocab.imported", String(model.contactNames.count))).foregroundStyle(Q.muted)

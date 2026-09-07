@@ -62,6 +62,8 @@ public struct QuillSettings: Codable, Equatable, Sendable {
     public var cleanupAutomatic = true
     public var cleanupProvider: Provider = .groq
     public var cleanupModel = Provider.groq.defaultCleanupModel
+    // Optional for backwards-compatible decoding of an existing settings file.
+    private var rememberedCleanupModels: [String: String]?
     public var writingStyle: WritingStyle = .neutral
     public var privateMode = false
     public var historyEnabled = true
@@ -81,8 +83,35 @@ public struct QuillSettings: Codable, Equatable, Sendable {
     public mutating func selectProvider(_ value: Provider) {
         provider = value; model = value == .custom ? customModel : value.defaultModel
     }
+    public mutating func setCleanupModel(_ value: String) {
+        if cleanupAutomatic { cleanupProvider = provider }
+        cleanupAutomatic = false
+        cleanupModel = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    public mutating func setCleanupAutomatic(_ automatic: Bool) {
+        if !automatic && cleanupAutomatic {
+            cleanupProvider = provider; cleanupModel = provider.defaultCleanupModel
+        }
+        cleanupAutomatic = automatic
+        if automatic { cleanupEnabled = true }
+    }
+    public mutating func selectCleanupProvider(_ value: Provider) {
+        cleanupAutomatic = false
+        var remembered = rememberedCleanupModels ?? [:]
+        remembered[cleanupProvider.rawValue] = cleanupModel
+        cleanupProvider = value
+        cleanupModel = remembered[value.rawValue] ?? value.defaultCleanupModel
+        rememberedCleanupModels = remembered
+    }
+    public mutating func setCleanupEnabled(_ enabled: Bool) {
+        cleanupEnabled = enabled
+        if enabled && cleanupAutomatic && !provider.hasKnownFreeCleanup {
+            cleanupAutomatic = false
+            cleanupProvider = provider; cleanupModel = provider.defaultCleanupModel
+        }
+    }
     public mutating func sanitize() {
-        sessionCapSeconds = min(600, max(30, sessionCapSeconds))
+        sessionCapSeconds = min(300, max(60, sessionCapSeconds))
         if ![0, 60, 1440, 10080, 43200].contains(retentionMinutes) { retentionMinutes = 60 }
         if !["Match system", "Light", "Dark"].contains(theme) { theme = "Match system" }
         if !["Small", "Medium", "Large"].contains(bubbleSize) { bubbleSize = "Medium" }

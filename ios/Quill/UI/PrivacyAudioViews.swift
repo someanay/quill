@@ -5,14 +5,14 @@ struct AudioSettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.audio.title"))
+            QHeading(title: model.c("settings.audio.title")).accessibilityIdentifier("screen.audio")
             QSection(title: model.c("settings.audio.start_stop"))
             QCard { VStack(alignment: .leading, spacing: 12) { Text(model.c("settings.audio.trigger_value")); Text(model.c("ios.audio.trigger_help")).font(Q.sans(13)).foregroundStyle(Q.muted) } }
             QSection(title: model.c("settings.audio.max_length"))
             QCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(model.c("ios.audio.cap", String(model.settings.sessionCapSeconds)))
-                    Slider(value: Binding(get: { Double(model.settings.sessionCapSeconds) }, set: { model.settings.sessionCapSeconds = Int($0) }), in: 30...600, step: 30).accessibilityLabel(model.c("settings.audio.max_length"))
+                    Slider(value: Binding(get: { Double(model.settings.sessionCapSeconds) }, set: { model.settings.sessionCapSeconds = Int($0) }), in: 60...300, step: 60).accessibilityLabel(model.c("settings.audio.max_length"))
                 }
             }
             QCard { VStack(alignment: .leading, spacing: 8) { Text(model.c("settings.audio.silence")); Text(model.c("ios.audio.silence_detail")).font(Q.sans(13)).foregroundStyle(Q.muted) } }
@@ -29,7 +29,7 @@ struct VisualSettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.bubble.title"))
+            QHeading(title: model.c("settings.bubble.title")).accessibilityIdentifier("screen.visual")
             QCard { RecordingBubble(size: model.settings.bubbleSize == "Small" ? 56 : model.settings.bubbleSize == "Large" ? 88 : 72).frame(maxWidth: .infinity).padding(.vertical, 25) }
             QSection(title: model.c("settings.bubble.size"))
             QCard { Picker(model.c("settings.bubble.size"), selection: $model.settings.bubbleSize) { Text(model.c("ios.size.small")).tag("Small"); Text(model.c("ios.size.medium")).tag("Medium"); Text(model.c("ios.size.large")).tag("Large") }.pickerStyle(.segmented) }
@@ -45,7 +45,7 @@ struct PrivacySettingsView: View {
     @State private var clear = false
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.privacy.title"))
+            QHeading(title: model.c("settings.privacy.title")).accessibilityIdentifier("screen.privacy")
             QBanner(title: model.c("settings.privacy.banner_title"), text: model.c("ios.privacy.direct"), icon: "lock.shield")
             QCard {
                 VStack(alignment: .leading, spacing: 12) {
@@ -93,7 +93,7 @@ struct AdvancedSettingsView: View {
     @State private var clear = false
     var body: some View {
         QPage {
-            QHeading(title: model.c("settings.advanced.title"))
+            QHeading(title: model.c("settings.advanced.title")).accessibilityIdentifier("screen.advanced")
             QField(title: model.c("settings.advanced.endpoint"), text: $model.settings.customBaseURL)
             QBanner(text: model.c("ios.keys.endpoint_binding"), icon: "lock")
             QCard { VStack(alignment: .leading, spacing: 10) { Text(model.c("settings.advanced.timeout")); Text(model.c("ios.advanced.timeout_detail")).font(Q.sans(13)).foregroundStyle(Q.muted) } }
@@ -115,7 +115,7 @@ struct AboutView: View {
     var body: some View {
         QPage {
             Wordmark().padding(.vertical, 20)
-            QHeading(title: model.c("settings.row.about"))
+            QHeading(title: model.c("settings.row.about")).accessibilityIdentifier("screen.about")
             Text(model.c("ios.about.version", Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"))
             QBanner(text: model.c("ios.privacy.direct"), icon: "lock.shield")
             Text(model.c("ios.about.provider_terms")).font(Q.sans(13)).foregroundStyle(Q.muted)
@@ -144,6 +144,6 @@ struct PrivacyDetailsView: View {
 struct LicenseView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
-        QPage { QHeading(title: model.c("ios.about.licenses")); Text((Bundle.main.url(forResource: "FONT-LICENSE", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "").font(Q.sans(13)).textSelection(.enabled) }
+        QPage { QHeading(title: model.c("ios.about.licenses")); Text((Bundle.main.url(forResource: "FONT-LICENSE", withExtension: "txt").flatMap { try? String(contentsOf: $0, encoding: .utf8) }) ?? "").font(Q.sans(13)).textSelection(.enabled) }.toolbar(.visible, for: .navigationBar)
     }
 }

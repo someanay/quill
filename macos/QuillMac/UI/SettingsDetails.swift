@@ -1,5 +1,7 @@
 import SwiftUI
 import AppKit
+import Contacts
+import Combine
 import QuillCore
 
 struct StyleSettings: View {
@@ -49,7 +51,7 @@ struct WordsSettings: View {
         VStack(alignment: .leading, spacing: 16) {
             HelpText(key: "settings.words.body")
             QuillCard {
-                TextField(Copy.text("settings.words.heard_label"), text: $heard).textFieldStyle(.roundedBorder)
+                TextField(Copy.text("settings.words.heard_label"), text: $heard).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-heard")
                 HStack {
                     Button(Copy.text(capturing && dictation.state == .recording ? "mac.dictation.stop" : "settings.words.record")) {
                         if capturing && dictation.state == .recording { dictation.stop() }
@@ -57,7 +59,7 @@ struct WordsSettings: View {
                     }.disabled(dictation.state == .transcribing)
                     if capturing { InkMeter(amplitude: dictation.level, bars: 6).frame(height: 34) }
                 }
-                TextField(Copy.text("settings.words.replacement_label"), text: $replacement).textFieldStyle(.roundedBorder)
+                TextField(Copy.text("settings.words.replacement_label"), text: $replacement).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-replacement")
                 QuillButton(key: "settings.words.save") {
                     let word = CustomWord(id: editing ?? UUID(), heard: heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement: replacement.trimmingCharacters(in: .whitespacesAndNewlines))
                     if let index = settings.value.words.firstIndex(where: { $0.id == editing }) { settings.value.words[index] = word } else { settings.value.words.append(word) }
@@ -65,7 +67,7 @@ struct WordsSettings: View {
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
-                QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } } } }
+                QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
             }
         }.onDisappear { if capturing { dictation.cancel() } }
     }
@@ -76,17 +78,22 @@ struct VocabularySettings: View {
     @EnvironmentObject var dictation: Dictation
     @State private var importing = false
     @State private var clear = false
+    @State private var failed = false
+    @State private var granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized
     var body: some View {
         QuillCard {
             HelpText(key: "settings.vocab.body")
+            if !granted { Label(Copy.text("settings.vocab.permission_needed"), systemImage: "person.crop.circle.badge.exclamationmark").foregroundStyle(QuillTheme.error) }
             Text(Copy.text("settings.vocab.imported", String(settings.value.contactNames.count)))
-            QuillButton(key: importing ? "settings.vocab.importing" : settings.value.contactNames.isEmpty ? "settings.vocab.import" : "settings.vocab.reimport") { importing = true; Task { await dictation.importContacts(); importing = false } }.disabled(importing)
+            QuillButton(key: importing ? "settings.vocab.importing" : settings.value.contactNames.isEmpty ? "settings.vocab.import" : "settings.vocab.reimport") { importing = true; failed = false; Task { failed = !(await dictation.importContacts()); granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized; importing = false } }.disabled(importing)
+            if failed { HelpText(key: "mac.error.contacts").foregroundStyle(QuillTheme.error) }
             Button(Copy.text("settings.vocab.open_settings")) { SystemLinks.open("Privacy_Contacts") }
             if !settings.value.contactNames.isEmpty {
                 DisclosureGroup(Copy.text("settings.vocab.title")) { Text(settings.value.contactNames.joined(separator: ", ")).font(QuillTheme.sans(13)).textSelection(.enabled) }
                 Button(Copy.text("settings.vocab.clear"), role: .destructive) { clear = true }
             }
-        }.confirmationDialog(Copy.text("settings.vocab.clear_confirm_title"), isPresented: $clear) { Button(Copy.text("settings.vocab.clear_confirm_cta"), role: .destructive) { settings.value.contactNames = [] } } message: { CopyText("settings.vocab.clear_confirm_body") }
+        }.onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized }
+        .confirmationDialog(Copy.text("settings.vocab.clear_confirm_title"), isPresented: $clear) { Button(Copy.text("settings.vocab.clear_confirm_cta"), role: .destructive) { settings.value.contactNames = [] } } message: { CopyText("settings.vocab.clear_confirm_body") }
     }
 }
 
@@ -98,7 +105,7 @@ struct AudioSettings: View {
             HStack { CopyText("settings.audio.trigger"); Spacer(); CopyText("settings.audio.trigger_value") }
             HelpText(key: "mac.hotkey.label")
             SectionLabel(key: "settings.audio.max_length")
-            Slider(value: Binding(get: { Double(settings.value.sessionCapSeconds) }, set: { settings.value.sessionCapSeconds = Int($0) }), in: 30...300, step: 30).accessibilityLabel(Copy.text("settings.audio.max_length"))
+            Slider(value: Binding(get: { Double(settings.value.sessionCapSeconds) }, set: { settings.value.sessionCapSeconds = Int($0) }), in: 60...300, step: 60).accessibilityLabel(Copy.text("settings.audio.max_length"))
             Text(Copy.text("mac.audio.limit", String(settings.value.sessionCapSeconds)))
             HelpText(key: "mac.audio.silence")
             HelpText(key: "settings.audio.silence_banner")
@@ -131,7 +138,7 @@ struct PrivacySettings: View {
         VStack(alignment: .leading, spacing: 16) {
             QuillCard { CopyText("settings.privacy.banner_title").fontWeight(.medium); HelpText(key: "mac.privacy.body") }
             QuillCard {
-                Toggle(Copy.text("settings.privacy.private_mode"), isOn: $settings.value.privateMode).toggleStyle(.switch)
+                Toggle(Copy.text("settings.privacy.private_mode"), isOn: $settings.value.privateMode).toggleStyle(.switch).accessibilityIdentifier("privacy-private-mode")
                 HelpText(key: "settings.privacy.private_mode_sub")
                 Toggle(Copy.text("settings.privacy.history"), isOn: $settings.value.historyEnabled).toggleStyle(.switch).disabled(settings.value.privateMode)
                 Picker(Copy.text("settings.privacy.history_retention"), selection: $settings.value.historyRetentionMinutes) {
@@ -207,13 +214,15 @@ struct DiagnosticReportView: View {
     @Environment(\.dismiss) private var dismiss
     var reportText: String? = nil
     var onClose: (() -> Void)? = nil
+    @State private var saveFailed = false
     private var text: String { reportText ?? Diagnostics.report() }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             CopyText("settings.privacy.example").font(QuillTheme.serif(24))
             HelpText(key: "settings.privacy.diag_help")
             ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
-            HStack { Button(Copy.text("mac.action.close")) { onClose?(); dismiss() }; Spacer(); Button(Copy.text("mac.report.save")) { let panel = NSSavePanel(); panel.nameFieldStringValue = "Quill-diagnostic.txt"; if panel.runModal() == .OK, let url = panel.url { do { try text.write(to: url, atomically: true, encoding: .utf8); onClose?(); dismiss() } catch { } } } }
+            if saveFailed { CopyText("mac.error.storage").foregroundStyle(QuillTheme.error) }
+            HStack { Button(Copy.text("mac.action.close")) { onClose?(); dismiss() }; Spacer(); Button(Copy.text("mac.report.save")) { saveFailed = false; let panel = NSSavePanel(); panel.nameFieldStringValue = "Quill-diagnostic.txt"; if panel.runModal() == .OK, let url = panel.url { do { try text.write(to: url, atomically: true, encoding: .utf8); onClose?(); dismiss() } catch { saveFailed = true } } } }
         }.padding(28).frame(width: 570, height: 420)
     }
 }

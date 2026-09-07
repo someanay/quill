@@ -9,7 +9,7 @@ The owner superseded Android-only scope and requested complete fresh Windows, ma
 - [ ] Replace Windows draft, build/test and verify native interactions.
 - [ ] Replace macOS draft, build/test on a Mac runner and verify native interactions.
 - [ ] Replace iOS draft, build/test host and keyboard on an Apple simulator; track unavoidable OS differences.
-- [ ] Expand local Copy Studio to all four platforms and verify independent edits.
+- [x] Expand local Copy Studio to all four platforms and verify independent edits.
 - [ ] Complete failure/cancellation/privacy/key-storage and cross-app test matrices; record exact evidence and remaining hardware/account gates.
 
 

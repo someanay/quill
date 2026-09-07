@@ -1,8 +1,17 @@
 import SwiftUI
+import QuillCore
 
 @main struct QuillApp: App {
-    @StateObject private var model = AppModel()
+    @StateObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
+    init() {
+        #if DEBUG
+        let api = UITestProvider.makeIfRequested() ?? ProviderAPI()
+        #else
+        let api = ProviderAPI()
+        #endif
+        _model = StateObject(wrappedValue: AppModel(providerAPI: api))
+    }
     var body: some Scene {
         WindowGroup {
             RootView().environmentObject(model).tint(Q.brandInk)
@@ -19,6 +28,30 @@ import SwiftUI
         }
     }
 }
+
+#if DEBUG
+/// Only a debug UI-test launch can install this synthetic transport. Request construction,
+/// validation, Keychain storage and the complete production pipeline still execute normally.
+private struct UITestProvider: HTTPTransport {
+    static func makeIfRequested() -> ProviderAPI? {
+        guard AppFiles.isUITesting, ProcessInfo.processInfo.arguments.contains("--ui-provider-fixtures") else { return nil }
+        return ProviderAPI(transport: UITestProvider())
+    }
+    func send(_ request: URLRequest) async throws -> HTTPResult {
+        guard request.url?.host == "api.groq.com", request.value(forHTTPHeaderField: "Authorization") == "Bearer quill-ui-fixture" else {
+            return HTTPResult(data: Data("{}".utf8), status: 401)
+        }
+        let body: String
+        switch request.url?.path {
+        case "/openai/v1/models": body = #"{"data":[{"id":"whisper-large-v3-turbo"},{"id":"llama-3.3-70b-versatile"}]}"#
+        case "/openai/v1/audio/transcriptions": body = #"{"text":"This is a simulated provider response."}"#
+        case "/openai/v1/chat/completions": body = #"{"choices":[{"message":{"content":"This is a simulated provider response."},"finish_reason":"stop"}]}"#
+        default: return HTTPResult(data: Data("{}".utf8), status: 404)
+        }
+        return HTTPResult(data: Data(body.utf8), status: 200)
+    }
+}
+#endif
 
 struct RootView: View {
     @EnvironmentObject private var model: AppModel

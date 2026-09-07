@@ -18,7 +18,7 @@ jobs:
   apple:
     name: ${{ matrix.platform }} native build and tests
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -61,6 +61,7 @@ jobs:
             echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           fi
       - name: Build and test native app
+        id: native
         working-directory: ${{ matrix.platform }}
         env:
           PROJECT: ${{ matrix.project }}
@@ -70,13 +71,52 @@ jobs:
         run: |
           set -o pipefail
           SIGNING=(CODE_SIGNING_ALLOWED=NO)
+          TEST_FILTER=()
           if [ "$PLATFORM" = ios ]; then
             SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
+            TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
           fi
           xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
-            -resultBundlePath TestResults.xcresult "${SIGNING[@]}" \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -resultBundlePath TestResults.xcresult "${SIGNING[@]}" "${TEST_FILTER[@]}" \
             2>&1 | tee native-build.log
+      - name: Test actual iOS simulator recording
+        if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          if [ ! -d DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ]; then
+            echo 'Host app was not built; recorder verification cannot run.'
+            exit 1
+          fi
+          xcrun simctl install "$UDID" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -destination "id=$UDID" -derivedDataPath DerivedData \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -resultBundlePath RecordingResults.xcresult -only-testing:QuillTests/RecorderTests \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee recording-test.log
+      - name: Test iPad navigation and adaptive layout
+        if: success() && matrix.platform == 'ios'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          IPAD=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPad")))')
+          xcrun simctl boot "$IPAD"
+          xcrun simctl bootstatus "$IPAD" -b
+          xcrun simctl install "$IPAD" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl privacy "$IPAD" grant microphone com.tihor.quill.ios
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -destination "id=$IPAD" -derivedDataPath DerivedData \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -resultBundlePath iPadResults.xcresult -only-testing:QuillUITests \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee ipad-test.log
+          xcrun simctl shutdown "$IPAD"
       - name: Inspect iOS simulator entitlements
         if: always() && matrix.platform == 'ios'
         run: |
@@ -97,6 +137,12 @@ jobs:
           if [ -d TestResults.xcresult ]; then
             xcrun xcresulttool export attachments --path TestResults.xcresult --output-path screenshots
           fi
+          if [ -d RecordingResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path RecordingResults.xcresult --output-path recording-screenshots
+          fi
+          if [ -d iPadResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path iPadResults.xcresult --output-path ipad-screenshots
+          fi
       - name: Upload native logs and test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -106,6 +152,12 @@ jobs:
           path: |
             ${{ matrix.platform }}/native-build.log
             ${{ matrix.platform }}/TestResults.xcresult
+            ${{ matrix.platform }}/RecordingResults.xcresult
+            ${{ matrix.platform }}/recording-test.log
+            ${{ matrix.platform }}/recording-screenshots
+            ${{ matrix.platform }}/iPadResults.xcresult
+            ${{ matrix.platform }}/ipad-test.log
+            ${{ matrix.platform }}/ipad-screenshots
             ${{ matrix.platform }}/simulator.png
             ${{ matrix.platform }}/screenshots
       - name: Package iOS simulator build
@@ -122,13 +174,14 @@ jobs:
           path: ios/Quill-iOS-simulator.zip
           if-no-files-found: ignore
           retention-days: 14
-      - name: Package unsigned macOS build
+      - name: Build and package universal macOS release
         if: success() && matrix.platform == 'macos'
-        run: ditto -c -k --sequesterRsrc --keepParent macos/DerivedData/Build/Products/Debug/Quill.app macos/QuillMac-unsigned.zip
+        working-directory: macos
+        run: bash scripts/build-release.sh
       - name: Upload macOS app for verification
         if: success() && matrix.platform == 'macos'
         uses: actions/upload-artifact@v4
         with:
-          name: QuillMac-unsigned
-          path: macos/QuillMac-unsigned.zip
+          name: Quill-macOS-universal
+          path: dist/macos
           retention-days: 14

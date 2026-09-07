@@ -138,7 +138,7 @@ public struct QuillSettings: Codable, Equatable, Sendable {
         return writingStyle
     }
     public mutating func normalize() {
-        sessionCapSeconds = min(300, max(30, sessionCapSeconds))
+        sessionCapSeconds = min(300, max(60, sessionCapSeconds))
         if ![60,1440,10080,43200,0].contains(historyRetentionMinutes) { historyRetentionMinutes = 60 }
         if !["Small","Medium","Large"].contains(bubbleSize) { bubbleSize = "Medium" }
         if !["Match system","Light","Dark"].contains(appTheme) { appTheme = "Match system" }

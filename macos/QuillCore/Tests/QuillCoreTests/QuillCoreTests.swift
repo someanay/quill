@@ -20,6 +20,7 @@ final class QuillCoreTests: XCTestCase {
     func testSettingsRejectOutOfRangeValues() {
         var settings = QuillSettings(); settings.sessionCapSeconds = 600; settings.historyRetentionMinutes = -1; settings.bubbleSize = "invalid"
         settings.normalize(); XCTAssertEqual(settings.sessionCapSeconds, 300); XCTAssertEqual(settings.historyRetentionMinutes, 60); XCTAssertEqual(settings.bubbleDiameter, 56)
+        settings.sessionCapSeconds = 15; settings.normalize(); XCTAssertEqual(settings.sessionCapSeconds, 60)
     }
     func testSettingsUpgradeRetainsKnownValuesWhenNewFieldsAreAbsent() throws {
         let old = Data("{\"provider\":\"gemini\",\"privateMode\":true,\"historyRetentionMinutes\":1440,\"unknownFutureField\":123}".utf8)

@@ -80,7 +80,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     func report(_ error: Error) { errorKey = (error as? QuillError ?? .storage).copyKey }
     func selectProvider(_ provider: Provider) { settings.selectProvider(provider); modelChoices = [] }
     func selectCleanupProvider(_ provider: Provider) {
-        settings.cleanupAutomatic = false; settings.cleanupProvider = provider; settings.cleanupModel = provider.defaultCleanupModel
+        settings.selectCleanupProvider(provider)
         modelChoices = []
     }
     func verifyAndSaveKey(provider: Provider, secret: String, label: String) async -> Bool {
