@@ -1,0 +1,84 @@
+[
+  {
+    "input": "",
+    "tokens": []
+  },
+  {
+    "input": "No placeholders here",
+    "tokens": []
+  },
+  {
+    "input": "%s",
+    "tokens": [
+      "%1$s"
+    ]
+  },
+  {
+    "input": "%d",
+    "tokens": [
+      "%1$d"
+    ]
+  },
+  {
+    "input": "%1$s",
+    "tokens": [
+      "%1$s"
+    ]
+  },
+  {
+    "input": "%2$.2f",
+    "tokens": [
+      "%2$f"
+    ]
+  },
+  {
+    "input": "%1$s and %1$s again",
+    "tokens": [
+      "%1$s"
+    ]
+  },
+  {
+    "input": "%s = %d",
+    "tokens": [
+      "%1$s",
+      "%2$d"
+    ]
+  },
+  {
+    "input": "%2$s then %1$d",
+    "tokens": [
+      "%1$d",
+      "%2$s"
+    ]
+  },
+  {
+    "input": "%05.2f",
+    "tokens": [
+      "%1$f"
+    ]
+  },
+  {
+    "input": "100%%",
+    "tokens": []
+  },
+  {
+    "input": "50% off",
+    "tokens": []
+  },
+  {
+    "input": "%1$d items",
+    "tokens": [
+      "%1$d"
+    ]
+  },
+  {
+    "input": "line one%nline two",
+    "tokens": []
+  },
+  {
+    "input": "%d%% done",
+    "tokens": [
+      "%1$d"
+    ]
+  }
+]

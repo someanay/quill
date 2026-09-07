@@ -102,7 +102,7 @@ DEFAULTS = {
     "ios.privacy.private_detail": "Private mode skips new transcript history. It does not erase earlier history. A failed recording is kept locally until Retry succeeds or you discard it. Send to keyboard and Copy are explicit actions you control.",
     "ios.permission.allowed": "Allowed", "ios.permission.off": "Off",
     "ios.diagnostics.opt_in": "Allow reviewed diagnostic reports",
-    "ios.diagnostics.body": "Nothing is sent automatically. You can review and share a report containing only the app version, iOS version, microphone permission and recording state. No keys, recordings, transcripts, contacts, clipboard, provider replies or endpoint addresses are included.",
+    "ios.diagnostics.body": "Nothing is sent automatically. When enabled, Quill stores only numeric crash, hang and exception counts from iOS. You can review and share those counts with the app version, iOS version, microphone permission and recording state. No keys, recordings, transcripts, contacts, clipboard, provider replies, stack traces or endpoint addresses are included.",
     "ios.diagnostics.review": "Review diagnostic report",
     "ios.diagnostics.share": "Share this report",
     "ios.diagnostics.enable": "Enable reviewed diagnostic reports in Privacy to share this report.",
@@ -151,4 +151,5 @@ if fixture.exists():
     target = IOS / "QuillCore/Tests/QuillCoreTests/Fixtures"
     target.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(fixture, target / "cleanup.json")
+    (target / "copy-placeholders.json").write_text(json.dumps(manifest["placeholderTestVectors"], ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 print(f"Synchronized {len(strings)} bundled strings, fonts, manifests and available Android parity fixtures.")

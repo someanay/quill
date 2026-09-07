@@ -21,7 +21,7 @@ enum QuillTheme {
     static func ink(_ dark: Bool) -> Color { Color(hex: dark ? 0xE0E7F6 : 0x202522) }
     static func muted(_ dark: Bool) -> Color { Color(hex: dark ? 0xB2B9C6 : 0x5C665F) }
     static func sans(_ size: CGFloat = 14) -> Font { .custom("IBMPlexSans", size: size, relativeTo: .body) }
-    static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerif", size: size, relativeTo: .title) }
+    static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerifVar-Regular", size: size, relativeTo: .title) }
     static func registerFonts() {
         for name in ["ibm_plex_sans", "ibm_plex_serif"] {
             if let url = Bundle.main.url(forResource: name, withExtension: "ttf", subdirectory: "fonts") ?? Bundle.main.url(forResource: name, withExtension: "ttf") { CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil) }
@@ -41,7 +41,8 @@ struct BrandMark: View {
     var body: some View { Image(systemName: "pencil.tip.crop.circle.fill").font(.system(size: size * 0.62)).foregroundStyle(.white).frame(width: size, height: size).background(QuillTheme.brand.gradient, in: RoundedRectangle(cornerRadius: size * 0.24)).accessibilityHidden(true) }
 }
 struct Wordmark: View {
-    var body: some View { HStack(spacing: 10) { BrandMark(); Text("Quill").font(QuillTheme.sans(26)).fontWeight(.medium) } }
+    @Environment(\.colorScheme) private var scheme
+    var body: some View { (Text("quill") + Text(".").foregroundColor(scheme == .dark ? Color(hex: 0xB6C9FF) : QuillTheme.brand)).font(QuillTheme.sans(34)).fontWeight(.semibold).tracking(-2).accessibilityLabel("Quill") }
 }
 struct QuillCard<Content: View>: View {
     @Environment(\.colorScheme) private var scheme

@@ -22,6 +22,7 @@ targets:
       - path: QuillMac
         excludes: [Resources, "App/Info.plist", "App/QuillMac.entitlements"]
     resources:
+      - path: QuillMac/Resources/Assets.xcassets
       - path: QuillMac/Resources/copy
         type: folder
       - path: QuillMac/Resources/fonts
@@ -42,6 +43,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac
         INFOPLIST_FILE: QuillMac/App/Info.plist
         CODE_SIGN_ENTITLEMENTS: QuillMac/App/QuillMac.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
   QuillMacTests:
     type: bundle.unit-test
     platform: macOS

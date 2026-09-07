@@ -75,6 +75,13 @@ jobs:
         env:
           UDID: ${{ steps.destination.outputs.udid }}
         run: xcrun simctl io "$UDID" screenshot ios/simulator.png
+      - name: Export screenshots from native tests
+        if: always()
+        working-directory: ${{ matrix.platform }}
+        run: |
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path TestResults.xcresult --output-path screenshots
+          fi
       - name: Upload native logs and test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -85,6 +92,21 @@ jobs:
             ${{ matrix.platform }}/native-build.log
             ${{ matrix.platform }}/TestResults.xcresult
             ${{ matrix.platform }}/simulator.png
+            ${{ matrix.platform }}/screenshots
+      - name: Package iOS simulator build
+        if: always() && matrix.platform == 'ios'
+        run: |
+          if [ -d ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ]; then
+            ditto -c -k --sequesterRsrc --keepParent ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ios/Quill-iOS-simulator.zip
+          fi
+      - name: Upload iOS simulator app for verification
+        if: always() && matrix.platform == 'ios'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-iOS-simulator
+          path: ios/Quill-iOS-simulator.zip
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Package unsigned macOS build
         if: success() && matrix.platform == 'macos'
         run: ditto -c -k --sequesterRsrc --keepParent macos/DerivedData/Build/Products/Debug/Quill.app macos/QuillMac-unsigned.zip

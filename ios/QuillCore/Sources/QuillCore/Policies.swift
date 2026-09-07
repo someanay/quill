@@ -125,10 +125,78 @@ public struct CopyCatalog: Sendable {
     }
     public func text(_ key: String, _ args: String...) -> String { format(key, args: args) }
     public func format(_ key: String, args: [String]) -> String {
-        var value = strings[key] ?? key
-        for (index, arg) in args.enumerated() {
-            for kind in ["s", "d", "f"] { value = value.replacingOccurrences(of: "%\(index + 1)$\(kind)", with: arg) }
+        let value = strings[key] ?? key
+        let regex = Self.placeholderExpression
+        var implicitIndex = 0
+        var lastIndex = 0
+        var replacements: [(NSRange, String)] = []
+        let nsValue = value as NSString
+        for match in regex.matches(in: value, range: NSRange(location: 0, length: nsValue.length)) {
+            let token = nsValue.substring(with: match.range)
+            if token == "%%" { replacements.append((match.range, "%")); continue }
+            if token == "%n" { replacements.append((match.range, "\n")); continue }
+            let indexText = match.range(at: 1).location == NSNotFound ? "" : nsValue.substring(with: match.range(at: 1)).replacingOccurrences(of: "$", with: "")
+            let flags = match.range(at: 2).location == NSNotFound ? "" : nsValue.substring(with: match.range(at: 2))
+            let widthText = match.range(at: 3).location == NSNotFound ? "" : nsValue.substring(with: match.range(at: 3))
+            let precisionText = match.range(at: 4).location == NSNotFound ? "" : nsValue.substring(with: match.range(at: 4))
+            let kind = nsValue.substring(with: match.range(at: 5))
+            let index: Int
+            if flags.contains("<") { index = lastIndex }
+            else if let explicit = Int(indexText) { index = explicit - 1 }
+            else { index = implicitIndex; implicitIndex += 1 }
+            lastIndex = index
+            guard args.indices.contains(index) else { continue }
+            let argument = args[index]
+            let width = min(Int(widthText) ?? 0, 1000)
+            let precision = min(Int(precisionText) ?? 6, 100)
+            var rendered: String
+            switch kind {
+            case "s":
+                rendered = precisionText.isEmpty ? argument : String(argument.prefix(precision))
+                if width > rendered.count {
+                    let spaces = String(repeating: " ", count: width - rendered.count)
+                    rendered = flags.contains("-") ? rendered + spaces : spaces + rendered
+                }
+            case "d":
+                guard let integer = Int64(argument) else { continue }
+                rendered = String(integer)
+                if integer >= 0 { rendered = (flags.contains("+") ? "+" : flags.contains(" ") ? " " : "") + rendered }
+                rendered = Self.paddedNumber(rendered, width: width, flags: flags)
+            default:
+                guard let number = Double(argument), number.isFinite else { continue }
+                rendered = String(format: "%.\(precision)f", number)
+                if flags.contains("#") && precision == 0 { rendered += "." }
+                if number >= 0 { rendered = (flags.contains("+") ? "+" : flags.contains(" ") ? " " : "") + rendered }
+                rendered = Self.paddedNumber(rendered, width: width, flags: flags)
+            }
+            replacements.append((match.range, rendered))
         }
-        return value.replacingOccurrences(of: "%%", with: "%")
+        let output = NSMutableString(string: value)
+        for (range, replacement) in replacements.reversed() { output.replaceCharacters(in: range, with: replacement) }
+        return output as String
+    }
+    private static func paddedNumber(_ text: String, width: Int, flags: String) -> String {
+        guard width > text.count else { return text }
+        let padding = String(repeating: flags.contains("0") && !flags.contains("-") ? "0" : " ", count: width - text.count)
+        if flags.contains("-") { return text + padding }
+        if flags.contains("0"), let first = text.first, "+- ".contains(first) { return String(first) + padding + text.dropFirst() }
+        return padding + text
+    }
+    private static let placeholderExpression = try! NSRegularExpression(pattern: "%([0-9]+\\$)?([-#+ 0,(<]*)([0-9]*)(?:\\.([0-9]+))?([sdf])|%%|%n")
+    public static func placeholderSignature(_ value: String) -> [String] {
+        let ns = value as NSString
+        var index = 0, last = 0, tokens = Set<String>()
+        for match in placeholderExpression.matches(in: value, range: NSRange(location: 0, length: ns.length)) {
+            guard match.range(at: 5).location != NSNotFound else { continue }
+            let position = match.range(at: 1).location == NSNotFound ? "" : ns.substring(with: match.range(at: 1)).replacingOccurrences(of: "$", with: "")
+            let flags = ns.substring(with: match.range(at: 2))
+            let current: Int
+            if flags.contains("<") { current = last }
+            else if let explicit = Int(position) { current = explicit }
+            else { index += 1; current = index }
+            last = current
+            tokens.insert("%\(current)$" + ns.substring(with: match.range(at: 5)))
+        }
+        return tokens.sorted()
     }
 }

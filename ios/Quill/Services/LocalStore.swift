@@ -6,9 +6,10 @@ import QuillCore
 enum AppFiles {
     static let groupID = "group.com.tihor.quill.ios"
     static let isUITesting = ProcessInfo.processInfo.arguments.contains("--ui-testing")
+    static let isTestProcess = isUITesting || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     static var root: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent(isUITesting ? "QuillUITests" : "Quill", isDirectory: true)
+        return base.appendingPathComponent(isTestProcess ? "QuillTests" : "Quill", isDirectory: true)
     }
     static var audio: URL { root.appendingPathComponent("Audio", isDirectory: true) }
     static func prepare() throws {
@@ -27,9 +28,20 @@ enum AppFiles {
         guard let data = try? Data(contentsOf: root.appendingPathComponent(name)) else { return nil }
         return try? JSONDecoder().decode(type, from: data)
     }
-    static func purgeAudio() {
+    static func purgeAudio(keeping preserved: URL? = nil) {
         guard let files = try? FileManager.default.contentsOfDirectory(at: audio, includingPropertiesForKeys: nil) else { return }
-        for file in files { try? FileManager.default.removeItem(at: file) }
+        for file in files where file != preserved { try? FileManager.default.removeItem(at: file) }
+    }
+}
+
+struct PendingRecording: Codable {
+    let filename: String
+    let settings: QuillSettings
+    let words: [CustomWord]
+    let voiceSample: Bool
+    var url: URL? {
+        guard filename.hasSuffix(".wav"), UUID(uuidString: String(filename.dropLast(4))) != nil else { return nil }
+        return AppFiles.audio.appendingPathComponent(filename)
     }
 }
 
@@ -45,7 +57,7 @@ struct SavedKey: Identifiable, Codable, Equatable {
 /// API-key bytes exist only in the host app's private Keychain access group. No Keychain sharing
 /// entitlement is granted to the keyboard. Records are local to this device and never synchronize.
 @MainActor final class KeyVault {
-    private let service = "com.tihor.quill.ios.provider-keys"
+    private let service = "com.tihor.quill.ios.provider-keys" + (AppFiles.isTestProcess ? ".tests" : "")
     private(set) var keys: [SavedKey] = AppFiles.read([SavedKey].self, name: "key-index.json") ?? []
     private var selected: [String: UUID] = AppFiles.read([String: UUID].self, name: "active-keys.json") ?? [:]
     func records(_ provider: Provider) -> [SavedKey] { keys.filter { $0.provider == provider } }

@@ -51,6 +51,7 @@ windows/artifacts/
 **/DerivedData/
 **/*.xcodeproj/
 **/*.xcresult/
+**/TestResults/
 /docs/OVERNIGHT_AUDIT_2026-08-18.md
 
 # Local source-editor lock

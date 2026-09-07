@@ -331,22 +331,22 @@
     {
       "raw": "weren't",
       "cleaned": "were not",
-      "accepted": true
+      "accepted": false
     },
     {
       "raw": "were not",
       "cleaned": "weren't",
-      "accepted": true
+      "accepted": false
     },
     {
       "raw": "werent",
       "cleaned": "were not",
-      "accepted": true
+      "accepted": false
     },
     {
       "raw": "were not",
       "cleaned": "werent",
-      "accepted": true
+      "accepted": false
     },
     {
       "raw": "hasn't",

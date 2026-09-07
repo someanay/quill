@@ -113,7 +113,7 @@ struct BubbleSettings: View {
     var body: some View {
         QuillCard {
             HStack(spacing: 20) {
-                ForEach([false,true], id: \.self) { dark in VStack { BubbleFace(state: .idle, diameter: settings.value.bubbleDiameter); CopyText(dark ? "settings.bubble.preview_dark" : "settings.bubble.preview_light").font(QuillTheme.sans(12)).foregroundStyle(dark ? .white : .black) }.frame(maxWidth: .infinity).padding(18).background(dark ? Color(hex: 0x15161C) : Color(hex: 0xF0F1F6), in: RoundedRectangle(cornerRadius: 12)) }
+                ForEach([false,true], id: \.self) { dark in VStack { BubbleFace(state: .idle, diameter: settings.value.bubbleDiameter, dark: dark); CopyText(dark ? "settings.bubble.preview_dark" : "settings.bubble.preview_light").font(QuillTheme.sans(12)).foregroundStyle(dark ? .white : .black) }.frame(maxWidth: .infinity).padding(18).background(dark ? Color(hex: 0x15161C) : Color(hex: 0xF0F1F6), in: RoundedRectangle(cornerRadius: 12)) }
             }
             HelpText(key: "settings.bubble.help")
             Picker(Copy.text("settings.bubble.size"), selection: $settings.value.bubbleSize) { ForEach(["Small","Medium","Large"], id: \.self) { CopyText("mac.size.\($0.lowercased())").tag($0) } }.pickerStyle(.segmented)
@@ -204,13 +204,15 @@ struct AboutSettings: View {
 
 struct DiagnosticReportView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var text = Diagnostics.report()
+    var reportText: String? = nil
+    var onClose: (() -> Void)? = nil
+    private var text: String { reportText ?? Diagnostics.report() }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             CopyText("settings.privacy.example").font(QuillTheme.serif(24))
             HelpText(key: "settings.privacy.diag_help")
             ScrollView { Text(text).font(.system(.body, design: .monospaced)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
-            HStack { Button(Copy.text("mac.action.close")) { dismiss() }; Spacer(); Button(Copy.text("mac.report.save")) { let panel = NSSavePanel(); panel.nameFieldStringValue = "Quill-diagnostic.txt"; if panel.runModal() == .OK, let url = panel.url { try? text.write(to: url, atomically: true, encoding: .utf8) } } }
+            HStack { Button(Copy.text("mac.action.close")) { onClose?(); dismiss() }; Spacer(); Button(Copy.text("mac.report.save")) { let panel = NSSavePanel(); panel.nameFieldStringValue = "Quill-diagnostic.txt"; if panel.runModal() == .OK, let url = panel.url { do { try text.write(to: url, atomically: true, encoding: .utf8); onClose?(); dismiss() } catch { } } } }
         }.padding(28).frame(width: 570, height: 420)
     }
 }

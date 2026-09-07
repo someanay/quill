@@ -9,7 +9,7 @@ struct SettingsView: View {
             QSection(title: model.c("settings.group.dictation"))
             QCard {
                 VStack {
-                    NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.row.speech_model"), icon: "waveform", value: model.settings.provider.title) }; Divider()
+                    NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.row.speech_model"), icon: "waveform", value: model.settings.provider.title) }.accessibilityIdentifier("settings.speech"); Divider()
                     NavigationLink { APIKeysView() } label: { QRow(title: model.c("settings.row.api_keys"), icon: "key", value: String(model.keys.count)) }; Divider()
                     NavigationLink { CleanupSettingsView() } label: { QRow(title: model.c("settings.row.cleanup"), icon: "sparkles") }; Divider()
                     NavigationLink { WritingStyleView() } label: { QRow(title: model.c("settings.row.writing_style"), icon: "textformat", value: model.c("settings.style.\(model.settings.writingStyle.rawValue)")) }; Divider()
@@ -21,14 +21,14 @@ struct SettingsView: View {
             QCard {
                 VStack {
                     NavigationLink { AudioSettingsView() } label: { QRow(title: model.c("settings.row.audio"), icon: "mic") }; Divider()
-                    NavigationLink { VisualSettingsView() } label: { QRow(title: model.c("settings.row.bubble"), icon: "paintpalette") }; Divider()
+                    NavigationLink { VisualSettingsView() } label: { QRow(title: model.c("settings.row.bubble"), icon: "paintpalette") }.accessibilityIdentifier("settings.visual"); Divider()
                     NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), icon: "keyboard") }
                 }
             }
             QSection(title: model.c("settings.group.privacy"))
             QCard {
                 VStack {
-                    NavigationLink { PrivacySettingsView() } label: { QRow(title: model.c("settings.row.privacy"), icon: "lock.shield") }; Divider()
+                    NavigationLink { PrivacySettingsView() } label: { QRow(title: model.c("settings.row.privacy"), icon: "lock.shield") }.accessibilityIdentifier("settings.privacy"); Divider()
                     NavigationLink { AdvancedSettingsView() } label: { QRow(title: model.c("settings.row.advanced"), icon: "slider.horizontal.3") }; Divider()
                     NavigationLink { AboutView() } label: { QRow(title: model.c("settings.row.about"), icon: "info.circle") }
                 }
@@ -48,7 +48,7 @@ struct SpeechSettingsView: View {
                 QBanner(text: model.c("ios.keys.endpoint_binding"))
             }
             ModelPickerView(cleanup: false)
-            QSection(title: model.c("settings.speech.language"))
+            QSection(title: model.c("settings.speech.language")).accessibilityIdentifier("speech.language.section")
             QCard {
                 Picker(model.c("settings.speech.language"), selection: $model.settings.language) {
                     Text(model.c("settings.speech.lang_en")).tag("en")
@@ -61,7 +61,7 @@ struct SpeechSettingsView: View {
             QBanner(text: model.c("settings.speech.language_help"))
             if model.settings.provider == .gemini { QBanner(text: model.c("settings.speech.gemini_caveat")) }
             if !model.hasActiveKey { NavigationLink(model.c("settings.speech.key_required_cta")) { APIKeysView() }.frame(minHeight: 48) }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -122,7 +122,7 @@ struct APIKeysView: View {
             }
             QSection(title: model.c("settings.keys.add"))
             KeyEditor()
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
             .confirmationDialog(model.c("ios.keys.remove_confirm"), isPresented: $showRemove, titleVisibility: .visible) {
                 Button(model.c("settings.keys.remove"), role: .destructive) { if let removing { model.deleteKey(removing) } }
             }
@@ -151,7 +151,7 @@ struct CleanupSettingsView: View {
                     Text(model.c("ios.cleanup.example_after"))
                 }
             }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -174,7 +174,7 @@ struct WritingStyleView: View {
             QBanner(text: model.c("settings.style.words_promise"), icon: "textformat")
             QBanner(text: model.c("ios.style.app_limit"))
             if !model.settings.effectiveCleanupEnabled { QBanner(text: model.c("settings.style.needs_cleanup")) }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -197,7 +197,7 @@ struct CustomWordsView: View {
                     }
                 }
             }
-        }.navigationBarTitleDisplayMode(.inline).sheet(isPresented: $adding) {
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar).sheet(isPresented: $adding) {
             QPage {
                 QHeading(title: model.c("settings.words.add_title"))
                 QField(title: model.c("settings.words.heard_label"), text: $heard)
@@ -228,6 +228,6 @@ struct ContactsView: View {
                 QCard { LazyVStack(alignment: .leading, spacing: 12) { ForEach(model.contactNames, id: \.self) { Text($0).privacySensitive(); Divider() } } }
                 QButton(title: model.c("settings.vocab.clear"), secondary: true) { clear = true }
             }
-        }.navigationBarTitleDisplayMode(.inline).confirmationDialog(model.c("settings.vocab.clear_confirm_title"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("settings.vocab.clear_confirm_cta"), role: .destructive) { model.clearContacts() } }
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar).confirmationDialog(model.c("settings.vocab.clear_confirm_title"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("settings.vocab.clear_confirm_cta"), role: .destructive) { model.clearContacts() } }
     }
 }

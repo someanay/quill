@@ -22,13 +22,13 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     @Published var microphoneGranted = AudioRecorder.permission == .granted
     let recorder = AudioRecorder()
     let vault = KeyVault()
+    let diagnosticsCollector = DiagnosticsCollector()
     let copy: CopyCatalog
     private let providerAPI = ProviderAPI()
     private var historyStore: HistoryStore?
     private var operation: Task<Void, Never>?
     private var pruneTimer: Timer?
     private var retainedAudio: URL?
-    private var retainedUntil: Date?
     private var snapshot: QuillSettings?
     private var snapshotWords: [CustomWord] = []
     private var generation = UUID()
@@ -48,7 +48,14 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         words = AppFiles.read([CustomWord].self, name: "words.json") ?? []
         contactNames = AppFiles.read([String].self, name: "contacts.json") ?? []
         keys = vault.keys
-        AppFiles.purgeAudio(); KeyboardTransfer.prune()
+        diagnosticsCollector.onUpdate = { [weak self] in self?.objectWillChange.send() }
+        diagnosticsCollector.setEnabled(settings.crashReportingEnabled)
+        if let pending = AppFiles.read(PendingRecording.self, name: "pending-recording.json"), let url = pending.url,
+           FileManager.default.fileExists(atPath: url.path) {
+            retainedAudio = url; snapshot = pending.settings; snapshotWords = pending.words; voiceSampleMode = pending.voiceSample
+            phase = .failed; notice = copy.text("ios.recording.retry_retention")
+        }
+        AppFiles.purgeAudio(keeping: retainedAudio); KeyboardTransfer.prune()
         recorder.onAutomaticStop = { [weak self] in
             guard let self else { return }
             if self.testingMicrophone { self.stopMicTest() } else { self.stopAndTranscribe() }
@@ -60,11 +67,12 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     deinit { pruneTimer?.invalidate(); operation?.cancel() }
     func c(_ key: String, _ args: String...) -> String { copy.format(key, args: args) }
     var busy: Bool { [.recording, .transcribing, .cleaning].contains(phase) }
-    var canRetry: Bool { retainedAudio != nil && (retainedUntil ?? .distantPast) > Date() && phase == .failed }
+    var canRetry: Bool { retainedAudio != nil && phase == .failed }
     var hasActiveKey: Bool { (try? endpoint(settings.provider)).flatMap { vault.active(settings.provider, endpoint: $0) } != nil }
     func endpoint(_ provider: Provider) throws -> String { try Endpoint.normalize(provider == .custom ? settings.customBaseURL : provider.baseURL) }
     func activeKey(_ provider: Provider) -> UUID? { (try? endpoint(provider)).flatMap { vault.active(provider, endpoint: $0)?.id } }
     private func persistSettings() {
+        diagnosticsCollector.setEnabled(settings.crashReportingEnabled)
         do { try AppFiles.write(settings, name: "settings.json") }
         catch { errorKey = QuillError.storage.copyKey }
     }
@@ -129,7 +137,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func stopMicTest() { recorder.cancel(); testingMicrophone = false }
     func start(voiceSample: Bool = false) async {
-        guard !busy else { return }
+        guard !busy, !canRetry else { return }
         stopMicTest()
         if !microphoneGranted { await requestMicrophone() }
         guard microphoneGranted else { return }
@@ -140,13 +148,16 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
             snapshot = settings; snapshotWords = words; generation = UUID()
             voiceSampleMode = voiceSample
             try recorder.start(capSeconds: settings.sessionCapSeconds)
+            retainedAudio = recorder.fileURL
+            try persistPendingRecording()
             phase = .recording
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        } catch { phase = .failed; report(error) }
+        } catch { if recorder.isRecording { retainedAudio = recorder.stop() }; phase = .failed; report(error) }
     }
     func stopAndTranscribe() {
         guard phase == .recording, let file = recorder.stop() else { return }
-        retainedAudio = file; retainedUntil = Date().addingTimeInterval(600)
+        retainedAudio = file
+        do { try persistPendingRecording() } catch { report(error) }
         beginTranscription()
     }
     func retry() { guard canRetry else { return }; errorKey = nil; beginTranscription() }
@@ -157,9 +168,10 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "Finish dictation") { [weak self] in
             Task { @MainActor in self?.processingExpired() }
         }
+        let backgroundIdentifier = backgroundTask
         operation = Task { [weak self] in
             guard let self else { return }
-            defer { self.endBackgroundTask() }
+            defer { self.endBackgroundTask(backgroundIdentifier) }
             do {
                 let config = try ProviderConfiguration(provider: capture.provider, customBaseURL: capture.customBaseURL, model: capture.model, language: capture.language)
                 let key = try self.vault.secret(capture.provider, endpoint: config.endpoint)
@@ -188,23 +200,22 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
             catch {
                 guard self.generation == token else { return }
                 self.phase = .failed; self.report(error)
-                if capture.privateMode || self.settings.privateMode { self.discardRetry() }
             }
         }
     }
     private func interrupted() {
         if testingMicrophone { stopMicTest(); errorKey = QuillError.interrupted.copyKey; return }
         guard phase == .recording else { return }
-        retainedAudio = recorder.stop(); retainedUntil = Date().addingTimeInterval(600)
+        retainedAudio = recorder.stop()
+        do { try persistPendingRecording() } catch { report(error) }
         phase = .failed; errorKey = QuillError.interrupted.copyKey
-        if settings.privateMode || snapshot?.privateMode == true { discardRetry() }
     }
     private func processingExpired() {
         operation?.cancel(); generation = UUID(); phase = .failed; errorKey = QuillError.interrupted.copyKey
-        if settings.privateMode || snapshot?.privateMode == true { discardRetry() }
         endBackgroundTask()
     }
-    private func endBackgroundTask() {
+    private func endBackgroundTask(_ expected: UIBackgroundTaskIdentifier? = nil) {
+        if let expected, expected != backgroundTask { return }
         if backgroundTask != .invalid { UIApplication.shared.endBackgroundTask(backgroundTask); backgroundTask = .invalid }
     }
     func cancel() {
@@ -214,10 +225,15 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     private func discardRetry() {
         if let retainedAudio { try? FileManager.default.removeItem(at: retainedAudio) }
-        retainedAudio = nil; retainedUntil = nil
+        retainedAudio = nil
+        try? FileManager.default.removeItem(at: AppFiles.root.appendingPathComponent("pending-recording.json"))
+    }
+    private func persistPendingRecording() throws {
+        guard let url = retainedAudio, let snapshot else { return }
+        try AppFiles.write(PendingRecording(filename: url.lastPathComponent, settings: snapshot, words: snapshotWords, voiceSample: voiceSampleMode), name: "pending-recording.json")
     }
     func copyText(_ text: String) {
-        UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(60)])
+        UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
         notice = c("ios.result.copied")
     }
     func sendToKeyboard(_ text: String) {
@@ -232,7 +248,6 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         settings.privateMode = value
         if value {
             try? KeyboardTransfer.clear()
-            if phase == .failed { discardRetry() }
         }
     }
     func saveWords() { do { try AppFiles.write(words, name: "words.json") } catch { report(error) } }
@@ -261,12 +276,12 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     func clearContacts() { contactNames = []; do { try AppFiles.write(contactNames, name: "contacts.json") } catch { report(error) } }
     private func prune() {
         KeyboardTransfer.prune(); refreshHistory()
-        if let until = retainedUntil, until <= Date(), phase == .failed { discardRetry(); errorKey = QuillError.expired.copyKey }
     }
     func reset() {
         cancel()
         do {
             try vault.clear(); try KeyboardTransfer.clear(); try historyStore?.clear()
+            diagnosticsCollector.clear()
             words = []; contactNames = []; keys = []; history = []
             try AppFiles.write(words, name: "words.json"); try AppFiles.write(contactNames, name: "contacts.json")
             settings = QuillSettings(); tab = 0
@@ -275,6 +290,10 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     var diagnostics: String {
         // Only a fixed whitelist: no provider response, host field content, keys, model IDs,
         // endpoint, contact data, transcript or file paths ever enter this report.
-        "Quill iOS\nVersion: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")\niOS: \(UIDevice.current.systemVersion)\nMicrophone allowed: \(microphoneGranted)\nPhase: \(phase.rawValue)\nPrivate mode: \(settings.privateMode)"
+        var report = "Quill iOS\nVersion: \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")\niOS: \(UIDevice.current.systemVersion)\nMicrophone allowed: \(microphoneGranted)\nPhase: \(phase.rawValue)\nPrivate mode: \(settings.privateMode)"
+        if let summary = diagnosticsCollector.latest {
+            report += "\nCrash count: \(summary.crashes)\nHang count: \(summary.hangs)\nCPU exception count: \(summary.cpuExceptions)\nDisk write exception count: \(summary.diskWriteExceptions)"
+        }
+        return report
     }
 }

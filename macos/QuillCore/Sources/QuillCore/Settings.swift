@@ -92,12 +92,17 @@ public struct QuillSettings: Codable, Equatable, Sendable {
     public var effectiveCleanupModel: String { cleanupAutomatic ? provider.defaultCleanup : cleanupModel }
     public var shouldClean: Bool { cleanupEnabled && (!cleanupAutomatic || provider.freeCleanup) }
     public var shouldSaveHistory: Bool { historyEnabled && !privateMode }
-    public var bubbleDiameter: Double { bubbleSize == "Small" ? 48 : bubbleSize == "Large" ? 64 : 56 }
+    public var bubbleDiameter: Double { bubbleSize == "Small" ? 56 * 0.82 : bubbleSize == "Large" ? 56 * 1.22 : 56 }
     public mutating func selectProvider(_ next: Provider) { provider = next; speechModel = next == .custom ? customModel : next.defaultSpeech }
     public mutating func selectCleanupProvider(_ next: Provider) {
         cleanupModelSelections[cleanupProvider.rawValue] = cleanupModel
         cleanupAutomatic = false; cleanupProvider = next
         cleanupModel = cleanupModelSelections[next.rawValue] ?? next.defaultCleanup
+    }
+    public mutating func setCleanupAutomatic(_ automatic: Bool) {
+        if !automatic && cleanupAutomatic { cleanupProvider = provider; cleanupModel = provider.defaultCleanup }
+        cleanupAutomatic = automatic
+        if automatic { cleanupEnabled = true }
     }
     public mutating func setCleanupEnabled(_ enabled: Bool) {
         cleanupEnabled = enabled
@@ -127,7 +132,7 @@ public enum Endpoint {
     }
 }
 public enum QuillError: Error, Equatable, Sendable {
-    case badKey, quota, rateLimit, network, timeout, emptyTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, sensitiveField, focusChanged, cancelled, storage
+    case badKey, quota, rateLimit, network, timeout, emptyTranscript, blockedTranscript, incompleteTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, sensitiveField, focusChanged, cancelled, storage
     public var copyKey: String {
         switch self {
         case .badKey: return "mac.error.bad_key"
@@ -142,6 +147,8 @@ public enum QuillError: Error, Equatable, Sendable {
         case .sensitiveField: return "mac.error.sensitive"
         case .focusChanged: return "mac.error.focus_changed"
         case .storage: return "mac.error.storage"
+        case .blockedTranscript: return "mac.error.blocked"
+        case .incompleteTranscript: return "mac.error.incomplete"
         case .cancelled: return "mac.status.cancelled"
         default: return "mac.error.provider"
         }

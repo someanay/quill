@@ -6,6 +6,7 @@ struct MainView: View {
     @EnvironmentObject var keys: KeychainStore
     @EnvironmentObject var history: HistoryStore
     @EnvironmentObject var dictation: Dictation
+    @EnvironmentObject var crashReports: CrashReports
     @Environment(\.colorScheme) private var scheme
     @State private var tab = "home"
     var body: some View {
@@ -29,6 +30,9 @@ struct MainView: View {
         .frame(minWidth: 510, idealWidth: 600, minHeight: 620, idealHeight: 790)
         .onChange(of: settings.value.privateMode) { value in if value { dictation.cancel() } }
         .onChange(of: settings.value.bootRestore) { _ in dictation.configureLogin() }
+        .sheet(isPresented: Binding(get: { crashReports.pendingReport != nil }, set: { if !$0 { crashReports.discard() } })) {
+            DiagnosticReportView(reportText: crashReports.pendingReport, onClose: { crashReports.discard() })
+        }
     }
     private func nav(_ id: String, icon: String) -> some View {
         Button { tab = id } label: {
@@ -50,7 +54,7 @@ struct HomeView: View {
                     QuillCard { Label(Copy.text("home.banner.a11y_off_text"), systemImage: "exclamationmark.shield").foregroundStyle(QuillTheme.error); Button(Copy.text("onboarding.accessibility.enable_cta")) { SystemLinks.open("Privacy_Accessibility") } }
                 }
                 QuillCard {
-                    Toggle(isOn: Binding(get: { settings.value.bubbleActive && settings.value.bubbleVisible }, set: { settings.value.bubbleActive = true; settings.value.bubbleVisible = $0 })) {
+                    Toggle(isOn: Binding(get: { settings.value.bubbleActive && settings.value.bubbleVisible }, set: { NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = true; settings.value.bubbleVisible = $0 })) {
                         VStack(alignment: .leading, spacing: 5) { CopyText(settings.value.bubbleVisible && settings.value.bubbleActive ? "home.toggle.on_title" : "home.toggle.off_title").font(QuillTheme.serif(24)); HelpText(key: settings.value.bubbleVisible && settings.value.bubbleActive ? "home.toggle.on_sub" : "home.toggle.off_sub") }
                     }.toggleStyle(.switch)
                     if dictation.state == .recording { InkMeter(amplitude: dictation.level); Text(formatDuration(dictation.elapsed)).monospacedDigit() }

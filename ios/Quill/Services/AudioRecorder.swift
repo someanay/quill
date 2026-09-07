@@ -18,9 +18,9 @@ import QuillCore
     private var interruptionObserver: NSObjectProtocol?
     private var routeObserver: NSObjectProtocol?
     var fileURL: URL? { recorder?.url }
-    static var permission: AVAudioSession.RecordPermission { AVAudioSession.sharedInstance().recordPermission }
+    static var permission: AVAudioApplication.recordPermission { AVAudioApplication.shared.recordPermission }
     static func requestPermission() async -> Bool {
-        await withCheckedContinuation { continuation in AVAudioSession.sharedInstance().requestRecordPermission { granted in continuation.resume(returning: granted) } }
+        await AVAudioApplication.requestRecordPermission()
     }
     override init() {
         super.init()
@@ -53,7 +53,7 @@ import QuillCore
             let audio = try AVAudioRecorder(url: path, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 16_000, AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false])
             audio.delegate = self; audio.isMeteringEnabled = true
             guard audio.prepareToRecord(), audio.record() else { throw QuillError.audio }
-            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: path.path)
+            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.completeUnlessOpen], ofItemAtPath: path.path)
             recorder = audio; detector = SilenceDetector(); elapsed = 0; amplitude = 0; warning = false
             cap = Double(capSeconds); testMode = microphoneTest; startedAt = ProcessInfo.processInfo.systemUptime; isRecording = true
             timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick() } }

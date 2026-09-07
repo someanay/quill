@@ -440,6 +440,8 @@
     "mac.error.focus_changed": "The text field changed. Your dictation is ready to copy; focus the intended field before pasting.",
     "mac.error.storage": "Quill could not save data securely. Check available storage and access to this Mac.",
     "mac.error.provider": "The provider did not return a complete transcript. Retry, or choose another model in Speech & model.",
+    "mac.error.blocked": "The provider blocked this recording and returned no transcript.",
+    "mac.error.incomplete": "The provider stopped before completing the transcript. Try a shorter recording.",
     "mac.error.login": "Quill could not update its login item. Check Login Items in System Settings.",
     "mac.error.contacts": "Quill could not read contacts. Allow Contacts access in System Settings and try again. Your previous import is kept.",
     "mac.status.cancelled": "Dictation cancelled.",

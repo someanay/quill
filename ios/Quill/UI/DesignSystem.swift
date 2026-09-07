@@ -20,15 +20,13 @@ enum Q {
     static let danger = adaptive(0xD6453D, 0xE8635B)
     static let success = adaptive(0x2E9E6B, 0x43B585)
     static func sans(_ size: CGFloat = 16, relativeTo style: Font.TextStyle = .body) -> Font { .custom("IBMPlexSans", size: size, relativeTo: style) }
-    static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerif", size: size, relativeTo: .title) }
+    static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerifVar-Regular", size: size, relativeTo: .title) }
 }
 
 struct Wordmark: View {
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "pencil.tip.crop.circle.fill").font(.system(size: 27)).foregroundStyle(Q.brand).accessibilityHidden(true)
-            Text("Quill").font(Q.sans(27, relativeTo: .title)).fontWeight(.medium).foregroundStyle(Q.ink)
-        }.accessibilityElement(children: .combine)
+        (Text("quill").foregroundStyle(Q.ink) + Text(".").foregroundStyle(Q.brand))
+            .font(Q.sans(34, relativeTo: .title)).fontWeight(.semibold).tracking(-2).accessibilityLabel("Quill")
     }
 }
 

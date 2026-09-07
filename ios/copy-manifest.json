@@ -3140,7 +3140,7 @@
       "optionalBlank": false
     },
     "ios.diagnostics.body": {
-      "default": "Nothing is sent automatically. You can review and share a report containing only the app version, iOS version, microphone permission and recording state. No keys, recordings, transcripts, contacts, clipboard, provider replies or endpoint addresses are included.",
+      "default": "Nothing is sent automatically. When enabled, Quill stores only numeric crash, hang and exception counts from iOS. You can review and share those counts with the app version, iOS version, microphone permission and recording state. No keys, recordings, transcripts, contacts, clipboard, provider replies, stack traces or endpoint addresses are included.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

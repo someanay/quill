@@ -13,6 +13,7 @@ import QuillCore
     let keys = KeychainStore()
     let history = HistoryStore()
     lazy var dictation = Dictation(settings: settings, keys: keys, history: history)
+    lazy var crashReports = CrashReports(settings: settings)
     private var mainWindow: NSWindow?
     private var bubble: BubbleController?
     private var statusItem: NSStatusItem?
@@ -22,7 +23,10 @@ import QuillCore
         QuillTheme.registerFonts()
         NSApp.setActivationPolicy(.regular)
         if AppPaths.testMode { settings.value = QuillSettings(); history.clear() }
-        let root = MainView().environmentObject(settings).environmentObject(keys).environmentObject(history).environmentObject(dictation)
+        #if DEBUG
+        if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-settings") { settings.value.onboardingComplete = true }
+        #endif
+        let root = MainView().environmentObject(settings).environmentObject(keys).environmentObject(history).environmentObject(dictation).environmentObject(crashReports)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 610, height: 790), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
         window.title = "Quill"; window.identifier = NSUserInterfaceItemIdentifier("QuillMain"); window.contentView = NSHostingView(rootView: root); window.center(); window.isReleasedWhenClosed = false; mainWindow = window
         let menu = NSMenu(); let appMenu = NSMenu(); let item = NSMenuItem(); item.submenu = appMenu; menu.addItem(item)
@@ -42,10 +46,10 @@ import QuillCore
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showMain(); return true }
-    func applicationWillTerminate(_ notification: Notification) { dictation.cancel() }
+    func applicationWillTerminate(_ notification: Notification) { dictation.cancel(); crashReports.finish() }
     @objc func showMain() { mainWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     @objc private func toggleRecording() { dictation.toggle() }
-    @objc private func toggleBubble() { settings.value.bubbleActive = true; settings.value.bubbleVisible.toggle() }
+    @objc private func toggleBubble() { NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = true; settings.value.bubbleVisible.toggle() }
     @objc private func cancelRecording() { dictation.cancel() }
     @objc private func willSleep() { dictation.cancel() }
     @objc private func didWake() { dictation.refreshPermissions(); bubble?.refresh() }

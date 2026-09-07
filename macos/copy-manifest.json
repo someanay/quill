@@ -1,5 +1,89 @@
 {
   "revision": 14,
+  "placeholderTestVectors": [
+    {
+      "input": "",
+      "tokens": []
+    },
+    {
+      "input": "No placeholders here",
+      "tokens": []
+    },
+    {
+      "input": "%s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%d",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "%1$s",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%2$.2f",
+      "tokens": [
+        "%2$f"
+      ]
+    },
+    {
+      "input": "%1$s and %1$s again",
+      "tokens": [
+        "%1$s"
+      ]
+    },
+    {
+      "input": "%s = %d",
+      "tokens": [
+        "%1$s",
+        "%2$d"
+      ]
+    },
+    {
+      "input": "%2$s then %1$d",
+      "tokens": [
+        "%1$d",
+        "%2$s"
+      ]
+    },
+    {
+      "input": "%05.2f",
+      "tokens": [
+        "%1$f"
+      ]
+    },
+    {
+      "input": "100%%",
+      "tokens": []
+    },
+    {
+      "input": "50% off",
+      "tokens": []
+    },
+    {
+      "input": "%1$d items",
+      "tokens": [
+        "%1$d"
+      ]
+    },
+    {
+      "input": "line one%nline two",
+      "tokens": []
+    },
+    {
+      "input": "%d%% done",
+      "tokens": [
+        "%1$d"
+      ]
+    }
+  ],
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -623,6 +707,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "mac.error.blocked": {
+      "default": "The provider blocked this recording and returned no transcript.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "mac.error.contacts": {
       "default": "Quill could not read contacts. Allow Contacts access in System Settings and try again. Your previous import is kept.",
       "placeholders": [],
@@ -637,6 +727,12 @@
     },
     "mac.error.focus_changed": {
       "default": "The text field changed. Your dictation is ready to copy; focus the intended field before pasting.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.error.incomplete": {
+      "default": "The provider stopped before completing the transcript. Try a shorter recording.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

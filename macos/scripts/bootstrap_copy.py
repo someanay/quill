@@ -21,6 +21,8 @@ catalog['strings'].update({
     'mac.error.focus_changed': 'The text field changed. Your dictation is ready to copy; focus the intended field before pasting.',
     'mac.error.storage': 'Quill could not save data securely. Check available storage and access to this Mac.',
     'mac.error.provider': 'The provider did not return a complete transcript. Retry, or choose another model in Speech & model.',
+    'mac.error.blocked': 'The provider blocked this recording and returned no transcript.',
+    'mac.error.incomplete': 'The provider stopped before completing the transcript. Try a shorter recording.',
     'mac.error.login': 'Quill could not update its login item. Check Login Items in System Settings.',
     'mac.error.contacts': 'Quill could not read contacts. Allow Contacts access in System Settings and try again. Your previous import is kept.',
     'mac.status.cancelled': 'Dictation cancelled.',
@@ -84,6 +86,7 @@ catalog['strings']['settings.privacy.history_sub'] = 'Kept on this Mac, then aut
 catalog['strings']['settings.advanced.keepalive_sub'] = catalog['strings']['mac.login.help']
 path = root / 'macos/QuillMac/Resources/copy/strings.default.json'
 path.write_text(json.dumps(catalog, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
-manifest = {'revision': catalog['revision'], 'keys': {key: {'default': value, 'placeholders': re.findall(r'%(?:\d+\$)?[sdif]', value), 'overridable': True, 'optionalBlank': False} for key,value in sorted(catalog['strings'].items())}}
+android_manifest = json.loads((root / 'copy-manifest.json').read_text(encoding='utf-8'))
+manifest = {'revision': catalog['revision'], 'placeholderTestVectors': android_manifest['placeholderTestVectors'], 'keys': {key: {'default': value, 'placeholders': re.findall(r'%(?:\d+\$)?[sdif]', value), 'overridable': True, 'optionalBlank': False} for key,value in sorted(catalog['strings'].items())}}
 (root / 'macos/copy-manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
 print(f'Bootstrapped {len(catalog["strings"])} macOS copy keys')

@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Contacts
+import AVFoundation
 import ServiceManagement
 import QuillCore
 
@@ -26,8 +27,11 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     private var recordingSettings: QuillSettings?
     private var target: FocusSnapshot?
     private var pendingAudio: Data?
+    private var clipboardTarget = false
     private var generation = UUID()
     private var permissionTimer: Timer?
+    private var lastHistoryRefresh = Date.distantPast
+    private var audioRouteObserver: NSObjectProtocol?
     var onWordCaptured: ((String) -> Void)?
     init(settings: SettingsStore, keys: KeychainStore, history: HistoryStore) {
         self.settings = settings; self.keys = keys; self.history = history
@@ -38,12 +42,17 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         } }
         audio.onAutoStop = { [weak self] in Task { @MainActor in guard let self else { return }; if self.microphoneTest { self.stopMicTest() } else { self.stop() } } }
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in Task { @MainActor in self?.refreshPermissions() } }
+        audioRouteObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in
+            guard let self else { return }
+            if self.state == .recording { self.stop() }
+            else if self.microphoneTest { self.stopMicTest() }
+        } }
     }
     func refreshPermissions() {
         microphoneGranted = AudioCapture.permitted; accessibilityGranted = TextInjector.permitted
         if accessibilityGranted && !settings.value.accessibilityEnabledOnce { settings.value.accessibilityEnabledOnce = true }
         if state == .recording && !microphoneGranted { cancel(); message = "mac.error.microphone" }
-        history.refresh(settings: settings.value)
+        if Date().timeIntervalSince(lastHistoryRefresh) >= 60 { history.refresh(settings: settings.value); lastHistoryRefresh = Date() }
     }
     func toggle() { if state == .recording { stop() } else if state == .paste { paste() } else if state == .idle || state == .error { start() } }
     func start(wordCapture: Bool = false, toClipboard: Bool = false) {
@@ -57,6 +66,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
             if snapshot.provider == .custom { _ = try Endpoint.validated(snapshot.customBaseURL) }
             let focused = wordCapture ? nil : try injector.snapshot()
             target = toClipboard ? nil : focused
+            clipboardTarget = toClipboard
             recordingSettings = snapshot; elapsed = 0; level = 0; limitWarning = false; transcript = ""; message = ""
             try audio.start(cap: wordCapture ? 30 : snapshot.sessionCapSeconds); state = .recording
         } catch { report(error) }
@@ -86,6 +96,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
                 transcript = final; pendingAudio = nil
                 if let captured = onWordCaptured { onWordCaptured = nil; captured(final); state = .idle; return }
                 history.insert(HistoryEntry(text: final, provider: snapshot.provider, appName: target?.appName ?? "", duration: elapsed), settings: settings.value)
+                if clipboardTarget { ClipboardLease.write(final); message = "mac.status.copied"; state = .idle; transcript = settings.value.privateMode ? "" : final; return }
                 do {
                     switch try injector.insert(final, target: target) {
                     case .confirmed: state = .idle
@@ -108,6 +119,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     func cancel() {
         generation = UUID(); pipeline?.cancel(); pipeline = nil; audio.cancel(); if let count = pendingAudio?.count { pendingAudio?.resetBytes(in: 0..<count) }; pendingAudio = nil
         state = .idle; level = 0; elapsed = 0; transcript = ""; target = nil; recordingSettings = nil; microphoneTest = false; onWordCaptured = nil
+        clipboardTarget = false
     }
     func startMicTest() {
         cancel(); testHeard = false
@@ -117,7 +129,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     func report(_ error: Error) { message = (error as? QuillError)?.copyKey ?? "mac.error.provider"; state = .error }
     func configureLogin() {
         guard !AppPaths.testMode else { return }
-        do { if settings.value.bootRestore { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
+        do { if settings.value.bootRestore && settings.value.onboardingComplete { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
         catch { message = "mac.error.login" }
     }
     func importContacts() async {
@@ -134,3 +146,4 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         } catch { message = "mac.error.contacts" }
     }
 }
+extension Notification.Name { static let quillExplicitVisibility = Notification.Name("QuillExplicitVisibility") }

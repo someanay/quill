@@ -122,8 +122,13 @@ public enum Prompts {
     }
     public static func stripWrapping(_ value: String) -> String {
         var result = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        if result.hasPrefix("```") { var lines = result.components(separatedBy: "\n"); lines.removeFirst(); if lines.last?.trimmingCharacters(in: .whitespaces) == "```" { lines.removeLast() }; result = lines.joined(separator: "\n") }
-        if result.lowercased().hasPrefix("transcript:") { result = String(result.dropFirst(11)) }
+        if result.hasPrefix("```") && result.hasSuffix("```") && result.count >= 6 {
+            result = String(result.dropFirst(3).dropLast(3)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let first = result.components(separatedBy: "\n").first ?? ""
+            if !first.isEmpty && !first.contains(" ") && result.contains("\n"), let newline = result.firstIndex(of: "\n") { result = String(result[result.index(after: newline)...]).trimmingCharacters(in: .whitespacesAndNewlines) }
+        }
+        let label = try! NSRegularExpression(pattern: "^(?:here(?:'s|\\s+is)\\s+(?:the\\s+)?)?transcri(?:pt|ption)\\s*:\\s*", options: .caseInsensitive)
+        result = label.stringByReplacingMatches(in: result, range: NSRange(result.startIndex..., in: result), withTemplate: "")
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

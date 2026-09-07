@@ -17,7 +17,7 @@ struct KeyEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HelpText(key: "onboarding.key.body")
-            Picker(Copy.text("settings.speech.provider"), selection: $provider) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }.pickerStyle(.segmented)
+            Picker(Copy.text("settings.speech.provider"), selection: $provider) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }.pickerStyle(.segmented).disabled(busy)
             if provider != .custom {
                 DisclosureGroup(Copy.text("onboarding.key.where_link")) {
                     VStack(alignment: .leading, spacing: 12) {

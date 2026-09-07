@@ -5,6 +5,7 @@ struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
     @State private var warning = false
     @State private var warningReady = false
+    @State private var keyboardTestText = ""
     private var step: Int { model.settings.onboardingStep }
     var body: some View {
         NavigationStack {
@@ -132,7 +133,7 @@ struct OnboardingView: View {
             Text(model.c("ios.keyboard.setup_steps"))
             QBanner(title: model.c("ios.keyboard.full_access_title"), text: model.c("ios.keyboard.full_access_body"), icon: "lock.shield")
             QButton(title: model.c("ios.settings.open")) { openSettings() }
-            TextField(model.c("ios.keyboard.test_field"), text: .constant("")).textFieldStyle(.roundedBorder).frame(minHeight: 48)
+            TextField(model.c("ios.keyboard.test_field"), text: $keyboardTestText).textFieldStyle(.roundedBorder).frame(minHeight: 48)
             QButton(title: model.c("ios.keyboard.setup_done"), secondary: true) { model.settings.keyboardSetupAcknowledged = true; model.settings.onboardingStep = 7 }
             Button(model.c("action.not_now")) { model.settings.onboardingStep = 7 }.frame(minHeight: 48)
         }

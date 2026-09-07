@@ -3,6 +3,9 @@ import hashlib
 import json
 import pathlib
 import re
+import base64
+import os
+import subprocess
 
 root = pathlib.Path(__file__).resolve().parents[1]
 source_path = root / "app/src/main/java/com/tihor/quill/cleanup/CleanupGuard.kt"
@@ -38,8 +41,26 @@ examples = [
 ]
 contractions = dict(re.findall(r'"([^"\n]+)"\s+to\s+"([^"\n]+)"', source))
 for contraction, expansion in contractions.items():
-    examples.append((contraction, expansion, True))
-    examples.append((expansion, contraction, True))
+    examples.append((contraction, expansion, None))
+    examples.append((expansion, contraction, None))
+# Ask the actual JVM implementation, including one-pass normalization edge cases.
+classes = root / "app/build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"
+guard_class = classes / "com/tihor/quill/cleanup/CleanupGuard.class"
+if not guard_class.exists() or guard_class.stat().st_mtime < source_path.stat().st_mtime:
+    raise SystemExit("Build the current Android debug classes before exporting parity fixtures.")
+stdlib = next((pathlib.Path.home() / ".gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.2.10").glob("*/*.jar"))
+encoded = "\n".join("\t".join(base64.b64encode(s.encode()).decode() for s in (raw, cleaned)) for raw, cleaned, _ in examples) + "\n"
+oracle = subprocess.run(["java", "--class-path", os.pathsep.join([str(classes), str(stdlib)]), str(root / "scripts/AndroidCleanupOracle.java")], input=encoded, text=True, capture_output=True, check=True)
+decisions = oracle.stdout.splitlines()
+if len(decisions) != len(examples) or any(value not in ("true", "false") for value in decisions):
+    raise SystemExit("Android policy oracle returned unexpected output.")
+verified = []
+for (raw, cleaned, expected), decision in zip(examples, decisions):
+    actual = decision == "true"
+    if expected is not None and expected != actual:
+        raise SystemExit(f"Android regression expectation differs for {raw!r} -> {cleaned!r}")
+    verified.append((raw, cleaned, actual))
+examples = verified
 fixture = {
     "reference": "app/src/main/java/com/tihor/quill/cleanup/CleanupGuard.kt",
     "sourceSha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),

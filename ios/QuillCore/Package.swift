@@ -5,4 +5,4 @@ let package = Package(
     name: "QuillCore",
     platforms: [.iOS(.v17), .macOS(.v13)],
     products: [.library(name: "QuillCore", targets: ["QuillCore"])],
-    targets: [.target(name: "QuillCore"), .testTarget(name: "QuillCoreTests", dependencies: ["QuillCore"])])
+    targets: [.target(name: "QuillCore"), .testTarget(name: "QuillCoreTests", dependencies: ["QuillCore"], resources: [.copy("Fixtures")])])

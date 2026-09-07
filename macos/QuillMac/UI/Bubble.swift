@@ -5,18 +5,31 @@ import Combine
 struct BubbleFace: View {
     var state: DictationState
     var diameter: Double = 56
+    var amplitude: Double = 0
+    var dark = false
     @Environment(\.accessibilityReduceMotion) private var reduced
     @State private var pulse = false
     var body: some View {
         ZStack {
             if state == .recording { Circle().fill(QuillTheme.brand.opacity(0.18)).frame(width: diameter + (pulse && !reduced ? 20 : 12), height: diameter + (pulse && !reduced ? 20 : 12)) }
-            Circle().fill((state == .error ? QuillTheme.error : state == .transcribing ? Color(hex: 0x3E5579) : QuillTheme.brand).gradient)
+            Circle().fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
                 .overlay(Circle().strokeBorder(Color.white.opacity(0.92), lineWidth: 2.5)).frame(width: diameter, height: diameter)
                 .shadow(color: .black.opacity(0.3), radius: 10, y: 6)
-            if state == .transcribing && !reduced { ProgressView().controlSize(.small).colorScheme(.dark) }
+            if state == .recording {
+                HStack(spacing: diameter * 0.065) { ForEach(0..<5, id: \.self) { index in
+                    Capsule().fill(.white).frame(width: 2.2, height: diameter * (0.16 + (reduced ? 0.25 : 0.18 + amplitude * 0.65) * (1 - abs(Double(index - 2)) * 0.2)))
+                } }
+            }
+            else if state == .transcribing && !reduced { ProgressView().controlSize(.small).colorScheme(.dark) }
             else { Image(systemName: state == .paste ? "doc.on.clipboard" : state == .error ? "exclamationmark" : state == .transcribing ? "ellipsis" : "mic.fill").font(.system(size: diameter * 0.44)).foregroundStyle(.white) }
         }.frame(width: diameter + 26, height: diameter + 26)
         .onAppear { if !reduced { withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true } } }
+    }
+    private var gradient: [Color] {
+        if state == .error { return [Color(hex: 0xD6453D), Color(hex: 0xE8635B)] }
+        if state == .transcribing { return [Color(hex: 0x3E5579), Color(hex: 0x526F9E)] }
+        if dark && state != .recording { return [Color(hex: 0x202522), Color(hex: 0x343E37)] }
+        return [Color(hex: 0x234DCE), Color(hex: 0x244FD8)]
     }
 }
 
@@ -60,13 +73,16 @@ final class BubblePanel: NSPanel {
         self.settings = settings; self.dictation = dictation
         settings.$value.sink { [weak self] _ in DispatchQueue.main.async { self?.refresh() } }.store(in: &subscriptions)
         dictation.$state.sink { [weak self] _ in DispatchQueue.main.async { self?.refresh() } }.store(in: &subscriptions)
+        dictation.$level.sink { [weak self] _ in DispatchQueue.main.async { self?.refresh() } }.store(in: &subscriptions)
+        NotificationCenter.default.publisher(for: .quillExplicitVisibility).sink { [weak self] _ in self?.hiddenByDrag = false; self?.returnTask?.cancel() }.store(in: &subscriptions)
     }
     func refresh() {
         guard !AppPaths.testMode else { return }
         if settings.value.bubbleVisible { hiddenByDrag = false; returnTask?.cancel() }
         guard settings.value.bubbleActive && settings.value.bubbleVisible else { panel?.orderOut(nil); companion?.orderOut(nil); return }
         if panel == nil { makePanel() }
-        view?.rootView = BubbleFace(state: dictation.state, diameter: settings.value.bubbleDiameter)
+        let dark = settings.value.appTheme == "Dark" || (settings.value.appTheme == "Match system" && NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
+        view?.rootView = BubbleFace(state: dictation.state, diameter: settings.value.bubbleDiameter, amplitude: dictation.level, dark: dark)
         view?.setAccessibilityLabel(Copy.text(dictation.state == .recording ? "mac.dictation.stop" : dictation.state == .paste ? "mac.dictation.paste" : "mac.dictation.start"))
         panel?.orderFrontRegardless()
         if dictation.state == .recording || dictation.state == .transcribing || dictation.state == .error || dictation.state == .paste { showCompanion() } else { companion?.orderOut(nil) }
@@ -78,7 +94,7 @@ final class BubblePanel: NSPanel {
         let view = BubbleHitView(rootView: BubbleFace(state: dictation.state, diameter: settings.value.bubbleDiameter))
         view.setAccessibilityRole(.button); view.setAccessibilityElement(true)
         view.clicked = { [weak self] in self?.dictation.toggle() }
-        view.longPressed = { [weak self] in self?.dictation.start(toClipboard: true) }
+        view.longPressed = { [weak self] in guard let self else { return }; if self.dictation.state == .recording { self.dictation.stop() } else { self.dictation.start(toClipboard: true) } }
         view.dragged = { [weak self] point in guard let self else { return }; self.panel?.setFrameOrigin(NSPoint(x: point.x - 48, y: point.y - 48)); self.positionCompanion() }
         view.dragEnded = { [weak self] in self?.finishDrag() }
         panel.contentView = view; self.panel = panel; self.view = view

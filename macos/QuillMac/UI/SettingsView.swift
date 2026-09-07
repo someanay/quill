@@ -97,7 +97,7 @@ struct SpeechSettings: View {
             }
             HelpText(key: "settings.speech.language_help")
             if settings.value.provider == .gemini { HelpText(key: "settings.speech.gemini_caveat") }
-        }
+        }.onChange(of: settings.value.speechModel) { model in if settings.value.provider == .custom { settings.value.customModel = model } }
     }
 }
 
@@ -149,9 +149,9 @@ struct CleanupSettings: View {
     @EnvironmentObject var keys: KeychainStore
     var body: some View {
         QuillCard {
-            Toggle(Copy.text("settings.cleanup.tidy_title"), isOn: Binding(get: { settings.value.cleanupEnabled }, set: { settings.value.setCleanupEnabled($0) })).toggleStyle(.switch)
+            Toggle(Copy.text("settings.cleanup.tidy_title"), isOn: Binding(get: { settings.value.shouldClean }, set: { settings.value.setCleanupEnabled($0) })).toggleStyle(.switch)
             HelpText(key: "settings.cleanup.tidy_sub")
-            Toggle(Copy.text("settings.cleanup.automatic"), isOn: $settings.value.cleanupAutomatic).toggleStyle(.switch)
+            Toggle(Copy.text("settings.cleanup.automatic"), isOn: Binding(get: { settings.value.cleanupAutomatic }, set: { settings.value.setCleanupAutomatic($0) })).toggleStyle(.switch)
             HelpText(key: "settings.cleanup.automatic_help")
             if settings.value.cleanupAutomatic {
                 Text(settings.value.provider.name + " · " + settings.value.effectiveCleanupModel).foregroundStyle(.secondary)

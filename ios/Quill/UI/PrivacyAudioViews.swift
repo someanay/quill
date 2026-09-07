@@ -21,7 +21,7 @@ struct AudioSettingsView: View {
             QCard { Text(model.c("ios.audio.format")) }
             QBanner(text: model.c("ios.audio.route"), icon: "mic")
             QButton(title: model.c("onboarding.mic.open_settings"), secondary: true) { openSettings() }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -36,7 +36,7 @@ struct VisualSettingsView: View {
             QSection(title: model.c("settings.bubble.theme"))
             QCard { Picker(model.c("settings.bubble.theme"), selection: $model.settings.theme) { Text(model.c("ios.theme.system")).tag("Match system"); Text(model.c("ios.theme.light")).tag("Light"); Text(model.c("ios.theme.dark")).tag("Dark") }.pickerStyle(.segmented) }
             QBanner(text: model.c("ios.visual.help"))
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -70,7 +70,7 @@ struct PrivacySettingsView: View {
             QCard { Toggle(model.c("ios.diagnostics.opt_in"), isOn: $model.settings.crashReportingEnabled).frame(minHeight: 48) }
             Text(model.c("ios.diagnostics.body")).font(Q.sans(13)).foregroundStyle(Q.muted)
             NavigationLink(model.c("ios.diagnostics.review")) { DiagnosticsView() }.frame(minHeight: 48)
-        }.navigationBarTitleDisplayMode(.inline).confirmationDialog(model.c("ios.history.clear_confirm"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("ios.history.clear"), role: .destructive) { model.clearHistory() } }
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar).confirmationDialog(model.c("ios.history.clear_confirm"), isPresented: $clear, titleVisibility: .visible) { Button(model.c("ios.history.clear"), role: .destructive) { model.clearHistory() } }
     }
 }
 
@@ -83,7 +83,7 @@ struct DiagnosticsView: View {
             QCard { Text(model.diagnostics).font(.system(.body, design: .monospaced)).textSelection(.enabled) }
             if model.settings.crashReportingEnabled { ShareLink(item: model.diagnostics) { Label(model.c("ios.diagnostics.share"), systemImage: "square.and.arrow.up").frame(minHeight: 48) } }
             else { Text(model.c("ios.diagnostics.enable")).foregroundStyle(Q.muted) }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 
@@ -101,7 +101,7 @@ struct AdvancedSettingsView: View {
             QSection(title: model.c("settings.advanced.reset"))
             QButton(title: model.c("settings.advanced.reset_settings"), secondary: true) { reset = true }
             QButton(title: model.c("settings.advanced.clear"), icon: "trash", destructive: true) { clear = true }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
             .confirmationDialog(model.c("settings.advanced.reset_confirm_title"), isPresented: $reset, titleVisibility: .visible) {
                 Button(model.c("settings.advanced.reset_settings"), role: .destructive) { model.cancel(); var defaults = QuillSettings(); defaults.onboardingComplete = true; model.settings = defaults }
             }.confirmationDialog(model.c("settings.advanced.clear_confirm_title"), isPresented: $clear, titleVisibility: .visible) {
@@ -119,11 +119,25 @@ struct AboutView: View {
             Text(model.c("ios.about.version", Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"))
             QBanner(text: model.c("ios.privacy.direct"), icon: "lock.shield")
             Text(model.c("ios.about.provider_terms")).font(Q.sans(13)).foregroundStyle(Q.muted)
-            Link(model.c("ios.about.privacy"), destination: URL(string: "https://quill.tihor.com/privacy.html")!).frame(minHeight: 48)
-            Link(model.c("ios.about.website"), destination: URL(string: "https://quill.tihor.com")!).frame(minHeight: 48)
+            NavigationLink(model.c("ios.about.privacy")) { PrivacyDetailsView() }.frame(minHeight: 48)
             NavigationLink(model.c("ios.about.licenses")) { LicenseView() }.frame(minHeight: 48)
             NavigationLink(model.c("ios.keyboard.title")) { KeyboardHelpView() }.frame(minHeight: 48)
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+    }
+}
+
+struct PrivacyDetailsView: View {
+    @EnvironmentObject private var model: AppModel
+    var body: some View {
+        QPage {
+            QHeading(title: model.c("ios.about.privacy"))
+            Text(model.c("ios.privacy.direct"))
+            Text(model.c("ios.keys.security"))
+            Text(model.c("ios.privacy.private_detail"))
+            Text(model.c("ios.keyboard.full_access_body"))
+            Text(model.c("ios.diagnostics.body"))
+            Text(model.c("settings.vocab.body"))
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
 

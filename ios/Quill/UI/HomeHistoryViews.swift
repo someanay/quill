@@ -56,7 +56,7 @@ struct DictationControls: View {
                     if model.phase == .recording { model.stopAndTranscribe() }
                     else if !model.busy { Task { await model.start() } }
                 } label: { RecordingBubble(phase: model.phase, size: model.settings.bubbleSize == "Small" ? 56 : model.settings.bubbleSize == "Large" ? 88 : 72) }
-                    .buttonStyle(.plain).disabled(model.phase == .transcribing || model.phase == .cleaning)
+                    .buttonStyle(.plain).disabled(model.phase == .transcribing || model.phase == .cleaning || model.canRetry)
                     .accessibilityLabel(model.c(model.phase == .recording ? "ios.recording.stop" : "ios.recording.start"))
                     .accessibilityIdentifier("dictation.record")
                 Text(model.c("ios.phase.\(model.phase.rawValue)")).font(Q.sans(17)).fontWeight(.medium).accessibilityAddTraits(.updatesFrequently)
@@ -133,6 +133,6 @@ struct KeyboardHelpView: View {
             Text(model.c("ios.workflow.step1")); Text(model.c("ios.workflow.step2")); Text(model.c("ios.workflow.step3"))
             QBanner(text: model.c("ios.keyboard.sensitive_limit"))
             QButton(title: model.c("ios.transfer.clear"), secondary: true) { model.clearTransfer() }
-        }.navigationBarTitleDisplayMode(.inline)
+        }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }
