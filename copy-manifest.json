@@ -1,5 +1,5 @@
 {
-  "revision": 7,
+  "revision": 8,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -74,7 +74,7 @@
       "optionalBlank": false
     },
     "bubble.dismiss.toast": {
-      "default": "Bubble hidden — shake your phone or tap the notification to bring it back.",
+      "default": "Bubble hidden - shake your phone or tap the notification to bring it back.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -230,7 +230,7 @@
       "optionalBlank": false
     },
     "compliance.privacy.welcome_pill": {
-      "default": "Your key, your audio — nothing through our servers",
+      "default": "Your key, your audio - nothing through our servers",
       "placeholders": [],
       "overridable": false,
       "optionalBlank": false
@@ -298,7 +298,7 @@
       "optionalBlank": false
     },
     "history.empty.on_body": {
-      "default": "Once you start dictating, your transcripts show up here — saved on this phone only.",
+      "default": "Once you start dictating, your transcripts show up here - saved on this phone only.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -352,7 +352,7 @@
       "optionalBlank": false
     },
     "home.banner.a11y_off_text": {
-      "default": "Accessibility is off — tap to switch it back on.",
+      "default": "Accessibility is off - tap to switch it back on.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -430,7 +430,7 @@
       "optionalBlank": false
     },
     "home.today.last_used_sub": {
-      "default": "Not yet — tap the bubble in any app",
+      "default": "Not yet - tap the bubble in any app",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -460,7 +460,7 @@
       "optionalBlank": false
     },
     "inject.failed.text": {
-      "default": "Couldn't insert here — paste your dictation manually.",
+      "default": "Couldn't insert here - paste your dictation manually.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -484,7 +484,7 @@
       "optionalBlank": false
     },
     "inject.revoked.title": {
-      "default": "Quill was turned off — copied instead",
+      "default": "Quill was turned off - copied instead",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -598,7 +598,7 @@
       "optionalBlank": false
     },
     "notification.text.hidden": {
-      "default": "Bubble hidden — tap Show Quill to bring it back.",
+      "default": "Bubble hidden - tap Show Quill to bring it back.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -751,7 +751,7 @@
       "optionalBlank": false
     },
     "onboarding.howitworks.step1": {
-      "default": "The bubble starts listening — tap again to send.",
+      "default": "The bubble starts listening - tap again to send.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -763,7 +763,7 @@
       "optionalBlank": false
     },
     "onboarding.howitworks.step3": {
-      "default": "Text drops in at the cursor — chat, email, search, notes.",
+      "default": "Text drops in at the cursor - chat, email, search, notes.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -799,7 +799,7 @@
       "optionalBlank": false
     },
     "onboarding.key.console_body": {
-      "default": "Any of these works — pick one for quick steps to get its key. Your key stays on this device.",
+      "default": "Any of these works - pick one for quick steps to get its key. Your key stays on this device.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -823,13 +823,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.gemini_steps": {
-      "default": "1. Sign in at aistudio.google.com with your Google account.\n2. Tap Get API key, then Create API key.\n3. Copy the key and paste it into Quill.\n4. The free tier works without a card — a good way to start.",
+      "default": "1. Sign in at aistudio.google.com with your Google account.\n2. Tap Get API key, then Create API key.\n3. Copy the key and paste it into Quill.\n4. The free tier works without a card - a good way to start.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "1. Sign in at console.groq.com — Google, GitHub, or email works.\n2. Open API Keys and tap Create API Key.\n3. Give it a name (e.g. Quill) and create it.\n4. Copy the key right away — it's shown only once — then paste it into Quill.",
+      "default": "1. Sign in at console.groq.com - Google, GitHub, or email works.\n2. Open API Keys and tap Create API Key.\n3. Give it a name (e.g. Quill) and create it.\n4. Copy the key right away - it's shown only once - then paste it into Quill.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -843,13 +843,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openai_steps": {
-      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away — it's shown only once — then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
+      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away - it's shown only once - then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "1. Sign in at openrouter.ai — Google, GitHub, or email works.\n2. Open Keys and tap Create Key.\n3. Name it, create it, and copy the key — then paste it into Quill.\n4. Add a little credit, or pick a model tagged \"free\" in Quill's model list.",
+      "default": "1. Sign in at openrouter.ai - Google, GitHub, or email works.\n2. Open Keys and tap Create Key.\n3. Name it, create it, and copy the key - then paste it into Quill.\n4. Add a little credit, or pick a model tagged \"free\" in Quill's model list.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -881,13 +881,13 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "I understand — add my key",
+      "default": "I understand - add my key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.warning.free_tier": {
-      "default": "You bring the key — some providers (like Groq) have a free tier to start.",
+      "default": "You bring the key - some providers (like Groq) have a free tier to start.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -899,7 +899,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.usage": {
-      "default": "Your provider may charge for usage — Quill itself is free.",
+      "default": "Your provider may charge for usage - Quill itself is free.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -923,7 +923,7 @@
       "optionalBlank": false
     },
     "onboarding.mictest.body": {
-      "default": "Let's check your mic. Speak now — you should see the strokes move.",
+      "default": "Let's check your mic. Speak now - you should see the strokes move.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1220,7 +1220,7 @@
       "optionalBlank": false
     },
     "settings.audio.silence_banner": {
-      "default": "In very noisy places this may not trigger — the max-length limit always applies.",
+      "default": "In very noisy places this may not trigger - the max-length limit always applies.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1328,7 +1328,7 @@
       "optionalBlank": false
     },
     "settings.cleanup.groq_key": {
-      "default": "Cleanup always runs on Groq — it uses your saved Groq key, not your active provider's.",
+      "default": "Cleanup always runs on Groq - it uses your saved Groq key, not your active provider's.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1504,13 +1504,13 @@
       "optionalBlank": false
     },
     "settings.privacy.crash_sub": {
-      "default": "Only if a crash happens — you review first",
+      "default": "Only if a crash happens - you review first",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.privacy.diag_help": {
-      "default": "Reports include the error, app version and device — never your audio, text, clipboard, or key.",
+      "default": "Reports include the error, app version and device - never your audio, text, clipboard, or key.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1702,7 +1702,7 @@
       "optionalBlank": false
     },
     "settings.speech.gemini_caveat": {
-      "default": "Gemini is a chat model asked to transcribe — spoken commands may occasionally be paraphrased instead of written word-for-word.",
+      "default": "Gemini is a chat model asked to transcribe - spoken commands may occasionally be paraphrased instead of written word-for-word.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1932,7 +1932,7 @@
       "optionalBlank": false
     },
     "settings.style.intro": {
-      "default": "Match how you write in each app — more formal at work, more relaxed with friends.",
+      "default": "Match how you write in each app - more formal at work, more relaxed with friends.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1944,7 +1944,7 @@
       "optionalBlank": false
     },
     "settings.style.needs_cleanup": {
-      "default": "Writing style rides on the AI cleanup pass — turn on \"Clean up with AI\" for it to apply.",
+      "default": "Writing style rides on the AI cleanup pass - turn on \"Clean up with AI\" for it to apply.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2010,7 +2010,7 @@
       "optionalBlank": false
     },
     "settings.survival.fallback": {
-      "default": "Couldn't open it automatically on this device — open Settings ▸ Battery / App management and find Quill manually.",
+      "default": "Couldn't open it automatically on this device - open Settings ▸ Battery / App management and find Quill manually.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2274,7 +2274,7 @@
       "optionalBlank": false
     },
     "stt.quota.toast": {
-      "default": "API usage has run out — check your provider plan.",
+      "default": "API usage has run out - check your provider plan.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2286,13 +2286,13 @@
       "optionalBlank": false
     },
     "system.crash.banner": {
-      "default": "Sent through your own share sheet — you choose the app, nothing auto-uploads.",
+      "default": "Sent through your own share sheet - you choose the app, nothing auto-uploads.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "system.crash.body": {
-      "default": "Quill closed unexpectedly last time. You can send a report to help fix it — here's exactly what it contains:",
+      "default": "Quill closed unexpectedly last time. You can send a report to help fix it - here's exactly what it contains:",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2316,7 +2316,7 @@
       "optionalBlank": false
     },
     "system.recovery.banner_text": {
-      "default": "Your phone switched off Accessibility access — Quill can't insert text until it's back on.",
+      "default": "Your phone switched off Accessibility access - Quill can't insert text until it's back on.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
