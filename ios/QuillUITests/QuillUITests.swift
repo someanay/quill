@@ -4,7 +4,7 @@ final class QuillUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
         let app = XCUIApplication()
-        let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
         let hierarchy = XCTAttachment(string: app.debugDescription); hierarchy.name = "UI hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
         app.terminate()
     }
@@ -14,7 +14,9 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(element.isHittable); element.tap()
     }
     private func capture(_ app: XCUIApplication, _ name: String) {
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
+        // Capture the physical screen directly. Observed app-element landscape captures have
+        // black padding despite valid window bounds; this avoids an app-rectangle crop.
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); shot.name = name; shot.lifetime = .keepAlways; add(shot)
     }
     private func settingsTab(_ app: XCUIApplication) -> XCUIElement {
         let phoneTab = app.tabBars.buttons["Settings"]
@@ -33,6 +35,22 @@ final class QuillUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
         XCTFail("The app did not settle into a stable landscape window.")
+    }
+    private func revealLandscapeControl(_ control: XCUIElement, in app: XCUIApplication) {
+        let scroll = app.scrollViews.firstMatch
+        for _ in 0..<12 {
+            let window = app.windows.firstMatch.frame
+            let top = max(scroll.frame.minY, app.navigationBars.firstMatch.frame.maxY) + 12
+            let bottom = min(scroll.frame.maxY, app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : window.maxY) - 12
+            let frame = control.frame
+            if control.isHittable && frame.minY >= top && frame.maxY <= bottom { return }
+            // A full swipe can skip a 32-point segmented control in a short landscape viewport.
+            // Move toward its measured location, in bounded increments, including upward recovery.
+            let distance = min(100, max(-100, (top + bottom) / 2 - frame.midY))
+            let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: distance)))
+        }
+        XCTFail("Landscape control could not be scrolled fully into view: \(control.frame)")
     }
     private func openHome(arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
@@ -145,7 +163,7 @@ final class QuillUITests: XCTestCase {
         XCTAssertGreaterThan(window.width, window.height)
         XCTAssertGreaterThanOrEqual(heading.minX, window.minX); XCTAssertLessThanOrEqual(heading.maxX, window.maxX)
         let medium = app.buttons["Medium"]
-        for _ in 0..<5 { if medium.isHittable { break }; app.swipeUp() }
+        revealLandscapeControl(medium, in: app)
         XCTAssertTrue(medium.isHittable); XCTAssertTrue(window.contains(medium.frame))
         capture(app, "ios-large-text-landscape")
     }
