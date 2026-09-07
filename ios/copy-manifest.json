@@ -3330,6 +3330,18 @@
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
+    },
+    "ios.recording.cleanup_pending": {
+      "default": "The last recording data could not be fully removed. Retry cleanup before starting another dictation.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.recording.cleanup_retry": {
+      "default": "Retry recording cleanup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
     }
   },
   "placeholderTestVectors": [

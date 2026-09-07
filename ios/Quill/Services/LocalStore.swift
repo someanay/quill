@@ -44,20 +44,54 @@ enum AppFiles {
         guard let data = try? Data(contentsOf: root.appendingPathComponent(name)) else { return nil }
         return try? JSONDecoder().decode(type, from: data)
     }
-    static func purgeAudio(keeping preserved: URL? = nil) {
-        guard let files = try? FileManager.default.contentsOfDirectory(at: audio, includingPropertiesForKeys: nil) else { return }
-        for file in files where file != preserved { try? FileManager.default.removeItem(at: file) }
-    }
 }
 
 struct PendingRecording: Codable {
+    enum Disposition: String, Codable { case pending, completed, discarded }
     let filename: String
     let settings: QuillSettings
     let words: [CustomWord]
     let voiceSample: Bool
+    var disposition: Disposition = .pending
     var url: URL? {
         guard filename.hasSuffix(".wav"), UUID(uuidString: String(filename.dropLast(4))) != nil else { return nil }
         return AppFiles.audio.appendingPathComponent(filename)
+    }
+}
+
+extension PendingRecording {
+    private enum CodingKeys: String, CodingKey { case filename, settings, words, voiceSample, disposition }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        filename = try values.decode(String.self, forKey: .filename)
+        settings = try values.decode(QuillSettings.self, forKey: .settings)
+        words = try values.decode([CustomWord].self, forKey: .words)
+        voiceSample = try values.decode(Bool.self, forKey: .voiceSample)
+        disposition = try values.decodeIfPresent(Disposition.self, forKey: .disposition) ?? .pending
+    }
+}
+
+@MainActor protocol RecordingRecoveryStore: AnyObject {
+    func load() -> PendingRecording?
+    func save(_ recording: PendingRecording) throws
+    func removeAudio(at url: URL) throws
+    func removeManifest() throws
+    func audioFiles() throws -> [URL]
+}
+
+@MainActor final class FileRecordingRecoveryStore: RecordingRecoveryStore {
+    func load() -> PendingRecording? { AppFiles.read(PendingRecording.self, name: "pending-recording.json") }
+    func save(_ recording: PendingRecording) throws { try AppFiles.write(recording, name: "pending-recording.json") }
+    func removeAudio(at url: URL) throws { try removeIfPresent(url) }
+    func removeManifest() throws { try removeIfPresent(AppFiles.root.appendingPathComponent("pending-recording.json")) }
+    func audioFiles() throws -> [URL] {
+        try FileManager.default.contentsOfDirectory(at: AppFiles.audio, includingPropertiesForKeys: nil).filter {
+            $0.pathExtension == "wav" && UUID(uuidString: $0.deletingPathExtension().lastPathComponent) != nil
+        }
+    }
+    private func removeIfPresent(_ url: URL) throws {
+        do { try FileManager.default.removeItem(at: url) }
+        catch let error as CocoaError where error.code == .fileNoSuchFile { }
     }
 }
 

@@ -552,6 +552,8 @@
     "ios.error.storage": "Couldn't save data on this iPhone. Check available storage and try again.",
     "ios.error.interrupted": "Recording or processing was interrupted. Return to Quill and tap Retry for the captured audio, or Cancel to discard it.",
     "ios.error.expired": "That keyboard transfer expired. Send the transcript from Quill again.",
-    "ios.error.cancelled": "Dictation cancelled."
+    "ios.error.cancelled": "Dictation cancelled.",
+    "ios.recording.cleanup_pending": "The last recording data could not be fully removed. Retry cleanup before starting another dictation.",
+    "ios.recording.cleanup_retry": "Retry recording cleanup"
   }
 }

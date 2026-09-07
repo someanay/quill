@@ -60,4 +60,11 @@ import QuillCore
         let pending = PendingRecording(filename: "../settings.json", settings: QuillSettings(), words: [], voiceSample: false)
         XCTAssertNil(pending.url)
     }
+    func testExistingPendingRecordWithoutDispositionRemainsRetryable() throws {
+        let pending = PendingRecording(filename: UUID().uuidString + ".wav", settings: QuillSettings(), words: [], voiceSample: false)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(pending)) as? [String: Any])
+        object.removeValue(forKey: "disposition")
+        let decoded = try JSONDecoder().decode(PendingRecording.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertEqual(decoded.disposition, .pending); XCTAssertEqual(decoded.filename, pending.filename)
+    }
 }

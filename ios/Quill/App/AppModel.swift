@@ -20,11 +20,13 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     @Published var keyValidationRunning = false
     @Published var voiceWordResult = ""
     @Published var microphoneGranted = AudioRecorder.permission == .granted
+    @Published private(set) var cleanupRequired = false
     let recorder = AudioRecorder()
     let vault = KeyVault()
     let diagnosticsCollector = DiagnosticsCollector()
     let copy: CopyCatalog
     private let providerAPI: ProviderAPI
+    private let recordingStore: any RecordingRecoveryStore
     private var historyStore: (any HistoryRepository)?
     private var operation: Task<Void, Never>?
     private var pruneTimer: Timer?
@@ -36,9 +38,20 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     private var testingMicrophone = false
     private var voiceSampleMode = false
+    private var terminalRecording: PendingRecording?
+    private var orphanedAudio: [URL] = []
+    private var orphanScanFailed = false
+    private struct Completion {
+        let text: String
+        let settings: QuillSettings
+        let voiceSample: Bool
+    }
+    private var pendingCompletion: Completion?
 
-    init(providerAPI: ProviderAPI = ProviderAPI(), historyStore: (any HistoryRepository)? = nil) {
+    init(providerAPI: ProviderAPI = ProviderAPI(), historyStore: (any HistoryRepository)? = nil,
+         recordingStore: (any RecordingRecoveryStore)? = nil) {
         self.providerAPI = providerAPI
+        self.recordingStore = recordingStore ?? FileRecordingRecoveryStore()
         let bundle = Bundle.main
         let url = bundle.url(forResource: "strings.default", withExtension: "json", subdirectory: "copy") ?? bundle.url(forResource: "strings.default", withExtension: "json")
         copy = (url.flatMap { try? Data(contentsOf: $0) }.flatMap { try? CopyCatalog(data: $0) }) ?? CopyCatalog(strings: [:])
@@ -52,12 +65,24 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         keys = vault.keys
         diagnosticsCollector.onUpdate = { [weak self] in self?.objectWillChange.send() }
         diagnosticsCollector.setEnabled(settings.crashReportingEnabled)
-        if let pending = AppFiles.read(PendingRecording.self, name: "pending-recording.json"), let url = pending.url,
-           FileManager.default.fileExists(atPath: url.path) {
-            retainedAudio = url; snapshot = pending.settings; snapshotWords = pending.words; voiceSampleMode = pending.voiceSample
-            phase = .failed; notice = copy.text("ios.recording.retry_retention")
+        if let pending = self.recordingStore.load(), let url = pending.url {
+            if pending.disposition != .pending {
+                terminalRecording = pending
+                _ = cleanTerminalRecording()
+                if cleanupRequired { phase = .failed }
+            } else if FileManager.default.fileExists(atPath: url.path) {
+                retainedAudio = url; snapshot = pending.settings; snapshotWords = pending.words; voiceSampleMode = pending.voiceSample
+                phase = .failed; notice = copy.text("ios.recording.retry_retention")
+            } else {
+                // A previous deletion may have removed the audio while its manifest remained.
+                // Its captured settings/words still need explicit cleanup; it cannot be retried.
+                var terminal = pending; terminal.disposition = .discarded; terminalRecording = terminal
+                _ = cleanTerminalRecording()
+            }
         }
-        AppFiles.purgeAudio(keeping: retainedAudio); KeyboardTransfer.prune()
+        cleanOrphanedAudio()
+        if cleanupRequired { phase = .failed }
+        KeyboardTransfer.prune()
         recorder.onAutomaticStop = { [weak self] in
             guard let self else { return }
             if self.testingMicrophone { self.stopMicTest() } else { self.stopAndTranscribe() }
@@ -69,7 +94,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     deinit { pruneTimer?.invalidate(); operation?.cancel() }
     func c(_ key: String, _ args: String...) -> String { copy.format(key, args: args) }
     var busy: Bool { [.recording, .transcribing, .cleaning].contains(phase) }
-    var canRetry: Bool { retainedAudio != nil && phase == .failed }
+    var canRetry: Bool { retainedAudio != nil && terminalRecording == nil && phase == .failed }
     var hasActiveKey: Bool { (try? endpoint(settings.provider)).flatMap { vault.active(settings.provider, endpoint: $0) } != nil }
     func endpoint(_ provider: Provider) throws -> String { try Endpoint.normalize(provider == .custom ? settings.customBaseURL : provider.baseURL) }
     func activeKey(_ provider: Provider) -> UUID? { (try? endpoint(provider)).flatMap { vault.active(provider, endpoint: $0)?.id } }
@@ -151,21 +176,22 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         prune()
     }
     func startMicTest() async {
+        guard !busy, !canRetry, !cleanupRequired else { return }
         if !microphoneGranted { await requestMicrophone() }
-        guard microphoneGranted, !busy else { return }
+        guard microphoneGranted, !busy, !canRetry, !cleanupRequired else { return }
         do { testingMicrophone = true; try recorder.start(capSeconds: 30, microphoneTest: true) }
         catch { testingMicrophone = false; report(error) }
     }
     func stopMicTest() { recorder.cancel(); testingMicrophone = false }
     func start(voiceSample: Bool = false) async {
-        guard !busy, !canRetry else { return }
+        guard !busy, !canRetry, !cleanupRequired else { return }
         stopMicTest()
         if !microphoneGranted { await requestMicrophone() }
-        guard microphoneGranted else { return }
+        guard microphoneGranted, !busy, !canRetry, !cleanupRequired else { return }
         do {
             guard hasActiveKey else { throw QuillError.noKey }
             _ = try ProviderConfiguration(provider: settings.provider, customBaseURL: settings.customBaseURL, model: settings.model, language: settings.language)
-            discardRetry(); result = ""; errorKey = nil; notice = nil
+            result = ""; errorKey = nil; notice = nil
             snapshot = settings; snapshotWords = words; generation = UUID()
             voiceSampleMode = voiceSample
             try recorder.start(capSeconds: voiceSample ? 8 : settings.sessionCapSeconds)
@@ -184,7 +210,8 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     /// The capture adapter hands a finalized app-owned file to the pipeline. Tests inject only
     /// the transport/storage seams and exercise this same entry point with a synthetic WAV.
     func processCapturedRecording(_ file: URL, configuration: QuillSettings, words: [CustomWord] = [], voiceSample: Bool = false) throws {
-        guard ![.transcribing, .cleaning].contains(phase),
+        guard ![.transcribing, .cleaning].contains(phase), !cleanupRequired,
+              retainedAudio == nil || retainedAudio == file,
               file.standardizedFileURL.deletingLastPathComponent() == AppFiles.audio.standardizedFileURL,
               FileManager.default.fileExists(atPath: file.path) else { throw QuillError.audio }
         snapshot = configuration; snapshotWords = words; voiceSampleMode = voiceSample
@@ -220,14 +247,12 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
                 try Task.checkCancellation()
                 guard self.generation == token else { return }
                 let final = self.voiceSampleMode ? raw : TextPipeline.finish(raw: raw, cleaned: cleaned, words: self.snapshotWords)
-                if self.voiceSampleMode { self.voiceWordResult = final } else { self.result = final }
-                self.phase = .ready
-                if !self.voiceSampleMode && capture.shouldSaveHistory && self.settings.shouldSaveHistory {
-                    do { try self.historyStore?.save(HistoryEntry(text: final, provider: capture.provider)); self.refreshHistory() }
-                    catch { self.report(error) }
-                }
-                self.discardRetry()
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                self.pendingCompletion = Completion(text: final, settings: capture, voiceSample: self.voiceSampleMode)
+                // Commit a terminal marker (or remove the pending take) before exposing success.
+                // A disk that rejects every operation must not turn an uncommitted result into a
+                // delivered result that could later be offered again as a retry.
+                if self.finishRecording(as: .completed) { self.publishCompletion() }
+                else { self.phase = .failed }
             } catch is CancellationError { }
             catch {
                 guard self.generation == token else { return }
@@ -253,17 +278,66 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func cancel() {
         generation = UUID(); operation?.cancel(); operation = nil
-        recorder.cancel(); testingMicrophone = false; discardRetry(); endBackgroundTask()
-        result = ""; phase = .idle; errorKey = nil
+        pendingCompletion = nil; result = ""; voiceWordResult = ""; errorKey = nil
+        recorder.cancel(); testingMicrophone = false
+        _ = finishRecording(as: .discarded); endBackgroundTask()
+        phase = cleanupRequired ? .failed : .idle
     }
-    private func discardRetry() {
-        if let retainedAudio { try? FileManager.default.removeItem(at: retainedAudio) }
+    func retryRecordingCleanup() {
+        guard cleanupRequired else { return }
+        errorKey = nil
+        let terminalCommitted = terminalRecording == nil || cleanTerminalRecording()
+        cleanOrphanedAudio()
+        if terminalCommitted, pendingCompletion != nil { publishCompletion() }
+        else if !cleanupRequired { phase = retainedAudio != nil ? .failed : result.isEmpty && voiceWordResult.isEmpty ? .idle : .ready }
+    }
+    private func finishRecording(as disposition: PendingRecording.Disposition) -> Bool {
+        if let pending = terminalRecording {
+            var terminal = pending; terminal.disposition = disposition; terminalRecording = terminal
+        } else if let url = retainedAudio, let snapshot {
+            terminalRecording = PendingRecording(filename: url.lastPathComponent, settings: snapshot,
+                words: snapshotWords, voiceSample: voiceSampleMode, disposition: disposition)
+        } else { return true }
+        return cleanTerminalRecording()
+    }
+    @discardableResult private func cleanTerminalRecording() -> Bool {
+        guard let terminal = terminalRecording, let url = terminal.url else { return true }
+        let outcome = RecordingCleanup.finish(markTerminal: { try recordingStore.save(terminal) },
+            removeAudio: { try recordingStore.removeAudio(at: url) }, removeManifest: { try recordingStore.removeManifest() })
+        // Keep either owned file available for explicit cleanup retry. Even a manifest without
+        // audio contains capture settings and words, so Clear all cannot report success yet.
         retainedAudio = nil
-        try? FileManager.default.removeItem(at: AppFiles.root.appendingPathComponent("pending-recording.json"))
+        if !outcome.cleanupFailed { terminalRecording = nil }
+        cleanupRequired = terminalRecording != nil || !orphanedAudio.isEmpty || orphanScanFailed
+        if outcome.cleanupFailed { report(QuillError.storage) }
+        return outcome.terminalCommitted
+    }
+    private func cleanOrphanedAudio() {
+        do {
+            let protected = [retainedAudio, terminalRecording?.url, recorder.fileURL].compactMap { $0?.standardizedFileURL }
+            var failed: [URL] = []
+            for url in try recordingStore.audioFiles() where !protected.contains(url.standardizedFileURL) {
+                do { try recordingStore.removeAudio(at: url) } catch { failed.append(url) }
+            }
+            orphanedAudio = failed; orphanScanFailed = false
+        } catch { orphanScanFailed = true }
+        cleanupRequired = terminalRecording != nil || !orphanedAudio.isEmpty || orphanScanFailed
+        if cleanupRequired { report(QuillError.storage) }
+    }
+    private func publishCompletion() {
+        guard let completion = pendingCompletion else { return }
+        pendingCompletion = nil
+        if completion.voiceSample { voiceWordResult = completion.text } else { result = completion.text }
+        phase = .ready
+        if !completion.voiceSample && completion.settings.shouldSaveHistory && settings.shouldSaveHistory {
+            do { try historyStore?.save(HistoryEntry(text: completion.text, provider: completion.settings.provider)); refreshHistory() }
+            catch { report(error) }
+        }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
     private func persistPendingRecording() throws {
         guard let url = retainedAudio, let snapshot else { return }
-        try AppFiles.write(PendingRecording(filename: url.lastPathComponent, settings: snapshot, words: snapshotWords, voiceSample: voiceSampleMode), name: "pending-recording.json")
+        try recordingStore.save(PendingRecording(filename: url.lastPathComponent, settings: snapshot, words: snapshotWords, voiceSample: voiceSampleMode))
     }
     func copyText(_ text: String) {
         UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
@@ -312,6 +386,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func reset() {
         cancel()
+        guard !cleanupRequired else { return }
         do {
             try vault.clear(); try KeyboardTransfer.clear(); try historyStore?.clear()
             try KeyDraftVault().clearAll()
