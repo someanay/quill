@@ -21,12 +21,14 @@ targets:
     sources:
       - path: QuillMac
         excludes: [Resources, "App/Info.plist", "App/QuillMac.entitlements"]
-    resources:
       - path: QuillMac/Resources/Assets.xcassets
+        buildPhase: resources
       - path: QuillMac/Resources/copy
         type: folder
+        buildPhase: resources
       - path: QuillMac/Resources/fonts
         type: folder
+        buildPhase: resources
     dependencies:
       - package: QuillCore
       - sdk: libsqlite3.tbd
@@ -44,6 +46,18 @@ targets:
         INFOPLIST_FILE: QuillMac/App/Info.plist
         CODE_SIGN_ENTITLEMENTS: QuillMac/App/QuillMac.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    postBuildScripts:
+      - name: Verify bundled copy and fonts
+        basedOnDependencyAnalysis: false
+        inputFiles:
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/copy/strings.default.json"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/fonts/ibm_plex_sans.ttf"
+          - "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/fonts/ibm_plex_serif.ttf"
+        script: |
+          set -eu
+          test -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/copy/strings.default.json"
+          test -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/fonts/ibm_plex_sans.ttf"
+          test -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/fonts/ibm_plex_serif.ttf"
   QuillMacTests:
     type: bundle.unit-test
     platform: macOS
