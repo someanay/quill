@@ -1,5 +1,7 @@
 # Quill — Product Requirements Document (PRD)
 
+> September 8, 2026: The owner expanded scope to fresh Windows, macOS and iOS apps matching the current Android source, plus local copy-tool support for all four platforms. M14 and [the native parity/verification contract](docs/platform-rebuild.md) govern that work. The Android-only v1 planning scope below is historical. iOS requires host-app recording and a custom-keyboard handoff because general cross-app overlays and keyboard microphone access are unavailable.
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.

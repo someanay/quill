@@ -6,7 +6,7 @@ Recordings go directly to your chosen speech provider. Optional cleanup uses you
 
 ## Status
 
-Android version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. Fresh native Windows, macOS and iOS implementations are being built from Android's current behavior and design. See [platform rebuild and verification](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS requires a host-app recording and keyboard handoff workflow because its system APIs differ.
+Android version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. The former Windows, macOS and iOS source drafts have been replaced with native implementations based on Android's current behavior and design. Windows is built, installed and exercised on this workstation. Apple builds and simulator tests have run on Mac runners; the final Apple corrections await another native run because GitHub has blocked jobs on the account's billing/spending limit. See [platform rebuild and exact verification status](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS uses host-app recording and an explicit keyboard handoff because its system APIs differ.
 
 ## Features
 

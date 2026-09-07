@@ -1,5 +1,13 @@
 # Quill — Testing Plan (testing_plan.md)
 
+## M14 native verification
+
+The native rebuild's current evidence and unresolved gates are maintained in [the verification record](docs/platform-rebuild.md), [Windows verification](windows/VERIFICATION.md), [macOS README](macos/README.md) and [iOS README](ios/README.md). Historical Android test shells remain below.
+
+Run native behavior on the actual OS: Windows UI Automation and microphone on the local PC; Apple XCTest, UI walkthroughs, real editor probes and iPhone/iPad simulators on Mac runners. Windows Swift core tests establish portable policy behavior only. Keep each binary tied to its producing commit, distinguish recorded real-editor output from HTTP fixtures, and preserve original failure screenshots. A failed or billing-blocked job is not a passing gate. No emulator replaces the required physical Android OEM checks, and simulator results do not establish physical iPhone lock protection, signing or Store readiness.
+
+Required failure cases include delayed or failed insertion acknowledgements, focus/content/selection drift, secure fields, clipboard ownership changes, partial paste dispatch, cancellation/Copy/sleep during insertion confirmation, stale microphone callbacks, provider/key failure, cleanup timeouts, storage failure after a completed transcript, and restart without automatic duplicate delivery. User keys and real provider accuracy remain a separate end-to-end gate; synthetic provider fixtures must never be described as live-provider verification.
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.

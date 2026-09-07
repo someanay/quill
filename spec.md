@@ -2,6 +2,8 @@
 
 Android architecture, storage, provider integration, and release constraints. Historical decisions are retained below; current release checks are in [release readiness](docs/play-readiness.md).
 
+The September 8 native rebuild uses the current Android source as its reference. Shared boundaries remain recorder → provider → optional cleanup → insertion/handoff, with separate secrets, settings/history/vocabulary and bundled copy repositories. Windows implements OS adapters with WPF/UI Automation/DPAPI; macOS uses SwiftUI/AppKit/Accessibility/Keychain; iOS uses AVFoundation/Keychain and an explicit custom-keyboard handoff. Current contracts, unavoidable platform substitutions and exact validation limits are in [the native rebuild record](docs/platform-rebuild.md). No platform downloads remote copy.
+
 ---
 
 ## 1. Tech stack
