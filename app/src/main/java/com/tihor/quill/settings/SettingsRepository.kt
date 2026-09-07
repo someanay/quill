@@ -30,7 +30,10 @@ data class QuillSettings(
     val customModel: String = "",
     val languageHint: String = DEFAULT_LANGUAGE, // ISO code, or LANGUAGE_AUTO for auto-detect
     /** LLM cleanup pass before insertion (M10). Opt-in: default OFF (extra latency + a second BYOK call). */
-    val cleanupEnabled: Boolean = false,
+    val cleanupEnabled: Boolean = true,
+    val cleanupAutomatic: Boolean = true,
+    val cleanupProvider: SttProvider = SttProvider.GROQ,
+    val cleanupModel: String = com.tihor.quill.cleanup.CleanupClient.MODEL,
     /**
      * Global writing-style default — the last tier of [com.tihor.quill.style.WritingStyleResolver],
      * used for any app with neither a user override nor a curated default. Ships Neutral, which
@@ -133,7 +136,11 @@ class SettingsRepository(private val context: Context) {
             customBaseUrl = p[Keys.CUSTOM_BASE_URL].orEmpty(),
             customModel = p[Keys.CUSTOM_MODEL].orEmpty(),
             languageHint = p[Keys.LANGUAGE_HINT]?.takeIf { it.isNotBlank() } ?: QuillSettings.DEFAULT_LANGUAGE,
-            cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: false,
+            cleanupEnabled = p[Keys.CLEANUP_ENABLED] ?: true,
+            cleanupAutomatic = p[Keys.CLEANUP_AUTO] ?: true,
+            cleanupProvider = if (p[Keys.CLEANUP_AUTO] != false) provider else SttProvider.fromId(p[Keys.CLEANUP_PROVIDER]),
+            cleanupModel = if (p[Keys.CLEANUP_AUTO] != false) com.tihor.quill.cleanup.CleanupProviders.defaultModel(provider)
+                else p[Keys.CLEANUP_MODEL] ?: com.tihor.quill.cleanup.CleanupClient.MODEL,
             writingStyleDefault = WritingStyle.fromId(p[Keys.WRITING_STYLE_DEFAULT]),
             privateMode = p[Keys.PRIVATE_MODE] ?: false,
             historyEnabled = p[Keys.HISTORY_ENABLED] ?: true,
@@ -174,6 +181,31 @@ class SettingsRepository(private val context: Context) {
     /** Persist the spoken-language choice: an ISO code ("en", "hi") or [QuillSettings.LANGUAGE_AUTO]. */
     suspend fun setLanguageHint(code: String) = context.settingsDataStore.edit {
         if (code.isBlank()) it.remove(Keys.LANGUAGE_HINT) else it[Keys.LANGUAGE_HINT] = code
+    }
+
+    suspend fun setCleanupModel(model: String) = context.settingsDataStore.edit {
+        if (it[Keys.CLEANUP_AUTO] != false) it[Keys.CLEANUP_PROVIDER] = SttProvider.fromId(it[Keys.PROVIDER]).id
+        it[Keys.CLEANUP_AUTO] = false
+        it[Keys.CLEANUP_MODEL] = model.trim()
+    }
+
+    suspend fun setCleanupAutomatic(automatic: Boolean) = context.settingsDataStore.edit {
+        if (!automatic && it[Keys.CLEANUP_AUTO] != false) {
+            val provider = SttProvider.fromId(it[Keys.PROVIDER])
+            it[Keys.CLEANUP_PROVIDER] = provider.id
+            it[Keys.CLEANUP_MODEL] = com.tihor.quill.cleanup.CleanupProviders.defaultModel(provider)
+        }
+        it[Keys.CLEANUP_AUTO] = automatic
+        if (automatic) it[Keys.CLEANUP_ENABLED] = true
+    }
+
+    suspend fun setCleanupProvider(provider: SttProvider) = context.settingsDataStore.edit { p ->
+        p[Keys.CLEANUP_AUTO] = false
+        val previous = SttProvider.fromId(p[Keys.CLEANUP_PROVIDER])
+        p[Keys.CLEANUP_MODEL]?.let { p[stringPreferencesKey("cleanup_model_${previous.id}")] = it }
+        p[Keys.CLEANUP_PROVIDER] = provider.id
+        p[Keys.CLEANUP_MODEL] = p[stringPreferencesKey("cleanup_model_${provider.id}")]
+            ?: com.tihor.quill.cleanup.CleanupProviders.defaultModel(provider)
     }
 
     suspend fun setCleanupEnabled(enabled: Boolean) =
@@ -278,6 +310,9 @@ class SettingsRepository(private val context: Context) {
         val CUSTOM_BASE_URL = stringPreferencesKey("custom_base_url")
         val CUSTOM_MODEL = stringPreferencesKey("custom_model")
         val LANGUAGE_HINT = stringPreferencesKey("language_hint")
+        val CLEANUP_MODEL = stringPreferencesKey("cleanup_model")
+        val CLEANUP_PROVIDER = stringPreferencesKey("cleanup_provider")
+        val CLEANUP_AUTO = booleanPreferencesKey("cleanup_automatic")
         val CLEANUP_ENABLED = booleanPreferencesKey("cleanup_enabled")
         val WRITING_STYLE_DEFAULT = stringPreferencesKey("writing_style_default")
         val PRIVATE_MODE = booleanPreferencesKey("private_mode")

@@ -1,6 +1,12 @@
 package com.tihor.quill.ui.app
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Settings
@@ -70,12 +76,13 @@ fun QuillBottomNav(current: Screen, onSelect: (Screen) -> Unit) {
         Triple(Screen.History, Icons.Rounded.Schedule, copy(K.NAV_HISTORY)),
         Triple(Screen.Settings, Icons.Rounded.Settings, copy(K.NAV_SETTINGS)),
     )
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
         items.forEach { (screen, icon, label) ->
+            val scale by animateFloatAsState(if (current == screen) 1.1f else 1f, spring(), label = "navSelection") // copy-exempt
             NavigationBarItem(
                 selected = current == screen,
                 onClick = { onSelect(screen) },
-                icon = { Icon(icon, contentDescription = label) },
+                icon = { Icon(icon, contentDescription = label, modifier = Modifier.graphicsLayer { scaleX = scale; scaleY = scale }) },
                 label = { Text(label, style = MaterialTheme.typography.labelSmall) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = q.brandInk,

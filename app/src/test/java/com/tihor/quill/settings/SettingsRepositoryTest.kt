@@ -26,9 +26,11 @@ class SettingsRepositoryTest {
     fun reset() {
         runBlocking {
             val r = repo()
+            r.clear()
             r.setProvider(SttProvider.GROQ) // also resets sttModel to the provider default
             r.setLanguageHint("en")
             r.setCleanupEnabled(false) // M10: cleanup is opt-in; baseline mirrors the default-off
+            r.setCleanupModel(com.tihor.quill.cleanup.CleanupClient.MODEL)
             r.setPrivateMode(false)
             r.setHistoryEnabled(true)
             r.setHistoryRetentionMinutes(QuillSettings.RETENTION_DEFAULT_MINUTES)
@@ -42,6 +44,27 @@ class SettingsRepositoryTest {
             r.setCustomModel("")
             r.setFreeTierOnly(SttProvider.GEMINI, freeOnly = false)
         }
+    }
+
+    @Test
+    fun cleanupModel_survivesRepositoryRecreation() = runTest {
+        repo().setCleanupModel("selected-cleanup-model")
+        assertEquals("selected-cleanup-model", repo().settings.first().cleanupModel)
+    }
+
+    @Test fun cleanupSelectionIsIndependentAndRemembersModels() = runTest {
+        val r = repo()
+        r.setProvider(SttProvider.GEMINI)
+        r.setSttModel("speech-model")
+        r.setCleanupProvider(SttProvider.OPENROUTER)
+        r.setCleanupModel("chosen-cleanup")
+        r.setCleanupProvider(SttProvider.GEMINI)
+        r.setCleanupProvider(SttProvider.OPENROUTER)
+        val settings = repo().settings.first()
+        assertEquals(SttProvider.GEMINI, settings.provider)
+        assertEquals("speech-model", settings.sttModel)
+        assertEquals(SttProvider.OPENROUTER, settings.cleanupProvider)
+        assertEquals("chosen-cleanup", settings.cleanupModel)
     }
 
     @Test
@@ -114,7 +137,8 @@ class SettingsRepositoryTest {
         assertEquals(SttProvider.DEFAULT, d.provider)
         assertEquals("en", d.languageHint)
         // M10: cleanup is opt-in, so the documented default is OFF (asserted, not incidental).
-        assertFalse(d.cleanupEnabled)
+        assertTrue(d.cleanupEnabled)
+        assertTrue(d.cleanupAutomatic)
         assertFalse(d.privateMode)
         assertEquals(300, d.sessionCapSeconds)
         assertFalse(d.onboardingComplete)
@@ -124,6 +148,25 @@ class SettingsRepositoryTest {
         assertEquals(QuillSettings.RETENTION_DEFAULT_MINUTES, d.historyRetentionMinutes)
         assertEquals(QuillSettings.BUBBLE_SIZE_MEDIUM, d.bubbleSize)
         assertEquals(QuillSettings.APP_THEME_SYSTEM, d.appTheme)
+    }
+
+    @Test fun automaticCleanupFollowsSpeechUnlessExplicitlyOverridden() = runTest {
+        val r = repo()
+        r.clear()
+        r.setProvider(SttProvider.GEMINI)
+        var s = r.settings.first()
+        assertTrue(s.cleanupEnabled)
+        assertEquals(SttProvider.GEMINI, s.cleanupProvider)
+        assertEquals("gemini-3.5-flash-lite", s.cleanupModel)
+        r.setCleanupProvider(SttProvider.OPENROUTER)
+        r.setProvider(SttProvider.OPENAI)
+        assertEquals(SttProvider.OPENROUTER, r.settings.first().cleanupProvider)
+        r.setCleanupAutomatic(true)
+        s = r.settings.first()
+        assertEquals(SttProvider.OPENAI, s.cleanupProvider)
+        r.setCleanupEnabled(false)
+        r.setProvider(SttProvider.GEMINI)
+        assertFalse(r.settings.first().cleanupEnabled)
     }
 
     @Test

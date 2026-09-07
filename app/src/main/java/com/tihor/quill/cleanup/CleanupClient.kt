@@ -36,15 +36,19 @@ class CleanupClient(
     private val httpClient: OkHttpClient =
         OkHttpClient.Builder().callTimeout(timeoutMs, TimeUnit.MILLISECONDS).build(),
     private val json: Json = DEFAULT_JSON,
+    private val model: String = MODEL,
+    private val lowLatencyRouting: Boolean = false,
 ) {
     /** Tidied text, or `null` to signal "use the raw transcript" (fail-soft). */
     suspend fun clean(text: String): String? = withContext(Dispatchers.IO) {
-        if (text.isBlank()) return@withContext null // nothing to clean — don't spend an API call
+        if (text.isBlank() || model.isBlank()) return@withContext null
         try {
             val payload = json.encodeToString(
                 ChatRequest.serializer(),
                 ChatRequest(
-                    model = MODEL,
+                    model = model,
+                    provider = if (lowLatencyRouting) ProviderRouting("latency") else null,
+                    temperature = 0.0,
                     messages = listOf(
                         ChatMessage(role = "system", content = WritingStylePrompt.compose(SYSTEM_PROMPT, style)),
                         ChatMessage(role = "user", content = userMessage(text)),
@@ -61,8 +65,9 @@ class CleanupClient(
             val cleaned = httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use null
                 val body = response.body?.string().orEmpty()
-                json.decodeFromString(ChatResponse.serializer(), body)
-                    .choices.firstOrNull()?.message?.content?.trim()
+                val choice = json.decodeFromString(ChatResponse.serializer(), body).choices.firstOrNull()
+                if (choice?.finishReason != null && choice.finishReason != "stop") return@use null
+                choice?.message?.content?.trim()
             }
             val tidied = cleaned?.takeIf { it.isNotBlank() } ?: return@withContext null
             // Structural safeguard: even with the hardened prompt, the model can still obey/expand the
@@ -77,7 +82,7 @@ class CleanupClient(
         } catch (e: CancellationException) {
             throw e // let the dictation's own cancellation propagate; don't swallow it
         } catch (e: Exception) {
-            Log.w(TAG, "Cleanup failed; using raw transcript: ${e.message}")
+            Log.w(TAG, "Cleanup failed; using raw transcript")
             null
         }
     }
@@ -85,7 +90,7 @@ class CleanupClient(
     companion object {
         private const val TAG = "Quill.Cleanup"
 
-        /** Hardcoded cleanup model (Groq). No user-facing picker in v1. */
+        /** Offline default for Groq cleanup. */
         const val MODEL = "llama-3.3-70b-versatile"
 
         /** Independent of the transcription timeout; on expiry we fall back to the raw transcript. */

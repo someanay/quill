@@ -1,5 +1,5 @@
 {
-  "revision": 4,
+  "revision": 7,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -209,30 +209,6 @@
       "default": "Coming soon",
       "placeholders": [],
       "overridable": true,
-      "optionalBlank": false
-    },
-    "compliance.accessibility.disclosure_accept": {
-      "default": "I understand — open Accessibility settings",
-      "placeholders": [],
-      "overridable": false,
-      "optionalBlank": false
-    },
-    "compliance.accessibility.disclosure_body": {
-      "default": "To type your dictation into whatever app you are using, Quill needs the Accessibility service.\n\nWhat it does:\n• Detects which text field is focused, so your words go to the right place.\n• Inserts the transcribed text at your cursor.\n\nWhat it never does:\n• It does not read or write password or banking fields.\n• It does not collect your data or send it to any server we operate. Audio goes only to the speech provider whose API key you supply.\n\nYou can turn this off any time in Settings.",
-      "placeholders": [],
-      "overridable": false,
-      "optionalBlank": false
-    },
-    "compliance.accessibility.disclosure_decline": {
-      "default": "Not now",
-      "placeholders": [],
-      "overridable": false,
-      "optionalBlank": false
-    },
-    "compliance.accessibility.disclosure_title": {
-      "default": "Allow Quill to insert dictation",
-      "placeholders": [],
-      "overridable": false,
       "optionalBlank": false
     },
     "compliance.key.required_body": {
@@ -521,6 +497,66 @@
     },
     "key.error.network": {
       "default": "Couldn't reach the provider. Check your connection and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.custom_refresh": {
+      "default": "Tap Refresh to check this endpoint’s model list.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.empty": {
+      "default": "No matching models.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.fallback": {
+      "default": "Could not refresh. Showing saved or built-in choices.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.fresh": {
+      "default": "Updated from the provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.loading": {
+      "default": "Checking the provider’s catalog…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.manual": {
+      "default": "Enter a model ID",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.ranking": {
+      "default": "Stable, responsive candidates appear first. Availability and cost depend on your provider account. Your selection stays unchanged when the list refreshes.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.refresh": {
+      "default": "Refresh models",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.save": {
+      "default": "Use this model",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "models.search": {
+      "default": "Search models",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1267,8 +1303,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "settings.cleanup.automatic": {
+      "default": "Match speech provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.automatic_help": {
+      "default": "Use the speech provider's active key and a recommended cleanup model. Choosing a provider or model below switches to a separate setup. Custom servers need a text model selected manually.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "settings.cleanup.before": {
       "default": "Before",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.cleanup.custom_endpoint": {
+      "default": "Custom cleanup shares the custom endpoint and key with transcription. Saving a different URL changes both.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1285,14 +1339,14 @@
       "overridable": true,
       "optionalBlank": false
     },
-    "settings.cleanup.help": {
-      "default": "If cleanup ever fails, your raw transcript is inserted instead — never blocked.",
+    "settings.cleanup.model": {
+      "default": "Cleanup model",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
-    "settings.cleanup.model": {
-      "default": "Cleanup model",
+    "settings.cleanup.provider_help": {
+      "default": "Cleanup uses the selected provider and its saved key. All three writing styles apply here. If cleanup fails or takes too long, Quill keeps your original transcript.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1335,6 +1389,12 @@
     },
     "settings.group.privacy": {
       "default": "Privacy & data",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.active": {
+      "default": "Active key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1409,6 +1469,12 @@
     },
     "settings.keys.title": {
       "default": "API keys",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.keys.use": {
+      "default": "Use this key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

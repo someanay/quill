@@ -49,6 +49,12 @@ sealed class TranscriptionError(message: String, cause: Throwable? = null) : Exc
 
     /** 2xx but the body didn't parse. */
     class Parse(cause: Throwable) : TranscriptionError("Couldn't read the provider's response.", cause)
+
+    class EmptyResponse : TranscriptionError("The model returned no transcript. Try again or choose another model in Speech & model.")
+
+    class BlockedResponse : TranscriptionError("The provider blocked this recording and returned no transcript.")
+
+    class IncompleteResponse : TranscriptionError("The provider stopped before completing the transcript. Try a shorter recording.")
 }
 
 /**

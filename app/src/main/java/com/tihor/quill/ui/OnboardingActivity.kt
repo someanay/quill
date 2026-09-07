@@ -136,7 +136,7 @@ class OnboardingActivity : ComponentActivity() {
 
 private enum class Step {
     SPLASH, WELCOME, KEY_WARNING, ADD_KEY, HOW_IT_WORKS, CHECKLIST,
-    MIC, MIC_TEST, OVERLAY, ACC_DISCLOSURE, ACC_ENABLE, ALL_SET,
+    MIC, MIC_TEST, OVERLAY, ACC_ENABLE, ALL_SET,
 }
 
 @Composable
@@ -158,8 +158,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
             Step.MIC -> Step.CHECKLIST
             Step.MIC_TEST -> Step.MIC
             Step.OVERLAY -> Step.MIC_TEST
-            Step.ACC_DISCLOSURE -> Step.OVERLAY
-            Step.ACC_ENABLE -> Step.ACC_DISCLOSURE
+            Step.ACC_ENABLE -> Step.OVERLAY
             Step.ALL_SET -> Step.ACC_ENABLE
             Step.SPLASH -> Step.SPLASH
         }
@@ -172,7 +171,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         if (result[Manifest.permission.RECORD_AUDIO] == true) step = Step.MIC_TEST
     }
     val overlayLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (OverlayPermission.isGranted(context)) step = Step.ACC_DISCLOSURE
+        if (OverlayPermission.isGranted(context)) step = Step.ACC_ENABLE
     }
     val accLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (AccessibilityUtil.isServiceEnabled(context)) step = Step.ALL_SET
@@ -206,7 +205,8 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         onFinish()
     }
 
-    when (step) {
+    androidx.compose.animation.Crossfade(targetState = step, label = "onboardingTransition") { shownStep -> // copy-exempt
+    when (shownStep) {
         Step.SPLASH -> SplashStep(onDone = { step = Step.WELCOME })
         Step.WELCOME -> WelcomeStep(onBack = ::back, onNext = { step = Step.KEY_WARNING }, onOpen = ::finishOnboarding)
         Step.KEY_WARNING -> {
@@ -227,13 +227,9 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         })
         Step.MIC_TEST -> MicTestStep(::back, onNext = { step = Step.OVERLAY })
         Step.OVERLAY -> OverlayStep(::back, onAllow = { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) })
-        Step.ACC_DISCLOSURE -> AccessibilityDisclosureStep(
-            ::back,
-            onAccept = { step = Step.ACC_ENABLE },
-            onDecline = { step = Step.ALL_SET },
-        )
-        Step.ACC_ENABLE -> AccessibilityEnableStep(::back, onOpen = { accLauncher.launch(AccessibilityUtil.settingsIntent()) })
+        Step.ACC_ENABLE -> AccessibilityEnableStep(::back, onOpen = { accLauncher.launch(AccessibilityUtil.disclosureIntent(context)) })
         Step.ALL_SET -> AllSetStep(onFinish = ::finishOnboarding, onHome = ::finishOnboarding)
+    }
     }
 }
 
@@ -701,31 +697,6 @@ private fun OverlayStep(onBack: () -> Unit, onAllow: () -> Unit) {
         primaryLabel = copy(K.OVERLAY_CTA),
         onPrimary = onAllow,
     )
-}
-
-@Composable
-private fun AccessibilityDisclosureStep(onBack: () -> Unit, onAccept: () -> Unit, onDecline: () -> Unit) {
-    // Compliance copy stays verbatim on its locked keys (CLAUDE.md hard rule); only the layout changes.
-    FormStep(onBack = onBack, primaryLabel = copy(K.DISCLOSURE_ACCEPT), onPrimary = onAccept) {
-        Spacer(Modifier.height(4.dp))
-        LeadIcon(Icons.Rounded.AccessibilityNew)
-        Spacer(Modifier.height(14.dp))
-        Text(copy(K.DISCLOSURE_TITLE), style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(10.dp))
-        QuillCard {
-            Text(
-                copy(K.DISCLOSURE_BODY),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.quill.text2,
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-        Spacer(Modifier.height(10.dp))
-        QuillGhostButton(copy(K.DISCLOSURE_DECLINE), onClick = onDecline)
-        // Optional demo clips illustrating the accessibility flow. Empty asset folder → renders nothing.
-        // The FormStep pins the CTA below this scrollable body, so it never pushes the CTA off-screen.
-        DemoCarousel(CarouselSurface.ONBOARDING_ACCESSIBILITY, modifier = Modifier.padding(top = 16.dp))
-    }
 }
 
 @Composable

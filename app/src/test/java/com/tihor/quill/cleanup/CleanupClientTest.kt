@@ -16,6 +16,12 @@ import java.util.concurrent.TimeUnit
  * (HTTP error, empty/malformed body, timeout, no network) to the null raw-fallback signal.
  */
 class CleanupClientTest {
+    @Test fun selectedModelIsSentToCleanup() = runTest {
+        server.enqueue(MockResponse().setBody(chat("Hello.")))
+        val client = CleanupClient(baseUrl = server.url("/v1").toString(), apiKey = { "test" }, model = "selected-model")
+        client.clean("hello")
+        assertTrue(server.takeRequest().body.readUtf8().contains("selected-model"))
+    }
 
     private lateinit var server: MockWebServer
 

@@ -1,8 +1,6 @@
 # Quill — Implementation Checklist (todo.md)
 
-This is the project's **state machine** and Claude Code's task queue. **Update it as you go** —
-check boxes, add notes, record deviations. Feed Claude Code **one milestone (often one sub-task)
-at a time**; never "build the whole app."
+Track implementation, verification, and deviations here. Work on one milestone or sub-task at a time.
 
 Milestones are ordered to **prove the riskiest things first**: overlay → accessibility injection →
 background mic capture, *before* investing in STT, UI, and polish. M1–M6 = a working end-to-end
@@ -77,7 +75,7 @@ not proceed until build + tests + the manual script all pass, then commit.
 >   `adb shell settings put secure enabled_accessibility_services com.tihor.quill/com.tihor.quill.accessibility.QuillAccessibilityService`
 >   then `adb shell settings put secure accessibility_enabled 1` (append, don't clobber existing services).
 
-## M3 — Text injection (hardcoded string) — code ✅, cross-app matrix is YOUR physical gate
+## M3 — Text injection (hardcoded string) — code ✅, cross-app matrix is the physical-device gate
 - [x] `TextInjector` / `AccessibilityTextInjector`: resolve the true editable node, read text+selection → `InsertionComposer.compose` → `ACTION_SET_TEXT` → `ACTION_SET_SELECTION` (caret repositioned). Ignores hint text so it never appends to a placeholder.
 - [x] **Node resolution made SAFE** (`EditableNodeResolver`): focus node → **isFocused** editable descendant → editable ancestor. Deliberately does **not** pick "first editable descendant" — that wandered to the wrong field in a multi-input web form (a real bug caught on-device). Focus is also tracked from focus **events** (`event.source`), which is more reliable than `findFocus(FOCUS_INPUT)` for WebViews.
 - [~] **Dump real nodes per matrix app + tune** — this is the on-device tuning (`spec.md` §5D) that belongs to your physical matrix run; the resolver is a safe starting point.
@@ -153,7 +151,7 @@ not proceed until build + tests + the manual script all pass, then commit.
 > doesn't throw in plain JVM tests. The live minified-parse check happens when the release APK is
 > exercised (M12); R8 retains the serializers (build proves it).
 
-## M6 — End-to-end happy path 🎯 — code ✅, YOUR live test pending (commit `feat: end-to-end dictation pipeline (M6)`)
+## M6 — End-to-end happy path 🎯 — code ✅, live testing pending (commit `feat: end-to-end dictation pipeline (M6)`)
 - [x] Wire capture → STT → injection through the bubble (`OverlayService.transcribeAndInject` → `onTranscript`): record → transcribe (Groq) → `injectText`.
 - [x] States flow: RECORDING → TRANSCRIBING → IDLE (inserted) / PASTE (clipboard fallback) / ERROR. Empty transcript → "didn't catch that" (ERROR). Temp WAV deleted on success/fallback, **kept on failure** for retry (spec §4.3).
 - [~] **Test:** end-to-end manual script across ≥3 apps — **yours** (needs a real Groq key + speech).
@@ -182,14 +180,14 @@ not proceed until build + tests + the manual script all pass, then commit.
 > insert-at-cursor logic exists; left as the tracked P1. `InkMeter` (§10) lands at M8 (mic-test).
 > Dev: `adb shell am broadcast -a com.tihor.quill.DEBUG_SET_KEY --es key '<key>'`.
 
-## M8 — Onboarding flow ✅ code/build/install, YOUR walkthrough pending (commit `feat: onboarding flow + Copy Catalog (M8)`)
+## M8 — Onboarding flow ✅ code/build/install, a device walkthrough pending (commit `feat: onboarding flow + Copy Catalog (M8)`)
 - [x] **Reordered flow (board A)** in `OnboardingActivity` (12-step state machine): splash → welcome → key-required warning (3 s gold read-gate) → add key → verify → key error → how-it-works → setup checklist → mic → **mic-test (InkMeter renders here)** → overlay → accessibility disclosure → accessibility enable → all set. Real grants via launchers (mic `RequestPermission`, overlay/accessibility settings intents).
 - [x] **Copy Catalog foundation:** `CopyKeys` + baked-in `assets/copy/strings.default.json` (complete) + `CopyRepository` (resolved `StateFlow`, `get(key,args)`, fallback) + `LocalCopy`/`copy(key)` + `QuillRoot`. **Compliance keys binary-only** — `CopyKeys.COMPLIANCE` excluded from `OVERRIDABLE` from the start; `applyOverride` physically ignores them (tested).
 - [x] **CI/lint guard:** `NoComposeStringLiteralsTest` fails on hardcoded `Text("…")` in the onboarding flow. *(Scoped to the on-design onboarding now; extend to migrated screens — see follow-up.)*
 - [x] Microphone test with the **InkMeter** (§10) driven by live `AudioRecorder` RMS; reduced-motion aware.
 - [x] **InkMeter (§10)** + **PermissionIllustration/ProgressDots** (§8.16/§8.15) built; every screen on QuillTheme + §8 patterns.
 - [x] **Test:** `CopyRepositoryTest` (completeness, fallback, compliance-not-overridable, override-ignores-compliance); literal guard. 57 unit tests green.
-- [~] **Verify:** Renders on-design (Welcome = brand illustration; Key-warning = gold illustration + 3 s gold gate + disabled CTA + compliance copy — screenshotted). **Cold-install run-through to first dictation is YOUR walkthrough** (real mic/overlay/accessibility grants).
+- [~] **Verify:** Renders on-design (Welcome = brand illustration; Key-warning = gold illustration + 3 s gold gate + disabled CTA + compliance copy — screenshotted). **Cold-install run-through to first dictation is a device walkthrough** (real mic/overlay/accessibility grants).
 
 > **M8 notes / deferred-within-M8 (tracked):**
 > - **Recovery cards for revoked permissions** → folded into **M11** (revocation detection + notification deep-link); the checklist step already shows live permission status.
@@ -361,3 +359,60 @@ Groq / OpenAI / OpenRouter / Gemini / Custom all selectable (Deepgram chip remov
 After each verification gate passes: review the diff, run the build + tests/manual script, then
 `git commit` with a clean conventional message (e.g. `feat: insert text via accessibility set_text`).
 One green milestone = one commit. If a later step breaks, you can roll back cheaply.
+
+
+## Android release preparation — September 6, 2026
+
+- [x] Android-only repository surface; paused ports preserved locally and removed from tracking.
+- [x] Replace planning-bundle READMEs with build, setup, and contribution documentation.
+- [x] Shared Android surface, typography, navigation, onboarding, and button polish.
+- [x] Bubble press/state animation and recording waveform; reduced-motion handling.
+- [x] Provider model discovery, ranked searchable dropdowns, cached fallback, and manual model IDs.
+- [x] Persist and use the selected Groq cleanup model.
+- [x] Copy tool synced against the Android app and live database: 393 keys, revision 5.
+- [x] Android unit tests (390), lint (no errors), and signed APK/AAB builds.
+- [ ] Physical Honor visual pass: small/large text, light/dark themes, keyboard and dropdown scrolling, bubble drag/dismiss, motion disabled.
+- [ ] Signed-release dictation in three real apps; discovery with each configured provider and offline fallback.
+- [ ] Complete the remaining [Play submission checks](docs/play-readiness.md).
+
+Scope expanded at the user's request to include Android visual polish and live model discovery. This release gate remains open until the physical-device and submission checks pass.
+
+## M13 follow-up — automatic copy refresh
+
+- [x] Keep the existing check on every foreground/restart and add a persistent six-hour background job requiring a network.
+- [x] Preserve the schedule when reopening; serialize competing fetches so the cache cannot roll back.
+- [ ] Physical Honor verification: launch online/offline; run job 1301; confirm signed copy applies without reopening; reboot and confirm the schedule survives. Force-stop must suspend background checks until manual relaunch.
+
+### M10 follow-up: independent cleanup providers
+- [x] Separate cleanup provider/model from transcription; preserve legacy Groq configuration and remember models per cleanup provider.
+- [x] Share style prompts and meaning-preservation checks across all five supported providers, using only the selected provider's key.
+- [x] Refresh provider-specific cleanup model catalogs; sync copy tool to Android manifest revision 6.
+- [ ] Complete automated and signed-build gate plus live Gemini cleanup and Gmail/WhatsApp style checks.
+
+### Gmail and key-management follow-up
+- [x] Add Android 13+ accessibility editor-connection path for WebView editors, with foreground-package and sensitive-field checks.
+- [x] Reject insertion into a different app after recording; confirm editor-connection insertion and preserve clipboard fallback when unconfirmed.
+- [x] Default cleanup to speech provider and recommended model, retaining explicit separate configuration and off switch.
+- [x] Encrypted per-provider multiple keys, active selection, removal, legacy-key retention and non-destructive validation.
+- [ ] Physical Gmail insertion/style retest with updated accessibility capabilities; WhatsApp Neutral and Casual tests.
+
+### September 6 physical retest outcome
+- [x] User confirmed Gmail Formal output after the editor-connection update; Gemini/Formal applied=true independently observed in diagnostics.
+- [x] User reports all three writing styles working in their physical testing.
+- [ ] Broader repeated insertion matrix, selection replacement, app switching during processing, OEM recovery and older Android coverage remain release gates.
+
+### Expanded app style catalog
+- [x] Expand offline defaults from 41 to 540 packages, preserving existing defaults and user override priority.
+- [x] Record published package identities and style assignments in docs/app-style-catalog.csv; add a validating generator.
+- [x] Verify every catalog entry can be overridden and reset, plus email/chat/notes classification regressions (411 unit tests pass).
+- Physical insertion compatibility across the full catalog is not claimed; the device matrix above remains open.
+
+### Accessibility disclosure audit — September 7
+- [x] Record the pre-fix audit and every Android accessibility-settings route.
+- [x] Route onboarding and recovery through one resource-only disclosure with Agree/Not now.
+- [x] Remove disclosure keys from the copy catalog and export; protect with regression tests.
+- [x] Use user-approved accurate wording for focused-field reads and local diagnostics; preserve runtime behavior.
+- [x] 415 unit tests, debug lint, and signed APK/AAB build pass.
+- [ ] Physical first-run, decline/Back, and revoked-service recovery checks: phone not connected.
+
+See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual script.

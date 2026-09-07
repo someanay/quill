@@ -1,6 +1,9 @@
 package com.tihor.quill.overlay
 
 import android.annotation.SuppressLint
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
+import androidx.core.graphics.ColorUtils
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -37,7 +40,19 @@ class BubbleView(
 
     var state: BubbleState = BubbleState.IDLE
         set(value) {
+            if (field == value) return
+            fromGradient = currentGradient()
             field = value
+            stateAnimator?.cancel()
+            if (reducedMotion) transition = 1f else {
+                transition = 0f
+                stateAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 240
+                    interpolator = DecelerateInterpolator()
+                    addUpdateListener { transition = it.animatedValue as Float; invalidate() }
+                    start()
+                }
+            }
             updateAnimation()
             invalidate()
         }
@@ -114,6 +129,30 @@ class BubbleView(
             context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f,
         ) == 0f
 
+    private var transition = 1f
+    private var fromGradient = intArrayOf(0xFF4A3FD0.toInt(), 0xFF6A5BEA.toInt())
+    private var stateAnimator: ValueAnimator? = null
+    private var pressAnimator: ValueAnimator? = null
+    private var pressScale = 1f
+    private var displayedLevel = 0f
+
+    private fun currentGradient(): IntArray {
+        val target = gradientFor(state)
+        return IntArray(2) { ColorUtils.blendARGB(fromGradient[it], target[it], transition) }
+    }
+
+    private fun press(down: Boolean) {
+        pressAnimator?.cancel()
+        val target = if (down) 0.92f else 1f
+        if (reducedMotion) { pressScale = 1f; invalidate(); return }
+        pressAnimator = ValueAnimator.ofFloat(pressScale, target).apply {
+            duration = if (down) 90 else 180
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { pressScale = it.animatedValue as Float; invalidate() }
+            start()
+        }
+    }
+
     private val animator = Runnable { invalidate() }
     private var animating = false
 
@@ -139,7 +178,7 @@ class BubbleView(
     }
 
     private fun updateAnimation() {
-        val shouldAnimate = !reducedMotion &&
+        val shouldAnimate = isAttachedToWindow && !reducedMotion &&
             (state == BubbleState.RECORDING || state == BubbleState.TRANSCRIBING)
         if (shouldAnimate && !animating) {
             animating = true
@@ -155,6 +194,9 @@ class BubbleView(
         val cy = height / 2f
         val r = diameter / 2f
         val now = AnimationUtils.currentAnimationTimeMillis()
+
+        canvas.save()
+        canvas.scale(pressScale, pressScale, cx, cy)
 
         // Recording gold halo with a 1.8 s breathe (§9). Drawn behind the fill.
         if (state == BubbleState.RECORDING) {
@@ -175,7 +217,7 @@ class BubbleView(
         // Gradient fill (150° ≈ top-left → bottom-right).
         fillPaint.clearShadowLayer()
         fillPaint.shader = LinearGradient(
-            cx - r, cy - r, cx + r, cy + r, gradientFor(state), null, Shader.TileMode.CLAMP,
+            cx - r, cy - r, cx + r, cy + r, currentGradient(), null, Shader.TileMode.CLAMP,
         )
         canvas.drawCircle(cx, cy, r, fillPaint)
         fillPaint.shader = null
@@ -183,7 +225,12 @@ class BubbleView(
         // White contrast ring.
         canvas.drawCircle(cx, cy, r - ringPaint.strokeWidth / 2f, ringPaint)
 
+        canvas.save()
+        val glyphScale = 0.86f + 0.14f * transition
+        canvas.scale(glyphScale, glyphScale, cx, cy)
         drawGlyph(canvas, cx, cy, r, now)
+        canvas.restore()
+        canvas.restore()
 
         // Keep the pulse/spinner going while animating.
         if (animating) postOnAnimation(animator)
@@ -191,10 +238,24 @@ class BubbleView(
 
     private fun drawGlyph(canvas: Canvas, cx: Float, cy: Float, r: Float, now: Long) {
         when (state) {
-            BubbleState.IDLE, BubbleState.RECORDING -> drawMic(canvas, cx, cy, r)
+            BubbleState.IDLE -> drawMic(canvas, cx, cy, r)
+            BubbleState.RECORDING -> drawRecordingMeter(canvas, cx, cy, r, now)
             BubbleState.TRANSCRIBING -> drawSpinner(canvas, cx, cy, r, now)
             BubbleState.PASTE -> drawCopy(canvas, cx, cy, r)
             BubbleState.ERROR -> drawBang(canvas, cx, cy, r)
+        }
+    }
+
+    private fun drawRecordingMeter(canvas: Canvas, cx: Float, cy: Float, r: Float, now: Long) {
+        displayedLevel += (level.coerceIn(0f, 1f) - displayedLevel) * 0.18f
+        val gap = r * 0.22f
+        for (index in 0..4) {
+            val envelope = 1f - kotlin.math.abs(index - 2) * 0.2f
+            val wave = if (reducedMotion) 0.25f else
+                (0.18f + displayedLevel * 0.65f + 0.08f * sin(now / 160.0 + index)).toFloat()
+            val half = r * (0.16f + wave * envelope).coerceIn(0.16f, 0.67f)
+            val x = cx + (index - 2) * gap
+            canvas.drawLine(x, cy - half, x, cy + half, glyphStroke)
         }
     }
 
@@ -242,6 +303,7 @@ class BubbleView(
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                press(true)
                 downRawX = event.rawX
                 downRawY = event.rawY
                 lastRawX = event.rawX
@@ -269,6 +331,7 @@ class BubbleView(
             }
 
             MotionEvent.ACTION_UP -> {
+                press(false)
                 handler.removeCallbacks(longPressRunnable)
                 when {
                     longPressed -> Unit
@@ -280,6 +343,7 @@ class BubbleView(
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                press(false)
                 handler.removeCallbacks(longPressRunnable)
                 if (dragging) onDragEnd()
                 dragging = false
@@ -289,7 +353,17 @@ class BubbleView(
         return super.onTouchEvent(event)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        updateAnimation()
+    }
+
     override fun onDetachedFromWindow() {
+        stateAnimator?.cancel()
+        pressAnimator?.cancel()
+        handler.removeCallbacks(longPressRunnable)
+        pressScale = 1f
+        transition = 1f
         animating = false
         removeCallbacks(animator)
         super.onDetachedFromWindow()

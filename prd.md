@@ -49,7 +49,7 @@ disclosed, and survives the periodic Play permission re-reviews.
 ## 3\. Out of scope
 
 The single source of truth for what Quill will **not** build. Its job is to make the boundary
-explicit so neither a human nor Claude Code quietly expands the project ("while we're at it…").
+explicit to keep changes within the agreed release scope.
 Tags: **Won't build** = not in any near-term plan; **P1 / P2** = deliberately deferred, designed-for
 but not built (see §6).
 
@@ -289,3 +289,11 @@ first** (overlay → accessibility injection → background mic capture) before 
 and polish. Treat M1–M6 (a working end-to-end happy path) as the real proof point; everything
 after is productisation and Play readiness.
 
+
+### Cleanup provider selection (September 6, 2026)
+The cleanup provider/model is independently selectable from transcription across Groq, OpenAI, OpenRouter, Gemini and custom OpenAI-compatible servers. All styles work through the same cleanup stage. Keys are reused only within their provider. Existing Groq-only installations retain their configuration until the user changes it. Custom endpoint/key configuration is shared and explicitly identified in settings.
+
+### Default cleanup and saved keys
+Cleanup is enabled by default for new settings and automatically follows the speech provider, using its active saved key and a recommended starter text model. The user can disable cleanup or select a separate provider/model. Model suitability is task-dependent; these defaults are not a universal quality or cost guarantee. Custom servers require a manually selected text model.
+
+Each provider can retain multiple encrypted keys. The user selects one active key; there is no automatic rotation or quota bypass. A rejected new key leaves existing keys intact.

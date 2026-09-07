@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        com.tihor.quill.copy.ota.CopyUpdateSchedule.ensureScheduled(applicationContext)
 
         // First-run gate + crash opt-in: one quick DataStore read.
         val settings = runBlocking { SettingsRepository(this@MainActivity).settings.first() }

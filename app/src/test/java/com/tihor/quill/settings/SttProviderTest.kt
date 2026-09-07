@@ -117,7 +117,7 @@ class SttProviderTest {
 
     @Test
     fun modelChoices_deriveFromTheProvider() {
-        // Decision 6: the screen renders provider.models, not hardcoded rows.
+        // Offline fallback choices must work with each provider's transcription endpoint.
         assertEquals(listOf("whisper-large-v3-turbo", "whisper-large-v3"), SttProvider.GROQ.models.map { it.id })
         assertEquals(
             listOf("whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"),
@@ -127,13 +127,8 @@ class SttProviderTest {
         assertEquals(
             listOf(
                 "openai/whisper-large-v3-turbo",
-                "mistralai/voxtral-small-24b-2507",
-                "openai/gpt-audio-mini",
-                "openai/gpt-audio",
-                "google/gemini-3.5-flash",
-                "google/gemini-3.1-flash-lite",
-                "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-                "xiaomi/mimo-v2.5",
+                "openai/gpt-4o-mini-transcribe",
+                "openai/gpt-4o-transcribe",
             ),
             SttProvider.OPENROUTER.models.map { it.id },
         )

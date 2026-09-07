@@ -59,9 +59,9 @@ class WritingStyleCopyTest {
 
     @Test
     fun styleKeys_areNotAddedToTheComplianceSet() {
-        // The locked set must stay exactly what CLAUDE.md pins it to. If this fails, something was
+        // Accessibility disclosure lives solely in Android resources. If this fails, something was
         // added to COMPLIANCE — check it belongs there before touching this number.
-        assertEquals("the compliance set must not grow for a product feature", 11, CopyKeys.COMPLIANCE.size)
+        assertEquals("the compliance set must not grow for a product feature", 7, CopyKeys.COMPLIANCE.size)
         assertTrue(CopyKeys.COMPLIANCE.all { it.startsWith("compliance.") })
     }
 

@@ -70,8 +70,7 @@ class CopyRepository(context: Context) {
 
     /**
      * Build the launch-time OTA fetcher (layer 3, spec §2.3). Wired to the baked-in templates + key
-     * allowlist so the verifier can enforce schema/parity. Caller fires it off-main, gated by the
-     * "Check for updated text" setting; an accepted bundle is cached and applied on the next launch.
+     * allowlist so the verifier can enforce schema/parity. Foreground and scheduled callers run it off-main and apply accepted bundles immediately.
      */
     fun newUpdater(context: Context): CopyUpdater {
         val cache = CopyBundleCache(File(context.filesDir, OTA_CACHE_DIR))

@@ -1,6 +1,8 @@
 package com.tihor.quill.accessibility
 
 import android.os.Bundle
+import android.content.Intent
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -17,7 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.tihor.quill.R
@@ -38,7 +39,7 @@ class AccessibilityDisclosureActivity : ComponentActivity() {
                     DisclosureContent(
                         modifier = Modifier.padding(padding),
                         onAccept = {
-                            startActivity(AccessibilityUtil.settingsIntent())
+                            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             finish()
                         },
                         onDecline = { finish() },
@@ -55,7 +56,6 @@ private fun DisclosureContent(
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
-    val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxSize()

@@ -213,7 +213,12 @@ object CopyKeys {
     const val SETTINGS_CLEANUP_BEFORE = "settings.cleanup.before"
     const val SETTINGS_CLEANUP_AFTER = "settings.cleanup.after"
     const val SETTINGS_CLEANUP_MODEL = "settings.cleanup.model"
-    const val SETTINGS_CLEANUP_HELP = "settings.cleanup.help"
+    const val SETTINGS_CLEANUP_HELP = "settings.cleanup.provider_help"
+    const val SETTINGS_CLEANUP_CUSTOM = "settings.cleanup.custom_endpoint"
+    const val CLEANUP_AUTO = "settings.cleanup.automatic"
+    const val CLEANUP_AUTO_HELP = "settings.cleanup.automatic_help"
+    const val KEY_ACTIVE = "settings.keys.active"
+    const val KEY_USE = "settings.keys.use"
     // Decision 5: cleanup is Groq-only — status lines when a non-Groq STT provider is active.
     const val SETTINGS_CLEANUP_GROQ_KEY = "settings.cleanup.groq_key"
     const val SETTINGS_CLEANUP_GROQ_MISSING = "settings.cleanup.groq_missing"
@@ -436,10 +441,6 @@ object CopyKeys {
     const val VALUE_CHECK = "value.check"
 
     // --- Compliance (binary-only; NEVER overridable) ---
-    const val DISCLOSURE_TITLE = "compliance.accessibility.disclosure_title"
-    const val DISCLOSURE_BODY = "compliance.accessibility.disclosure_body"
-    const val DISCLOSURE_ACCEPT = "compliance.accessibility.disclosure_accept"
-    const val DISCLOSURE_DECLINE = "compliance.accessibility.disclosure_decline"
     const val RATIONALE_MIC = "compliance.rationale.mic"
     const val RATIONALE_OVERLAY = "compliance.rationale.overlay"
     const val RATIONALE_ACCESSIBILITY = "compliance.rationale.accessibility"
@@ -453,7 +454,6 @@ object CopyKeys {
      * physically ignores these (spec §2.3 / §6).
      */
     val COMPLIANCE: Set<String> = setOf(
-        DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
         RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
         PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY,
         WELCOME_PRIVACY_PILL,
@@ -467,11 +467,24 @@ object CopyKeys {
     val OPTIONAL_BLANK: Set<String> = CAROUSEL_CAPTIONS.toSet()
 
     /** Keys an OTA bundle may override = everything that is **not** compliance. Enforced in M13. */
+    const val MODELS_SAVE = "models.save"
+    const val MODELS_CUSTOM_REFRESH = "models.custom_refresh"
+    const val MODELS_SEARCH = "models.search"
+    const val MODELS_EMPTY = "models.empty"
+    const val MODELS_LOADING = "models.loading"
+    const val MODELS_FALLBACK = "models.fallback"
+    const val MODELS_FRESH = "models.fresh"
+    const val MODELS_REFRESH = "models.refresh"
+    const val MODELS_RANKING = "models.ranking"
+    const val MODELS_MANUAL = "models.manual"
+
     val OVERRIDABLE: Set<String> = ALL - COMPLIANCE
 
     /** Every key the app references — CI checks `strings.default.json` is complete against this. */
     val ALL: Set<String>
         get() = listOf(
+            MODELS_SAVE, MODELS_CUSTOM_REFRESH,
+            MODELS_SEARCH, MODELS_EMPTY, MODELS_LOADING, MODELS_FALLBACK, MODELS_FRESH, MODELS_REFRESH, MODELS_RANKING, MODELS_MANUAL,
             SPLASH_TAGLINE, WELCOME_TITLE, WELCOME_BODY, WELCOME_CTA, WELCOME_ALREADY, WELCOME_OPEN,
             KEY_WARNING_FREE_TIER, KEY_WARNING_USAGE, KEY_WARNING_READING, KEY_WARNING_ACCEPT,
             HOWITWORKS_EYEBROW, HOWITWORKS_TITLE, HOWITWORKS_T1, HOWITWORKS_T2, HOWITWORKS_T3,
@@ -523,7 +536,8 @@ object CopyKeys {
             SETTINGS_KEYS_REPLACE, SETTINGS_KEYS_TEST, SETTINGS_KEYS_REMOVE,
             SETTINGS_CLEANUP_TITLE, SETTINGS_CLEANUP_TIDY_TITLE, SETTINGS_CLEANUP_TIDY_SUB,
             SETTINGS_CLEANUP_WHAT, SETTINGS_CLEANUP_BEFORE, SETTINGS_CLEANUP_AFTER,
-            SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP,
+            SETTINGS_CLEANUP_MODEL, SETTINGS_CLEANUP_HELP, SETTINGS_CLEANUP_CUSTOM,
+            CLEANUP_AUTO, CLEANUP_AUTO_HELP, KEY_ACTIVE, KEY_USE,
             SETTINGS_CLEANUP_GROQ_KEY, SETTINGS_CLEANUP_GROQ_MISSING,
             SETTINGS_STYLE_TITLE, SETTINGS_STYLE_INTRO, SETTINGS_STYLE_DEFAULT_SECTION,
             SETTINGS_STYLE_PER_APP_SECTION, SETTINGS_STYLE_FORMAL, SETTINGS_STYLE_FORMAL_SUB,
@@ -588,7 +602,6 @@ object CopyKeys {
             BUBBLE_BIN_LABEL, BUBBLE_BIN_LABEL_ACTIVE, BUBBLE_AUTORETURN_TOAST,
             CAROUSEL_HOME_HEADER, CAROUSEL_CARD_A11Y, CAROUSEL_PLAY_A11Y,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
-            DISCLOSURE_TITLE, DISCLOSURE_BODY, DISCLOSURE_ACCEPT, DISCLOSURE_DECLINE,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
             PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY, WELCOME_PRIVACY_PILL,
         ).toSet() + CAROUSEL_CAPTIONS

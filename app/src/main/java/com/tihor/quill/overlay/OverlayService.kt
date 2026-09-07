@@ -868,13 +868,19 @@ class OverlayService : Service() {
             applyState(BubbleState.IDLE)
             return
         }
+        val accessibility = QuillAccessibilityService.instance
+        if (accessibility == null) {
+            toast("Quill accessibility is disconnected — open Accessibility settings and enable Quill.")
+            return
+        }
+        val hasInput = accessibility.isEditableFocused()
         if (sensitiveActive) {
             // Board F4: refuse to record into password/banking fields; the bubble is already dimmed.
             toast("Dictation is off in password fields — for your security.")
             return
         }
         // Warn up front (not after the recording) if there's nowhere to insert the result.
-        if (QuillAccessibilityService.instance?.isEditableFocused() != true) {
+        if (!hasInput) {
             toast("No text input selected — long-press to dictate to the clipboard.")
             return
         }
@@ -996,22 +1002,22 @@ class OverlayService : Service() {
                         cleanupEnabled = settings.cleanupEnabled,
                         words = customWords,
                         clean = { text ->
-                            // Decision 5: cleanup is Groq-only. On a non-Groq provider it uses the
-                            // stored GROQ key; without one it's skipped silently (null → raw text).
-                            // Never sends the active provider's key to Groq (decision 3).
-                            val groqKey = CleanupKeyPolicy.resolve(
-                                provider = settings.provider,
-                                activeKey = key,
-                                groqKey = sttKeyStore.get(SttProvider.GROQ),
-                            )
-                            if (groqKey == null) {
-                                null
-                            } else {
+                            val cleanupKey = com.tihor.quill.cleanup.CleanupProviders.key(settings.cleanupProvider) {
+                                sttKeyStore.get(it)
+                            }
+                            if (cleanupKey == null) null else runCatching {
                                 CleanupClient(
-                                    baseUrl = OpenAiCompatibleTranscriptionClient.GROQ_BASE_URL,
-                                    apiKey = { groqKey },
+                                    baseUrl = com.tihor.quill.cleanup.CleanupProviders.baseUrl(settings.cleanupProvider, settings.customBaseUrl),
+                                    apiKey = { cleanupKey },
                                     style = style,
-                                ).clean(text)
+                                    model = settings.cleanupModel,
+                                    lowLatencyRouting = settings.cleanupProvider == SttProvider.OPENROUTER,
+                                ).clean(text).also { cleaned ->
+                                    Log.i(TAG, "Cleanup provider=${settings.cleanupProvider.id} style=${style.id} applied=${cleaned != null}")
+                                }
+                            }.getOrElse { error ->
+                                if (error is kotlinx.coroutines.CancellationException) throw error
+                                null
                             }
                         },
                     )
@@ -1034,6 +1040,11 @@ class OverlayService : Service() {
                     // explicit toast — a silent ERROR bubble reads as "the app broke", not "top up".
                     if (err is TranscriptionError.QuotaExhausted || err is TranscriptionError.RateLimited) {
                         toast(Copy.repository(this@OverlayService).get(CopyKeys.STT_QUOTA_TOAST))
+                    } else {
+                        // Provider response bodies can echo user content; show only our own messages.
+                        toast(if (err is TranscriptionError && err !is TranscriptionError.Provider) {
+                            err.message ?: "Couldn't transcribe. Try again."
+                        } else "The provider couldn't transcribe this recording. Check Speech & model settings.")
                     }
                     applyState(BubbleState.ERROR)
                 },
@@ -1075,7 +1086,7 @@ class OverlayService : Service() {
             wav.delete()
             return
         }
-        when (val result = a11y.injectText(text)) {
+        when (val result = a11y.injectText(text, expectedPackage = recordingPackage)) {
             InsertResult.Success -> {
                 applyState(BubbleState.IDLE)
                 wav.delete()
@@ -1138,7 +1149,7 @@ class OverlayService : Service() {
         if (revoked) {
             // One-tap deep-link back to Accessibility settings to re-enable the service.
             val reenable = PendingIntent.getActivity(
-                this, 1, AccessibilityUtil.settingsIntent(), PendingIntent.FLAG_IMMUTABLE,
+                this, 1, AccessibilityUtil.disclosureIntent(this), PendingIntent.FLAG_IMMUTABLE,
             )
             builder.addAction(0, copy.get(CopyKeys.INJECT_REENABLE_ACTION), reenable)
         }

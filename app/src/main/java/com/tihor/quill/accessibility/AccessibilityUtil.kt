@@ -30,8 +30,8 @@ object AccessibilityUtil {
         return false
     }
 
-    fun settingsIntent(): Intent =
-        Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+    fun disclosureIntent(context: Context): Intent =
+        Intent(context, AccessibilityDisclosureActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 }

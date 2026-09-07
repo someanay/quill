@@ -1,6 +1,11 @@
 package com.tihor.quill.ui.app
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import com.tihor.quill.ui.screens.AboutScreen
@@ -27,7 +32,13 @@ fun QuillApp() {
     val nav = remember { QuillNav() }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
-    when (nav.current) {
+    val savedState = rememberSaveableStateHolder()
+    AnimatedContent(targetState = nav.current, modifier = Modifier.fillMaxSize(),
+        transitionSpec = { (fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 16 }) togetherWith fadeOut(tween(110)) },
+        label = "screenTransition", // copy-exempt
+    ) { destination ->
+      savedState.SaveableStateProvider(destination.toString()) {
+       when (destination) {
         Screen.Home -> HomeScreen(nav)
         Screen.History -> HistoryScreen(nav)
         Screen.Settings -> SettingsScreen(nav)
@@ -45,5 +56,7 @@ fun QuillApp() {
         Screen.Recovery -> PermissionRevokedScreen(nav)
         Screen.CrashReport -> CrashReportScreen(nav)
         Screen.OemSurvival -> OemSurvivalScreen(nav)
+       }
+      }
     }
 }

@@ -40,7 +40,7 @@ enum class SttProvider(
     val keyGuideStepsKey: String? = null,
     /** Placeholder mask matching THIS provider's key format (copy-exempt: a format, not copy). */
     val keyMask: String = "••••••••••••••••••••",
-    /** Fixed model choices rendered by the picker (decision 6). Empty = free-text only. */
+    /** Offline choices; the dropdown refreshes from each provider's live catalog. */
     val models: List<ProviderModel> = emptyList(),
     /** Whether the picker offers a free-text model field (OpenRouter's catalog is huge; Custom is user-defined). */
     val freeTextModel: Boolean = false,
@@ -91,13 +91,8 @@ enum class SttProvider(
         // Dedicated Whisper STT default verified against OpenRouter's live docs in 2026-08.
         models = listOf(
             ProviderModel(OpenRouterTranscriptionClient.DEFAULT_MODEL, CopyKeys.SETTINGS_MODEL_OPENROUTER_WHISPER_TURBO_SUB),
-            ProviderModel(OpenRouterTranscriptionClient.LEGACY_DEFAULT_MODEL, CopyKeys.SETTINGS_MODEL_OPENROUTER_VOXTRAL_SUB),
-            ProviderModel("openai/gpt-audio-mini", CopyKeys.SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_MINI_SUB),
-            ProviderModel("openai/gpt-audio", CopyKeys.SETTINGS_MODEL_OPENROUTER_GPT_AUDIO_SUB),
-            ProviderModel("google/gemini-3.5-flash", CopyKeys.SETTINGS_MODEL_OPENROUTER_GEMINI_FLASH_SUB),
-            ProviderModel("google/gemini-3.1-flash-lite", CopyKeys.SETTINGS_MODEL_OPENROUTER_GEMINI_LITE_SUB),
-            ProviderModel("nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free", CopyKeys.SETTINGS_MODEL_OPENROUTER_NEMOTRON_SUB),
-            ProviderModel("xiaomi/mimo-v2.5", CopyKeys.SETTINGS_MODEL_OPENROUTER_MIMO_SUB),
+            ProviderModel("openai/gpt-4o-mini-transcribe", CopyKeys.SETTINGS_MODEL_OPENAI_MINI_SUB),
+            ProviderModel("openai/gpt-4o-transcribe", CopyKeys.SETTINGS_MODEL_OPENAI_4O_SUB),
         ),
         freeTextModel = true,
     ),

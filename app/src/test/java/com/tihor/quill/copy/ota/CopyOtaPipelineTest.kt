@@ -3,6 +3,8 @@ package com.tihor.quill.copy.ota
 import com.tihor.quill.copy.CopyKeys
 import com.tihor.quill.copy.CopyRepository
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
@@ -54,13 +56,13 @@ class CopyOtaPipelineTest {
 
     @Test
     fun cachedBundle_cannotChangeComplianceKey() {
-        val baked = CopyRepository(context).get(CopyKeys.DISCLOSURE_BODY)
+        val baked = CopyRepository(context).get(CopyKeys.RATIONALE_ACCESSIBILITY)
         cache().write(
             signer.bundleBytes(
                 2,
                 mapOf(
                     CopyKeys.WELCOME_TITLE to "Overridden",
-                    CopyKeys.DISCLOSURE_BODY to "MALICIOUS DISCLOSURE", // compliance key — must be ignored
+                    CopyKeys.RATIONALE_ACCESSIBILITY to "MALICIOUS DISCLOSURE", // compliance key — must be ignored
                 ),
             ),
         )
@@ -68,7 +70,7 @@ class CopyOtaPipelineTest {
         repo.applyCachedOverride(context, repo.verifierWith(testEd25519()))
 
         assertEquals("Overridden", repo.get(CopyKeys.WELCOME_TITLE))
-        assertEquals("compliance copy stays binary-only", baked, repo.get(CopyKeys.DISCLOSURE_BODY))
+        assertEquals("compliance copy stays binary-only", baked, repo.get(CopyKeys.RATIONALE_ACCESSIBILITY))
     }
 
     @Test
@@ -148,6 +150,29 @@ class CopyOtaPipelineTest {
         assertEquals(0, store.appliedRevision())
         // Resolved copy is untouched — a fresh repo still renders baked-in.
         assertEquals("Dictate into any app you use", CopyRepository(context).get(CopyKeys.WELCOME_TITLE))
+    }
+
+    @Test
+    fun overlappingForegroundAndScheduledChecksCannotRollBackCache() = runBlocking {
+        server.enqueue(MockResponse().setBody(bodyString(7, "Seven")))
+        server.enqueue(MockResponse().setBody(bodyString(6, "Six")))
+        server.start()
+        val store = CopyUpdateStore(context)
+        val c = cache()
+        val outcomes = (1..2).map {
+            async {
+                CopyUpdater(
+                    verifier = CopyRepository(context).verifierWith(testEd25519()),
+                    cache = c, store = store, baseUrl = server.url("/").toString(),
+                ).checkForUpdate()
+            }
+        }.awaitAll()
+        assertEquals(1, outcomes.count { it is CopyUpdater.Outcome.Accepted })
+        assertEquals(1, outcomes.count { it is CopyUpdater.Outcome.Rejected })
+        assertEquals(7, store.appliedRevision())
+        val repo = CopyRepository(context)
+        repo.applyCachedOverride(context, repo.verifierWith(testEd25519()))
+        assertEquals("Seven", repo.get(CopyKeys.WELCOME_TITLE))
     }
 
     private fun bodyString(revision: Int, title: String): String =

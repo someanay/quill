@@ -127,15 +127,39 @@ class GeminiTranscriptionClientTest {
     }
 
     @Test
-    fun emptyTranscript_mapsToParseError() = runTest {
+    fun emptyTranscript_mapsToEmptyResponse() = runTest {
         server.enqueue(success("   "))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.Parse)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.EmptyResponse)
     }
 
     @Test
-    fun noCandidates_mapsToParseError() = runTest {
+    fun blockedPrompt_mapsToBlockedResponse() = runTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("""{"promptFeedback":{"blockReason":"SAFETY"}}"""))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.Parse)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.BlockedResponse)
+    }
+
+    @Test
+    fun emptyPartWithStop_mapsToEmptyResponse() = runTest {
+        server.enqueue(MockResponse().setBody("""{"candidates":[{"content":{"parts":[{}]},"finishReason":"STOP"}]}"""))
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.EmptyResponse)
+    }
+
+    @Test
+    fun thoughtText_isNeverInserted() = runTest {
+        server.enqueue(MockResponse().setBody("""{"candidates":[{"content":{"parts":[{"text":"private reasoning","thought":true},{"text":"Purple notebook."}]},"finishReason":"STOP"}]}"""))
+        assertEquals("Purple notebook.", client().transcribe(audio(), opts).getOrNull()?.text)
+    }
+
+    @Test
+    fun truncatedTranscript_isNotInserted() = runTest {
+        server.enqueue(MockResponse().setBody("""{"candidates":[{"content":{"parts":[{"text":"partial"}]},"finishReason":"MAX_TOKENS"}]}"""))
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.IncompleteResponse)
+    }
+
+    @Test
+    fun blockedCandidate_isNotInserted() = runTest {
+        server.enqueue(MockResponse().setBody("""{"candidates":[{"content":{"parts":[{"text":"partial"}]},"finishReason":"SAFETY"}]}"""))
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.BlockedResponse)
     }
 
     @Test

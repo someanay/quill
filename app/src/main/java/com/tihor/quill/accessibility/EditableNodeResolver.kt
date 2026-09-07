@@ -11,6 +11,14 @@ import android.view.accessibility.AccessibilityNodeInfo
  */
 object EditableNodeResolver {
 
+    /** Compose may report a semantic container from findFocus; inspect its focused descendant. */
+    fun findInputTarget(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        root ?: return null
+        val focus = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        if (focus?.isEditable == true) return focus
+        return findFocusedEditable(focus) ?: findFocusedEditable(root)
+    }
+
     fun supportsSetText(node: AccessibilityNodeInfo): Boolean =
         node.actionList.any {
             it.id == AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_TEXT.id
