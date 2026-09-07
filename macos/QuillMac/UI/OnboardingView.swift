@@ -52,11 +52,11 @@ struct OnboardingView: View {
                         QuillButton(key: "mac.bubble.show") { settings.value.bubbleActive = true; settings.value.bubbleVisible = true; step = 7 }
                     case 7:
                         QuillCard { HelpText(key: "mac.accessibility.disclosure"); Toggle(Copy.text("mac.accessibility.consent"), isOn: $accepted) }
-                        QuillButton(key: "onboarding.accessibility.enable_cta") { TextInjector.requestPermission(); SystemLinks.open("Privacy_Accessibility") }.disabled(!accepted)
-                        if dictation.accessibilityGranted { QuillButton(key: "action.continue") { step = 8 } }
+                        QuillButton(key: "onboarding.accessibility.enable_cta") { settings.value.accessibilityConsent = true; TextInjector.requestPermission(); SystemLinks.open("Privacy_Accessibility") }.disabled(!accepted)
+                        if dictation.accessibilityGranted { QuillButton(key: "action.continue") { settings.value.accessibilityConsent = true; step = 8 }.disabled(!accepted) }
                     default:
                         HelpText(key: "onboarding.allset.body")
-                        QuillButton(key: "onboarding.allset.cta") { finish() }
+                        QuillButton(key: "onboarding.allset.cta") { finish(); NSApp.hide(nil) }
                         QuillButton(key: "onboarding.allset.home_link", primary: false) { finish() }
                     }
                 }

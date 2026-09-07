@@ -60,7 +60,9 @@ final class PolicyTests: XCTestCase {
         XCTAssertTrue(RecordingLimits.reached(elapsed: 300, cap: 300))
     }
     func testSpacingPreservesPunctuationAndExistingText() {
-        XCTAssertEqual(InsertionComposer.compose("hello", before: "Say", after: "world"), " hello ")
+        XCTAssertEqual(InsertionComposer.compose("hello", before: "Say", after: "world"), "hello")
+        XCTAssertEqual(InsertionComposer.compose("hello", before: "Say", after: ""), " hello")
+        XCTAssertEqual(InsertionComposer.compose("hello", before: "Say", after: "", replacingSelection: true), "hello")
         XCTAssertEqual(InsertionComposer.compose("hello", before: "Say ", after: ","), "hello")
         XCTAssertEqual(InsertionComposer.compose("hello", before: "(", after: ")"), "hello")
         XCTAssertEqual(InsertionComposer.compose("", before: "a", after: "b"), "")

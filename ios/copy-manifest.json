@@ -2741,6 +2741,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "ios.keyboard.field_unavailable": {
+      "default": "Quill can't insert into this field. Choose an ordinary text field in an app that allows custom keyboards.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "ios.keyboard.full_access_needed": {
       "default": "Type normally here. To insert a dictation, allow Full Access for Quill in Settings → General → Keyboard → Keyboards.",
       "placeholders": [],

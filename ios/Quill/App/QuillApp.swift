@@ -5,7 +5,7 @@ import SwiftUI
     @Environment(\.scenePhase) private var scenePhase
     var body: some Scene {
         WindowGroup {
-            RootView().environmentObject(model).tint(Q.brand)
+            RootView().environmentObject(model).tint(Q.brandInk)
                 .preferredColorScheme(model.settings.theme == "Dark" ? .dark : model.settings.theme == "Light" ? .light : nil)
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { model.resume() }

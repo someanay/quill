@@ -18,8 +18,9 @@ enum AppPaths {
 @MainActor final class SettingsStore: ObservableObject {
     @Published var value: QuillSettings { didSet { persist() } }
     @Published var storageFailed = false
-    private let path = AppPaths.root.appendingPathComponent("settings.json")
-    init() {
+    private let path: URL
+    init(directory: URL = AppPaths.root) {
+        path = directory.appendingPathComponent("settings.json")
         if AppPaths.testMode { value = QuillSettings() }
         else { value = (try? JSONDecoder().decode(QuillSettings.self, from: Data(contentsOf: path))) ?? QuillSettings(); value.normalize() }
     }
@@ -27,14 +28,18 @@ enum AppPaths {
         do { var safe = value; safe.normalize(); try JSONEncoder().encode(safe).write(to: path, options: .atomic); try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path.path); storageFailed = false }
         catch { storageFailed = true }
     }
-    func reset() { let onboarded = value.onboardingComplete, grantedOnce = value.accessibilityEnabledOnce; var fresh = QuillSettings(); fresh.onboardingComplete = onboarded; fresh.accessibilityEnabledOnce = grantedOnce; fresh.activeKeys = value.activeKeys; fresh.words = value.words; fresh.contactNames = value.contactNames; fresh.styleOverrides = value.styleOverrides; value = fresh }
+    func reset() { let onboarded = value.onboardingComplete, grantedOnce = value.accessibilityEnabledOnce; var fresh = QuillSettings(); fresh.onboardingComplete = onboarded; fresh.accessibilityEnabledOnce = grantedOnce; fresh.accessibilityConsent = value.accessibilityConsent; fresh.activeKeys = value.activeKeys; fresh.words = value.words; fresh.contactNames = value.contactNames; fresh.styleOverrides = value.styleOverrides; value = fresh }
 }
 
 @MainActor final class KeychainStore: ObservableObject {
     @Published private(set) var slots: [KeySlot] = []
-    private let service = AppPaths.testMode ? "com.tihor.quill.mac.tests.keys" : "com.tihor.quill.mac.keys"
-    private let path = AppPaths.root.appendingPathComponent("key-slots.json")
-    init() { slots = (try? JSONDecoder().decode([KeySlot].self, from: Data(contentsOf: path))) ?? [] }
+    private let service: String
+    private let path: URL
+    init(directory: URL = AppPaths.root, namespace: String? = nil) {
+        service = namespace ?? (AppPaths.testMode ? "com.tihor.quill.mac.tests.keys" : "com.tihor.quill.mac.keys")
+        path = directory.appendingPathComponent("key-slots.json")
+        slots = (try? JSONDecoder().decode([KeySlot].self, from: Data(contentsOf: path))) ?? []
+    }
     private func query(_ id: UUID) -> [String:Any] { [kSecClass as String:kSecClassGenericPassword, kSecAttrService as String:service, kSecAttrAccount as String:id.uuidString] }
     func read(_ slot: KeySlot, customURL: String) -> String? {
         if slot.provider == .custom, slot.customOrigin != (try? Endpoint.validated(customURL).absoluteString) { return nil }
@@ -71,8 +76,8 @@ enum AppPaths {
     @Published var storageFailed = false
     private var db: OpaquePointer?
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
-    init() {
-        let path = AppPaths.root.appendingPathComponent("history.sqlite").path
+    init(directory: URL = AppPaths.root) {
+        let path = directory.appendingPathComponent("history.sqlite").path
         guard sqlite3_open_v2(path, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK else { storageFailed = true; return }
         execute("PRAGMA journal_mode=DELETE"); execute("PRAGMA secure_delete=ON")
         execute("CREATE TABLE IF NOT EXISTS history(id TEXT PRIMARY KEY, text TEXT NOT NULL, created REAL NOT NULL, provider TEXT NOT NULL, app TEXT NOT NULL, duration REAL NOT NULL)")

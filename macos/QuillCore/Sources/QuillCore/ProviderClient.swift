@@ -112,7 +112,11 @@ public final class ProviderClient: @unchecked Sendable {
         return try RequestBuilder.parseTranscript(data, provider: options.provider)
     }
     public func validateKey(provider: Provider, key: String, baseURL: String) async throws {
-        guard (20...4096).contains(key.count), !key.contains("..."), key.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || "-_.".unicodeScalars.contains($0) }) else { throw QuillError.badKey }
+        if provider == .custom {
+            guard (1...4096).contains(key.count), key.unicodeScalars.allSatisfy({ $0.value >= 32 && $0.value < 127 }) else { throw QuillError.badKey }
+        } else {
+            guard (20...4096).contains(key.count), !key.contains("..."), key.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || "-_.".unicodeScalars.contains($0) }) else { throw QuillError.badKey }
+        }
         let prefixes: [Provider:[String]] = [.groq:["gsk_"], .openai:["sk-"], .openrouter:["sk-or-"], .gemini:["AIza","AQ."]]
         if let allowed = prefixes[provider], !allowed.contains(where: key.hasPrefix) { throw QuillError.badKey }
         let base = try Endpoint.validated(provider == .custom ? baseURL : provider.baseURL)
@@ -192,10 +196,16 @@ public enum ModelCatalog {
     public static func rank(_ models: [ModelOption], use: ModelUse) -> [ModelOption] {
         var seen: Set<String> = []
         func score(_ id: String) -> Int { (["preview","experimental","exp-","reasoning"].contains { id.contains($0) } ? 20 : 0) + ((use == .dictation ? ["turbo","mini","flash"] : ["versatile","instant","instruct"]).contains { id.contains($0) } ? 0 : 5) }
+        func version(_ id: String) -> Double {
+            let regex = try! NSRegularExpression(pattern: "[0-9]+(?:\\.[0-9]+)?")
+            guard let match = regex.firstMatch(in: id, range: NSRange(id.startIndex..., in: id)) else { return 0 }
+            return Double((id as NSString).substring(with: match.range)) ?? 0
+        }
         return models.filter { seen.insert($0.id).inserted }.sorted { a,b in
             if a.isFree != b.isFree { return a.isFree }
             if score(a.id) != score(b.id) { return score(a.id) < score(b.id) }
             if a.created != b.created { return a.created > b.created }
+            if version(a.id) != version(b.id) { return version(a.id) > version(b.id) }
             return a.id < b.id
         }
     }

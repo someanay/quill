@@ -54,6 +54,11 @@ struct SavedKey: Identifiable, Codable, Equatable {
     let createdAt: Date
 }
 
+struct KeychainFailure: Error, LocalizedError {
+    let status: OSStatus
+    var errorDescription: String? { "Keychain operation failed (OSStatus \(status))." }
+}
+
 /// API-key bytes exist only in the host app's private Keychain access group. No Keychain sharing
 /// entitlement is granted to the keyboard. Records are local to this device and never synchronize.
 @MainActor final class KeyVault {
@@ -82,7 +87,8 @@ struct SavedKey: Identifiable, Codable, Equatable {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
             kSecAttrAccount as String: id.uuidString, kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecAttrSynchronizable as String: false, kSecValueData as String: Data(secret.utf8)]
-        guard SecItemAdd(query as CFDictionary, nil) == errSecSuccess else { throw QuillError.storage }
+        let status = SecItemAdd(query as CFDictionary, nil)
+        guard status == errSecSuccess else { throw KeychainFailure(status: status) }
         let record = SavedKey(id: id, label: label.isEmpty ? provider.title : String(label.prefix(60)), provider: provider, endpoint: endpoint, suffix: String(secret.suffix(4)), createdAt: Date())
         keys.append(record); selected[provider.rawValue] = id
         do { try persist() }
@@ -107,7 +113,14 @@ struct SavedKey: Identifiable, Codable, Equatable {
 
 /// SQLite is confined to the main actor. All text is bound, never interpolated into SQL. Secure
 /// deletion and DELETE journaling avoid a persistent WAL copy of expired transcripts.
-@MainActor final class HistoryStore {
+@MainActor protocol HistoryRepository: AnyObject {
+    func save(_ entry: HistoryEntry) throws
+    func entries(retentionMinutes: Int) throws -> [HistoryEntry]
+    func delete(_ id: UUID) throws
+    func clear() throws
+}
+
+@MainActor final class HistoryStore: HistoryRepository {
     private var database: OpaquePointer?
     init() throws {
         try AppFiles.prepare()
@@ -146,10 +159,14 @@ struct SavedKey: Identifiable, Codable, Equatable {
         defer { sqlite3_finalize(s) }
         func string(_ index: Int32) -> String { guard let ptr = sqlite3_column_text(s, index) else { return "" }; return String(cString: ptr) }
         var entries = [HistoryEntry]()
-        while sqlite3_step(s) == SQLITE_ROW {
-            guard let id = UUID(uuidString: string(0)) else { continue }
-            entries.append(HistoryEntry(text: string(1), provider: Provider(rawValue: string(2)) ?? .groq, date: Date(timeIntervalSince1970: sqlite3_column_double(s, 3)), destination: string(4), status: string(5), id: id))
+        var step = sqlite3_step(s)
+        while step == SQLITE_ROW {
+            if let id = UUID(uuidString: string(0)) {
+                entries.append(HistoryEntry(text: string(1), provider: Provider(rawValue: string(2)) ?? .groq, date: Date(timeIntervalSince1970: sqlite3_column_double(s, 3)), destination: string(4), status: string(5), id: id))
+            }
+            step = sqlite3_step(s)
         }
+        guard step == SQLITE_DONE else { throw QuillError.storage }
         return entries
     }
     func delete(_ id: UUID) throws {

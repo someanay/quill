@@ -12,6 +12,7 @@ enum Copy {
 }
 enum QuillTheme {
     static let brand = Color(hex: 0x234DCE)
+    static func brandInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xB6C9FF : 0x1A3FAF) }
     static let error = Color(hex: 0xD6453D)
     static let success = Color(hex: 0x2E9E6B)
     static func paper(_ dark: Bool) -> Color { Color(hex: dark ? 0x11141A : 0xF5F7F5) }
@@ -42,21 +43,23 @@ struct BrandMark: View {
 }
 struct Wordmark: View {
     @Environment(\.colorScheme) private var scheme
-    var body: some View { (Text("quill") + Text(".").foregroundColor(scheme == .dark ? Color(hex: 0xB6C9FF) : QuillTheme.brand)).font(QuillTheme.sans(34)).fontWeight(.semibold).tracking(-2).accessibilityLabel("Quill") }
+    var body: some View { (Text("quill") + Text(".").foregroundColor(QuillTheme.brandInk(scheme == .dark))).font(QuillTheme.sans(34)).fontWeight(.semibold).tracking(-2).accessibilityLabel("Quill") }
 }
 struct QuillCard<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder var content: Content
-    var body: some View { VStack(alignment: .leading, spacing: 14) { content }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1)) }
+    var body: some View { VStack(alignment: .leading, spacing: 14) { content }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1)) }
 }
 struct QuillButton: View {
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.isEnabled) private var enabled
     let key: String
     var primary = true
     var action: () -> Void
     var body: some View {
         Button(action: action) { CopyText(key).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 48).contentShape(Capsule()) }
-        .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brand)
-        .background(primary ? QuillTheme.brand : QuillTheme.brand.opacity(0.1), in: Capsule()).accessibilityIdentifier(key)
+        .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
+        .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: Capsule()).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
     }
 }
 struct SectionLabel: View {
@@ -73,7 +76,11 @@ struct InkMeter: View {
     @Environment(\.accessibilityReduceMotion) private var reduced
     var body: some View {
         HStack(spacing: 4) { ForEach(0..<bars, id: \.self) { index in
-            Capsule().fill(QuillTheme.brand.gradient).frame(width: 5, height: max(5, (reduced ? 0.18 : amplitude) * (28 + 30 * abs(sin(Double(index) * 1.7)))))
+            let t = bars <= 1 ? 0.5 : Double(index) / Double(bars - 1)
+            let weight = 0.45 + 0.55 * (1 - abs(t - 0.5) * 2)
+            let target = reduced ? 0.18 : min(1, max(0, amplitude))
+            let active = target * weight > 0.06
+            Capsule().fill(LinearGradient(colors: active ? [QuillTheme.brand, Color(hex: 0x1A3FAF)] : [Color(hex: 0xCBD2CC), Color(hex: 0xCBD2CC)], startPoint: .top, endPoint: .bottom)).frame(width: 5, height: active ? 64 * (0.16 + 0.84 * target * weight) : 5)
         } }.frame(height: 64).animation(reduced ? nil : .easeOut(duration: 0.1), value: amplitude).accessibilityLabel(Copy.text("mac.meter.level"))
     }
 }

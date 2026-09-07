@@ -103,9 +103,7 @@ struct OnboardingView: View {
             QHeading(title: model.c("onboarding.mictest.title"))
             Text(model.c("onboarding.mictest.body")).foregroundStyle(Q.muted)
             MicTestPanel(recorder: model.recorder)
-            QButton(title: model.recorder.isRecording ? model.c("ios.recording.stop_test") : model.c("ios.recording.start_test")) {
-                if model.recorder.isRecording { model.stopMicTest() } else { Task { await model.startMicTest() } }
-            }
+            MicTestControls(recorder: model.recorder)
             QBanner(text: model.c("ios.mic.test_private"), icon: "lock")
             QButton(title: model.c("onboarding.mictest.cta"), secondary: true) { model.stopMicTest(); model.settings.onboardingStep = 5 }
         }.task { await model.startMicTest() }.onDisappear { model.stopMicTest() }
@@ -154,6 +152,16 @@ struct MicTestPanel: View {
     var body: some View { QCard { InkMeter(amplitude: recorder.amplitude).frame(maxWidth: .infinity).padding(.vertical, 20) } }
 }
 
+struct MicTestControls: View {
+    @EnvironmentObject private var model: AppModel
+    @ObservedObject var recorder: AudioRecorder
+    var body: some View {
+        QButton(title: model.c(recorder.isRecording ? "ios.recording.stop_test" : "ios.recording.start_test")) {
+            if recorder.isRecording { model.stopMicTest() } else { Task { await model.startMicTest() } }
+        }
+    }
+}
+
 func openSettings() { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }
 
 struct KeyEditor: View {
@@ -181,7 +189,7 @@ struct KeyEditor: View {
                                     else { SecureField(model.c("onboarding.key.field_label"), text: $secret) }
                                 }.textInputAutocapitalization(.never).autocorrectionDisabled().font(.system(.body, design: .monospaced)).privacySensitive()
                                 Button { reveal.toggle() } label: { Image(systemName: reveal ? "eye.slash" : "eye").frame(width: 48, height: 48) }.accessibilityLabel(model.c(reveal ? "a11y.hide_key" : "a11y.show_key"))
-                            }.padding(.leading, 14).background(Q.sunken, in: RoundedRectangle(cornerRadius: 12))
+                            }.padding(.leading, 14).background(Q.sunken, in: RoundedRectangle(cornerRadius: Q.fieldRadius))
                             QButton(title: model.keyValidationRunning ? model.c("onboarding.key.verifying") : model.c("onboarding.key.cta")) {
                                 let candidate = secret, chosen = provider
                                 Task { if await model.verifyAndSaveKey(provider: chosen, secret: candidate, label: label) { model.selectProvider(chosen); secret = ""; onSaved() } }

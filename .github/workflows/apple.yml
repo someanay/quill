@@ -66,12 +66,25 @@ jobs:
           PROJECT: ${{ matrix.project }}
           SCHEME: ${{ matrix.scheme }}
           DESTINATION: ${{ steps.destination.outputs.value }}
+          PLATFORM: ${{ matrix.platform }}
         run: |
           set -o pipefail
+          SIGNING=(CODE_SIGNING_ALLOWED=NO)
+          if [ "$PLATFORM" = ios ]; then
+            SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
+          fi
           xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
-            -resultBundlePath TestResults.xcresult CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath TestResults.xcresult "${SIGNING[@]}" \
             2>&1 | tee native-build.log
+      - name: Inspect iOS simulator entitlements
+        if: always() && matrix.platform == 'ios'
+        run: |
+          for APP in ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app/PlugIns/QuillKeyboard.appex; do
+            if [ -d "$APP" ]; then
+              codesign -d --entitlements :- "$APP"
+            fi
+          done
       - name: Capture iOS simulator
         if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
         env:

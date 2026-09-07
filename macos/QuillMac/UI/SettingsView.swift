@@ -1,4 +1,5 @@
 import SwiftUI
+import CryptoKit
 import QuillCore
 
 enum SettingsPage: String, CaseIterable, Identifiable {
@@ -8,6 +9,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var symbol: String { ["speech":"waveform", "keys":"key", "cleanup":"sparkles", "style":"textformat", "words":"pencil", "vocab":"person.crop.rectangle", "audio":"mic", "bubble":"rectangle.on.rectangle", "privacy":"lock.shield", "advanced":"slider.horizontal.3", "about":"info.circle"][rawValue]! }
 }
 struct SettingsView: View {
+    @Environment(\.colorScheme) private var scheme
     @State private var page: SettingsPage?
     var body: some View {
         ScrollView {
@@ -33,7 +35,7 @@ struct SettingsView: View {
                         if item == .audio { SectionLabel(key: "settings.group.capture") }
                         if item == .privacy { SectionLabel(key: "settings.group.privacy") }
                         Button { page = item } label: {
-                            QuillCard { HStack { Image(systemName: item.symbol).font(.system(size: 20)).foregroundStyle(QuillTheme.brand).frame(width: 40, height: 40).background(QuillTheme.brand.opacity(0.09), in: RoundedRectangle(cornerRadius: 10)); CopyText(item.key).font(QuillTheme.sans(16)); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) } }
+                            QuillCard { HStack { Image(systemName: item.symbol).font(.system(size: 20)).foregroundStyle(QuillTheme.brandInk(scheme == .dark)).frame(width: 40, height: 40).background(QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)); CopyText(item.key).font(QuillTheme.sans(16)); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) } }
                         }.buttonStyle(.plain).accessibilityIdentifier("settings.\(item.rawValue)")
                     }
                 }
@@ -57,9 +59,9 @@ struct ModelPicker: View {
             Picker(Copy.text(use == .dictation ? "settings.speech.model" : "settings.cleanup.model"), selection: $selection) {
                 ForEach(choices) { model in Text(model.id + (model.isFree ? " · " + Copy.text("onboarding.key.console_free") : model.isPaid ? " · " + Copy.text("models.paid") : "")).tag(model.id) }
             }
-            TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder)
+            TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder).accessibilityIdentifier("model-id")
             HStack { Button(Copy.text("mac.models.refresh")) { Task { await refresh() } }.disabled(loading); if loading { ProgressView().controlSize(.small) }; if failed { HelpText(key: "mac.models.offline") } }
-        }.task(id: provider.rawValue + use.rawValue) {
+        }.task(id: provider.rawValue + use.rawValue + (provider == .custom ? settings.value.customBaseURL : "")) {
             models = cached()
             if models.isEmpty { await refresh() }
         }
@@ -70,7 +72,10 @@ struct ModelPicker: View {
         if !selection.isEmpty && !result.contains(where: { $0.id == selection }) { result.insert(ModelOption(id: selection), at: 0) }
         return result
     }
-    private var path: URL { AppPaths.root.appendingPathComponent("models-\(provider.rawValue)-\(use.rawValue).json") }
+    private var path: URL {
+        let suffix = provider == .custom ? "-" + SHA256.hash(data: Data(settings.value.customBaseURL.utf8)).prefix(8).map { String(format: "%02x", $0) }.joined() : ""
+        return AppPaths.root.appendingPathComponent("models-\(provider.rawValue)-\(use.rawValue)\(suffix).json")
+    }
     private func cached() -> [ModelOption] { (try? JSONDecoder().decode([ModelOption].self, from: Data(contentsOf: path))) ?? [] }
     private func refresh() async {
         loading = true; failed = false; defer { loading = false }
@@ -151,7 +156,7 @@ struct CleanupSettings: View {
         QuillCard {
             Toggle(Copy.text("settings.cleanup.tidy_title"), isOn: Binding(get: { settings.value.shouldClean }, set: { settings.value.setCleanupEnabled($0) })).toggleStyle(.switch)
             HelpText(key: "settings.cleanup.tidy_sub")
-            Toggle(Copy.text("settings.cleanup.automatic"), isOn: Binding(get: { settings.value.cleanupAutomatic }, set: { settings.value.setCleanupAutomatic($0) })).toggleStyle(.switch)
+            Toggle(Copy.text("settings.cleanup.automatic"), isOn: Binding(get: { settings.value.cleanupAutomatic }, set: { settings.value.setCleanupAutomatic($0) })).toggleStyle(.switch).accessibilityIdentifier("cleanup-automatic")
             HelpText(key: "settings.cleanup.automatic_help")
             if settings.value.cleanupAutomatic {
                 Text(settings.value.provider.name + " · " + settings.value.effectiveCleanupModel).foregroundStyle(.secondary)

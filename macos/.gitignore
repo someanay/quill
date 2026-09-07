@@ -1,0 +1,6 @@
+.DS_Store
+build/
+*.xcodeproj/
+QuillCore/.build/
+QuillCore/.swiftpm/
+*.xcresult/

@@ -86,9 +86,13 @@ struct HistoryView: View {
             if model.history.isEmpty {
                 VStack(spacing: 18) {
                     PermissionIllustration(icon: "clock")
-                    Text(model.c("history.empty_title")).font(Q.serif(24))
-                    Text(model.c("ios.home.no_history")).foregroundStyle(Q.muted)
-                    QButton(title: model.c("onboarding.allset.cta"), secondary: true) { model.tab = 0 }
+                    Text(model.c(model.settings.shouldSaveHistory ? "history.empty.on_title" : "history.empty.off_title")).font(Q.serif(24))
+                    Text(model.c(model.settings.shouldSaveHistory ? "history.empty.on_body" : "history.empty.off_body")).foregroundStyle(Q.muted)
+                    if model.settings.shouldSaveHistory {
+                        QButton(title: model.c("history.empty.on_cta"), secondary: true) { model.tab = 0 }
+                    } else {
+                        NavigationLink(model.c("history.empty.off_cta")) { PrivacySettingsView() }.frame(minHeight: 48)
+                    }
                 }.frame(maxWidth: .infinity).padding(.vertical, 45)
             } else {
                 ForEach(model.history) { entry in

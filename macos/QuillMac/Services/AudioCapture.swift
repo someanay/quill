@@ -40,7 +40,7 @@ final class AudioCapture: @unchecked Sendable {
             let shouldNotify = stop && !self.stoppedAutomatically
             if shouldNotify { self.stoppedAutomatically = true }
             self.lock.unlock()
-            self.onLevel?(min(1, rms / 10000), elapsed, elapsed >= Double(cap - 15))
+            self.onLevel?(min(1, rms / 8000), elapsed, elapsed >= Double(cap - 15))
             if shouldNotify { self.onAutoStop?() }
         }
         do { engine.prepare(); try engine.start() }

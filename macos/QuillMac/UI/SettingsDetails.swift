@@ -24,7 +24,7 @@ struct StyleSettings: View {
                 }
             }
             HelpText(key: "settings.style.help")
-        }.task {
+        }.onAppear {
             var found: [String:String] = [:]
             for path in ["/Applications", "/System/Applications", NSHomeDirectory() + "/Applications"] {
                 guard let enumerator = FileManager.default.enumerator(at: URL(fileURLWithPath: path), includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles, .skipsPackageDescendants]) else { continue }
@@ -38,6 +38,7 @@ struct StyleSettings: View {
 }
 
 struct WordsSettings: View {
+    @Environment(\.colorScheme) private var scheme
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var dictation: Dictation
     @State private var heard = ""
@@ -64,7 +65,7 @@ struct WordsSettings: View {
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
-                QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brand) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } } } }
+                QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } } } }
             }
         }.onDisappear { if capturing { dictation.cancel() } }
     }

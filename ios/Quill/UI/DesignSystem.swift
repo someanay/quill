@@ -10,6 +10,7 @@ enum Q {
     }
     static let brand = adaptive(0x234DCE, 0x234DCE)
     static let brandInk = adaptive(0x1A3FAF, 0xB6C9FF)
+    static let brandMark = adaptive(0x234DCE, 0xB6C9FF)
     static let brandSoft = adaptive(0xE4EBF5, 0x202D47)
     static let paper = adaptive(0xF5F7F5, 0x11141A)
     static let surface = adaptive(0xFFFFFF, 0x171B23)
@@ -19,13 +20,18 @@ enum Q {
     static let line = adaptive(0xD9DED9, 0x353C48)
     static let danger = adaptive(0xD6453D, 0xE8635B)
     static let success = adaptive(0x2E9E6B, 0x43B585)
+    static let fieldRadius: CGFloat = 6
+    static let cardRadius: CGFloat = 8
+    static let controlRadius: CGFloat = 4
+    static let largeRadius: CGFloat = 12
+    static let dialogRadius: CGFloat = 16
     static func sans(_ size: CGFloat = 16, relativeTo style: Font.TextStyle = .body) -> Font { .custom("IBMPlexSans", size: size, relativeTo: style) }
     static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerifVar-Regular", size: size, relativeTo: .title) }
 }
 
 struct Wordmark: View {
     var body: some View {
-        (Text("quill").foregroundStyle(Q.ink) + Text(".").foregroundStyle(Q.brand))
+        (Text("quill").foregroundStyle(Q.ink) + Text(".").foregroundStyle(Q.brandMark))
             .font(Q.sans(34, relativeTo: .title)).fontWeight(.semibold).tracking(-2).accessibilityLabel("Quill")
     }
 }
@@ -33,7 +39,7 @@ struct Wordmark: View {
 struct QCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
-    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Q.surface, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).stroke(Q.line, lineWidth: 1)) }
+    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
 }
 struct QButton: View {
     let title: String
@@ -46,7 +52,7 @@ struct QButton: View {
             HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center) }
                 .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 18).padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 48)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
-                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: 12))
+                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.largeRadius))
         }.buttonStyle(.plain)
     }
 }
@@ -64,7 +70,8 @@ struct QBanner: View {
             }
         }.font(Q.sans(13)).foregroundStyle(error ? Q.danger : Q.brandInk)
             .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            .background(error ? Q.danger.opacity(0.09) : Q.brandSoft, in: RoundedRectangle(cornerRadius: 12))
+            // Android's Banner explicitly overrides its theme's small shape with 12 dp.
+            .background(error ? Q.danger.opacity(0.09) : Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.largeRadius))
     }
 }
 struct QHeading: View {
@@ -82,7 +89,7 @@ struct QRow: View {
     var value: String? = nil
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon).font(.system(size: 19)).foregroundStyle(Q.brandInk).frame(width: 40, height: 40).background(Q.brandSoft, in: RoundedRectangle(cornerRadius: 10)).accessibilityHidden(true)
+            Image(systemName: icon).font(.system(size: 19)).foregroundStyle(Q.brandInk).frame(width: 40, height: 40).background(Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.cardRadius)).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(Q.sans(16)).foregroundStyle(Q.ink)
                 if let subtitle { Text(subtitle).font(Q.sans(13)).foregroundStyle(Q.muted) }
@@ -100,7 +107,7 @@ struct QField: View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).font(Q.sans(12)).foregroundStyle(Q.muted)
             TextField(title, text: $text, axis: .vertical).font(Q.sans()).textInputAutocapitalization(.never).autocorrectionDisabled()
-                .padding(14).background(Q.surface, in: RoundedRectangle(cornerRadius: 12)).overlay(RoundedRectangle(cornerRadius: 12).stroke(Q.line, lineWidth: 1.5))
+                .padding(14).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.fieldRadius)).overlay(RoundedRectangle(cornerRadius: Q.fieldRadius).stroke(Q.line, lineWidth: 1.5))
                 .accessibilityLabel(title)
         }
     }
@@ -111,7 +118,7 @@ struct PermissionIllustration: View {
         ZStack {
             Circle().fill(Q.brandSoft.opacity(0.5))
             Circle().stroke(Q.line, style: StrokeStyle(lineWidth: 1.5, dash: [6, 6])).padding(5)
-            Image(systemName: icon).font(.system(size: 30)).foregroundStyle(.white).frame(width: 60, height: 60).background(Q.brand, in: RoundedRectangle(cornerRadius: 18))
+            Image(systemName: icon).font(.system(size: 30)).foregroundStyle(.white).frame(width: 60, height: 60).background(Q.brand, in: RoundedRectangle(cornerRadius: Q.largeRadius))
         }.frame(width: 118, height: 118).accessibilityHidden(true)
     }
 }

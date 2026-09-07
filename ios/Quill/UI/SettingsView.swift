@@ -166,7 +166,7 @@ struct WritingStyleView: View {
                     QCard {
                         HStack {
                             VStack(alignment: .leading, spacing: 5) { Text(model.c("settings.style.\(style.rawValue)")).font(Q.sans(17)).foregroundStyle(Q.ink); Text(model.c("settings.style.\(style.rawValue)_sub")).font(Q.sans(13)).foregroundStyle(Q.muted).multilineTextAlignment(.leading) }
-                            Spacer(); if model.settings.writingStyle == style { Image(systemName: "checkmark.circle.fill").foregroundStyle(Q.brand) }
+                            Spacer(); if model.settings.writingStyle == style { Image(systemName: "checkmark.circle.fill").foregroundStyle(Q.brandInk) }
                         }.frame(minHeight: 48)
                     }
                 }.buttonStyle(.plain).accessibilityAddTraits(model.settings.writingStyle == style ? [.isSelected] : [])

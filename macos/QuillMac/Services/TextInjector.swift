@@ -38,7 +38,13 @@ enum InsertionResult { case confirmed, unconfirmed, unavailable }
         guard let value = attribute(root, kAXFocusedUIElementAttribute), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
         let element = value as! AXUIElement
         guard !isSensitive(element) else { throw QuillError.sensitiveField }
-        return FocusSnapshot(element: element, process: app.processIdentifier, bundleID: app.bundleIdentifier, appName: app.localizedName ?? "", originalText: string(element, kAXValueAttribute), originalRange: range(element))
+        var selectedSettable: DarwinBoolean = false, valueSettable: DarwinBoolean = false
+        _ = AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &selectedSettable)
+        _ = AXUIElementIsAttributeSettable(element, kAXValueAttribute as CFString, &valueSettable)
+        let role = string(element, kAXRoleAttribute) ?? ""
+        let text = string(element, kAXValueAttribute)
+        guard selectedSettable.boolValue || (valueSettable.boolValue && text != nil) || [kAXTextFieldRole, kAXTextAreaRole, kAXComboBoxRole].contains(role) else { return nil }
+        return FocusSnapshot(element: element, process: app.processIdentifier, bundleID: app.bundleIdentifier, appName: app.localizedName ?? "", originalText: text, originalRange: range(element))
     }
     private func matches(_ target: FocusSnapshot) throws -> Bool {
         guard Self.permitted else { throw QuillError.noAccessibility }

@@ -77,6 +77,7 @@ public struct QuillSettings: Codable, Equatable, Sendable {
     public var sessionCapSeconds = 300
     public var onboardingComplete = false
     public var accessibilityEnabledOnce = false
+    public var accessibilityConsent = false
     public var bubbleSize = "Medium"
     public var appTheme = "Match system"
     public var bootRestore = true
@@ -88,6 +89,26 @@ public struct QuillSettings: Codable, Equatable, Sendable {
     public var words: [CustomWord] = []
     public var contactNames: [String] = []
     public init() {}
+    private enum CodingKeys: String, CodingKey {
+        case provider, speechModel, customBaseURL, customModel, language, cleanupEnabled, cleanupAutomatic, cleanupProvider, cleanupModel, cleanupModelSelections, writingStyle, styleOverrides, privateMode, historyEnabled, historyRetentionMinutes, sessionCapSeconds, onboardingComplete, accessibilityEnabledOnce, accessibilityConsent, bubbleSize, appTheme, bootRestore, bubbleActive, bubbleVisible, crashReportingEnabled, freeTierProviders, activeKeys, words, contactNames
+    }
+    public init(from decoder: Decoder) throws {
+        self.init()
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        func read<T: Decodable>(_ key: CodingKeys, _ fallback: T) -> T { (try? values.decode(T.self, forKey: key)) ?? fallback }
+        provider = read(.provider, provider); speechModel = read(.speechModel, provider.defaultSpeech)
+        customBaseURL = read(.customBaseURL, customBaseURL); customModel = read(.customModel, customModel); language = read(.language, language)
+        cleanupEnabled = read(.cleanupEnabled, cleanupEnabled); cleanupAutomatic = read(.cleanupAutomatic, cleanupAutomatic)
+        cleanupProvider = read(.cleanupProvider, cleanupProvider); cleanupModel = read(.cleanupModel, cleanupModel)
+        cleanupModelSelections = read(.cleanupModelSelections, cleanupModelSelections); writingStyle = read(.writingStyle, writingStyle); styleOverrides = read(.styleOverrides, styleOverrides)
+        privateMode = read(.privateMode, privateMode); historyEnabled = read(.historyEnabled, historyEnabled)
+        historyRetentionMinutes = read(.historyRetentionMinutes, historyRetentionMinutes); sessionCapSeconds = read(.sessionCapSeconds, sessionCapSeconds)
+        onboardingComplete = read(.onboardingComplete, onboardingComplete); accessibilityEnabledOnce = read(.accessibilityEnabledOnce, accessibilityEnabledOnce); accessibilityConsent = read(.accessibilityConsent, accessibilityConsent)
+        bubbleSize = read(.bubbleSize, bubbleSize); appTheme = read(.appTheme, appTheme); bootRestore = read(.bootRestore, bootRestore)
+        bubbleActive = read(.bubbleActive, bubbleActive); bubbleVisible = read(.bubbleVisible, bubbleVisible); crashReportingEnabled = read(.crashReportingEnabled, crashReportingEnabled)
+        freeTierProviders = read(.freeTierProviders, freeTierProviders); activeKeys = read(.activeKeys, activeKeys); words = read(.words, words); contactNames = read(.contactNames, contactNames)
+        normalize()
+    }
     public var effectiveCleanupProvider: Provider { cleanupAutomatic ? provider : cleanupProvider }
     public var effectiveCleanupModel: String { cleanupAutomatic ? provider.defaultCleanup : cleanupModel }
     public var shouldClean: Bool { cleanupEnabled && (!cleanupAutomatic || provider.freeCleanup) }
@@ -132,7 +153,7 @@ public enum Endpoint {
     }
 }
 public enum QuillError: Error, Equatable, Sendable {
-    case badKey, quota, rateLimit, network, timeout, emptyTranscript, blockedTranscript, incompleteTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, sensitiveField, focusChanged, cancelled, storage
+    case badKey, quota, rateLimit, network, timeout, emptyTranscript, blockedTranscript, incompleteTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, noFocusedField, sensitiveField, focusChanged, cancelled, storage
     public var copyKey: String {
         switch self {
         case .badKey: return "mac.error.bad_key"
@@ -144,6 +165,7 @@ public enum QuillError: Error, Equatable, Sendable {
         case .invalidModel: return "mac.error.model"
         case .noMicrophone: return "mac.error.microphone"
         case .noAccessibility: return "mac.error.accessibility"
+        case .noFocusedField: return "mac.error.no_field"
         case .sensitiveField: return "mac.error.sensitive"
         case .focusChanged: return "mac.error.focus_changed"
         case .storage: return "mac.error.storage"

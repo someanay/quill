@@ -41,6 +41,7 @@ DEFAULTS = {
     "ios.keyboard.space": "Space",
     "ios.keyboard.return": "Return",
     "ios.keyboard.selection": "Tap to place the cursor without a selection before inserting. Your existing text stays intact.",
+    "ios.keyboard.field_unavailable": "Quill can't insert into this field. Choose an ordinary text field in an app that allows custom keyboards.",
     "ios.keyboard.full_access_needed": "Type normally here. To insert a dictation, allow Full Access for Quill in Settings → General → Keyboard → Keyboards.",
     "ios.keyboard.record_help": "Record in the Quill app, tap Send to keyboard, return here and tap Insert dictation.",
     "ios.keyboard.transfer_error": "Couldn't read that dictation. Return to Quill and send it to the keyboard again.",

@@ -77,18 +77,13 @@ public enum TextPipeline {
 }
 
 public enum InsertionComposer {
-    public static func compose(_ text: String, before: String?, after: String?) -> String {
+    public static func compose(_ text: String, before: String?, after: String?, replacingSelection: Bool = false) -> String {
         guard !text.isEmpty else { return "" }
-        let closing = CharacterSet(charactersIn: ",.;:!?)]}、。，！？：；")
-        let opening = CharacterSet(charactersIn: "([{\n")
-        var result = text
-        if let last = before?.unicodeScalars.last, let first = text.unicodeScalars.first,
-           !CharacterSet.whitespacesAndNewlines.contains(last), !opening.contains(last),
-           !CharacterSet.whitespacesAndNewlines.contains(first), !closing.contains(first) { result = " " + result }
-        if let next = after?.unicodeScalars.first, let last = text.unicodeScalars.last,
-           !CharacterSet.whitespacesAndNewlines.contains(next), !closing.contains(next),
-           !CharacterSet.whitespacesAndNewlines.contains(last), !opening.contains(last) { result += " " }
-        return result
+        // Android adds one separator only when appending; middle insertion and selection
+        // replacement preserve the exact transcript. A native proxy has no placeholder text.
+        if !replacingSelection, (after ?? "").isEmpty, let last = before?.last,
+           !last.isWhitespace, let first = text.first, !first.isWhitespace { return " " + text }
+        return text
     }
 }
 

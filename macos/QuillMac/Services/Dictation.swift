@@ -28,6 +28,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     private var target: FocusSnapshot?
     private var pendingAudio: Data?
     private var clipboardTarget = false
+    private var pasteSent = false
     private var generation = UUID()
     private var permissionTimer: Timer?
     private var lastHistoryRefresh = Date.distantPast
@@ -61,10 +62,12 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         do {
             guard microphoneGranted else { throw QuillError.noMicrophone }
             let snapshot = settings.value
+            if !wordCapture && !snapshot.accessibilityConsent { throw QuillError.noAccessibility }
             guard keys.active(snapshot.provider, settings: snapshot) != nil else { throw QuillError.badKey }
             guard !snapshot.speechModel.isEmpty else { throw QuillError.invalidModel }
             if snapshot.provider == .custom { _ = try Endpoint.validated(snapshot.customBaseURL) }
             let focused = wordCapture ? nil : try injector.snapshot()
+            if !wordCapture && !toClipboard && focused == nil { throw QuillError.noFocusedField }
             target = toClipboard ? nil : focused
             clipboardTarget = toClipboard
             recordingSettings = snapshot; elapsed = 0; level = 0; limitWarning = false; transcript = ""; message = ""
@@ -79,7 +82,10 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     }
     func retry() { guard pendingAudio != nil, state == .error else { return }; transcribe() }
     private func transcribe() {
-        guard let audio = pendingAudio, let snapshot = recordingSettings, let key = keys.active(snapshot.provider, settings: snapshot) else { report(QuillError.badKey); return }
+        guard let audio = pendingAudio, let snapshot = recordingSettings else { return }
+        var credentialSettings = settings.value
+        credentialSettings.customBaseURL = snapshot.customBaseURL
+        guard let key = keys.active(snapshot.provider, settings: credentialSettings) else { report(QuillError.badKey); return }
         state = .transcribing; message = ""; let token = generation
         pipeline = Task { [weak self] in
             guard let self else { return }
@@ -88,7 +94,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
                 let raw = try await client.transcribe(audio: audio, options: options, key: key)
                 try Task.checkCancellation(); guard token == generation else { return }
                 var final = raw
-                if snapshot.shouldClean, let cleanupKey = keys.active(snapshot.effectiveCleanupProvider, settings: snapshot) {
+                if snapshot.shouldClean, let cleanupKey = keys.active(snapshot.effectiveCleanupProvider, settings: credentialSettings) {
                     final = try await client.clean(raw, provider: snapshot.effectiveCleanupProvider, model: snapshot.effectiveCleanupModel, baseURL: snapshot.customBaseURL, key: cleanupKey, style: snapshot.style(for: target?.bundleID))
                 }
                 try Task.checkCancellation(); guard token == generation else { return }
@@ -96,7 +102,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
                 transcript = final; pendingAudio = nil
                 if let captured = onWordCaptured { onWordCaptured = nil; captured(final); state = .idle; return }
                 history.insert(HistoryEntry(text: final, provider: snapshot.provider, appName: target?.appName ?? "", duration: elapsed), settings: settings.value)
-                if clipboardTarget { ClipboardLease.write(final); message = "mac.status.copied"; state = .idle; transcript = settings.value.privateMode ? "" : final; return }
+                if clipboardTarget { ClipboardLease.write(final); message = "mac.status.copied"; state = .idle; transcript = settings.value.privateMode ? "" : final; target = nil; recordingSettings = nil; return }
                 do {
                     switch try injector.insert(final, target: target) {
                     case .confirmed: state = .idle
@@ -105,21 +111,30 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
                     }
                 }
                 catch { message = (error as? QuillError)?.copyKey ?? "mac.error.focus_changed"; state = .paste }
-                if state == .idle { message = "mac.status.inserted"; if settings.value.privateMode { transcript = "" } }
+                if state == .idle { message = "mac.status.inserted"; target = nil; recordingSettings = nil; if settings.value.privateMode { transcript = "" } }
             } catch is CancellationError { }
             catch { if token == generation { report(error) } }
         }
     }
     func paste() {
         guard !transcript.isEmpty else { return }
-        do { if try injector.paste(transcript, target: target) { state = .paste; message = "mac.status.pasted" } }
+        guard !pasteSent else { message = "mac.status.pasted"; return }
+        do { if try injector.paste(transcript, target: target) { state = .paste; message = "mac.status.pasted"; pasteSent = true } }
         catch { report(error); state = .paste }
     }
-    func copyTranscript() { guard !transcript.isEmpty else { return }; ClipboardLease.write(transcript); message = "mac.status.copied"; state = .idle; transcript = "" }
+    func copyTranscript() { guard !transcript.isEmpty else { return }; ClipboardLease.write(transcript); message = "mac.status.copied"; state = .idle; transcript = ""; target = nil; recordingSettings = nil }
     func cancel() {
         generation = UUID(); pipeline?.cancel(); pipeline = nil; audio.cancel(); if let count = pendingAudio?.count { pendingAudio?.resetBytes(in: 0..<count) }; pendingAudio = nil
         state = .idle; level = 0; elapsed = 0; transcript = ""; target = nil; recordingSettings = nil; microphoneTest = false; onWordCaptured = nil
         clipboardTarget = false
+        pasteSent = false
+    }
+    func suspend() {
+        if microphoneTest { stopMicTest(); return }
+        guard state == .recording || state == .transcribing else { return }
+        generation = UUID(); pipeline?.cancel(); pipeline = nil
+        if state == .recording { pendingAudio = audio.stop(); level = 0 }
+        state = .error; message = "mac.status.sleep_retry"
     }
     func startMicTest() {
         cancel(); testHeard = false

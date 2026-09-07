@@ -731,6 +731,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "mac.error.hotkey": {
+      "default": "Command–Option–Space is already in use. Use the bubble or menu bar to dictate, or release this shortcut in the other app.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "mac.error.incomplete": {
       "default": "The provider stopped before completing the transcript. Try a shorter recording.",
       "placeholders": [],
@@ -757,6 +763,12 @@
     },
     "mac.error.network": {
       "default": "Could not reach your provider. Your recording is kept in memory so you can retry.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.error.no_field": {
+      "default": "Focus a text field in another app before tapping the bubble. Long-press the bubble to dictate to the clipboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1001,6 +1013,12 @@
     },
     "mac.status.ready_to_copy": {
       "default": "Your dictation is ready. Copy it, then paste it into your chosen field.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.status.sleep_retry": {
+      "default": "Recording stopped for sleep. Your audio is still available to retry or cancel.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

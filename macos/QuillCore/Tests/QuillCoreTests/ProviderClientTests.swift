@@ -42,6 +42,14 @@ final class ProviderClientTests: XCTestCase {
         do { try await client.validateKey(provider: .groq, key: "invalid", baseURL: ""); XCTFail("Expected rejection") }
         catch { XCTAssertEqual(error as? QuillError, .badKey) }
     }
+    func testCustomKeysHaveNoInventedProviderPrefixOrMinimumLength() async throws {
+        let client = client { request in
+            XCTAssertEqual(request.url?.host, "custom.example")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer local=key/+")
+            return (200, Data("{}".utf8))
+        }
+        try await client.validateKey(provider: .custom, key: "local=key/+", baseURL: "https://custom.example/v1")
+    }
     func testSuccessfulTranscriptionThroughURLSession() async throws {
         let client = client { request in
             XCTAssertEqual(request.url?.host, "api.openai.com")

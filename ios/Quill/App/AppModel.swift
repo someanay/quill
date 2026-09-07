@@ -24,8 +24,8 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     let vault = KeyVault()
     let diagnosticsCollector = DiagnosticsCollector()
     let copy: CopyCatalog
-    private let providerAPI = ProviderAPI()
-    private var historyStore: HistoryStore?
+    private let providerAPI: ProviderAPI
+    private var historyStore: (any HistoryRepository)?
     private var operation: Task<Void, Never>?
     private var pruneTimer: Timer?
     private var retainedAudio: URL?
@@ -36,14 +36,15 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     private var testingMicrophone = false
     private var voiceSampleMode = false
 
-    init() {
+    init(providerAPI: ProviderAPI = ProviderAPI(), historyStore: (any HistoryRepository)? = nil) {
+        self.providerAPI = providerAPI
         let bundle = Bundle.main
         let url = bundle.url(forResource: "strings.default", withExtension: "json", subdirectory: "copy") ?? bundle.url(forResource: "strings.default", withExtension: "json")
         copy = (url.flatMap { try? Data(contentsOf: $0) }.flatMap { try? CopyCatalog(data: $0) }) ?? CopyCatalog(strings: [:])
         settings = AppFiles.read(QuillSettings.self, name: "settings.json") ?? QuillSettings()
         if AppFiles.isUITesting { settings = QuillSettings() }
         settings.sanitize()
-        do { try AppFiles.prepare(); historyStore = try HistoryStore() }
+        do { try AppFiles.prepare(); self.historyStore = try historyStore ?? HistoryStore() }
         catch { errorKey = QuillError.storage.copyKey }
         words = AppFiles.read([CustomWord].self, name: "words.json") ?? []
         contactNames = AppFiles.read([String].self, name: "contacts.json") ?? []
@@ -156,7 +157,18 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func stopAndTranscribe() {
         guard phase == .recording, let file = recorder.stop() else { return }
-        retainedAudio = file
+        guard let snapshot else { return }
+        do { try processCapturedRecording(file, configuration: snapshot, words: snapshotWords, voiceSample: voiceSampleMode) }
+        catch { phase = .failed; report(error) }
+    }
+    /// The capture adapter hands a finalized app-owned file to the pipeline. Tests inject only
+    /// the transport/storage seams and exercise this same entry point with a synthetic WAV.
+    func processCapturedRecording(_ file: URL, configuration: QuillSettings, words: [CustomWord] = [], voiceSample: Bool = false) throws {
+        guard ![.transcribing, .cleaning].contains(phase),
+              file.standardizedFileURL.deletingLastPathComponent() == AppFiles.audio.standardizedFileURL,
+              FileManager.default.fileExists(atPath: file.path) else { throw QuillError.audio }
+        snapshot = configuration; snapshotWords = words; voiceSampleMode = voiceSample
+        retainedAudio = file; generation = UUID()
         do { try persistPendingRecording() } catch { report(error) }
         beginTranscription()
     }

@@ -21,6 +21,12 @@ final class QuillCoreTests: XCTestCase {
         var settings = QuillSettings(); settings.sessionCapSeconds = 600; settings.historyRetentionMinutes = -1; settings.bubbleSize = "invalid"
         settings.normalize(); XCTAssertEqual(settings.sessionCapSeconds, 300); XCTAssertEqual(settings.historyRetentionMinutes, 60); XCTAssertEqual(settings.bubbleDiameter, 56)
     }
+    func testSettingsUpgradeRetainsKnownValuesWhenNewFieldsAreAbsent() throws {
+        let old = Data("{\"provider\":\"gemini\",\"privateMode\":true,\"historyRetentionMinutes\":1440,\"unknownFutureField\":123}".utf8)
+        let settings = try JSONDecoder().decode(QuillSettings.self, from: old)
+        XCTAssertEqual(settings.provider, .gemini); XCTAssertEqual(settings.speechModel, Provider.gemini.defaultSpeech)
+        XCTAssertTrue(settings.privateMode); XCTAssertEqual(settings.historyRetentionMinutes, 1440); XCTAssertEqual(settings.sessionCapSeconds, 300)
+    }
     func testEndpointsRejectCredentialExfiltrationShapes() throws {
         for url in ["http://localhost", "https://user:password@example.com", "https://example.com?a=b", "https://example.com/#part", "file:///tmp/a", "https://"] { XCTAssertThrowsError(try Endpoint.validated(url)) }
         XCTAssertEqual(try Endpoint.validated("https://example.com/v1").host, "example.com")
@@ -75,6 +81,7 @@ final class QuillCoreTests: XCTestCase {
             if provider == .openrouter {
                 let body = try JSONSerialization.jsonObject(with: request.httpBody!) as! [String:Any]
                 XCTAssertNotNil(body["input_audio"]); XCTAssertNil(body["messages"])
+                XCTAssertNil(body["prompt"])
             }
         }
     }

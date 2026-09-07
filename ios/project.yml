@@ -62,7 +62,10 @@ targets:
   QuillTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [QuillTests]
+    sources:
+      - path: QuillTests
+      - path: QuillKeyboard/KeyboardViewController.swift
+      - path: Shared
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
