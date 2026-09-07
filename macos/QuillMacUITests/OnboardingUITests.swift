@@ -1,6 +1,24 @@
 import XCTest
 
 final class OnboardingUITests: XCTestCase {
+    func testEveryOnboardingStagePresentationInLightAndDark() throws {
+        let stages = ["splash", "welcome", "warning", "key", "checklist", "microphone", "bubble", "accessibility", "ready"]
+        for dark in [false, true] {
+            for (index, stage) in stages.enumerated() {
+                let app = XCUIApplication()
+                app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(index)] + (dark ? ["--ui-dark"] : [])
+                app.launch()
+                XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
+                if index == 3 { XCTAssertFalse(app.buttons["onboarding.key.cta"].isEnabled) }
+                if index == 5 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
+                if index == 7 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
+                let shot = XCTAttachment(screenshot: app.screenshot())
+                shot.name = "macOS-onboarding-presentation-" + (dark ? "dark-" : "light-") + stage
+                shot.lifetime = .keepAlways; add(shot)
+                app.terminate()
+            }
+        }
+    }
     private func reveal(_ row: XCUIElement, in app: XCUIApplication) {
         let scroll = app.scrollViews.firstMatch
         for _ in 0..<10 {

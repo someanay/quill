@@ -9,7 +9,7 @@ xcodebuild -project QuillMac.xcodeproj -scheme QuillMac -configuration Release \
   CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ARCHS='arm64 x86_64' build
 mkdir -p ../dist/macos
 app='build/Build/Products/Release/Quill.app'
-lipo -verify_arch arm64 x86_64 "$app/Contents/MacOS/Quill"
+lipo "$app/Contents/MacOS/Quill" -verify_arch arm64 x86_64
 lipo -info "$app/Contents/MacOS/Quill"
 if [[ -n "${QUILL_DEVELOPER_ID:-}" ]]; then
   codesign --force --options runtime --timestamp \

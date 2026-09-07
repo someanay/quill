@@ -51,7 +51,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         } }
         self.audio.onAutoStop = { [weak self] id in Task { @MainActor in guard let self, self.captureID == id else { return }; if self.microphoneTest { self.stopMicTest() } else { self.stop() } } }
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in Task { @MainActor in self?.refreshPermissions() } }
-        audioRouteObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in
+        audioRouteObserver = NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main) { [weak self] _ in MainActor.assumeIsolated {
             guard let self else { return }
             if self.state == .recording { self.stop() }
             else if self.microphoneTest { self.stopMicTest() }

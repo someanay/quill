@@ -45,7 +45,7 @@ struct KeyEditor: View {
             if busy { HStack { ProgressView().controlSize(.small); CopyText("onboarding.key.verifying") } }
             QuillButton(key: "onboarding.key.cta") { verify() }.disabled(secret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || busy)
             HelpText(key: "mac.key.security")
-        }.onAppear { provider = settings.value.provider }.onDisappear { task?.cancel(); secret = "" }
+        }.onAppear { provider = onboarding ? .gemini : settings.value.provider }.onDisappear { task?.cancel(); secret = "" }
         .onChange(of: provider) { _ in secret = ""; error = "" }
     }
     private func verify() {
@@ -55,13 +55,11 @@ struct KeyEditor: View {
             defer { busy = false }
             do {
                 try await dictation.client.validateKey(provider: selected, key: entered, baseURL: customURL)
+                let models = onboarding ? (try? await dictation.client.models(provider: selected, use: .dictation, baseURL: customURL, key: entered)) : nil
                 try Task.checkCancellation()
                 let slot = try keys.save(provider: selected, label: name, secret: entered, status: "valid", customURL: customURL)
-                settings.value.activeKeys[selected.rawValue] = slot.id
-                settings.value.selectProvider(selected)
-                if selected == .custom { settings.value.speechModel = settings.value.customModel }
+                settings.selectSavedKey(slot, activateSpeechProvider: onboarding, preferredModel: models?.first(where: \.isFree)?.id)
                 secret = ""
-                if let models = try? await dictation.client.models(provider: selected, use: .dictation, baseURL: customURL, key: entered), let preferred = models.first(where: \.isFree) { settings.value.speechModel = preferred.id }
                 try Task.checkCancellation(); saved?()
             } catch is CancellationError { }
             catch { self.error = (error as? QuillError)?.copyKey ?? "onboarding.key.unverified" }

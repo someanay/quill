@@ -1,5 +1,6 @@
 import XCTest
 import Combine
+import AVFoundation
 import QuillCore
 @testable import QuillMac
 
@@ -55,6 +56,16 @@ private final class NativeTranscriptProtocol: URLProtocol, @unchecked Sendable {
 }
 
 final class DictationTests: XCTestCase {
+    @MainActor func testRouteChangeIsHandledBeforeANewMicrophoneTestCanStart() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let dictation = fixture.dictation
+        dictation.startMicTest(); XCTAssertTrue(dictation.microphoneTest)
+        NotificationCenter.default.post(name: .AVAudioEngineConfigurationChange, object: nil)
+        XCTAssertFalse(dictation.microphoneTest)
+        dictation.startMicTest(); let stopped = fixture.audio.stops
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertTrue(dictation.microphoneTest); XCTAssertEqual(fixture.audio.stops, stopped)
+    }
     @MainActor func testStaleMicrophoneCallbacksCannotStopOrAnimateNewCapture() async throws {
         let fixture = try DictationFixture(); defer { fixture.dispose() }
         let dictation = fixture.dictation

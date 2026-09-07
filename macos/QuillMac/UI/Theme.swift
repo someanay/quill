@@ -20,6 +20,7 @@ enum QuillTheme {
     static func line(_ dark: Bool) -> Color { Color(hex: dark ? 0x353C48 : 0xD9DED9) }
     static func soft(_ dark: Bool) -> Color { Color(hex: dark ? 0x202D47 : 0xE4EBF5) }
     static func ink(_ dark: Bool) -> Color { Color(hex: dark ? 0xE0E7F6 : 0x202522) }
+    static func text2(_ dark: Bool) -> Color { Color(hex: dark ? 0xC2C6CF : 0x454E48) }
     static func muted(_ dark: Bool) -> Color { Color(hex: dark ? 0xB2B9C6 : 0x5C665F) }
     static func sans(_ size: CGFloat = 14) -> Font { .custom("IBMPlexSans", size: size, relativeTo: .body) }
     static func serif(_ size: CGFloat = 30) -> Font { .custom("IBMPlexSerifVar-Regular", size: size, relativeTo: .title) }
@@ -57,9 +58,9 @@ struct QuillButton: View {
     var primary = true
     var action: () -> Void
     var body: some View {
-        Button(action: action) { CopyText(key).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 48).contentShape(Capsule()) }
+        Button(action: action) { CopyText(key).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 50).contentShape(RoundedRectangle(cornerRadius: 4)) }
         .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
-        .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: Capsule()).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
+        .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 4)).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
     }
 }
 struct SectionLabel: View {
@@ -67,8 +68,15 @@ struct SectionLabel: View {
     var body: some View { CopyText(key).font(QuillTheme.sans(13)).fontWeight(.medium).foregroundStyle(.secondary).padding(.top, 8) }
 }
 struct HelpText: View {
+    @Environment(\.colorScheme) private var scheme
     let key: String
-    var body: some View { CopyText(key).font(QuillTheme.sans(13)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true) }
+    var size: CGFloat = 12
+    var body: some View { CopyText(key).font(QuillTheme.sans(size)).foregroundStyle(QuillTheme.muted(scheme == .dark)).fixedSize(horizontal: false, vertical: true) }
+}
+struct BodyCopy: View {
+    @Environment(\.colorScheme) private var scheme
+    let key: String
+    var body: some View { CopyText(key).font(QuillTheme.sans(16)).foregroundStyle(QuillTheme.text2(scheme == .dark)).lineSpacing(5).fixedSize(horizontal: false, vertical: true) }
 }
 struct InkMeter: View {
     var amplitude: Double

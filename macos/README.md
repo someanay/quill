@@ -28,7 +28,7 @@ xcodebuild -project QuillMac.xcodeproj -scheme QuillMac \
   -resultBundlePath build/QuillMacTests.xcresult CODE_SIGNING_ALLOWED=NO test
 ```
 
-The UI test launch option uses a separate application-support directory and Keychain service. The Debug-only settings fixture changes initial navigation without inventing a valid key, granting permissions or bypassing the provider client. Release builds do not recognize that settings shortcut.
+The UI test launch option uses a separate application-support directory and Keychain service. Debug-only presentation fixtures render every onboarding stage in light and dark and allow settings navigation without inventing a valid key, granting permissions or bypassing the provider client. Onboarding presentation captures keep the microphone inactive and show the real disabled permission/key gates. They verify rendering, not successful completion of setup. Release builds do not recognize either presentation shortcut.
 
 ## Android behavior carried across
 
@@ -58,7 +58,7 @@ The native history gate deliberately preserves the privacy choice at recording s
 
 - **Passed on Windows, Swift 6.3.3:** 34 QuillCore tests, including all 195 authoritative Android cleanup vectors evaluated by the Android JVM implementation. Coverage includes default/settings round trips, contact filtering, Unicode selection/insertion, history pruning, WAV headers, silence timing, custom URL rejection, key metadata requests, all provider request shapes, typed provider errors, a real four-second drip-fed cleanup deadline, Gemini response safety states, cancellation of unfinished streams above 4 MiB, 20-page catalog bounds, custom-word upsert, copy formatting and visible-bottom bubble-dismiss geometry.
 - **Passed:** Swift parser check over every native source file, catalog/manifest generation and deterministic app-icon generation from Android artwork.
-- **Passed on macOS CI (snapshot `6ee67b1`):** 28 core tests and 17 native tests, including real AVFoundation stereo-to-mono resampling, Keychain/SQLite/settings, bundle resources and nine insertion-adapter mutation/refusal/readback cases. Three UI walkthroughs passed: first-run key validation, settings/history navigation, and custom-word save/remove plus private history. The all-settings walkthrough exposed an offscreen-row hit-test issue; its test now scrolls the complete row inside the visible viewport. The new durable recovery, stale callback and privacy regression tests are awaiting the final CI run.
+- **Passed on macOS CI (snapshot `532bc34`):** 34 core tests and 22 native tests, including real AVFoundation stereo-to-mono resampling, Keychain/SQLite/settings, encrypted recovery and tamper rejection, microphone revocation, raw vocabulary capture, private retry and nine insertion-adapter mutation/refusal/readback cases. All four UI walkthroughs passed: first-run key validation, settings/history navigation, every settings screen in dark mode, and custom-word save/remove plus private history. The universal Release app built successfully; a corrected packaging command and one additional synchronous audio-route notification regression await the final CI run.
 - **Requires a physical Mac and user provider accounts:** real microphone fidelity, multi-app Accessibility insertion, secure fields, provider quota/access behavior, sleep/wake, login restore, clipboard ownership changes and long-running recording/bubble behavior. Unit tests and a successful compile do not establish these results.
 
 ## Manual release gate

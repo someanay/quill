@@ -28,6 +28,16 @@ enum AppPaths {
         do { var safe = value; safe.normalize(); try JSONEncoder().encode(safe).write(to: path, options: .atomic); try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path.path); storageFailed = false }
         catch { storageFailed = true }
     }
+    func selectSavedKey(_ slot: KeySlot, activateSpeechProvider: Bool, preferredModel: String? = nil) {
+        var updated = value
+        updated.activeKeys[slot.provider.rawValue] = slot.id
+        if activateSpeechProvider {
+            updated.selectProvider(slot.provider)
+            if slot.provider == .custom { updated.speechModel = updated.customModel }
+            if let preferredModel { updated.speechModel = preferredModel }
+        }
+        value = updated
+    }
     func reset() { let onboarded = value.onboardingComplete, grantedOnce = value.accessibilityEnabledOnce; var fresh = QuillSettings(); fresh.onboardingComplete = onboarded; fresh.accessibilityEnabledOnce = grantedOnce; fresh.accessibilityConsent = value.accessibilityConsent; fresh.activeKeys = value.activeKeys; fresh.words = value.words; fresh.contactNames = value.contactNames; fresh.styleOverrides = value.styleOverrides; value = fresh }
 }
 

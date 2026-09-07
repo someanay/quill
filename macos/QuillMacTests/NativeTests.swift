@@ -58,6 +58,22 @@ final class NativeTests: XCTestCase {
         XCTAssertNil(keys.read(custom, customURL: "https://second.example/v1"))
         XCTAssertFalse(try String(contentsOf: directory.appendingPathComponent("key-slots.json")).contains("first-test-secret"))
     }
+    @MainActor func testAddingCleanupKeyKeepsSpeechProviderModelAndIndependentCleanup() throws {
+        let directory = try isolatedDirectory(), settings = SettingsStore(directory: directory)
+        let keys = KeychainStore(directory: directory, namespace: "com.tihor.quill.native-test." + UUID().uuidString)
+        defer { try? keys.clear() }
+        settings.value.provider = .openai; settings.value.speechModel = "gpt-4o-mini-transcribe"
+        settings.value.cleanupAutomatic = false; settings.value.cleanupProvider = .gemini; settings.value.cleanupModel = "gemini-cleanup"
+        let slot = try keys.save(provider: .gemini, label: "Cleanup", secret: "test-cleanup-secret", status: "valid", customURL: "")
+        settings.selectSavedKey(slot, activateSpeechProvider: false)
+        XCTAssertEqual(settings.value.provider, .openai); XCTAssertEqual(settings.value.speechModel, "gpt-4o-mini-transcribe")
+        XCTAssertEqual(settings.value.cleanupProvider, .gemini); XCTAssertEqual(settings.value.cleanupModel, "gemini-cleanup")
+        XCTAssertEqual(keys.active(.gemini, settings: settings.value), "test-cleanup-secret")
+        let reopened = SettingsStore(directory: directory)
+        XCTAssertEqual(reopened.value.provider, .openai); XCTAssertEqual(reopened.value.activeKeys["gemini"], slot.id)
+        settings.selectSavedKey(slot, activateSpeechProvider: true, preferredModel: "gemini-new-free")
+        XCTAssertEqual(settings.value.provider, .gemini); XCTAssertEqual(settings.value.speechModel, "gemini-new-free")
+    }
     @MainActor func testSQLiteRetentionPrivateModeAndDelete() throws {
         let directory = try isolatedDirectory()
         let store = HistoryStore(directory: directory)
