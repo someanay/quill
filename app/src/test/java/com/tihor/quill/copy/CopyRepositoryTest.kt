@@ -31,7 +31,7 @@ class CopyRepositoryTest {
     }
 
     /**
-     * Carousel copy: the Home header has a non-blank default and is OTA-overridable; the 18 caption
+     * Carousel copy: the Home header has a non-blank default and is editable by the source copy tool; the 18 caption
      * keys are present (so OTA can set them) yet blank by default (no caption row) and overridable.
      */
     @Test
@@ -43,7 +43,7 @@ class CopyRepositoryTest {
         CopyKeys.CAROUSEL_CAPTIONS.forEach { key ->
             assertTrue("$key must be a referenced key", key in CopyKeys.ALL)
             assertEquals("$key must exist in the catalog (blank default)", "", r.bakedInValue(key))
-            assertTrue("$key must be OTA-overridable", key in CopyKeys.OVERRIDABLE)
+            assertTrue("$key must be editable by the source copy tool", key in CopyKeys.OVERRIDABLE)
         }
     }
 
@@ -76,23 +76,6 @@ class CopyRepositoryTest {
         }
     }
 
-    @Test
-    fun applyOverride_changesOverridableKey_butIgnoresComplianceKey() {
-        val r = repo()
-        val complianceKey = CopyKeys.RATIONALE_ACCESSIBILITY
-        val overridableKey = CopyKeys.WELCOME_TITLE
-        val bakedCompliance = r.get(complianceKey)
-
-        r.applyOverride(
-            mapOf(
-                overridableKey to "OVERRIDDEN WELCOME",
-                complianceKey to "MALICIOUS DISCLOSURE", // must be ignored
-            ),
-        )
-
-        assertEquals("OVERRIDDEN WELCOME", r.get(overridableKey))
-        assertEquals("compliance copy must stay binary-only", bakedCompliance, r.get(complianceKey))
-    }
 
     @Test
     fun formatArgs_areApplied() {
@@ -108,30 +91,9 @@ class CopyRepositoryTest {
         assertTrue(r.get(CopyKeys.HISTORY_CLEAR_BODY, 5).contains("5"))
     }
 
-    @Test
-    fun applyOverride_cannotChangeAnyComplianceKey() {
-        val r = repo()
-        // The whole locked set at once: an attacker-controlled bundle targeting every compliance key.
-        val baked = CopyKeys.COMPLIANCE.associateWith { r.get(it) }
-        r.applyOverride(CopyKeys.COMPLIANCE.associateWith { "TAMPERED" })
-        CopyKeys.COMPLIANCE.forEach { key ->
-            assertEquals("compliance key $key must stay binary-only", baked[key], r.get(key))
-        }
-    }
 
-    @Test
-    fun applyOverride_overridableKey_appliesThenRevertsWhenAbsentFromNextBundle() {
-        val r = repo()
-        val key = CopyKeys.WELCOME_TITLE
-        val baked = r.get(key)
-        r.applyOverride(mapOf(key to "Bienvenue"))
-        assertEquals("Bienvenue", r.get(key))
-        // applyOverride rebuilds from baked-in each call, so a later bundle without the key reverts it.
-        r.applyOverride(emptyMap())
-        assertEquals(baked, r.get(key))
-    }
 
-    /** The bubble dismiss/summon + FGS-notification copy keys exist, resolve non-blank, and stay OTA-able. */
+    /** The bubble dismiss/summon + FGS-notification copy keys exist, resolve non-blank, and stay editable by the source copy tool. */
     @Test
     fun bubbleDismissSummonKeys_arePresentAndOverridable() {
         val r = repo()
@@ -144,15 +106,8 @@ class CopyRepositoryTest {
         ).forEach { key ->
             assertTrue("$key must be referenced in CopyKeys.ALL", key in CopyKeys.ALL)
             assertFalse("$key must resolve to a non-blank baked-in default", r.get(key).isBlank())
-            assertTrue("$key must be OTA-overridable (not compliance-locked)", key in CopyKeys.OVERRIDABLE)
+            assertTrue("$key must be editable by the source copy tool (not compliance-locked)", key in CopyKeys.OVERRIDABLE)
         }
     }
 
-    @Test
-    fun applyOverride_unknownKey_isIgnoredNotAdded() {
-        val r = repo()
-        r.applyOverride(mapOf("totally.unknown.key" to "x"))
-        // Unknown keys never become resolvable; a missing key falls back to the key string itself.
-        assertEquals("totally.unknown.key", r.get("totally.unknown.key"))
-    }
 }

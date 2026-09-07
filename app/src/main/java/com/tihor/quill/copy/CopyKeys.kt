@@ -4,10 +4,8 @@ package com.tihor.quill.copy
  * Typed copy keys (spec §2.3). Every user-facing string is read by one of these from the Copy
  * Catalog — no string literals in composables (CI guard enforces it).
  *
- * **Compliance keys ([COMPLIANCE]) are binary-only and excluded from [OVERRIDABLE]** — the OTA layer
- * (M13) may only ever touch [OVERRIDABLE] keys, so the accessibility disclosure/consent, permission
- * rationales, privacy promises, and the BYOK key warning can never be changed over the air
- * (CLAUDE.md hard rule).
+ * Compliance keys are excluded from source-editor changes. Every string is bundled
+ * in the APK; no remote override mechanism exists.
  */
 object CopyKeys {
     // --- Onboarding (overridable) ---
@@ -450,8 +448,8 @@ object CopyKeys {
     const val WELCOME_PRIVACY_PILL = "compliance.privacy.welcome_pill"
 
     /**
-     * Compliance keys — locked to the binary, **excluded** from [OVERRIDABLE]. The OTA override layer
-     * physically ignores these (spec §2.3 / §6).
+     * Compliance keys — locked to the binary, **excluded** from [OVERRIDABLE]. The local source editor
+     * rejects edits to these (spec §2.3 / §6).
      */
     val COMPLIANCE: Set<String> = setOf(
         RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
@@ -461,12 +459,12 @@ object CopyKeys {
 
     /**
      * Overridable keys whose baked-in default is intentionally **blank** (the carousel captions).
-     * Present in the catalog for completeness + OTA-overridability, but exempt from the "no blank
+     * Present in the catalog for completeness + source-editor support, but exempt from the "no blank
      * default" check — a blank caption simply renders no caption row.
      */
     val OPTIONAL_BLANK: Set<String> = CAROUSEL_CAPTIONS.toSet()
 
-    /** Keys an OTA bundle may override = everything that is **not** compliance. Enforced in M13. */
+    /** Keys the local source editor may change; all changes require a new app build. */
     const val MODELS_SAVE = "models.save"
     const val MODELS_CUSTOM_REFRESH = "models.custom_refresh"
     const val MODELS_SEARCH = "models.search"

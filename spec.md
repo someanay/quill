@@ -109,106 +109,28 @@ session cap is the backstop there. A relative/adaptive noise-floor estimate is t
 
 ---
 
-### 2.3 Soft-coded copy — the Copy Catalog + over-the-air updates *(Accepted)*
+### 2.3 Build-time copy catalog (accepted September 7, 2026)
 
-**Goal.** No user-facing string is hardcoded in the UI. Every label, heading, body line, button,
-error, and tip is read by **stable key** from a **Copy Catalog**, so copy can be corrected or improved
-**without shipping an app update** — while the UI **never breaks offline** and remote copy **cannot be
-weaponised**.
+The app reads interface text exclusively from its packaged assets. There is no
+remote copy host, network updater, signature verifier, cache application, or
+scheduled copy fetch. Existing installations cancel legacy job 1301 and ignore
+previously downloaded copy. Only a new APK delivered through an app update changes
+wording. Direct calls to user-selected AI providers remain unchanged.
 
-**Three layers, resolved at startup (offline-first).**
-1. **Baked-in defaults** — a *complete* catalog shipped inside the APK at
-   `assets/copy/strings.default.json`. This is the source of truth and the always-available fallback:
-   first launch, airplane mode, no network, or a rejected remote bundle → the app renders these.
-   *Every key the UI can request exists here* (CI-enforced), so a blank/missing string is impossible.
-2. **Cached remote override** — the last remote bundle that was fetched **and** passed signature +
-   schema validation, persisted in app-private storage.
-3. **Live fetch** — on every app foreground/restart and approximately every six hours via a persisted, network-constrained Android job, off the main thread: GET the remote bundle; if it is
-   newer, correctly signed, and valid, **atomically** replace the cache.
+The companion Copy Tool is a local-only authoring application. It reads the Android
+checkout, stores drafts/backups on the maintainer's PC, validates placeholders and
+locked keys, then applies edits to the source catalog and generated manifest.
+Concurrent or stale drafts are rejected. It has no cloud database dependency.
 
-At startup the app computes one **resolved catalog** = `bakedIn` overlaid by the *validated* remote
-override (the override may only touch allowlisted keys; any key absent from or disallowed by the
-override falls through to baked-in). The UI reads `copy(key, args…)` from this resolved map via a
-Compose `CompositionLocal`. A partial, stale, or corrupt override can therefore **never** blank or
-half-blank a screen — worst case the user sees the baked-in default.
+Accessibility disclosure lives only in Android string resources. Other compliance
+keys are locked in the copy editor and require a reviewed source change. All copy,
+including ordinary editable text, becomes fixed in the installed app binary.
 
-**Offline / airplane guarantee (an explicit requirement).** The remote fetch is **never on the UI
-critical path**: short timeout, silent failure (log only), and the UI builds immediately from whatever
-catalog is already resolved (cache → baked-in). A newer bundle that arrives mid-session is applied on
-acceptance and observed by the UI in the same session. Android may defer scheduled checks while idle or offline; a force-stopped app resumes checks when reopened. Cold-start
-in airplane mode → baked-in defaults, full UI, zero breakage.
-
-**Integrity & abuse-resistance (security detail in §6).** Remote copy is attacker-relevant: whoever
-controls the bundle controls what the app *says*. Therefore —
-- **Signed bundles only.** Each bundle ships with a detached **Ed25519** signature; the app bundles
-  the **public** key and verifies before trusting. Unsigned / wrong-signature / tampered → rejected,
-  keep current catalog. HTTPS is necessary but **not sufficient** (it doesn't protect against a
-  compromised origin); the signature does.
-- **Monotonic revision** (rollback protection): apply only if `revision` strictly exceeds the highest
-  already applied; record it.
-- **On-device schema validation** before apply: required keys present, per-string length caps,
-  **placeholder-arg parity** (a value with `%1$s` / named args must preserve them or formatting
-  crashes), value-type checks. Any failure rejects the **whole** bundle (atomic — never half-apply).
-- **Locked keys are not remotely overridable.** A hardcoded **allowlist** defines which keys a remote
-  bundle may change. **Excluded (binary-only, can never be changed OTA):** the accessibility
-  **prominent-disclosure** + consent text, all **permission rationales**, the **privacy / data-safety**
-  promises, and the **BYOK key-required warning**. These are precisely the strings (a) Play requires to
-  match real behaviour and be present at review, and (b) an attacker would most want to rewrite
-  (phishing, false privacy claims). The override layer physically ignores them.
-
-**Catalog schema.**
-```json
-{
-  "schemaVersion": 1,
-  "revision": 42,                 // monotonic int; device applies only if > last applied
-  "locale": "en",                 // served at /copy/{locale}.json — i18n is a drop-in later
-  "updatedAt": "2026-06-24T00:00:00Z",
-  "strings": {
-    "onboarding.welcome.title": "Dictate into any app you use",
-    "key.error.invalid": "That key was rejected (401). Check you copied it fully…",
-    "bubble.state.recording": "Listening"
-    // …every UI key
-  }
-}
-```
-Served as `…/copy/en.json` + a detached `…/copy/en.json.sig` (Ed25519) over HTTPS from a **static
-host** (e.g. Cloudflare Pages / GitHub Pages / S3+CDN). v1 ships `en` only; the `{locale}` path keeps
-localisation a future drop-in, not a rewrite.
-
-**Authoring & publish interface — a developer tool, *not* part of the app.** The app stays
-backend-less and only does a read-only GET. A standalone tool (recommended: a small **Next.js page on
-Vercel** — your stack) lets you:
-- see every key grouped by screen, with the **baked-in default shown read-only** beside an editable
-  override, char-count vs cap, placeholder hints, and a **lock badge** on non-overridable keys
-  (uneditable in the tool);
-- validate on save (schema, lengths, placeholder parity, no empty required, no locked-key edits), bump
-  `revision`, set `updatedAt`;
-- **commit the *plaintext* catalog to the repo.** **Signing happens in CI, never in the browser:** a
-  GitHub Action signs the bundle with the Ed25519 **private key held only as a CI secret**, then
-  deploys `en.json` + `en.json.sig` to the static host. "Push" = this publish step. The private key
-  never reaches the client *or* the authoring browser.
-- CI also **fails the build if the baked-in default is missing any key the code references**, keeping
-  layer 1 complete.
-
-**Android components.**
-- `CopyKeys` (typed key constants) · `CopyCatalog` (serializable) · `assets/copy/strings.default.json`
-  (baked-in = source of truth).
-- `CopyRepository`: loads baked-in + validated cache, exposes the resolved map as a `StateFlow`;
-  `get(key, vararg args)`.
-- `CopyUpdater`: launch-time coroutine / `WorkManager` one-shot (off-main) → GET → **Ed25519 verify**
-  (Tink or `java.security`) → schema validate → atomic cache write → bump applied-revision.
-- Compose: a `LocalCopy` `CompositionLocal`; UI calls `copy(CopyKeys.X)` — **no string literals in
-  composables** (lint/CI guard).
-- Updates are automatic with no toggle. The privacy policy discloses foreground and six-hour background checks.
-
-**Privacy delta (a real change — see §6 and the README locked-decisions).** This adds exactly one
-outbound call beyond the provider calls: a GET of a **public, static, signed** file. No user data, no
-account, and **no device / install identifier** is sent; the only transmitted metadata is the
-unavoidable transport layer (IP, a generic User-Agent, app version). Automatic checks are disclosed in the privacy policy. The "no backend / local-only" claim is updated to: **no backend for
-user data; a static, signed copy bundle may be fetched read-only.**
+Use scripts/build-android-release.ps1 to generate the export, test, lint, build,
+and verify signed APK/AAB artifacts. Google Play upload remains a separate release
+step; version codes must increase for each new upload.
 
 ---
-
 ## 3. Components ("API & core functions")
 
 We own no HTTP *endpoints*; the only hosted artifact is a static, signed copy bundle (§2.3). The "API
@@ -334,20 +256,10 @@ app-private cache (not user-visible storage).
 **Retention:** the log is bounded — keep the most recent **~1,000 entries** and prune the oldest;
 per-item delete and clear-all are both available. No time-based expiry in v1.
 
-### 4.4 Copy catalog — baked-in asset + validated cache *(see §2.3)*
+### 4.4 Copy catalog
 
-| Store | Where | Contents |
-|---|---|---|
-| Baked-in default | `assets/copy/strings.default.json` (in APK) | Complete catalog (every key). Source of truth + offline fallback. Read-only. |
-| Validated override | App-private files dir | Last remote bundle that passed Ed25519 + schema validation, written atomically. |
-| Applied revision | DataStore | Highest `revision` applied (monotonic rollback guard). |
-| Pinned public key | In binary (resource / constant) | Ed25519 **public** key used to verify bundles. The private key never ships here. |
-
-The resolved catalog (`bakedIn` ⊕ validated override, override limited to allowlisted keys) is held in
-memory and exposed as a `StateFlow`; it is **never** persisted as a merged blob (so a bad cache can
-always be discarded back to baked-in). No user content is stored in any of these.
-
----
+The sole runtime source is assets/copy/strings.default.json. copy-manifest.json is
+build-time authoring metadata. Legacy cache files are never loaded.
 
 ## 5. Permissions & the foreground-service model
 
@@ -456,16 +368,8 @@ exist and the ciphertext would be undecryptable garbage.
 **Network:** HTTPS only; default certificate validation; no traffic proxied through any server we
 run.
 
-**Copy-bundle integrity (OTA copy — see §2.3).** The copy fetch is the one call to a host we publish,
-so it is treated as untrusted input until proven otherwise: (1) every bundle must carry a valid
-**Ed25519** signature checked against a **public key pinned in the binary** — HTTPS alone is not
-trusted, since it doesn't defend against a compromised origin; (2) the bundle is **schema-validated**
-on device (required keys, length caps, placeholder-arg parity) and applied **atomically or not at
-all**; (3) **`revision` is monotonic** (no rollback to an older bundle); (4) a hardcoded **allowlist**
-means the accessibility disclosure, permission rationales, privacy promises, and the BYOK key warning
-**cannot be changed over the air** — they live only in the binary. Net effect: a compromised copy
-host can at worst withhold updates or get its bundle rejected; it cannot make the app say something
-harmful, false about privacy, or out of step with the Play disclosure.
+**Copy integrity.** Copy is packaged in the signed app. No remote copy endpoint or
+override parser is present. The local editor validates source edits before building.
 
 **Accessibility data handling (privacy promise + Play expectation):** the service reads focused-
 field text only to position/insert dictation, and explicitly skips password/banking fields. This

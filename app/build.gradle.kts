@@ -25,8 +25,8 @@ android {
         applicationId = "com.tihor.quill"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 2
+        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,6 +61,9 @@ android {
             )
             // Use the release signingConfig when it was created (secrets present); else leave unsigned.
             signingConfigs.findByName("release")?.let { signingConfig = it }
+            if (providers.gradleProperty("requireReleaseSigning").orNull == "true" && signingConfig == null) {
+                throw GradleException("Release signing is not configured. Set the QUILL_KEYSTORE_* and QUILL_KEY_* values in local.properties or the environment.")
+            }
         }
     }
     compileOptions {
@@ -108,9 +111,6 @@ dependencies {
     // Settings persistence (spec §4.1)
     implementation(libs.androidx.datastore.preferences)
 
-    // OTA copy-bundle Ed25519 verification (spec §2.3 / §6; M13a). Pure-Java, no NDK, no platform
-    // "Ed25519" provider (which would NoSuchAlgorithmException on API 29–32).
-    implementation(libs.eddsa)
 
     // Demo-video carousel (Home + onboarding steps): muted looping MP4s, one ExoPlayer per carousel,
     // rendered in Compose via media3-ui-compose's PlayerSurface.

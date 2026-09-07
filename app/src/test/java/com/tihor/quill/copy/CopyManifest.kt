@@ -1,6 +1,6 @@
 package com.tihor.quill.copy
 
-import com.tihor.quill.copy.ota.Placeholders
+import com.tihor.quill.copy.Placeholders
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add

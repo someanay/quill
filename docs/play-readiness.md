@@ -1,5 +1,10 @@
 # Android release checklist
 
+> September 7, 2026: Remote copy updates (M13) have been retired. The app uses
+> bundled text only; the local copy tool edits source for the next signed APK/AAB.
+> Earlier OTA milestones below are historical and no longer release requirements.
+
+
 Updated September 6, 2026 for Quill 1.0.0 (version code 1).
 
 The signed build is ready for device testing. This is not yet a completed Google Play submission.

@@ -42,15 +42,11 @@ your key's tier, solely so the model picker can hide models your key cannot use.
 your key, go only to that provider, and contain no speech.
 _Code: `stt/KeyValidator.kt`._
 
-### The one thing Quill fetches from us
+### App updates and interface text
 
-Quill periodically fetches a small, **static, cryptographically signed bundle of interface text**
-(wording/translations) over a read-only HTTPS request — at app start and when the app returns to the
-foreground, and approximately every six hours in the background when a network is available. Android may delay background checks to save battery. Checks are automatic. The bundle is identical for every user and the request **contains no personal data**; as
-with any web request, the content host necessarily sees standard connection metadata such as your IP
-address. Bundles are verified against a signing key built into the app, and **privacy, consent, and
-disclosure wording can never be changed this way** — that text is locked into the app binary.
-_Code: `copy/ota/CopyUpdater.kt`, `copy/ota/CopyBundleVerifier.kt`, `copy/CopyRepository.kt`._
+Quill does not contact a copy server or fetch interface text from us. Interface
+text is included in the installed app and changes only when you install an app
+update, such as through Google Play. Previously cached remote text is ignored.
 
 ## Your providers are separate data controllers
 
@@ -121,9 +117,8 @@ _Code: `history/HistoryStore.kt`, `history/HistoryRepository.kt`._
   "couldn't insert / re-enable" alerts.
 - **Run after reboot (`RECEIVE_BOOT_COMPLETED`)** — to restore the bubble after a restart, if you had
   it on. No UI is auto-launched.
-- **Internet (`INTERNET`)** — to send audio/text to the provider you configured and to fetch the
-  signed interface-text bundle.
-- **Network state (`ACCESS_NETWORK_STATE`)** — to schedule copy checks when a connection is available.
+- **Internet (INTERNET)** - to validate keys, discover models, and send audio/text
+  directly to the provider you configured.
 
 Quill does **not** hold the restricted "ignore battery optimisations" permission; at most it opens
 the system battery-settings page for you to make that choice yourself.

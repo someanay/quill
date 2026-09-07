@@ -4,9 +4,7 @@ import android.content.res.AssetManager
 import java.io.IOException
 
 /**
- * An ordered list of demo clips for a surface. v1 is backed by the APK's assets
- * ([AssetCarouselSource]); a remote signed-manifest source can replace this later **without touching
- * the UI** — [DemoCarousel][com.tihor.quill.ui.components.DemoCarousel] only depends on this interface.
+ * An ordered list of demo clips bundled in the APK assets.
  */
 fun interface CarouselSource {
     /** Clips for [surface], sorted by filename, capped at [CarouselScan.MAX_CLIPS]. Empty if none. */

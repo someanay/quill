@@ -125,13 +125,6 @@ class OnboardingActivity : ComponentActivity() {
         setContent { QuillRoot { OnboardingFlow(onFinish = { finish() }) } }
     }
 
-    override fun onStart() {
-        super.onStart()
-        // Re-apply the cached OTA copy bundle on every foreground (same as MainActivity): this screen
-        // renders copy, so a bundle cached on a prior open should show here too. Cheap + idempotent;
-        // QuillRoot observes resolved copy, so it recomposes live.
-        Copy.repository(applicationContext).applyCachedOverride(applicationContext)
-    }
 }
 
 private enum class Step {

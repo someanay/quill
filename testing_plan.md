@@ -1,5 +1,10 @@
 # Quill — Testing Plan (testing_plan.md)
 
+> September 7, 2026: Remote copy updates (M13) have been retired. The app uses
+> bundled text only; the local copy tool edits source for the next signed APK/AAB.
+> Earlier OTA milestones below are historical and no longer release requirements.
+
+
 Much of this app **cannot be fully automated** — accessibility insertion and OEM survival are
 verified by hand on real devices. So this plan has three parts: (1) automated test **shells**
 written before the code, (2) **manual verification scripts** per milestone, and (3) the **cross-app

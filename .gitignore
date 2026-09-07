@@ -52,3 +52,6 @@ windows/artifacts/
 /ios/
 /.github/workflows/apple.yml
 /docs/OVERNIGHT_AUDIT_2026-08-18.md
+
+# Local source-editor lock
+/.copy-tool.lock

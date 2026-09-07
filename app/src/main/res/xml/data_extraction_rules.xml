@@ -8,7 +8,7 @@
     <cloud-backup>
         <exclude domain="file" path="secrets/" />
         <exclude domain="file" path="datastore/" />
-        <!-- Cached OTA copy bundle (M13a): re-fetched + re-verified on demand, so it must not restore. -->
+        <!-- Legacy copy cache from older versions: never used or restored. -->
         <exclude domain="file" path="copy/" />
         <exclude domain="database" path="quill_history.db" />
         <!-- Crash reports (M11): local-only, user-reviewable; must not transfer. -->

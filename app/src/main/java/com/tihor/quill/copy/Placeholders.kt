@@ -1,8 +1,8 @@
-package com.tihor.quill.copy.ota
+package com.tihor.quill.copy
 
 /**
  * Format-placeholder parity (M13a, spec §2.3 / §6). UI copy is rendered with `String.format`
- * (`template.format(args…)`), so an OTA override that changes a value's placeholder shape would crash
+ * (`template.format(args…)`), so a source edit that changes a value's placeholder shape would crash
  * formatting at the call site (e.g. baked-in `"%1$d set"`, override `"set"` then `.format(3)` is fine,
  * but override `"%1$s of %2$d"` throws `MissingFormatArgumentException`). We therefore reject any
  * override whose placeholder signature differs from the baked-in template for that key.

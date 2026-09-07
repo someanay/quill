@@ -1,5 +1,10 @@
 # Quill — Product Requirements Document (PRD)
 
+> September 7, 2026: Remote copy updates (M13) have been retired. The app uses
+> bundled text only; the local copy tool edits source for the next signed APK/AAB.
+> Earlier OTA milestones below are historical and no longer release requirements.
+
+
 **Status:** Draft for review · **Owner:** Anay and Papa (Tihor online) · **Platform:** Android only (v1)
 **Name:** Quill · `applicationId com.tihor.quill`
 

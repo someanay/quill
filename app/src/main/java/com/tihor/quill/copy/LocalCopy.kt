@@ -23,9 +23,6 @@ object Copy {
     fun repository(context: Context): CopyRepository =
         instance ?: synchronized(this) {
             instance ?: CopyRepository(context.applicationContext).also {
-                // Layer 2 (spec §2.3): re-verify + apply the cached OTA bundle once, before first read,
-                // so every entry point (activities, overlay, notifications) sees the same resolved copy.
-                it.applyCachedOverride(context.applicationContext)
                 instance = it
             }
         }
@@ -33,13 +30,7 @@ object Copy {
 
 val LocalCopy = staticCompositionLocalOf<CopyRepository> { error("CopyRepository not provided") }
 
-/**
- * The currently-**resolved** copy map (baked-in, overlaid by any applied OTA bundle). [QuillRoot]
- * provides it from `collectAsState(repository.resolved)`, and [copy] reads from it — so when an OTA
- * bundle is (re)applied on foreground (see `MainActivity.onStart`), the new map propagates and every
- * `copy(key)` recomposes with fresh text, no cold start required. Dynamic local (not static) so only
- * the composables that read copy recompose.
- */
+/** Copy bundled with this installed app version. */
 val LocalResolvedCopy = compositionLocalOf<Map<String, String>> { emptyMap() }
 
 /**
@@ -64,8 +55,6 @@ fun QuillRoot(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val settingsRepository = remember { SettingsRepository(context) }
     val settings by settingsRepository.settings.collectAsState(initial = QuillSettings())
-    // Observe the resolved copy so an OTA bundle (re)applied on foreground recomposes the UI live,
-    // instead of going stale until the next cold start.
     val repository = remember(context) { Copy.repository(context) }
     val resolved by repository.resolved.collectAsState()
     // The "Theme" choice in Visual preferences drives the whole UI; "Match system" defers to the OS.

@@ -31,7 +31,6 @@ class AccessibilityDisclosureTest {
             assertFalse(it in CopyKeys.ALL)
             assertNull(repo.bakedInValue(it))
         }
-        repo.applyOverride((oldKeys + resourceKeys).associateWith { "malicious replacement" })
         assertEquals(before, ids.map(context::getString))
         assertFalse(repo.resolved.value.keys.any { it in oldKeys || it in resourceKeys })
     }

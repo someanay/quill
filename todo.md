@@ -1,5 +1,10 @@
 # Quill — Implementation Checklist (todo.md)
 
+> September 7, 2026: Remote copy updates (M13) have been retired. The app uses
+> bundled text only; the local copy tool edits source for the next signed APK/AAB.
+> Earlier OTA milestones below are historical and no longer release requirements.
+
+
 Track implementation, verification, and deviations here. Work on one milestone or sub-task at a time.
 
 Milestones are ordered to **prove the riskiest things first**: overlay → accessibility injection →
@@ -416,3 +421,10 @@ Scope expanded at the user's request to include Android visual polish and live m
 - [ ] Physical first-run, decline/Back, and revoked-service recovery checks: phone not connected.
 
 See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual script.
+
+## Local copy workflow - September 7, 2026
+- [x] Remove app foreground/background copy downloads, signature dependency and runtime overrides.
+- [x] Ignore legacy caches and cancel job 1301 on upgrade.
+- [x] Retain a local copy editor, preserve existing drafts, and apply validated edits to source.
+- [x] Add APK/AAB release script with signing checks and explicit Play version parameters.
+- [ ] Physical app upgrade check: phone not connected during this pass.

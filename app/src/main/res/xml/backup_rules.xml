@@ -6,7 +6,7 @@
 <full-backup-content>
     <exclude domain="file" path="secrets/" />
     <exclude domain="file" path="datastore/" />
-    <!-- Cached OTA copy bundle (M13a): re-fetched + re-verified on demand, so it must not restore. -->
+    <!-- Legacy copy cache from older versions: never used or restored. -->
     <exclude domain="file" path="copy/" />
     <!-- Dictation history stays on this device only (M9). -->
     <exclude domain="database" path="quill_history.db" />
