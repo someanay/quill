@@ -6,6 +6,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private let host = XCUIApplication(bundleIdentifier: "com.tihor.quill.ios")
     private let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
     private let fixture = XCUIApplication(bundleIdentifier: "com.tihor.quill.ios.qa.keyboard-field")
+    private let sessionID = UUID().uuidString
     private var stage = "starting"
     private var outcome = "incomplete"
     override func setUpWithError() throws {
@@ -52,7 +53,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     private func completeOnboarding() throws {
         stage = "synthetic-key-onboarding"
-        host.launchArguments = ["--ui-testing", "--ui-provider-fixtures"]
+        host.launchArguments = ["--ui-testing", "--ui-provider-fixtures", "--ui-session-id", sessionID]
         host.launch()
         tap(host.buttons["onboarding.getStarted"], in: host)
         let next = host.buttons["Help me get & add a key"]
@@ -113,6 +114,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     func testRealRecordingHandoffIntoSeparateAppThroughInstalledKeyboard() throws {
         try completeOnboarding()
+        // Prove that real settings and the validated Keychain credential survive a new process.
+        // The same isolated QA session is reopened below; the test never skips onboarding or seeds keys.
+        host.terminate()
         try enableKeyboardThroughSettings()
         stage = "prepare-separate-native-field"
         fixture.launch()
@@ -125,6 +129,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
 
         stage = "record-and-publish"
         host.activate()
+        attach("host-restored-validated-session", app: host)
         let record = host.buttons["dictation.record"]
         tap(record, in: host)
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))

@@ -7,9 +7,25 @@ enum AppFiles {
     static let groupID = "group.com.tihor.quill.ios"
     static let isUITesting = ProcessInfo.processInfo.arguments.contains("--ui-testing")
     static let isTestProcess = isUITesting || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    /// A fresh UUID gives a UI integration run isolated storage that survives process recreation.
+    /// Release builds cannot select a QA session; no settings or keys are seeded by this option.
+    static let uiSessionID: String? = {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        guard isUITesting, let index = arguments.firstIndex(of: "--ui-session-id"),
+              arguments.indices.contains(index + 1), let id = UUID(uuidString: arguments[index + 1]) else { return nil }
+        return id.uuidString
+        #else
+        return nil
+        #endif
+    }()
+    static var resetsUISettingsOnLaunch: Bool { isUITesting && uiSessionID == nil }
+    static var keychainTestSuffix: String { isTestProcess ? ".tests" + (uiSessionID.map { ".session." + $0 } ?? "") : "" }
     static var root: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent(isTestProcess ? "QuillTests" : "Quill", isDirectory: true)
+        let directory = base.appendingPathComponent(isTestProcess ? "QuillTests" : "Quill", isDirectory: true)
+        if let uiSessionID { return directory.appendingPathComponent("Sessions", isDirectory: true).appendingPathComponent(uiSessionID, isDirectory: true) }
+        return directory
     }
     static var audio: URL { root.appendingPathComponent("Audio", isDirectory: true) }
     static func prepare() throws {
@@ -62,7 +78,7 @@ struct KeychainFailure: Error, LocalizedError {
 /// API-key bytes exist only in the host app's private Keychain access group. No Keychain sharing
 /// entitlement is granted to the keyboard. Records are local to this device and never synchronize.
 @MainActor final class KeyVault {
-    private let service = "com.tihor.quill.ios.provider-keys" + (AppFiles.isTestProcess ? ".tests" : "")
+    private let service = "com.tihor.quill.ios.provider-keys" + AppFiles.keychainTestSuffix
     private(set) var keys: [SavedKey] = AppFiles.read([SavedKey].self, name: "key-index.json") ?? []
     private var selected: [String: UUID] = AppFiles.read([String: UUID].self, name: "active-keys.json") ?? [:]
     func records(_ provider: Provider) -> [SavedKey] { keys.filter { $0.provider == provider } }

@@ -63,7 +63,9 @@ final class QuillUITests: XCTestCase {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
         let start = app.buttons["onboarding.getStarted"]
         XCTAssertTrue(start.waitForExistence(timeout: 10)); start.tap()
-        XCTAssertTrue(app.staticTexts["Bring your own key"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["You'll need your own API key"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose."].exists)
+        capture(app, "ios-required-key-warning")
         let next = app.buttons["Help me get & add a key"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         let predicate = NSPredicate(format: "enabled == true")

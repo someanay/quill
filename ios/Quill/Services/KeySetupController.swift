@@ -13,7 +13,7 @@ import QuillCore
 /// Only the expanded provider identifier goes to the protected preferences file.
 @MainActor final class KeyDraftVault: KeyDraftStorage {
     private let service: String
-    init(namespace: String? = nil) { service = namespace ?? "com.tihor.quill.ios.key-drafts" + (AppFiles.isTestProcess ? ".tests" : "") }
+    init(namespace: String? = nil) { service = namespace ?? "com.tihor.quill.ios.key-drafts" + AppFiles.keychainTestSuffix }
     private func query(_ provider: Provider) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: provider.rawValue, kSecAttrSynchronizable as String: false]
     }
@@ -64,7 +64,7 @@ private struct KeySetupPreferences: Codable { let expanded: String }
          store: (any KeyDraftStorage)? = nil, preferencesName: String = "key-setup.json", debounce: UInt64 = 650_000_000) {
         self.model = model; self.activateSpeechProvider = activateSpeechProvider; self.prefillSavedKey = prefillSavedKey
         self.store = store ?? KeyDraftVault(); self.preferencesName = preferencesName; self.debounce = debounce
-        let remembered = AppFiles.isUITesting ? nil : AppFiles.read(KeySetupPreferences.self, name: preferencesName)
+        let remembered = AppFiles.resetsUISettingsOnLaunch ? nil : AppFiles.read(KeySetupPreferences.self, name: preferencesName)
         if let remembered { expanded = Provider(rawValue: remembered.expanded) } else { expanded = initialProvider }
         if let expanded, !KeySetupPolicy.guidedProviders.contains(expanded) { self.expanded = .gemini }
         for provider in KeySetupPolicy.guidedProviders {

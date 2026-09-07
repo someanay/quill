@@ -43,7 +43,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         let url = bundle.url(forResource: "strings.default", withExtension: "json", subdirectory: "copy") ?? bundle.url(forResource: "strings.default", withExtension: "json")
         copy = (url.flatMap { try? Data(contentsOf: $0) }.flatMap { try? CopyCatalog(data: $0) }) ?? CopyCatalog(strings: [:])
         settings = AppFiles.read(QuillSettings.self, name: "settings.json") ?? QuillSettings()
-        if AppFiles.isUITesting { settings = QuillSettings() }
+        if AppFiles.resetsUISettingsOnLaunch { settings = QuillSettings() }
         settings.sanitize()
         do { try AppFiles.prepare(); self.historyStore = try historyStore ?? HistoryStore() }
         catch { errorKey = QuillError.storage.copyKey }
