@@ -89,7 +89,11 @@ private struct FieldFailure: Error, CustomStringConvertible {
                 let result = try injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
                 guard result == .confirmed, actual == expected else {
-                    throw FieldFailure("result=\(result), expected=\(String(reflecting: expected)), actual=\(String(reflecting: actual))")
+                    // Diagnostic only: never retry the write. WebKit may acknowledge an
+                    // AX request before its separate web-content process updates readback.
+                    try await Task.sleep(nanoseconds: 500_000_000)
+                    let settled = attribute(target.element, kAXValueAttribute) as? String
+                    throw FieldFailure("result=\(result), expected=\(String(reflecting: expected)), immediate=\(String(reflecting: actual)), after500ms=\(String(reflecting: settled))")
                 }
                 report.checks.append(FieldCheck(name: name, passed: true, detail: "Actual Safari AX readback confirmed \(String(reflecting: expected))."))
             } catch {
