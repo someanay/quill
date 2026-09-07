@@ -56,9 +56,10 @@ struct QuillButton: View {
     @Environment(\.isEnabled) private var enabled
     let key: String
     var primary = true
+    var arguments: [String] = []
     var action: () -> Void
     var body: some View {
-        Button(action: action) { CopyText(key).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 50).contentShape(RoundedRectangle(cornerRadius: 4)) }
+        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 50).contentShape(RoundedRectangle(cornerRadius: 4)) }
         .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
         .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 4)).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
     }
@@ -71,7 +72,8 @@ struct HelpText: View {
     @Environment(\.colorScheme) private var scheme
     let key: String
     var size: CGFloat = 12
-    var body: some View { CopyText(key).font(QuillTheme.sans(size)).foregroundStyle(QuillTheme.muted(scheme == .dark)).fixedSize(horizontal: false, vertical: true) }
+    var bad = false
+    var body: some View { CopyText(key).font(QuillTheme.sans(size)).foregroundStyle(bad ? QuillTheme.error : QuillTheme.muted(scheme == .dark)).fixedSize(horizontal: false, vertical: true) }
 }
 struct BodyCopy: View {
     @Environment(\.colorScheme) private var scheme

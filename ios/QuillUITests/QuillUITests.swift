@@ -23,6 +23,17 @@ final class QuillUITests: XCTestCase {
         // Both observed nodes have the same frame; firstMatch avoids ambiguity.
         return app.buttons.matching(identifier: "gearshape").matching(NSPredicate(format: "label == %@", "Settings")).firstMatch
     }
+    private func waitForLandscape(_ app: XCUIApplication) {
+        var last = CGRect.zero, stable = 0
+        for _ in 0..<40 {
+            let frame = app.windows.firstMatch.frame
+            stable = frame.width > frame.height && frame == last ? stable + 1 : 0
+            if stable >= 4 { return }
+            last = frame
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        XCTFail("The app did not settle into a stable landscape window.")
+    }
     private func openHome(arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
         tap(app.buttons["Open Quill"], in: app)
@@ -41,6 +52,7 @@ final class QuillUITests: XCTestCase {
         expectation(for: predicate, evaluatedWith: next); waitForExpectations(timeout: 6)
         next.tap()
         XCTAssertTrue(app.secureTextFields["API key"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["key.provider.gemini"].isSelected)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "ios-onboarding-key"; shot.lifetime = .keepAlways; add(shot)
     }
     func testHomeSettingsPrivacyAndKeyboardHelp() throws {
@@ -48,7 +60,7 @@ final class QuillUITests: XCTestCase {
         settingsTab(app).tap()
         tap(app.buttons["settings.speech"], in: app)
         let language = app.staticTexts["speech.language.section"]
-        for _ in 0..<4 { if language.exists && language.isHittable { break }; app.swipeUp() }
+        for _ in 0..<8 { if language.exists && language.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(language.waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()
         tap(app.buttons["settings.privacy"], in: app)
@@ -71,8 +83,13 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(accept.waitForExistence(timeout: 5))
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: accept); waitForExpectations(timeout: 6)
         tap(accept, in: app)
+        XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["key.provider.gemini"].isSelected)
+        tap(app.buttons["key.provider.groq"], in: app)
         let key = app.secureTextFields["API key"]
-        tap(key, in: app); key.typeText("quill-ui-fixture")
+        tap(key, in: app); key.typeText("gsk_quill_ui_fixture0000000000")
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["onboarding.key.verify"].isEnabled)
         tap(app.buttons["onboarding.key.verify"], in: app)
         XCTAssertTrue(app.staticTexts["onboarding.checklist"].waitForExistence(timeout: 10)); capture(app, "ios-setup-checklist")
         tap(app.buttons["onboarding.permission"], in: app)
@@ -104,13 +121,26 @@ final class QuillUITests: XCTestCase {
     }
     func testLargerTextDarkSettingsAndLandscapeLayout() throws {
         let app = openHome(arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        XCTAssertTrue(app.buttons["dictation.record"].isHittable)
+        capture(app, "ios-large-text-home")
+        let today = app.staticTexts["home.today"]
+        for _ in 0..<5 { if today.exists && today.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(today.exists); XCTAssertTrue(today.isHittable)
+        capture(app, "ios-large-text-home-today")
         settingsTab(app).tap()
         tap(app.buttons["settings.visual"], in: app)
         tap(app.buttons["Dark"], in: app); capture(app, "ios-large-text-dark")
         XCTAssertTrue(app.buttons["Match system"].exists)
         XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = .portrait }
+        waitForLandscape(app)
         XCTAssertTrue(app.staticTexts["screen.visual"].waitForExistence(timeout: 5))
+        let window = app.windows.firstMatch.frame, heading = app.staticTexts["screen.visual"].frame
+        XCTAssertGreaterThan(window.width, window.height)
+        XCTAssertGreaterThanOrEqual(heading.minX, window.minX); XCTAssertLessThanOrEqual(heading.maxX, window.maxX)
+        let medium = app.buttons["Medium"]
+        for _ in 0..<5 { if medium.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(medium.isHittable); XCTAssertTrue(window.contains(medium.frame))
         capture(app, "ios-large-text-landscape")
     }
 }

@@ -73,7 +73,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             QHeading(title: model.c("onboarding.key.title"))
             Text(model.c("onboarding.key.body")).foregroundStyle(Q.muted)
-            KeyEditor(activateSpeechProvider: true, onSaved: { model.settings.onboardingStep = 3 })
+            GuidedKeySetup(activateSpeechProvider: true, onSaved: { model.settings.onboardingStep = 3 })
             if model.hasActiveKey { QButton(title: model.c("action.continue")) { model.settings.onboardingStep = 3 } }
         }
     }
@@ -141,7 +141,7 @@ struct OnboardingView: View {
             PermissionIllustration(icon: "checkmark").padding(.top, 45)
             QHeading(title: model.c("onboarding.allset.title")).accessibilityIdentifier("onboarding.ready")
             Text(model.c("ios.onboarding.ready_body")).foregroundStyle(Q.muted)
-            RecordingBubble()
+            QCard { HStack(spacing: 12) { RecordingBubble(size: 40); Text(model.c("ios.onboarding.bubble_look")).font(Q.sans(14)).foregroundStyle(Q.muted) } }
             QButton(title: model.c("onboarding.allset.cta")) { model.settings.onboardingComplete = true; model.tab = 0 }.accessibilityIdentifier("onboarding.finish")
         }
     }
@@ -168,19 +168,20 @@ struct KeyEditor: View {
     @EnvironmentObject private var model: AppModel
     var activateSpeechProvider = false
     var onSaved: () -> Void = {}
-    @State private var provider: Provider = .groq
+    @State private var provider: Provider = .openai
     @State private var secret = ""
     @State private var label = ""
     @State private var reveal = false
     @State private var showGuide = false
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(Provider.allCases) { item in
+            ForEach([Provider.openai, .custom]) { item in
                 QCard {
                     VStack(alignment: .leading, spacing: 14) {
                         Button { provider = item; secret = ""; label = "" } label: {
                             HStack { Text(item.title).font(Q.sans(17)).foregroundStyle(Q.ink); Spacer(); Image(systemName: provider == item ? "chevron.up" : "chevron.down").foregroundStyle(Q.muted) }.frame(minHeight: 48)
-                        }.buttonStyle(.plain)
+                        }.buttonStyle(.plain).accessibilityIdentifier("key.provider.\(item.rawValue)")
+                            .accessibilityAddTraits(provider == item ? [.isSelected] : [])
                         if provider == item {
                             if provider == .custom { QField(title: model.c("settings.speech.custom_url_label"), text: $model.settings.customBaseURL); QField(title: model.c("settings.speech.model_field_label"), text: $model.settings.customModel) }
                             QField(title: model.c("ios.keys.label"), text: $label)

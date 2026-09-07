@@ -68,7 +68,7 @@ final class KeyboardViewController: UIInputViewController {
         status.accessibilityIdentifier = "keyboard.status"; stack.addArrangedSubview(status)
         insertButton.setTitle(c("ios.keyboard.insert"), for: .normal); insertButton.backgroundColor = brand; insertButton.tintColor = .white
         insertButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 15) ?? .systemFont(ofSize: 15, weight: .medium)
-        insertButton.layer.cornerRadius = 12; insertButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
+        insertButton.layer.cornerRadius = 4; insertButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
         insertButton.addTarget(self, action: #selector(insertDictation), for: .touchUpInside)
         insertButton.accessibilityIdentifier = "keyboard.insert"; stack.addArrangedSubview(insertButton)
         letters.axis = .vertical; letters.spacing = 5; stack.addArrangedSubview(letters)

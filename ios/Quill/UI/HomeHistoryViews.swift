@@ -26,7 +26,7 @@ struct HomeView: View {
                 }
             }
             if let notice = model.notice { QBanner(text: notice, icon: "checkmark.circle").accessibilityAddTraits(.updatesFrequently) }
-            QSection(title: model.c("home.group.today"))
+            QSection(title: model.c("home.group.today")).accessibilityIdentifier("home.today")
             QCard {
                 VStack(spacing: 10) {
                     QRow(title: model.c("ios.home.dictations_count", String(today.count)), subtitle: model.c("ios.home.words_count", String(todayWords)), icon: "waveform", chevron: false)

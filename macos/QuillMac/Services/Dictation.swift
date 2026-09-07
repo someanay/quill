@@ -17,6 +17,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     @Published var accessibilityGranted = TextInjector.permitted
     @Published var microphoneTest = false
     @Published var testHeard = false
+    @Published private(set) var testCaptureSucceeded = false
     @Published var recoveryWarning = false
     let settings: SettingsStore
     let keys: KeychainStore
@@ -186,8 +187,8 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     }
     func startMicTest() {
         guard state == .idle, pendingAudio == nil, !recoveryUnavailable else { message = "mac.status.pending_retry"; return }
-        cancel(); testHeard = false
-        do { microphoneTest = true; captureID = try audio.start(cap: 30) } catch { microphoneTest = false; report(error) }
+        cancel(); testHeard = false; testCaptureSucceeded = false
+        do { microphoneTest = true; captureID = try audio.start(cap: 30); testCaptureSucceeded = true } catch { microphoneTest = false; report(error) }
     }
     func stopMicTest() { captureID = nil; audio.cancel(); microphoneTest = false; level = 0 }
     func report(_ error: Error) { message = (error as? QuillError)?.copyKey ?? "mac.error.provider"; state = .error }

@@ -169,14 +169,17 @@ public final class ProviderClient: @unchecked Sendable {
         let data = try await send(RequestBuilder.transcribe(audio: audio, options: options, key: key), provider: options.provider)
         return try RequestBuilder.parseTranscript(data, provider: options.provider)
     }
-    public func validateKey(provider: Provider, key: String, baseURL: String) async throws {
+    public static func plausibleKey(provider: Provider, key: String) -> Bool {
         if provider == .custom {
-            guard (1...4096).contains(key.count), key.unicodeScalars.allSatisfy({ $0.value >= 32 && $0.value < 127 }) else { throw QuillError.badKey }
+            return (1...4096).contains(key.count) && key.unicodeScalars.allSatisfy({ $0.value >= 32 && $0.value < 127 })
         } else {
-            guard (20...4096).contains(key.count), !key.contains("..."), key.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || "-_.".unicodeScalars.contains($0) }) else { throw QuillError.badKey }
+            guard (20...4096).contains(key.count), !key.contains("..."), key.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || "-_.".unicodeScalars.contains($0) }) else { return false }
         }
         let prefixes: [Provider:[String]] = [.groq:["gsk_"], .openai:["sk-"], .openrouter:["sk-or-"], .gemini:["AIza","AQ."]]
-        if let allowed = prefixes[provider], !allowed.contains(where: key.hasPrefix) { throw QuillError.badKey }
+        return prefixes[provider]?.contains(where: key.hasPrefix) == true
+    }
+    public func validateKey(provider: Provider, key: String, baseURL: String) async throws {
+        guard Self.plausibleKey(provider: provider, key: key) else { throw QuillError.badKey }
         let base = try Endpoint.validated(provider == .custom ? baseURL : provider.baseURL)
         let path = provider == .openrouter ? "key" : provider == .gemini ? "v1beta/models" : "models"
         var request = URLRequest(url: base.appendingPathComponent(path)); request.timeoutInterval = 15

@@ -43,7 +43,13 @@ struct SpeechSettingsView: View {
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.speech.title")).accessibilityIdentifier("screen.speech")
-            QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.provider }, set: model.selectProvider)) { ForEach(Provider.allCases) { Text($0.title).tag($0) } }.pickerStyle(.menu) }
+            GuidedKeySetup(activateSpeechProvider: true, prefillSavedKey: true)
+            DisclosureGroup(model.c("ios.keys.other_providers")) {
+                QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.provider }, set: model.selectProvider)) {
+                    if KeySetupPolicy.guidedProviders.contains(model.settings.provider) { Text(model.settings.provider.title).tag(model.settings.provider) }
+                    Text(Provider.openai.title).tag(Provider.openai); Text(Provider.custom.title).tag(Provider.custom)
+                }.pickerStyle(.menu) }
+            }
             if model.settings.provider == .custom {
                 QField(title: model.c("settings.speech.custom_url_label"), text: $model.settings.customBaseURL)
                 QBanner(text: model.c("ios.keys.endpoint_binding"))
@@ -98,11 +104,20 @@ struct APIKeysView: View {
     @EnvironmentObject private var model: AppModel
     @State private var removing: SavedKey?
     @State private var showRemove = false
+    @State private var addingFor: Provider?
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.keys.title")).accessibilityIdentifier("screen.keys")
             QBanner(text: model.c("ios.keys.security"), icon: "lock.shield")
-            if !model.keys.isEmpty {
+            if let addingFor {
+                QSection(title: model.c("settings.keys.add"))
+                GuidedKeySetup(activateSpeechProvider: false, initialProvider: KeySetupPolicy.guidedProviders.contains(addingFor) ? addingFor : .gemini, onSaved: { self.addingFor = nil })
+                DisclosureGroup(model.c("ios.keys.other_providers")) { KeyEditor(onSaved: { self.addingFor = nil }) }
+                QButton(title: model.c("action.cancel"), secondary: true) { self.addingFor = nil }
+            } else {
+            if model.keys.isEmpty {
+                QCard { VStack(alignment: .leading, spacing: 10) { Text(model.c("settings.keys.empty_title")).font(Q.serif(24)); Text(model.c("settings.keys.empty_body")).foregroundStyle(Q.muted) } }
+            } else {
                 QSection(title: model.c("settings.keys.section"))
                 ForEach(model.keys) { key in
                     QCard {
@@ -117,12 +132,13 @@ struct APIKeysView: View {
                                 Button(model.c("settings.keys.test")) { Task { await model.testKey(key) } }.frame(minHeight: 48)
                                 Button(role: .destructive) { removing = key; showRemove = true } label: { Image(systemName: "trash").frame(width: 48, height: 48) }.accessibilityLabel(model.c("settings.keys.remove"))
                             }
+                            Button(model.c("settings.keys.replace")) { addingFor = key.provider }.frame(minHeight: 48)
                         }
                     }
                 }
             }
-            QSection(title: model.c("settings.keys.add"))
-            KeyEditor()
+            QButton(title: model.c("settings.keys.add"), icon: "key") { addingFor = model.settings.provider }.accessibilityIdentifier("keys.add")
+            }
         }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
             .confirmationDialog(model.c("ios.keys.remove_confirm"), isPresented: $showRemove, titleVisibility: .visible) {
                 Button(model.c("settings.keys.remove"), role: .destructive) { if let removing { model.deleteKey(removing) } }

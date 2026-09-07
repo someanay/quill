@@ -119,6 +119,8 @@ struct SpeechSettings: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+        KeyEditor(activateSpeechProvider: true, prefillSavedKey: true)
         QuillCard {
             Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.provider }, set: { settings.value.selectProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
             if settings.value.provider == .custom {
@@ -132,6 +134,7 @@ struct SpeechSettings: View {
             }
             HelpText(key: "settings.speech.language_help")
             if settings.value.provider == .gemini { HelpText(key: "settings.speech.gemini_caveat") }
+        }
         }.onChange(of: settings.value.speechModel) { model in if settings.value.provider == .custom { settings.value.customModel = model } }
     }
 }

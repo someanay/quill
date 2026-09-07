@@ -36,7 +36,9 @@ struct OnboardingView: View {
                         QuillCard { HelpText(key: "onboarding.key.warning.free_tier"); HelpText(key: "onboarding.key.warning.usage"); HelpText(key: "compliance.privacy.promise") }
                         QuillButton(key: warningReady ? "onboarding.key.warning.accept" : "onboarding.key.warning.reading") { step = 3 }.disabled(!warningReady)
                         QuillButton(key: "action.not_now", primary: false) { step = 1 }
-                    case 3: KeyEditor(onboarding: true) { step = 4 }
+                    case 3:
+                        HelpText(key: "onboarding.key.body", size: 14)
+                        KeyEditor(onboarding: true) { step = 4 }
                     case 4:
                         QuillCard {
                             checklist("onboarding.checklist.key", done: keys.active(settings.value.provider, settings: settings.value) != nil)
@@ -54,7 +56,7 @@ struct OnboardingView: View {
                         HStack { Spacer(); InkMeter(amplitude: dictation.level); Spacer() }
                         if dictation.testHeard { Label(Copy.text("onboarding.mictest.heard"), systemImage: "checkmark.circle.fill").foregroundStyle(QuillTheme.success) }
                         QuillButton(key: dictation.microphoneTest ? "mac.mic.stop_test" : "mac.mic.test") { if dictation.microphoneTest { dictation.stopMicTest() } else { dictation.startMicTest() } }
-                        QuillButton(key: "onboarding.mictest.cta") { dictation.stopMicTest(); step = 6 }.disabled(!dictation.testHeard)
+                        QuillButton(key: "onboarding.mictest.cta") { dictation.stopMicTest(); step = 6 }.disabled(!dictation.microphoneGranted || !dictation.testCaptureSucceeded)
                     case 6:
                         BodyCopy(key: "mac.onboarding.overlay")
                         QuillButton(key: "mac.bubble.show") { settings.value.bubbleActive = true; settings.value.bubbleVisible = true; step = 7 }
@@ -64,6 +66,7 @@ struct OnboardingView: View {
                         if dictation.accessibilityGranted { QuillButton(key: "action.continue") { settings.value.accessibilityConsent = true; step = 8 }.disabled(!accepted) }
                     default:
                         BodyCopy(key: "onboarding.allset.body")
+                        QuillCard { HStack(spacing: 14) { BubbleFace(state: .idle, diameter: 40); CopyText("onboarding.allset.look").font(QuillTheme.sans(14)) } }
                         QuillButton(key: "onboarding.allset.cta") { finish(); NSApp.hide(nil) }
                         QuillButton(key: "onboarding.allset.home_link", primary: false) { finish() }
                     }

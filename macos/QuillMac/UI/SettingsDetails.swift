@@ -183,7 +183,7 @@ struct AdvancedSettings: View {
         .confirmationDialog(Copy.text("settings.advanced.clear_confirm_title"), isPresented: $clear) { Button(Copy.text("settings.advanced.clear_confirm_cta"), role: .destructive) {
             dictation.cancel()
             do {
-                try keys.clear(); history.clear(); settings.value = QuillSettings()
+                try keys.clear(); try KeySetupDraftStore().clearAll(); history.clear(); settings.value = QuillSettings()
                 let files = try FileManager.default.contentsOfDirectory(at: AppPaths.root, includingPropertiesForKeys: nil)
                 for file in files where file.lastPathComponent.hasPrefix("models-") || file.lastPathComponent == "diagnostic.json" { try FileManager.default.removeItem(at: file) }
             } catch { dictation.report(QuillError.storage) }

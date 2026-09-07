@@ -70,6 +70,7 @@ final class DictationTests: XCTestCase {
         let fixture = try DictationFixture(); defer { fixture.dispose() }
         let dictation = fixture.dictation
         dictation.startMicTest(); let old = fixture.audio.id; dictation.stopMicTest(); dictation.startMicTest()
+        XCTAssertTrue(dictation.testCaptureSucceeded); XCTAssertFalse(dictation.testHeard)
         let current = fixture.audio.id, stopped = fixture.audio.stops
         fixture.audio.onAutoStop?(old); fixture.audio.onLevel?(old, 1, 999, true)
         try await Task.sleep(nanoseconds: 50_000_000)

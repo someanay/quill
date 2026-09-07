@@ -8,6 +8,8 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[2]
 catalog = json.loads((root / 'app/src/main/assets/copy/strings.default.json').read_text(encoding='utf-8'))
 catalog['strings'].update({
+    'mac.key.other_providers': 'OpenAI or a custom provider',
+    'mac.key.custom_check': 'Check this endpoint before saving. Editing the address does not send your draft key anywhere.',
     'mac.error.bad_key': 'That key was rejected. Check that you copied the complete key for this provider.',
     'mac.error.quota': 'Your provider account has run out of usage or credits. Check your plan, then retry.',
     'mac.error.rate_limit': 'Your provider is limiting requests. Wait a moment, then retry.',
@@ -86,6 +88,7 @@ catalog['strings'].update({
     'mac.cleanup.example.after': "I don't know, maybe tomorrow.",
 })
 catalog['strings']['settings.keys.banner'] = catalog['strings']['mac.key.security']
+catalog['strings']['onboarding.key.browser_error'] = 'The browser could not open. Choose a default browser in macOS System Settings, then try again.'
 catalog['strings']['compliance.rationale.accessibility'] = catalog['strings']['mac.accessibility.disclosure']
 catalog['strings']['settings.privacy.banner_text'] = catalog['strings']['mac.privacy.body']
 catalog['strings']['settings.audio.format_sub'] = catalog['strings']['mac.audio.format']

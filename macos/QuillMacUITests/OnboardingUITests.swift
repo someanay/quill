@@ -1,6 +1,29 @@
 import XCTest
 
 final class OnboardingUITests: XCTestCase {
+    func testGuidedKeyRowsRetainDraftAndRememberExpansion() throws {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "3"]; app.launch()
+        XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 10))
+        for provider in ["groq", "openrouter", "gemini"] {
+            let row = app.buttons["key-provider-" + provider]; reveal(row, in: app); row.click()
+            let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 5)); reveal(field, in: app)
+            if provider == "openrouter" {
+                field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-router")
+                XCTAssertFalse(app.buttons["key-save-openrouter"].isEnabled)
+                app.buttons["key-reveal"].click(); XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-router")
+                app.buttons["key-reveal"].click()
+            }
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-guided-key-" + provider; shot.lifetime = .keepAlways; add(shot)
+        }
+        let router = app.buttons["key-provider-openrouter"]; reveal(router, in: app); router.click()
+        app.terminate(); app.launch()
+        XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 10))
+        reveal(app.secureTextFields["key-input"], in: app); app.buttons["key-reveal"].click()
+        XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-router")
+        XCTAssertFalse(app.buttons["key-save-openrouter"].isEnabled)
+        // Restore the default expansion for the independent welcome flow.
+        let gemini = app.buttons["key-provider-gemini"]; reveal(gemini, in: app); gemini.click()
+    }
     func testEveryOnboardingStagePresentationInLightAndDark() throws {
         let stages = ["splash", "welcome", "warning", "key", "checklist", "microphone", "bubble", "accessibility", "ready"]
         for dark in [false, true] {
@@ -9,7 +32,7 @@ final class OnboardingUITests: XCTestCase {
                 app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(index)] + (dark ? ["--ui-dark"] : [])
                 app.launch()
                 XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
-                if index == 3 { XCTAssertFalse(app.buttons["onboarding.key.cta"].isEnabled) }
+                if index == 3 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
                 if index == 5 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
                 if index == 7 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
                 let shot = XCTAttachment(screenshot: app.screenshot())
@@ -24,7 +47,7 @@ final class OnboardingUITests: XCTestCase {
         for _ in 0..<10 {
             let viewport = scroll.frame.insetBy(dx: 0, dy: 6)
             if row.exists && row.frame.height > 0 && viewport.contains(row.frame) { return }
-            scroll.scroll(byDeltaX: 0, deltaY: -200)
+            scroll.scroll(byDeltaX: 0, deltaY: row.frame.minY < viewport.minY ? 200 : -200)
         }
         XCTAssertTrue(scroll.frame.contains(row.frame), "Settings row must be inside the visible scroll viewport")
     }
@@ -39,12 +62,12 @@ final class OnboardingUITests: XCTestCase {
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: accept)
         wait(for: [enabled], timeout: 6); accept.click()
         XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 6))
-        XCTAssertFalse(app.buttons["onboarding.key.cta"].isEnabled)
+        XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
         let key = XCTAttachment(screenshot: app.screenshot()); key.name = "macOS-key-setup"; key.lifetime = .keepAlways; add(key)
         app.secureTextFields["key-input"].click()
         app.secureTextFields["key-input"].typeText("invalid")
-        app.buttons["onboarding.key.cta"].click()
-        XCTAssertTrue(app.staticTexts["That key was rejected. Check that you copied the complete key for this provider."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["key-format-help"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
         XCTAssertTrue(app.secureTextFields["key-input"].exists)
     }
     func testSettingsNavigationAndHistory() throws {
@@ -53,7 +76,9 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["nav.settings"].click()
         XCTAssertTrue(app.buttons["settings.speech"].waitForExistence(timeout: 5)); app.buttons["settings.speech"].click()
         XCTAssertTrue(app.textFields["model-id"].waitForExistence(timeout: 5))
+        reveal(app.textFields["model-id"], in: app)
         let speech = XCTAttachment(screenshot: app.screenshot()); speech.name = "macOS-speech-settings"; speech.lifetime = .keepAlways; add(speech)
+        reveal(app.buttons["settings-back"], in: app)
         app.buttons["settings-back"].click()
         app.buttons["settings.cleanup"].click()
         XCTAssertTrue(app.descendants(matching: .any)["cleanup-automatic"].waitForExistence(timeout: 5))

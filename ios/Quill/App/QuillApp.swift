@@ -38,7 +38,7 @@ private struct UITestProvider: HTTPTransport {
         return ProviderAPI(transport: UITestProvider())
     }
     func send(_ request: URLRequest) async throws -> HTTPResult {
-        guard request.url?.host == "api.groq.com", request.value(forHTTPHeaderField: "Authorization") == "Bearer quill-ui-fixture" else {
+        guard request.url?.host == "api.groq.com", request.value(forHTTPHeaderField: "Authorization") == "Bearer gsk_quill_ui_fixture0000000000" else {
             return HTTPResult(data: Data("{}".utf8), status: 401)
         }
         let body: String

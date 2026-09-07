@@ -2615,6 +2615,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "ios.onboarding.bubble_look": {
+      "default": "Look for this microphone on Home.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "ios.workflow.step1": {
       "default": "1. Open Quill. Tap the microphone, speak, then tap to stop.",
       "placeholders": [],
@@ -2791,6 +2797,12 @@
     },
     "ios.keys.label": {
       "default": "Key name (optional)",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.keys.other_providers": {
+      "default": "OpenAI or a custom provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

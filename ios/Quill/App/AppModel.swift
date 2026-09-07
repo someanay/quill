@@ -106,6 +106,11 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         } catch is CancellationError { return false }
         catch { report(error); return false }
     }
+    func validateKeyCandidate(provider: Provider, secret: String) async throws {
+        let config = try ProviderConfiguration(provider: provider, customBaseURL: settings.customBaseURL, model: provider.defaultModel)
+        try await providerAPI.validate(config, key: secret)
+        try Task.checkCancellation()
+    }
     func activateKey(_ key: SavedKey) { do { try vault.activate(key); keys = vault.keys } catch { report(error) } }
     func deleteKey(_ key: SavedKey) { do { try vault.delete(key); keys = vault.keys } catch { report(error) } }
     func testKey(_ key: SavedKey) async {
@@ -309,6 +314,8 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         cancel()
         do {
             try vault.clear(); try KeyboardTransfer.clear(); try historyStore?.clear()
+            try KeyDraftVault().clearAll()
+            try? FileManager.default.removeItem(at: AppFiles.root.appendingPathComponent("key-setup.json"))
             diagnosticsCollector.clear()
             words = []; contactNames = []; keys = []; history = []
             try AppFiles.write(words, name: "words.json"); try AppFiles.write(contactNames, name: "contacts.json")
