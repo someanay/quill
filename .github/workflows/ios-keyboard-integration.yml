@@ -1,0 +1,101 @@
+name: iOS installed keyboard integration
+
+on:
+  push:
+    paths:
+      - "ios/QA/**"
+      - "ios/QuillKeyboardIntegrationTests/**"
+      - "ios/project.yml"
+      - "ios/QuillKeyboard/**"
+      - "ios/Shared/**"
+      - ".github/workflows/ios-keyboard-integration.yml"
+  pull_request:
+    paths: ["ios/**", ".github/workflows/ios-keyboard-integration.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-keyboard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  installed-keyboard:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record Apple toolchain
+        run: xcodebuild -version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Boot an isolated iPhone simulator
+        id: destination
+        run: |
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+          test -n "$UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build the host, real keyboard, and separate editor fixture
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          xcodegen generate
+          xcodebuild build-for-testing -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
+            -configuration Debug -destination "id=$UDID" -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee keyboard-build.log
+          xcrun simctl install "$UDID" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl install "$UDID" DerivedData/Build/Products/Debug-iphonesimulator/QuillKeyboardFieldFixture.app
+          xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
+      - name: Enable and exercise the installed keyboard through actual system UI
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
+            -destination "id=$UDID" -derivedDataPath DerivedData \
+            -resultBundlePath KeyboardIntegrationResults.xcresult \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
+            -maximum-test-execution-time-allowance 900 \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee keyboard-integration.log
+      - name: Export original keyboard integration evidence
+        if: always()
+        working-directory: ios
+        run: |
+          if [ -d KeyboardIntegrationResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path KeyboardIntegrationResults.xcresult --output-path keyboard-evidence
+          fi
+      - name: Require a completed integration outcome
+        working-directory: ios
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          reports = []
+          for path in Path('keyboard-evidence').rglob('*'):
+              if path.is_file() and path.suffix == '.txt':
+                  text = path.read_text(errors='replace')
+                  if text.startswith('status='):
+                      reports.append(text)
+          assert len(reports) == 1, 'Missing or ambiguous keyboard integration outcome'
+          print(reports[0])
+          assert reports[0].splitlines()[0] == 'status=passed', 'Keyboard integration is blocked or incomplete; inspect the actual UI evidence'
+          PY
+      - name: Preserve keyboard integration logs and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-installed-keyboard-verification
+          path: |
+            ios/keyboard-build.log
+            ios/keyboard-integration.log
+            ios/keyboard-evidence
+            ios/KeyboardIntegrationResults.xcresult
+          retention-days: 14

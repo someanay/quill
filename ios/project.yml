@@ -83,3 +83,34 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.uitests
     dependencies:
       - target: Quill
+  QuillKeyboardFieldFixture:
+    type: application
+    platform: iOS
+    sources: [QA/KeyboardFieldFixture.swift]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.qa.keyboard-field
+        INFOPLIST_KEY_CFBundleDisplayName: Quill Keyboard QA
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+  QuillKeyboardIntegrationTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [QuillKeyboardIntegrationTests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.ios.qa.keyboard-integration
+        TEST_TARGET_NAME: Quill
+    dependencies:
+      - target: Quill
+      - target: QuillKeyboardFieldFixture
+schemes:
+  QuillKeyboardIntegration:
+    build:
+      targets:
+        Quill: all
+        QuillKeyboardFieldFixture: all
+    test:
+      targets: [QuillKeyboardIntegrationTests]
