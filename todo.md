@@ -492,3 +492,8 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Remove the separate key-help link and use a single guided setup action.
 - [ ] Physical dismissal animation check: phone not connected.
 - [x] Version 1.0.8 (code 9): 392 tests, lint and signed APK/AAB checks pass.
+
+### Disclaimer footer stability
+- [x] Keep both actions in place throughout the reading timer; remove the Not now spring scale.
+- [ ] Physical animation verification: phone not connected.
+- [x] Signed version 1.0.9 (code 10): unit tests, lint and release signing checks pass.

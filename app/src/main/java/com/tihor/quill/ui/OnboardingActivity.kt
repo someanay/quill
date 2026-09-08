@@ -66,6 +66,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -399,28 +400,30 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                     }
                 }
                 Spacer(Modifier.height(16.dp))
-                if (!ready) {
-                    LinearProgressIndicator(
-                        progress = { progress.value },
-                        color = MaterialTheme.quill.gold,
-                        trackColor = MaterialTheme.quill.lineStrong,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    QuillPrimaryButton(copy(K.ACTION_CONTINUE), onClick = {}, enabled = false)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        copy(K.KEY_WARNING_READING),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.quill.faint,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                } else {
-                    QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept)
-                    Spacer(Modifier.height(10.dp))
-                    QuillGhostButton(copy(K.ACTION_NOT_NOW), onClick = onDismiss)
-                }
+                // Keep the footer's geometry stable when the timer finishes. Replacing it
+                // made the centered dialog resize and bounce while Not now was appearing.
+                LinearProgressIndicator(
+                    progress = { progress.value },
+                    color = MaterialTheme.quill.gold,
+                    trackColor = MaterialTheme.quill.lineStrong,
+                    modifier = Modifier.fillMaxWidth().then(
+                        Modifier.graphicsLayer { alpha = if (ready) 0f else 1f }),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(copy(K.KEY_WARNING_READING),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.quill.faint,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = if (ready) 0f else 1f })
+                Spacer(Modifier.height(12.dp))
+                QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept, enabled = ready)
+                Spacer(Modifier.height(10.dp))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onDismiss,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                ) { Text(copy(K.ACTION_NOT_NOW)) }
+
             }
         }
     }

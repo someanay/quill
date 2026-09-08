@@ -6,7 +6,7 @@ Recordings go directly to your chosen speech provider. Optional cleanup uses you
 
 ## Status
 
-Android version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. The former Windows, macOS and iOS source drafts have been replaced with native implementations based on Android's current behavior and design. Windows is built, installed and exercised on this workstation. Apple builds and simulator tests have run on Mac runners; the final Apple corrections await another native run because GitHub has blocked jobs on the account's billing/spending limit. See [platform rebuild and exact verification status](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS uses host-app recording and an explicit keyboard handoff because its system APIs differ.
+Android version 1.0.9 builds as a signed APK and AAB; final device testing and Google Play submission are pending. The former Windows, macOS and iOS source drafts have been replaced with native implementations based on Android's current behavior and design. Windows is built, installed and exercised on this workstation. Apple builds and simulator tests have run on Mac runners; the final Apple corrections await another native run because GitHub has blocked jobs on the account's billing/spending limit. See [platform rebuild and exact verification status](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS uses host-app recording and an explicit keyboard handoff because its system APIs differ.
 
 ## Features
 
@@ -55,9 +55,9 @@ All catalog strings are editable locally, including compliance text. Accessibili
 Build both signed artifacts with `BUILD-ANDROID.cmd`, or:
 
 ```powershell
-./scripts/build-android-release.ps1 -VersionCode 9 -VersionName 1.0.8
+./scripts/build-android-release.ps1 -VersionCode 10 -VersionName 1.0.9
 # To apply the copy tool's pending drafts before building:
-./scripts/build-android-release.ps1 -ApplyCopy -VersionCode 10 -VersionName 1.0.9
+./scripts/build-android-release.ps1 -ApplyCopy -VersionCode 11 -VersionName 1.0.10
 ```
 
 The script validates copy, runs tests/lint, verifies signatures, and writes APK/AAB
