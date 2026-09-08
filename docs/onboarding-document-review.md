@@ -1,20 +1,19 @@
-# Onboarding document review
+# Onboarding suggestion review
 
-Rechecked September 8, 2026 against [Copy changes in the Quill app onboarding flow](https://docs.google.com/document/d/1YRghkmN6Hts_phe1yvnKz_Wm2NWwovxwVJVwhXdFAIk/edit). Both the text and seven embedded screenshots were inspected.
+Reviewed from the user's full-resolution screenshot of the Google Docs suggestions. Earlier reviews used exported document text and missed suggestion content.
 
-| Document item | Result |
+| Screen | Applied suggestion |
 | --- | --- |
-| Splash tagline | Applied the pending copy-tool wording, superseding the older document tagline. |
-| Welcome title, description, privacy pill and actions | Applied the pending welcome title and body exactly. Privacy pill and actions match the document; regular hyphens remain as requested. |
-| BYOK warning, free-tier note, usage note, privacy explanation and reading prompt | Already present. Existing correctly spelled provider names and privacy wording are retained. |
-| Key entry screenshots | These show the older chip layout. The later approved accordion, Gemini-first setup, validation and removal of OpenAI from new-key choices remain in place. |
-| Remove the three-step explanation and go straight to the checklist | Already implemented after a verified key is saved. |
-| Checklist heading, progress, four rows and subtitles | Already present. The key subtitle now names the actual connected provider rather than always saying Groq or using generic saved-key text. |
-| Request microphone permission on the checklist and remove the microphone priming screen | Implemented. Allow microphone opens the Android permission prompt directly. Denial retains the checklist with recovery actions. |
-| Open the mic test immediately after permission is granted | Implemented. The existing mic-test title and description remain. Notification permission is handled separately after the test. |
+| Splash | Speak instead of typing tagline, already bundled. |
+| Welcome | Small bubble on your screen; tap and speak; revised AI-service privacy paragraph; Start One-Time Setup (2-3 minutes). |
+| Key explanation | Step 1 of 4 heading; explain the private key and encrypted provider connection; recommend Gemini; remove the two old free-tier/usage bullets. |
+| Key explanation privacy | No Quill account or server; encrypted key and local history. The source uses ordinary local SQLite for history, so it does not claim additional history encryption. |
+| Key explanation actions | Preserve the user's later single Help me get & add a key button, removed help link, and stable Not now footer. |
+| Key entry | Revised explanation, AI Service label, bold Paste your key below label, Google Gemini name. Preserve later accordion layout, separate step label and Add your key heading, and removal of OpenAI from new-key options. |
+| Checklist | Your key works. Next: microphone; completion checkmark; four numbered rows; revised permission explanations; Allow Microphone. |
+| Connected provider | Show Google Gemini when Gemini is selected; preserve the actual provider for other keys. |
+| Navigation | No three-step interstitial or microphone priming screen; save opens checklist, permission grant opens mic test. |
 
-This is an M8 onboarding follow-up. No changes to recording, transcription, injection or accessibility disclosure behavior were requested here. New interface text remains bundled in the app and editable through the local source-copy workflow.
+The unsupported assertion that 99% of users never need to pay is replaced with a free-quota statement. The later requested single key-help action supersedes the screenshot's separate help/already-have-key buttons. All other visible suggestions are applied or preserved from the existing implementation.
 
-Automated tests cover initial permission requests, retryable denial, permanent denial and already-granted permission routing. Physical permission-dialog and microphone tests remain pending because the connected-device list was empty during this review. See [the manual checks](key-setup.md#verification).
-
-All 13 pending editor changes were applied to bundled source revision 12. The editor now has zero pending edits. Its older entries were missing the Android platform label; those entries were migrated before applying. The three-provider accordion remains as explicitly requested in the supplied wireframes.
+Copy remains bundled and editable through the local editor. Physical screen and animation checks remain pending.

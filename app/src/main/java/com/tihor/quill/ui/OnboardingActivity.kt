@@ -365,7 +365,8 @@ private fun WelcomeStep(onBack: () -> Unit, onNext: () -> Unit, onOpen: () -> Un
         primaryLabel = copy(K.WELCOME_CTA),
         onPrimary = onNext,
         content = {
-            StatusPill(copy(K.WELCOME_PRIVACY_PILL), PillKind.LIVE)
+            Text(copy(K.WELCOME_PRIVACY_PILL), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.quill.muted, textAlign = TextAlign.Center)
         },
     )
     // "Already set up? Open Quill" sits under the CTA; rendered as part of caption row.
@@ -394,8 +395,6 @@ private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
                 QuillCard {
                     Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        BulletRow(Icons.Rounded.Key, MaterialTheme.quill.brandInk, copy(K.KEY_WARNING_FREE_TIER))
-                        BulletRow(Icons.Rounded.Info, MaterialTheme.quill.goldDeep, copy(K.KEY_WARNING_USAGE))
                         BulletRow(Icons.Rounded.Lock, MaterialTheme.quill.ok, copy(K.PRIVACY_PROMISE))
                     }
                 }
@@ -454,13 +453,13 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
     }), primaryEnabled = primaryEnabled, onPrimary = onNext) {
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(copy(K.CHECKLIST_TITLE), style = MaterialTheme.typography.titleLarge)
+            Text(copy(K.CHECKLIST_TITLE), modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
             Text(copy(K.CHECKLIST_PROGRESS, doneCount, done.size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.muted)
         }
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
             ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY),
-                currentSettings?.let { copy(K.CHECKLIST_PROVIDER_CONNECTED, it.provider.displayName) }
+                currentSettings?.let { copy(K.CHECKLIST_PROVIDER_CONNECTED, if (it.provider == SttProvider.GEMINI) "Google Gemini" else it.provider.displayName) }
                     ?: copy(K.CHECKLIST_KEY_SUB), done[0])
             RowDivider()
             ChecklistRow(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.CHECKLIST_MIC), copy(K.CHECKLIST_MIC_SUB), done[1])

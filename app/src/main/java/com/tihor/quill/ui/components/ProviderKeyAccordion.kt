@@ -132,6 +132,7 @@ fun ProviderKeyAccordion(
                             storageError = runCatching { draftStore.write(provider, text) }.isFailure
                         }
                     }
+                    Text(copy(K.KEY_FIELD_LABEL), style = MaterialTheme.typography.labelLarge)
                     OutlinedTextField(value = value, onValueChange = update, enabled = !saving,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
                         modifier = Modifier.fillMaxWidth(), singleLine = true,

@@ -497,3 +497,10 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Keep both actions in place throughout the reading timer; remove the Not now spring scale.
 - [ ] Physical animation verification: phone not connected.
 - [x] Signed version 1.0.9 (code 10): unit tests, lint and release signing checks pass.
+
+### M8: screenshot suggestions
+- [x] Review actual suggestion text and screen associations in the supplied screenshot.
+- [x] Apply welcome, key explanation, key-entry labels and numbered checklist changes.
+- [x] Preserve later accordion/button requests; document factual wording adjustments.
+- [ ] Physical screen comparison pending.
+- [x] Version 1.0.10 (code 11): 392 tests, lint and signed APK/AAB checks pass; bundled copy verified.

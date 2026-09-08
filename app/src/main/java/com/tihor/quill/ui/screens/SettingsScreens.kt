@@ -1479,7 +1479,7 @@ private fun SystemSettingsLinks() {
             onClick = { open(AccessibilityUtil.disclosureIntent(context)) },
             trailing = { RowValueChevron(copy(if (accessibility) K.VALUE_ON else K.VALUE_OFF)) })
         RowDivider()
-        QuillRow(title = copy(K.CHECKLIST_OVERLAY_SUB), leadIcon = Icons.Rounded.PictureInPicture,
+        QuillRow(title = copy(K.OVERLAY_TITLE), leadIcon = Icons.Rounded.PictureInPicture,
             onClick = { open(com.tihor.quill.overlay.OverlayPermission.settingsIntent(context)) },
             trailing = { RowValueChevron(copy(if (overlay) K.VALUE_GRANTED else K.VALUE_OFF)) })
         RowDivider()
