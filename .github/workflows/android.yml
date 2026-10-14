@@ -10,23 +10,26 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-java@v6.0.1
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v4.0.4
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v6.4.0
       - name: Install Android SDK
         run: sdkmanager "platforms;android-37" "build-tools;37.0.0"
       - name: Test, lint, and build
-        run: bash gradlew testDebugUnitTest lint assembleRelease bundleRelease
+        run: bash gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease --no-daemon --max-workers=2 --stacktrace
       - name: Upload check reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: android-reports
           path: app/build/reports

@@ -61,7 +61,7 @@ class BubbleGeometryTest {
     }
 
     private val screenHeight = 1920
-    private val dismissThreshold = 200 // ~dp(72) at 2.75x density, in px for the test
+    private val dismissThreshold = 200 // Arbitrary pixel threshold; geometry is independent of density.
 
     @Test
     fun dismissZone_releaseNearBottom_dismisses() {

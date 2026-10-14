@@ -1,5 +1,5 @@
 {
-  "revision": 14,
+  "revision": 24,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -70,6 +70,20 @@
     "bubble.bin.label_active": {
       "default": "Release to hide",
       "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "bubble.dismiss.never": {
+      "default": "Bubble hidden until you bring it back. Shake your phone or use Quill or its notification.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "bubble.dismiss.timed": {
+      "default": "Bubble hidden for %1$d min. Shake your phone or tap the notification to bring it back sooner.",
+      "placeholders": [
+        "%1$d"
+      ],
       "overridable": true,
       "optionalBlank": false
     },
@@ -212,25 +226,25 @@
       "optionalBlank": false
     },
     "compliance.key.required_body": {
-      "default": "Quill is bring-your-own-key: it transcribes using your own provider account (e.g. Groq or OpenAI). Without a key, Quill can't transcribe. Your key is encrypted on this device and never sent to us.",
+      "default": "A key is a long private code from an AI service (Google Gemini, OpenAI, Groq, etc.). It lets Quill send your voice to the AI & get text back over an encrypted connection. Many AI services offer a free quota. Gemini is a good place to start.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "compliance.key.required_title": {
-      "default": "You'll need your own API key",
+      "default": "(Step 1 of 4) Get a key from your AI service",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "compliance.privacy.promise": {
-      "default": "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose.",
+      "default": "Quill has no account & no server. Your key is encrypted on this device. Dictation history stays only on this device.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "compliance.privacy.welcome_pill": {
-      "default": "Your key, your audio - nothing through our servers",
+      "default": "Your voice goes only to the AI service you choose (like Google, OpenAI, Groq, etc.). Quill is 100% Private & 100% Free. Pair it with a free AI for 100% free dictation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -700,13 +714,13 @@
       "optionalBlank": false
     },
     "onboarding.checklist.accessibility": {
-      "default": "Type into apps",
+      "default": "4) Allow typing into apps",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.checklist.accessibility_sub": {
-      "default": "Accessibility access",
+      "default": "Accessibility access to put your spoken words at the cursor",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -718,7 +732,19 @@
       "optionalBlank": false
     },
     "onboarding.checklist.key": {
-      "default": "Add your key",
+      "default": "1) Key Added",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.key_pending": {
+      "default": "1) Add a key later",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.checklist.key_pending_sub": {
+      "default": "Add your provider key in Settings before dictating.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -730,31 +756,31 @@
       "optionalBlank": false
     },
     "onboarding.checklist.mic": {
-      "default": "Microphone",
+      "default": "2) Allow usage of Microphone",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.checklist.mic_sub": {
-      "default": "So Quill can hear you",
+      "default": "So that Quill can hear you",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.checklist.overlay": {
-      "default": "Floating bubble",
+      "default": "3) Allow Floating bubble",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.checklist.overlay_sub": {
-      "default": "Display over other apps",
+      "default": "To reach Quill while using another app",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.checklist.progress": {
-      "default": "%1$d of %2$d done",
+      "default": "%1$d of %2$d done ✅",
       "placeholders": [
         "%1$d",
         "%2$d"
@@ -771,7 +797,7 @@
       "optionalBlank": false
     },
     "onboarding.checklist.title": {
-      "default": "You're connected",
+      "default": "Your key works.\nNext: microphone",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -830,8 +856,14 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.key.already_have": {
+      "default": "I already have a key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.key.body": {
-      "default": "A key is a long private code from an AI service. It lets Quill send your voice to the AI & get text back over an encrypted connection. Never share your key with anyone.",
+      "default": "A key is a private code from Groq. It lets Quill send your voice directly to Groq and get text back over an encrypted connection. Follow the steps below to get one.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -843,7 +875,7 @@
       "optionalBlank": false
     },
     "onboarding.key.choose": {
-      "default": "Choose any 1 of the following",
+      "default": "AI Service",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -885,7 +917,7 @@
       "optionalBlank": false
     },
     "onboarding.key.field_label": {
-      "default": "API key",
+      "default": "Paste your key below",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -956,6 +988,30 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.key.other_providers": {
+      "default": "Add other providers later in Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.other_providers_body": {
+      "default": "You can set up Gemini, OpenRouter, and other providers later in Settings. Manage keys under API keys and choose your provider under Speech & model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.other_providers_done": {
+      "default": "Skip for now",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.other_providers_title": {
+      "default": "Other providers",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.key.paste": {
       "default": "Paste",
       "placeholders": [],
@@ -989,7 +1045,7 @@
       "optionalBlank": false
     },
     "onboarding.key.step": {
-      "default": "Step (1 of 4)",
+      "default": "Step 1 of 4",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1001,7 +1057,7 @@
       "optionalBlank": false
     },
     "onboarding.key.title": {
-      "default": "Add your key",
+      "default": "Add your Groq key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1037,7 +1093,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Help me get & add a key",
+      "default": "Help me get & add a free key (1 min)",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1073,7 +1129,7 @@
       "optionalBlank": false
     },
     "onboarding.mic.cta": {
-      "default": "Allow microphone",
+      "default": "Allow Microphone",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1126,6 +1182,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "onboarding.overlay.steps": {
+      "default": "Tap the button below to go to Settings\nScroll to Quill\nTap Quill\nEnable display over other apps\nReturn to Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "onboarding.overlay.title": {
       "default": "Allow the floating bubble",
       "placeholders": [],
@@ -1145,13 +1207,13 @@
       "optionalBlank": false
     },
     "onboarding.welcome.body": {
-      "default": "A small bubble floats over the screen. Tap it & speak. Your words appear where your cursor is.",
+      "default": "A small bubble floats on your screen. Tap it & speak. Your words appear where your cursor is.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.welcome.cta": {
-      "default": "Get started",
+      "default": "Start One-Time Setup (2-3 minutes).",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1453,6 +1515,26 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "settings.bubble.return": {
+      "default": "After dragging to the bin, bring bubble back in",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.return_minutes": {
+      "default": "%1$d min",
+      "placeholders": [
+        "%1$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "settings.bubble.return_never": {
+      "default": "Never",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "settings.bubble.size": {
       "default": "Size",
       "placeholders": [],
@@ -1466,7 +1548,7 @@
       "optionalBlank": false
     },
     "settings.bubble.title": {
-      "default": "Visual preferences",
+      "default": "Preferences",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1785,6 +1867,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "settings.privacy.saving": {
+      "default": "Dictation history is being saved",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "settings.privacy.title": {
       "default": "Privacy and History",
       "placeholders": [],
@@ -1816,7 +1904,7 @@
       "optionalBlank": false
     },
     "settings.row.bubble": {
-      "default": "Visual preferences",
+      "default": "Preferences",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

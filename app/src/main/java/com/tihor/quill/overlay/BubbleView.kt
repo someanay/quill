@@ -109,6 +109,10 @@ class BubbleView(
         strokeCap = Paint.Cap.ROUND
     }
 
+    private val idleLight = android.graphics.BitmapFactory.decodeResource(resources, com.tihor.quill.R.drawable.bubble_idle_light)
+    private val idleDark = android.graphics.BitmapFactory.decodeResource(resources, com.tihor.quill.R.drawable.bubble_idle_dark)
+    private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
     private val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
     private val handler = Handler(Looper.getMainLooper())
@@ -238,7 +242,7 @@ class BubbleView(
 
     private fun drawGlyph(canvas: Canvas, cx: Float, cy: Float, r: Float, now: Long) {
         when (state) {
-            BubbleState.IDLE -> drawMic(canvas, cx, cy, r)
+            BubbleState.IDLE -> drawIdleIcon(canvas, cx, cy, r)
             BubbleState.RECORDING -> drawRecordingMeter(canvas, cx, cy, r, now)
             BubbleState.TRANSCRIBING -> drawSpinner(canvas, cx, cy, r, now)
             BubbleState.PASTE -> drawCopy(canvas, cx, cy, r)
@@ -259,19 +263,16 @@ class BubbleView(
         }
     }
 
-    private fun drawMic(canvas: Canvas, cx: Float, cy: Float, r: Float) {
-        val bodyW = r * 0.42f
-        val bodyH = r * 0.62f
-        val top = cy - r * 0.5f
-        val body = RectF(cx - bodyW / 2, top, cx + bodyW / 2, top + bodyH)
-        canvas.drawRoundRect(body, bodyW / 2, bodyW / 2, glyphPaint)
-        val cradle = r * 0.4f
-        canvas.drawArc(
-            RectF(cx - cradle, cy - cradle * 0.7f, cx + cradle, cy + cradle * 0.7f),
-            25f, 130f, false, glyphStroke,
-        )
-        canvas.drawLine(cx, cy + cradle * 0.7f, cx, cy + r * 0.55f, glyphStroke)
-        canvas.drawLine(cx - r * 0.22f, cy + r * 0.55f, cx + r * 0.22f, cy + r * 0.55f, glyphStroke)
+    private fun drawIdleIcon(canvas: Canvas, cx: Float, cy: Float, r: Float) {
+        val radius = r - ringPaint.strokeWidth
+        val clip = android.graphics.Path().apply {
+            addCircle(cx, cy, radius, android.graphics.Path.Direction.CW)
+        }
+        canvas.save()
+        canvas.clipPath(clip)
+        canvas.drawBitmap(if (darkTheme) idleDark else idleLight, null,
+            RectF(cx - radius, cy - radius, cx + radius, cy + radius), bitmapPaint)
+        canvas.restore()
     }
 
     private fun drawSpinner(canvas: Canvas, cx: Float, cy: Float, r: Float, now: Long) {

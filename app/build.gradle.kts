@@ -22,11 +22,11 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tihor.quill"
+        applicationId = "com.quill.quill"
         minSdk = 29
         targetSdk = 36
-        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 9
-        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.8"
+        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 23
+        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.22"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

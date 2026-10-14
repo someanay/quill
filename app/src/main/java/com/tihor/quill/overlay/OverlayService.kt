@@ -109,6 +109,7 @@ class OverlayService : Service() {
      * preference. Same respect-the-user's-intent line M11 draws around a force-stop. Consumed on read.
      */
     private var hiddenByDrag = false
+    private var dragReturnMinutes = 10
 
     /** True while a long-press dictation is in flight — the transcript goes to the clipboard, not a field. */
     private var clipboardMode = false
@@ -296,7 +297,7 @@ class OverlayService : Service() {
             hiddenByDrag = false
             // Drag-dismiss → come back on your own. Home toggle off (and a hidden-state restore after
             // an OEM kill, which also lands here with the flag clear) → stay gone until asked.
-            if (transient) autoReturn.schedule() else autoReturn.cancel()
+            if (transient) autoReturn.schedule(dragReturnMinutes * 60_000L) else autoReturn.cancel()
             startShakeListening()
         }
         hideBinTarget(animate = false)
@@ -635,10 +636,15 @@ class OverlayService : Service() {
             // applyVisibility arms the auto-return timer + shake listener.
             animateIntoBin {
                 hideBinTarget(animate = false)
-                toast(Copy.repository(this).get(CopyKeys.BUBBLE_DISMISS_TOAST))
                 // Flag first: this is the *transient* hide, the only one that earns an auto-return.
-                hiddenByDrag = true
-                scope.launch { settingsRepository.setBubbleVisible(false) }
+                scope.launch {
+                    dragReturnMinutes = settingsRepository.settings.first().bubbleReturnMinutes
+                    val copy = Copy.repository(this@OverlayService)
+                    toast(if (dragReturnMinutes == 0) copy.get(CopyKeys.BUBBLE_DISMISS_NEVER)
+                        else copy.get(CopyKeys.BUBBLE_DISMISS_TIMED, dragReturnMinutes))
+                    hiddenByDrag = true
+                    settingsRepository.setBubbleVisible(false)
+                }
             }
         } else {
             hideBinTarget(animate = true)
@@ -1243,14 +1249,14 @@ class OverlayService : Service() {
         const val ACTION_SHOW = "com.tihor.quill.overlay.SHOW"
 
         /** Drag-release within this many dp of the screen's bottom edge dismisses (hides) the bubble. */
-        private const val DISMISS_ZONE_DP = 72f
+        private const val DISMISS_ZONE_DP = 192f
 
         /**
          * The bin target starts fading/growing in once the bubble's bottom edge is within this many dp
          * of the screen bottom, and is fully drawn by [DISMISS_ZONE_DP]. Must exceed [DISMISS_ZONE_DP]
          * so the target announces itself *before* the drop would take effect.
          */
-        private const val BIN_APPROACH_DP = 210f
+        private const val BIN_APPROACH_DP = 320f
 
         /** Gap between the screen's bottom edge and the bin target's own bottom. */
         private const val BIN_BOTTOM_MARGIN_DP = 22f

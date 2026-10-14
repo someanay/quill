@@ -26,6 +26,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DarkMode
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.AccessibilityNew
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
@@ -70,6 +72,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -272,29 +276,14 @@ fun SettingsScreen(nav: QuillNav) {
             SectionHeader(copy(K.SETTINGS_GROUP_CAPTURE))
             QuillListContainer {
                 QuillRow(
-                    leadIcon = Icons.Rounded.Mic, leadVariant = LeadIconVariant.GOLD,
-                    title = copy(K.SETTINGS_ROW_AUDIO),
-                    onClick = { nav.navigate(Screen.AudioRecording) },
-                    trailing = { RowChevron() },
-                )
-                RowDivider()
-                QuillRow(
                     leadIcon = Icons.Rounded.PictureInPicture, title = copy(K.SETTINGS_ROW_BUBBLE),
                     onClick = { nav.navigate(Screen.BubbleAppearance) },
                     trailing = { RowChevron() },
                 )
             }
 
-            SystemSettingsLinks()
-
             SectionHeader(copy(K.SETTINGS_GROUP_PRIVACY))
             QuillListContainer {
-                QuillRow(
-                    leadIcon = Icons.Rounded.Shield, title = copy(K.SETTINGS_ROW_PRIVACY),
-                    onClick = { nav.navigate(Screen.Privacy) },
-                    trailing = { RowChevron() },
-                )
-                RowDivider()
                 QuillRow(
                     leadIcon = Icons.Rounded.Layers, leadVariant = LeadIconVariant.PLAIN,
                     title = copy(K.SETTINGS_ROW_ADVANCED),
@@ -333,10 +322,14 @@ fun SpeechModelScreen(nav: QuillNav) {
     val settings by repo.settings.collectAsState(initial = QuillSettings())
 
     DetailScaffold(copy(K.SETTINGS_SPEECH_TITLE), nav) {
-        com.tihor.quill.ui.components.ProviderKeyAccordion(
-            secretStore = remember { KeystoreSecretStore(context) }, onSaved = {},
-            prefillSavedKey = true,
-        )
+        FieldLabel(copy(K.KEY_CHOOSE))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SttProvider.selectable().forEach { provider ->
+                QuillChip(providerLabel(provider), selected = settings.provider == provider,
+                    onClick = { scope.launch { repo.setProvider(provider) } })
+            }
+        }
+        TextButton(onClick = { nav.navigate(Screen.ApiKeys) }) { Text(copy(K.SETTINGS_ROW_API_KEYS)) }
 
         FieldLabel(copy(K.SETTINGS_SPEECH_MODEL), Modifier.padding(top = 16.dp))
         com.tihor.quill.ui.components.ModelDropdown(
@@ -460,10 +453,6 @@ fun ApiKeysScreen(nav: QuillNav) {
     val stored = remember(revision) { SttProvider.selectable().filter { sttKeys.has(it) } }
     // The provider the inline entry form is open for (null = closed).
     var addingFor by rememberSaveable { mutableStateOf<String?>(null) }
-    var showConsoles by rememberSaveable { mutableStateOf(false) }
-    if (showConsoles) {
-        com.tihor.quill.ui.components.KeyConsoleDialog(onDismiss = { showConsoles = false })
-    }
 
     DetailScaffold(copy(K.SETTINGS_KEYS_TITLE), nav) {
         val adding = addingFor
@@ -494,9 +483,6 @@ fun ApiKeysScreen(nav: QuillNav) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(6.dp))
-                    TextButton(onClick = { showConsoles = true }) {
-                        Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
-                    }
                 }
             }
         } else {
@@ -526,9 +512,6 @@ fun ApiKeysScreen(nav: QuillNav) {
                 copy(K.SETTINGS_KEYS_ADD), onClick = { addingFor = settings.provider.id },
                 leadingIcon = Icons.Rounded.Key,
             )
-            TextButton(onClick = { showConsoles = true }) {
-                Text(copy(K.KEY_WHERE), color = MaterialTheme.quill.brandInk)
-            }
             HelpText(copy(K.SETTINGS_KEYS_HELP))
         }
     }
@@ -1070,59 +1053,6 @@ fun ContactsVocabScreen(nav: QuillNav) {
 // C6 — Audio & recording
 // ============================================================================
 
-@Composable
-fun AudioRecordingScreen(nav: QuillNav) {
-    val context = LocalContext.current
-    val repo = remember { SettingsRepository(context) }
-    val scope = rememberCoroutineScope()
-    val settings by repo.settings.collectAsState(initial = QuillSettings())
-
-    DetailScaffold(copy(K.SETTINGS_AUDIO_TITLE), nav) {
-        FieldLabel(copy(K.SETTINGS_AUDIO_START_STOP), Modifier.padding(top = 8.dp))
-        QuillListContainer {
-            // Trigger mode + hold-to-talk are M11 (touch the recorder/FGS); honest placeholders until then.
-            ComingSoonRow(copy(K.SETTINGS_AUDIO_TRIGGER), copy(K.SETTINGS_AUDIO_TRIGGER_SUB))
-            RowDivider()
-            ComingSoonRow(copy(K.SETTINGS_AUDIO_HOLD), copy(K.SETTINGS_AUDIO_HOLD_SUB))
-        }
-
-        FieldLabel(copy(K.SETTINGS_AUDIO_MAX_LENGTH), Modifier.padding(top = 16.dp))
-        QuillCard {
-            Column(Modifier.padding(16.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(copy(K.SETTINGS_AUDIO_AUTOSTOP), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
-                    Text(formatCap(settings.sessionCapSeconds), style = MaterialTheme.typography.titleMedium)
-                }
-                Slider(
-                    value = settings.sessionCapSeconds.toFloat(),
-                    onValueChange = { scope.launch { repo.setSessionCapSeconds(it.toInt()) } },
-                    valueRange = 60f..300f,
-                    steps = 3, // 60 / 120 / 180 / 240 / 300
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-        QuillListContainer {
-            // Silence auto-stop wiring touches the recorder loop (M4/M11); honest placeholder until then.
-            ComingSoonRow(copy(K.SETTINGS_AUDIO_SILENCE), copy(K.SETTINGS_AUDIO_SILENCE_SUB))
-        }
-        Spacer(Modifier.height(10.dp))
-        Banner(
-            text = copy(K.SETTINGS_AUDIO_SILENCE_BANNER),
-            icon = Icons.Rounded.Info, kind = PillKind.LIVE,
-        )
-
-        Spacer(Modifier.height(16.dp))
-        QuillListContainer {
-            QuillRow(
-                title = copy(K.SETTINGS_AUDIO_FORMAT), subtitle = copy(K.SETTINGS_AUDIO_FORMAT_SUB),
-                trailing = { Text(copy(K.SETTINGS_AUDIO_FORMAT_VALUE), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.quill.faint) },
-            )
-        }
-    }
-}
-
 private fun formatCap(seconds: Int): String = if (seconds < 60) "${seconds}s" else "${seconds / 60} min"
 
 @Composable
@@ -1156,20 +1086,26 @@ fun PrivacyScreen(nav: QuillNav) {
             icon = Icons.Rounded.Shield, kind = PillKind.OK,
         )
         Spacer(Modifier.height(14.dp))
+        val savingHistory = settings.historyEnabled && !settings.privateMode
+        val modeTitle = copy(if (savingHistory) K.SETTINGS_PRIVACY_SAVING else K.SETTINGS_PRIVACY_PRIVATE_MODE)
         QuillListContainer {
-            SwitchRow(
-                copy(K.SETTINGS_PRIVACY_PRIVATE_MODE), settings.privateMode,
-                { scope.launch { repo.setPrivateMode(it) } }, copy(K.SETTINGS_PRIVACY_PRIVATE_MODE_SUB),
-            )
-            RowDivider()
-            SwitchRow(
-                copy(K.SETTINGS_PRIVACY_HISTORY),
-                settings.historyEnabled,
-                { scope.launch { repo.setHistoryEnabled(it) } },
-                copy(K.SETTINGS_PRIVACY_HISTORY_SUB),
+            QuillRow(
+                title = modeTitle,
+                subtitle = copy(if (savingHistory) K.SETTINGS_PRIVACY_HISTORY_SUB else K.SETTINGS_PRIVACY_PRIVATE_MODE_SUB),
+                trailing = {
+                    Switch(
+                        checked = savingHistory,
+                        onCheckedChange = { enabled -> scope.launch { repo.setHistorySaving(enabled) } },
+                        thumbContent = {
+                            Icon(if (savingHistory) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,
+                                contentDescription = null, modifier = Modifier.size(18.dp))
+                        },
+                        modifier = Modifier.semantics { contentDescription = modeTitle },
+                    )
+                },
             )
         }
-        if (settings.historyEnabled) {
+        if (savingHistory) {
             FieldLabel(copy(K.SETTINGS_PRIVACY_HISTORY_RETENTION), Modifier.padding(top = 16.dp))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 QuillSettings.RETENTION_OPTIONS.forEach { minutes ->
@@ -1199,7 +1135,6 @@ fun PrivacyScreen(nav: QuillNav) {
         }
         HelpText(copy(K.SETTINGS_PRIVACY_DIAG_HELP))
 
-        SystemSettingsLinks()
     }
 }
 
@@ -1252,6 +1187,39 @@ fun BubbleAppearanceScreen(nav: QuillNav) {
                 QuillChip(it, selected = settings.appTheme == it, onClick = { scope.launch { repo.setAppTheme(it) } })
             }
         }
+        FieldLabel(copy(K.BUBBLE_RETURN_SETTING), Modifier.padding(top = 16.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(1, 5, 10, 30, 60, 0).forEach { minutes ->
+                QuillChip(
+                    if (minutes == 0) copy(K.BUBBLE_RETURN_NEVER) else copy(K.BUBBLE_RETURN_MINUTES, minutes),
+                    selected = settings.bubbleReturnMinutes == minutes,
+                    onClick = { scope.launch { repo.setBubbleReturnMinutes(minutes) } },
+                )
+            }
+        }
+        FieldLabel(copy(K.SETTINGS_AUDIO_MAX_LENGTH), Modifier.padding(top = 16.dp))
+        QuillCard {
+            Column(Modifier.padding(16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(copy(K.SETTINGS_AUDIO_AUTOSTOP), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
+                    Text(formatCap(settings.sessionCapSeconds), style = MaterialTheme.typography.titleMedium)
+                }
+                Slider(
+                    value = settings.sessionCapSeconds.toFloat(),
+                    onValueChange = { scope.launch { repo.setSessionCapSeconds(it.toInt()) } },
+                    valueRange = 60f..300f,
+                    steps = 3, // 60 / 120 / 180 / 240 / 300
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        QuillListContainer {
+            QuillRow(title = copy(K.SETTINGS_ROW_PRIVACY), leadIcon = Icons.Rounded.Shield,
+                onClick = { nav.navigate(Screen.Privacy) }, trailing = { RowChevron() })
+        }
+        SystemSettingsLinks()
+
     }
 }
 
@@ -1270,7 +1238,7 @@ private fun androidx.compose.foundation.layout.RowScope.PreviewTile(
             label, style = MaterialTheme.typography.labelSmall, color = labelColor,
             modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
         )
-        QuillBubble(BubbleState.IDLE, Icons.Rounded.Mic, size = bubbleSize)
+        QuillBubble(BubbleState.IDLE, Icons.Rounded.Mic, size = bubbleSize, darkTheme = bg == Color(0xFF15161C))
     }
 }
 
@@ -1289,7 +1257,6 @@ fun AdvancedScreen(nav: QuillNav) {
     val vocabStore = remember { com.tihor.quill.vocab.ContactsVocabularyStore(context) }
     val scope = rememberCoroutineScope()
     val settings by repo.settings.collectAsState(initial = QuillSettings())
-    var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt(context)) }
     var showClearConfirm by rememberSaveable { mutableStateOf(false) }
     var showResetConfirm by rememberSaveable { mutableStateOf(false) }
 
@@ -1307,20 +1274,6 @@ fun AdvancedScreen(nav: QuillNav) {
             SwitchRow(
                 copy(K.SETTINGS_ADVANCED_KEEPALIVE), settings.bootRestore,
                 { scope.launch { repo.setBootRestore(it) } }, copy(K.SETTINGS_ADVANCED_KEEPALIVE_SUB),
-            )
-            RowDivider()
-            QuillRow(
-                title = copy(K.SETTINGS_ADVANCED_BATTERY), subtitle = copy(K.SETTINGS_ADVANCED_BATTERY_SUB),
-                trailing = {
-                    StatusPill(
-                        if (batteryExempt) copy(K.VALUE_GRANTED) else copy(K.VALUE_CHECK),
-                        if (batteryExempt) PillKind.OK else PillKind.INFO,
-                    )
-                },
-                onClick = {
-                    // M12: deep-link to the battery-optimisation settings list (user allows Quill there).
-                    runCatching { context.startActivity(BatteryOptimization.settingsIntent()) }
-                },
             )
             RowDivider()
             QuillRow(
@@ -1479,7 +1432,7 @@ private fun SystemSettingsLinks() {
             onClick = { open(AccessibilityUtil.disclosureIntent(context)) },
             trailing = { RowValueChevron(copy(if (accessibility) K.VALUE_ON else K.VALUE_OFF)) })
         RowDivider()
-        QuillRow(title = copy(K.CHECKLIST_OVERLAY_SUB), leadIcon = Icons.Rounded.PictureInPicture,
+        QuillRow(title = copy(K.OVERLAY_TITLE), leadIcon = Icons.Rounded.PictureInPicture,
             onClick = { open(com.tihor.quill.overlay.OverlayPermission.settingsIntent(context)) },
             trailing = { RowValueChevron(copy(if (overlay) K.VALUE_GRANTED else K.VALUE_OFF)) })
         RowDivider()
