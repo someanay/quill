@@ -22,7 +22,7 @@ import kotlin.math.abs
  * SIGNATURE 2 — the ink-stroke level meter (design_system.md §10): voice drawn as gold nib-strokes.
  * Vertical rounded bars grow up & down from a shared centre baseline; heights track [amplitude]
  * (0..1), smoothed (~100 ms) so it reads as ink, not a jittery visualiser. Gold while [recording],
- * brand otherwise. Honours reduced motion by damping to a steady low state.
+ * brand otherwise. Reduced motion removes interpolation while preserving live audio feedback.
  */
 @Composable
 fun InkMeter(
@@ -33,7 +33,7 @@ fun InkMeter(
     recording: Boolean = true,
 ) {
     val reduced = isReducedMotion()
-    val target = if (reduced) 0.18f else amplitude.coerceIn(0f, 1f)
+    val target = amplitude.coerceIn(0f, 1f)
     val smoothed by animateFloatAsState(
         targetValue = target,
         animationSpec = tween(durationMillis = if (reduced) 0 else 110),

@@ -102,6 +102,31 @@ class AutoReturnTest {
         assertEquals(10 * 60 * 1000L, AutoReturn.DEFAULT_DELAY_MS)
     }
 
+    @Test fun customDelayIsUsed() {
+        val scope = scope()
+        var returns = 0
+        val timer = AutoReturn(scope) { returns++ }
+        timer.schedule(60_000L)
+        scope.advanceTimeBy(59_999L)
+        scope.runCurrent()
+        assertEquals(0, returns)
+        scope.advanceTimeBy(1L)
+        scope.runCurrent()
+        assertEquals(1, returns)
+    }
+
+    @Test fun neverCancelsPendingReturn() {
+        val scope = scope()
+        var returns = 0
+        val timer = AutoReturn(scope) { returns++ }
+        timer.schedule()
+        timer.schedule(0)
+        scope.advanceTimeBy(DELAY * 2)
+        scope.runCurrent()
+        assertFalse(timer.isPending)
+        assertEquals(0, returns)
+    }
+
     private companion object {
         const val DELAY = 10 * 60 * 1000L
     }

@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
  *
  * Deliberately **not** armed by every hide: `OverlayService` schedules this only for a drag-dismiss.
  * Switching the Home master toggle off is a stated preference, and a preference that flips itself
- * back on ten minutes later isn't one — see `OverlayService.hiddenByDrag`.
+ * back on later isn't one — see `OverlayService.hiddenByDrag`.
  *
  * ### Why a coroutine and not AlarmManager / WorkManager
  * Under Option A, hiding the bubble does **not** stop the service: the foreground service and its
@@ -44,10 +44,11 @@ class AutoReturn(
      * Arm the return, replacing any timer already running — so re-hiding restarts the full countdown
      * rather than stacking a second one.
      */
-    fun schedule() {
+    fun schedule(delayMillis: Long = delayMs) {
         cancel()
+        if (delayMillis <= 0) return
         job = scope.launch {
-            delay(delayMs)
+            delay(delayMillis)
             job = null
             onReturn()
         }

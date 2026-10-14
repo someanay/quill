@@ -32,6 +32,12 @@ object CopyKeys {
     const val KEY_READ_STEPS = "onboarding.key.read_steps"
     const val KEY_BROWSER_ERROR = "onboarding.key.browser_error"
     const val KEY_USE_SAVED = "onboarding.key.use_saved"
+    const val KEY_OTHER_PROVIDERS = "onboarding.key.other_providers"
+    const val KEY_OTHER_PROVIDERS_TITLE = "onboarding.key.other_providers_title"
+    const val KEY_OTHER_PROVIDERS_BODY = "onboarding.key.other_providers_body"
+    const val KEY_OTHER_PROVIDERS_DONE = "onboarding.key.other_providers_done"
+    const val CHECKLIST_KEY_PENDING = "onboarding.checklist.key_pending"
+    const val CHECKLIST_KEY_PENDING_SUB = "onboarding.checklist.key_pending_sub"
     const val MODELS_FREE = "models.free"
     const val MODELS_FREE_TIER = "models.free_tier"
     const val MODELS_PAID_PLAN = "models.paid_plan"
@@ -48,6 +54,7 @@ object CopyKeys {
     const val KEY_WARNING_FREE_TIER = "onboarding.key.warning.free_tier"
     const val KEY_WARNING_USAGE = "onboarding.key.warning.usage"
     const val KEY_WARNING_READING = "onboarding.key.warning.reading"
+    const val KEY_ALREADY_HAVE = "onboarding.key.already_have"
     const val KEY_WARNING_ACCEPT = "onboarding.key.warning.accept"
 
     const val HOWITWORKS_EYEBROW = "onboarding.howitworks.eyebrow"
@@ -99,6 +106,7 @@ object CopyKeys {
     const val MICTEST_HEARD = "onboarding.mictest.heard"
 
     const val OVERLAY_TITLE = "onboarding.overlay.title"
+    const val OVERLAY_STEPS = "onboarding.overlay.steps"
     const val OVERLAY_CTA = "onboarding.overlay.cta"
 
     const val ACC_ENABLE_TITLE = "onboarding.accessibility.enable_title"
@@ -336,6 +344,7 @@ object CopyKeys {
     const val SETTINGS_PRIVACY_BANNER_TEXT = "settings.privacy.banner_text"
     const val SETTINGS_PRIVACY_PRIVATE_MODE = "settings.privacy.private_mode"
     const val SETTINGS_PRIVACY_PRIVATE_MODE_SUB = "settings.privacy.private_mode_sub"
+    const val SETTINGS_PRIVACY_SAVING = "settings.privacy.saving"
     const val SETTINGS_PRIVACY_HISTORY = "settings.privacy.history"
     const val SETTINGS_PRIVACY_HISTORY_SUB = "settings.privacy.history_sub"
     const val SETTINGS_PRIVACY_HISTORY_RETENTION = "settings.privacy.history_retention"
@@ -434,6 +443,11 @@ object CopyKeys {
     const val NOTIFICATION_TEXT_HIDDEN = "notification.text.hidden"
     const val NOTIFICATION_TITLE_RECORDING = "notification.title.recording"
     const val NOTIFICATION_TEXT_RECORDING = "notification.text.recording"
+    const val BUBBLE_RETURN_SETTING = "settings.bubble.return"
+    const val BUBBLE_RETURN_NEVER = "settings.bubble.return_never"
+    const val BUBBLE_RETURN_MINUTES = "settings.bubble.return_minutes"
+    const val BUBBLE_DISMISS_TIMED = "bubble.dismiss.timed"
+    const val BUBBLE_DISMISS_NEVER = "bubble.dismiss.never"
     const val BUBBLE_DISMISS_TOAST = "bubble.dismiss.toast"
     // Drag-to-dismiss bin target (v1.1): the caption under the bin, resting vs "release now".
     const val BUBBLE_BIN_LABEL = "bubble.bin.label"
@@ -514,7 +528,7 @@ object CopyKeys {
             MODELS_SAVE, MODELS_CUSTOM_REFRESH,
             MODELS_SEARCH, MODELS_EMPTY, MODELS_LOADING, MODELS_FALLBACK, MODELS_FRESH, MODELS_REFRESH, MODELS_RANKING, MODELS_MANUAL,
             SPLASH_TAGLINE, WELCOME_TITLE, WELCOME_BODY, WELCOME_CTA, WELCOME_ALREADY, WELCOME_OPEN,
-            KEY_WARNING_FREE_TIER, KEY_WARNING_USAGE, KEY_WARNING_READING, KEY_WARNING_ACCEPT,
+            KEY_WARNING_FREE_TIER, KEY_WARNING_USAGE, KEY_WARNING_READING, KEY_WARNING_ACCEPT, KEY_ALREADY_HAVE,
             HOWITWORKS_EYEBROW, HOWITWORKS_TITLE, HOWITWORKS_T1, HOWITWORKS_T2, HOWITWORKS_T3,
             HOWITWORKS_STEP1, HOWITWORKS_STEP2, HOWITWORKS_STEP3, HOWITWORKS_CTA,
             CHECKLIST_TITLE, CHECKLIST_PROGRESS,
@@ -523,11 +537,13 @@ object CopyKeys {
             KEY_STEP, KEY_CHOOSE, KEY_EXPANDED, KEY_COLLAPSED, KEY_EASY, KEY_MORE_STEPS, KEY_FREE_OPTIONS, KEY_FREE_NOTE, KEY_ROUTER_NOTE, KEY_PASTE, KEY_VERIFIED, KEY_FORMAT_HELP, KEY_UNVERIFIED, KEY_RETRY, KEY_SAVE_PROVIDER, KEY_STORAGE_ERROR, KEY_READ_STEPS, KEY_BROWSER_ERROR, KEY_USE_SAVED, MODELS_FREE, MODELS_FREE_TIER, MODELS_PAID_PLAN, MODELS_PREVIEW,
             CHECKLIST_PROVIDER_CONNECTED, MIC_OPEN_SETTINGS, MIC_DENIED, MIC_BLOCKED,
             MODELS_PAID, KEY_TITLE, KEY_BODY, KEY_FIELD_LABEL, KEY_CTA, KEY_WHERE, KEY_CONSOLE_BODY, KEY_CONSOLE_FREE,
+            KEY_OTHER_PROVIDERS, KEY_OTHER_PROVIDERS_TITLE, KEY_OTHER_PROVIDERS_BODY, KEY_OTHER_PROVIDERS_DONE,
+            CHECKLIST_KEY_PENDING, CHECKLIST_KEY_PENDING_SUB,
             KEY_GUIDE_TITLE, KEY_GUIDE_OPEN, KEY_GUIDE_GROQ_STEPS, KEY_GUIDE_OPENAI_STEPS,
             KEY_GUIDE_OPENROUTER_STEPS, KEY_GUIDE_GEMINI_STEPS,
             KEY_VERIFYING, KEY_VALID, KEY_ERROR_INVALID, KEY_ERROR_NETWORK,
             MIC_TITLE, MIC_CTA, MICTEST_TITLE, MICTEST_BODY, MICTEST_CTA, MICTEST_HEARD,
-            OVERLAY_TITLE, OVERLAY_CTA, ACC_ENABLE_TITLE, ACC_ENABLE_CTA,
+            OVERLAY_TITLE, OVERLAY_STEPS, OVERLAY_CTA, ACC_ENABLE_TITLE, ACC_ENABLE_CTA,
             ALLSET_TITLE, ALLSET_BODY, ALLSET_CTA, ALLSET_LOOK, ALLSET_HOME_LINK,
             ACTION_NOT_NOW, ACTION_CONTINUE, ACTION_BACK, ACTION_CANCEL, STATUS_DONE,
             NAV_HOME, NAV_HISTORY, NAV_SETTINGS,
@@ -594,7 +610,7 @@ object CopyKeys {
             SETTINGS_AUDIO_SILENCE_SUB, SETTINGS_AUDIO_SILENCE_BANNER, SETTINGS_AUDIO_FORMAT,
             SETTINGS_AUDIO_FORMAT_SUB, SETTINGS_AUDIO_FORMAT_VALUE,
             SETTINGS_PRIVACY_TITLE, SETTINGS_PRIVACY_BANNER_TITLE, SETTINGS_PRIVACY_BANNER_TEXT,
-            SETTINGS_PRIVACY_PRIVATE_MODE, SETTINGS_PRIVACY_PRIVATE_MODE_SUB, SETTINGS_PRIVACY_HISTORY,
+            SETTINGS_PRIVACY_PRIVATE_MODE, SETTINGS_PRIVACY_PRIVATE_MODE_SUB, SETTINGS_PRIVACY_SAVING, SETTINGS_PRIVACY_HISTORY,
             SETTINGS_PRIVACY_HISTORY_SUB, SETTINGS_PRIVACY_HISTORY_RETENTION,
             SETTINGS_PRIVACY_HISTORY_RETENTION_HOUR, SETTINGS_PRIVACY_HISTORY_RETENTION_DAY,
             SETTINGS_PRIVACY_HISTORY_RETENTION_WEEK, SETTINGS_PRIVACY_HISTORY_RETENTION_MONTH,
@@ -628,7 +644,7 @@ object CopyKeys {
             NOTIFICATION_ACTION_SHOW, NOTIFICATION_ACTION_STOP,
             NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
             NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,
-            NOTIFICATION_TITLE_RECORDING, NOTIFICATION_TEXT_RECORDING, BUBBLE_DISMISS_TOAST,
+            NOTIFICATION_TITLE_RECORDING, NOTIFICATION_TEXT_RECORDING, BUBBLE_DISMISS_TOAST, BUBBLE_RETURN_SETTING, BUBBLE_RETURN_NEVER, BUBBLE_RETURN_MINUTES, BUBBLE_DISMISS_TIMED, BUBBLE_DISMISS_NEVER,
             BUBBLE_BIN_LABEL, BUBBLE_BIN_LABEL_ACTIVE, BUBBLE_AUTORETURN_TOAST,
             CAROUSEL_HOME_HEADER, CAROUSEL_CARD_A11Y, CAROUSEL_PLAY_A11Y,
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,

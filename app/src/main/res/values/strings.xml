@@ -12,4 +12,8 @@
     <string name="a11y_disclosure_body">Android provides no standard way for an app to detect the focused text field in another app or insert text into it without replacing your keyboard, so an accessibility service is required.\n\nQuill uses the service to find the focused editable text field, check whether it is a password field, and insert your dictation. It reads the field\'s existing text and cursor position to preserve surrounding text and confirm insertion. It also uses the current app\'s identity to apply your writing style. Password fields are excluded.\n\nQuill does not capture screen images or log keystrokes. Existing field text is processed temporarily on your device, not saved to dictation history or sent to us or your AI provider. Local Android diagnostic logs can include app and field identifiers, field hints, input types, text length and cursor positions, but not the field\'s entered text. Quill has no backend server.\n\nAfter you tap Agree, Android Settings will open. Turn on Quill under Accessibility. Do not turn on the Accessibility Shortcut.</string>
     <string name="a11y_disclosure_accept">Agree</string>
     <string name="a11y_disclosure_decline">Not now</string>
+    <string name="a11y_guide_title">Turn on Quill</string>
+    <string name="a11y_guide_open_settings">Open Accessibility settings</string>
+    <string name="a11y_guide_close">Close guide</string>
+    <string name="a11y_guide_unavailable">The floating video guide is unavailable. Opening Accessibility settings.</string>
 </resources>

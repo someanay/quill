@@ -116,3 +116,23 @@ closed. Repeat with Back. Open again, scroll through all copy, choose Agree, and
 confirm Android Accessibility Settings opens. Enable Quill and return. Revoke only
 Quill's service, use Home recovery and the failed-insertion notification in turn,
 and confirm each shows the full disclosure before Settings. Repeat at large font size.
+
+## October 4 follow-up: post-consent video guidance
+
+The shared host now plays the supplied accessibility clip in native PiP after Agree,
+then opens Settings once Android confirms entry. Unsupported/disabled PiP and video
+failure fall back to normal Settings. The single Settings-launch location remains
+`AccessibilityDisclosureActivity`; its session coordinator now gates asynchronous
+callbacks instead of opening Settings inline in Agree. A post-consent timeout cannot
+open Settings before acceptance or after the session ends.
+
+The disclosure still has no timer, stored acceptance bypass or video before consent.
+Its body, Agree/Not now labels and service summary remain XML resources. Guide labels
+also use XML resources so the standalone Activity has no copy-catalog dependency.
+Process recreation ends the guide; a new setup request requires the full disclosure.
+Eight `AccessibilityGuideFlowTest` cases cover these sequencing and cancellation
+rules alongside the existing disclosure tests. The added manifest PiP declaration
+and handled configuration changes do not change accessibility service capabilities.
+
+Physical PiP and disclosure verification remains pending because no phone is connected.
+The extended manual script is in [accessibility-video-guide.md](docs/accessibility-video-guide.md).

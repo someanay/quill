@@ -68,10 +68,25 @@ close to a worst-case device for this app. Record pass/fail + device + OS versio
 **Overlay (M1)**
 1. Grant overlay permission. 2. Open another app. 3. Confirm bubble appears, drags, dismisses, and
    survives backgrounding Quill.
+4. Drag toward the bottom: the 80 dp dustbin must start appearing when the bubble's visible bottom
+   edge enters the bottom 320 dp, and turn red inside the bottom 192 dp. Release there to dismiss;
+   release just above that area to keep the bubble and snap it to an edge. Repeat at all three bubble
+   sizes, in portrait/landscape, and with gesture or three-button navigation. Check that reaching the
+   visible dustbin activates it before release, and that ordinary repositioning above the red zone
+   keeps the bubble visible.
 
 **Accessibility detection (M2)**
 1. Enable the service via the disclosure → settings flow. 2. Focus a field in WhatsApp → node
    logged. 3. Focus a **password** field → flagged sensitive, dictation disabled.
+
+**Accessibility video guide (M8 follow-up)**
+1. Not now and Back on the disclosure must open neither Settings nor PiP.
+2. Agree must open Settings with the supplied silent portrait video looping in native PiP.
+   Move/resize/close it, expand and explicitly reopen Settings, rotate, and enable Quill:
+   enabling must close the guide. Returning without enabling must not relaunch Settings.
+3. Deny PiP access: setup must still open Settings. Check cancellation, backgrounding,
+   process recreation and all disclosure entry points using
+   [the complete guide script](docs/accessibility-video-guide.md) on physical devices.
 
 **Injection (M3) — see the matrix in §3.**
 
@@ -100,6 +115,19 @@ close to a worst-case device for this app. Record pass/fail + device + OS versio
 
 **Onboarding (M8)**
 1. Fresh install (clear data) → complete the whole flow to first dictation with no outside help.
+2. On Welcome, verify the bundled square video autoplays silently without controls. Watch at least
+   three repeats for extra pauses, black flashes or dropped frames; confirm text, colour and framing.
+   Background and resume the app: playback must pause and resume. Navigate to key setup and back:
+   the departing Welcome must stop immediately, release its player after the transition, and return
+   with one player. Check the lowest-end supported phone and a representative modern phone against
+   [the video handoff](docs/onboarding-looping-video.md); do not transcode to mask device limitations.
+3. In the microphone test, compare quiet input, ordinary background noise and normal speaking:
+   bars should rest during quiet input and rise clearly for speech. Repeat with system animations
+   disabled; the meter must still follow live input. Check on the Honor and another physical phone
+   using [the microphone-meter checks](docs/key-setup.md).
+4. On the overlay permission page, verify the five instructions are numbered and left-aligned above
+   the button. Check narrow widths and large text for readable wrapping and a reachable button.
+   Follow the instructions and return to Quill: granted permission must advance onboarding.
 
 **Hardening (M11)**
 1. Force-stop the app → reopen → bubble returns. 2. Reboot device → bubble auto-starts (after
@@ -212,4 +240,4 @@ On Android 13+, verify Gmail compose-body detection where the accessibility tree
 Verify multiple same-provider keys can be added, selected, removed and retained across app recreation. Rejecting a new key must not erase a working key. Verify automatic cleanup follows speech provider changes, separate choices remain independent, and disabling cleanup stays disabled.
 # API key onboarding follow-up
 
-The provider accordion, clipboard, browser-return, process-recreation and model-label manual checks are listed in [key setup](docs/key-setup.md). Run these on the physical phone before Play submission. Authentication checks do not prove model quota or successful dictation.
+The Groq-only onboarding form, other-providers popup Back/Skip actions, truthful pending-key checklist, Settings provider accordion, clipboard, browser-return, process-recreation and model-label manual checks are listed in [key setup](docs/key-setup.md). Run these on the physical phone before Play submission. Authentication checks do not prove model quota or successful dictation.

@@ -58,6 +58,7 @@ data class QuillSettings(
     val accessibilityEnabledOnce: Boolean = false,
     /** Floating-bubble size: [BUBBLE_SIZE_SMALL] / [BUBBLE_SIZE_MEDIUM] / [BUBBLE_SIZE_LARGE]. */
     val bubbleSize: String = BUBBLE_SIZE_MEDIUM,
+    val bubbleReturnMinutes: Int = 10,
     /** App theme: [APP_THEME_SYSTEM] / [APP_THEME_LIGHT] / [APP_THEME_DARK] — drives the whole UI. */
     val appTheme: String = APP_THEME_SYSTEM,
     /**
@@ -150,6 +151,7 @@ class SettingsRepository(private val context: Context) {
             sessionCapSeconds = p[Keys.SESSION_CAP_SECONDS] ?: 300,
             onboardingComplete = p[Keys.ONBOARDING_COMPLETE] ?: false,
             accessibilityEnabledOnce = p[Keys.ACCESSIBILITY_ENABLED_ONCE] ?: false,
+            bubbleReturnMinutes = (p[Keys.BUBBLE_RETURN_MINUTES] ?: 10).takeIf { it in listOf(0, 1, 5, 10, 30, 60) } ?: 10,
             bubbleSize = p[Keys.BUBBLE_SIZE] ?: QuillSettings.BUBBLE_SIZE_MEDIUM,
             appTheme = p[Keys.APP_THEME] ?: QuillSettings.APP_THEME_SYSTEM,
             bootRestore = p[Keys.BOOT_RESTORE] ?: true,
@@ -229,6 +231,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setPrivateMode(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.PRIVATE_MODE] = enabled }
 
+    /** Select one privacy/history mode in a single persisted update. */
+    suspend fun setHistorySaving(enabled: Boolean) = context.settingsDataStore.edit {
+        it[Keys.PRIVATE_MODE] = !enabled
+        it[Keys.HISTORY_ENABLED] = enabled
+    }
+
     suspend fun setHistoryEnabled(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.HISTORY_ENABLED] = enabled }
 
@@ -244,6 +252,11 @@ class SettingsRepository(private val context: Context) {
     /** Record that the accessibility service has connected at least once (gates the revocation banner). */
     suspend fun setAccessibilityEnabledOnce(enabled: Boolean) =
         context.settingsDataStore.edit { it[Keys.ACCESSIBILITY_ENABLED_ONCE] = enabled }
+
+    suspend fun setBubbleReturnMinutes(minutes: Int) {
+        require(minutes in listOf(0, 1, 5, 10, 30, 60))
+        context.settingsDataStore.edit { it[Keys.BUBBLE_RETURN_MINUTES] = minutes }
+    }
 
     suspend fun setBubbleSize(size: String) =
         context.settingsDataStore.edit { it[Keys.BUBBLE_SIZE] = size }
@@ -332,6 +345,7 @@ class SettingsRepository(private val context: Context) {
         val SESSION_CAP_SECONDS = intPreferencesKey("session_cap_seconds")
         val ONBOARDING_COMPLETE = booleanPreferencesKey("onboarding_complete")
         val ACCESSIBILITY_ENABLED_ONCE = booleanPreferencesKey("accessibility_enabled_once")
+        val BUBBLE_RETURN_MINUTES = intPreferencesKey("bubble_return_minutes")
         val BUBBLE_SIZE = stringPreferencesKey("bubble_size")
         val APP_THEME = stringPreferencesKey("app_theme")
         val BOOT_RESTORE = booleanPreferencesKey("boot_restore")

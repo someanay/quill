@@ -37,6 +37,32 @@ class SettingsRepositoryTest {
         assertFalse(r.settings.first().cleanupAutomatic)
     }
 
+    @Test fun historyModePersistsBothFlagsAndKeepsRetention() = runTest {
+        val r = repo()
+        r.setHistoryRetentionMinutes(1440)
+        r.setPrivateMode(true)
+        r.setHistoryEnabled(true)
+        r.setHistorySaving(true)
+        val saving = repo().settings.first()
+        assertFalse(saving.privateMode)
+        assertTrue(saving.historyEnabled)
+        r.setHistorySaving(false)
+        val private = repo().settings.first()
+        assertTrue(private.privateMode)
+        assertFalse(private.historyEnabled)
+        assertEquals(1440, private.historyRetentionMinutes)
+    }
+
+    @Test fun bubbleReturnPreferencePersists() = runTest {
+        assertEquals(10, repo().settings.first().bubbleReturnMinutes)
+        for (minutes in listOf(1, 5, 10, 30, 60, 0)) {
+            repo().setBubbleReturnMinutes(minutes)
+            assertEquals(minutes, repo().settings.first().bubbleReturnMinutes)
+        }
+        assertTrue(runCatching { repo().setBubbleReturnMinutes(7) }.isFailure)
+        assertEquals(0, repo().settings.first().bubbleReturnMinutes)
+    }
+
     private fun repo() = SettingsRepository(RuntimeEnvironment.getApplication())
 
     // Robolectric caches the DataStore singleton across methods in a class, so reset to a known clean

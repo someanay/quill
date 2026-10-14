@@ -35,7 +35,7 @@ class BinTargetView(
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Float) = v * density
 
-    private val baseRadius = dp(30f)                 // 60 dp resting target
+    private val baseRadius = dp(40f)                 // 80 dp resting target
     private val maxRadius = baseRadius * ACTIVE_SCALE
     private val shadowPad = dp(12f)
     private val labelGap = dp(9f)

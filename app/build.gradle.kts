@@ -22,7 +22,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tihor.quill"
+        applicationId = "com.quill.quill"
         minSdk = 29
         targetSdk = 36
         versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 11

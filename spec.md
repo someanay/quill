@@ -37,6 +37,13 @@ consequences, so the reasoning survives.
 
 ### 2.1 Text injection — AccessibilityService + overlay bubble *(Accepted)*
 
+**Accessibility setup guidance (October 4, 2026):** after the standalone disclosure's
+Agree action, a bundled silent video accompanies Accessibility Settings in native
+Android PiP. This uses the existing disclosure Activity, adds no overlay/FGS permission,
+closes when Quill's service is enabled, and falls back to normal Settings when PiP is
+unavailable. Every new request still requires disclosure and consent. See
+[the guide's session behavior and physical checks](docs/accessibility-video-guide.md).
+
 **Decision:** insert dictated text via an **`AccessibilityService`** that writes into the focused
 field (`ACTION_SET_TEXT`, clipboard + `ACTION_PASTE` fallback), with a **`SYSTEM_ALERT_WINDOW`
 overlay** drawing the floating bubble. **Rejected alternative:** a custom keyboard (IME).

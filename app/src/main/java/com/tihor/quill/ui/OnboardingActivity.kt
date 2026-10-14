@@ -12,12 +12,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -28,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -110,6 +113,7 @@ import com.tihor.quill.ui.components.QuillListContainer
 import com.tihor.quill.ui.components.QuillPrimaryButton
 import com.tihor.quill.ui.components.QuillRow
 import com.tihor.quill.ui.components.QuillTopBar
+import com.tihor.quill.ui.components.OnboardingVideo
 import com.tihor.quill.ui.components.RowDivider
 import com.tihor.quill.ui.components.StatusPill
 import com.tihor.quill.ui.components.Wordmark
@@ -130,7 +134,7 @@ class OnboardingActivity : ComponentActivity() {
 }
 
 private enum class Step {
-    SPLASH, WELCOME, KEY_WARNING, ADD_KEY, CHECKLIST,
+    SPLASH, WELCOME, ADD_KEY, CHECKLIST,
     MIC_TEST, OVERLAY, ACC_ENABLE, ALL_SET,
 }
 
@@ -162,8 +166,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
     fun back() {
         step = when (step) {
             Step.WELCOME -> Step.SPLASH
-            Step.KEY_WARNING -> Step.WELCOME
-            Step.ADD_KEY -> Step.KEY_WARNING
+            Step.ADD_KEY -> Step.WELCOME
             Step.CHECKLIST -> Step.ADD_KEY
             Step.MIC_TEST -> Step.CHECKLIST
             Step.OVERLAY -> Step.MIC_TEST
@@ -173,7 +176,7 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         }
     }
 
-    // The checklist requests the microphone directly. Notifications are requested after the mic test.
+    // The checklist requests the microphone directly; mic-test completion only advances setup.
     val micLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionPending = false
         hasMic = granted
@@ -186,7 +189,6 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         micDenied = !hasMic
         if (hasMic) step = Step.MIC_TEST
     }
-    val notificationsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val overlayLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (OverlayPermission.isGranted(context)) step = Step.ACC_ENABLE
     }
@@ -222,16 +224,14 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         onFinish()
     }
 
-    // A dialog owns a separate window. Keep it outside the page transition so dismissal
-    // does not crossfade two welcome screens while retaining the outgoing dialog window.
-    val page = if (step == Step.KEY_WARNING) Step.WELCOME else step
-    androidx.compose.animation.Crossfade(targetState = page, label = "onboardingTransition") { shownStep -> // copy-exempt
+    androidx.compose.animation.Crossfade(targetState = step, label = "onboardingTransition") { shownStep -> // copy-exempt
     when (shownStep) {
         Step.SPLASH -> SplashStep(onDone = { step = Step.WELCOME })
-        Step.WELCOME -> WelcomeStep(onBack = ::back, onNext = { step = Step.KEY_WARNING }, onOpen = ::finishOnboarding)
-        Step.KEY_WARNING -> Unit // Rendered separately from the page transition below.
-        Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.CHECKLIST })
-        Step.CHECKLIST -> ChecklistStep(::back, context, hasMic, micDenied, micAction, !permissionPending, onNext = {
+        Step.WELCOME -> WelcomeStep(onNext = { step = Step.ADD_KEY }, onOpen = ::finishOnboarding,
+            isVisible = step == Step.WELCOME)
+        Step.ADD_KEY -> AddKeyStep(::back, secretStore, onVerified = { step = Step.CHECKLIST },
+            onSkip = { step = Step.CHECKLIST })
+        Step.CHECKLIST -> ChecklistStep(::back, context, secretStore, hasMic, micDenied, micAction, !permissionPending, onNext = {
             when (microphoneSetupAction(microphoneGranted(), micDenied,
                 activity?.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO) == true)) {
                 MicrophoneSetupAction.TEST_MIC -> step = Step.MIC_TEST
@@ -248,19 +248,12 @@ internal fun OnboardingFlow(onFinish: () -> Unit) {
         })
         Step.MIC_TEST -> MicTestStep(::back, onNext = {
             step = Step.OVERLAY
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                androidx.core.content.ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+
         })
         Step.OVERLAY -> OverlayStep(::back, onAllow = { overlayLauncher.launch(OverlayPermission.settingsIntent(context)) })
         Step.ACC_ENABLE -> AccessibilityEnableStep(::back, onOpen = { accLauncher.launch(AccessibilityUtil.disclosureIntent(context)) })
         Step.ALL_SET -> AllSetStep(onFinish = ::finishOnboarding, onHome = ::finishOnboarding)
     }
-    }
-    if (step == Step.KEY_WARNING) {
-        KeyWarningDialog(onAccept = { step = Step.ADD_KEY }, onDismiss = { step = Step.WELCOME })
     }
 }
 
@@ -356,73 +349,48 @@ private fun SplashStep(onDone: () -> Unit) {
 }
 
 @Composable
-private fun WelcomeStep(onBack: () -> Unit, onNext: () -> Unit, onOpen: () -> Unit) {
-    CenteredStep(
-        onBack = onBack,
-        illustration = { Wordmark() },
-        title = copy(K.WELCOME_TITLE),
-        body = copy(K.WELCOME_BODY),
-        primaryLabel = copy(K.WELCOME_CTA),
-        onPrimary = onNext,
-        content = {
-            Text(copy(K.WELCOME_PRIVACY_PILL), style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.quill.muted, textAlign = TextAlign.Center)
-        },
-    )
-    // "Already set up? Open Quill" sits under the CTA; rendered as part of caption row.
-    // (Kept simple: a text button overlay would over-complicate the centered layout.)
-    Box(Modifier.fillMaxSize().padding(bottom = 18.dp), contentAlignment = Alignment.BottomCenter) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(copy(K.WELCOME_ALREADY), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.quill.muted)
-            TextButton(onClick = onOpen) { Text(copy(K.WELCOME_OPEN), color = MaterialTheme.quill.brandInk) }
-        }
-    }
-}
-
-@Composable
-private fun KeyWarningDialog(onAccept: () -> Unit, onDismiss: () -> Unit) {
-    val progress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { progress.animateTo(1f, tween(3000)) }
-    val ready = progress.value >= 1f
-    Dialog(onDismissRequest = onDismiss) {
-        QuillCard {
-            Column(Modifier.padding(20.dp)) {
-                LeadIcon(Icons.Rounded.Key, LeadIconVariant.GOLD)
-                Spacer(Modifier.height(12.dp))
-                Text(copy(K.KEY_REQUIRED_WARNING_TITLE), style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Text(copy(K.KEY_REQUIRED_WARNING_BODY), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.quill.muted)
-                Spacer(Modifier.height(12.dp))
-                QuillCard {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        BulletRow(Icons.Rounded.Lock, MaterialTheme.quill.ok, copy(K.PRIVACY_PROMISE))
+private fun WelcomeStep(onNext: () -> Unit, onOpen: () -> Unit, isVisible: Boolean) {
+    Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+        androidx.compose.foundation.layout.BoxWithConstraints(
+            Modifier.padding(padding).fillMaxSize(),
+        ) {
+            val availableHeight = maxHeight
+            Column(
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                    .heightIn(min = availableHeight).padding(horizontal = 20.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Wordmark()
+                    Spacer(Modifier.height(12.dp))
+                    Text(copy(K.WELCOME_TITLE), style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center)
+                }
+                Spacer(Modifier.height(24.dp))
+                // Preserve the supplied video's square frame and existing rounded-corner layout.
+                Box(
+                    Modifier.widthIn(max = 360.dp).fillMaxWidth().aspectRatio(1f)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                ) {
+                    OnboardingVideo(visible = isVisible, modifier = Modifier.matchParentSize())
+                }
+                Spacer(Modifier.height(24.dp))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(copy(K.WELCOME_PRIVACY_PILL), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.quill.muted, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(20.dp))
+                    QuillPrimaryButton(copy(K.WELCOME_CTA), onNext)
+                    Spacer(Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(copy(K.WELCOME_ALREADY), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.quill.muted)
+                        TextButton(onClick = onOpen) {
+                            Text(copy(K.WELCOME_OPEN), color = MaterialTheme.quill.brandInk)
+                        }
                     }
                 }
-                Spacer(Modifier.height(16.dp))
-                // Keep the footer's geometry stable when the timer finishes. Replacing it
-                // made the centered dialog resize and bounce while Not now was appearing.
-                LinearProgressIndicator(
-                    progress = { progress.value },
-                    color = MaterialTheme.quill.gold,
-                    trackColor = MaterialTheme.quill.lineStrong,
-                    modifier = Modifier.fillMaxWidth().then(
-                        Modifier.graphicsLayer { alpha = if (ready) 0f else 1f }),
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(copy(K.KEY_WARNING_READING),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.quill.faint,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = if (ready) 0f else 1f })
-                Spacer(Modifier.height(12.dp))
-                QuillPrimaryButton(copy(K.KEY_WARNING_ACCEPT), onClick = onAccept, enabled = ready)
-                Spacer(Modifier.height(10.dp))
-                androidx.compose.material3.OutlinedButton(
-                    onClick = onDismiss,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                ) { Text(copy(K.ACTION_NOT_NOW)) }
-
             }
         }
     }
@@ -437,13 +405,15 @@ private fun BulletRow(icon: ImageVector, tint: androidx.compose.ui.graphics.Colo
 }
 
 @Composable
-private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, hasMic: Boolean,
+private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, secretStore: SecretStore, hasMic: Boolean,
     micDenied: Boolean, micAction: MicrophoneSetupAction, primaryEnabled: Boolean, onNext: () -> Unit) {
     val settings = remember { SettingsRepository(context) }
     val currentSettings by settings.settings.collectAsState(initial = null)
-    val hasOverlay = OverlayPermission.isGranted(context)
+    val keys = remember(secretStore) { SttKeyStore(secretStore) }
+    val hasKey = currentSettings?.let { keys.has(it.provider) } == true
     val hasAcc = AccessibilityUtil.isServiceEnabled(context)
-    val done = listOf(true, hasMic, hasOverlay, hasAcc)
+    // Overlay setup is still ahead in this flow, even if Android retained its grant.
+    val done = listOf(hasKey, hasMic, false, hasAcc)
     val doneCount = done.count { it }
 
     FormStep(onBack = onBack, primaryLabel = copy(when (micAction) {
@@ -458,9 +428,11 @@ private fun ChecklistStep(onBack: () -> Unit, context: android.content.Context, 
         }
         Spacer(Modifier.height(16.dp))
         QuillListContainer {
-            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.OK, copy(K.CHECKLIST_KEY),
-                currentSettings?.let { copy(K.CHECKLIST_PROVIDER_CONNECTED, if (it.provider == SttProvider.GEMINI) "Google Gemini" else it.provider.displayName) }
-                    ?: copy(K.CHECKLIST_KEY_SUB), done[0])
+            ChecklistRow(Icons.Rounded.Key, LeadIconVariant.PLAIN,
+                copy(if (hasKey) K.CHECKLIST_KEY else K.CHECKLIST_KEY_PENDING),
+                if (hasKey) currentSettings?.let {
+                    copy(K.CHECKLIST_PROVIDER_CONNECTED, if (it.provider == SttProvider.GEMINI) "Google Gemini" else it.provider.displayName)
+                } ?: copy(K.CHECKLIST_KEY_SUB) else copy(K.CHECKLIST_KEY_PENDING_SUB), done[0])
             RowDivider()
             ChecklistRow(Icons.Rounded.Mic, LeadIconVariant.GOLD, copy(K.CHECKLIST_MIC), copy(K.CHECKLIST_MIC_SUB), done[1])
             RowDivider()
@@ -505,6 +477,9 @@ private fun ChecklistRow(
     )
 }
 
+private const val MIC_TEST_NOISE_FLOOR_RMS = 1_000f
+private const val MIC_TEST_FULL_SCALE_RMS = 10_000f
+
 @Composable
 private fun MicTestStep(onBack: () -> Unit, onNext: () -> Unit) {
     val context = LocalContext.current
@@ -516,7 +491,11 @@ private fun MicTestStep(onBack: () -> Unit, onNext: () -> Unit) {
         val temp = File(context.cacheDir, "quill_mictest.wav")
         recorder.start(
             output = temp,
-            onAmplitude = { rms -> mainHandler.post { amplitude = (rms / 7000f).coerceIn(0f, 1f) } },
+            onAmplitude = { rms -> mainHandler.post {
+                // Leave quiet background noise at rest; give speech room to rise without saturating.
+                amplitude = ((rms - MIC_TEST_NOISE_FLOOR_RMS) /
+                    (MIC_TEST_FULL_SCALE_RMS - MIC_TEST_NOISE_FLOOR_RMS)).coerceIn(0f, 1f)
+            } },
         )
         onDispose { recorder.requestStop(); temp.delete() }
     }
@@ -546,6 +525,32 @@ private fun OverlayStep(onBack: () -> Unit, onAllow: () -> Unit) {
         body = copy(K.RATIONALE_OVERLAY),
         primaryLabel = copy(K.OVERLAY_CTA),
         onPrimary = onAllow,
+        content = {
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                copy(K.OVERLAY_STEPS).lines().filter { it.isNotBlank() }.forEachIndexed { index, step ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            (index + 1).toString() + ".",
+                            modifier = Modifier.width(24.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.quill.text2,
+                            textAlign = TextAlign.Start,
+                        )
+                        Text(
+                            step,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.quill.text2,
+                            textAlign = TextAlign.Start,
+                        )
+                    }
+                }
+            }
+        },
     )
 }
 

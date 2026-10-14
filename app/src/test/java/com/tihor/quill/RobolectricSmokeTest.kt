@@ -16,6 +16,6 @@ import org.robolectric.annotation.Config
 class RobolectricSmokeTest {
     @Test
     fun applicationContext_hasExpectedPackage() {
-        assertEquals("com.tihor.quill", RuntimeEnvironment.getApplication().packageName)
+        assertEquals("com.quill.quill", RuntimeEnvironment.getApplication().packageName)
     }
 }

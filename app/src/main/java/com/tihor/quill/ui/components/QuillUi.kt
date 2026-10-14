@@ -1,5 +1,7 @@
 package com.tihor.quill.ui.components
 
+import androidx.compose.ui.graphics.luminance
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -64,6 +66,7 @@ fun QuillPrimaryButton(
     modifier: Modifier = Modifier.fillMaxWidth(),
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues = ButtonDefaults.ContentPadding,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -71,6 +74,7 @@ fun QuillPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
+        contentPadding = contentPadding,
         shape = MaterialTheme.shapes.extraSmall,
         interactionSource = interaction,
         modifier = modifier.heightIn(min = 50.dp).graphicsLayer { scaleX = scale; scaleY = scale },
@@ -383,6 +387,7 @@ fun QuillBubble(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 56.dp,
+    darkTheme: Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f,
 ) {
     val q = MaterialTheme.quill
     val gradient: List<Color> = when (state) {
@@ -407,7 +412,17 @@ fun QuillBubble(
                 .background(Brush.linearGradient(listOf(gradientStart, gradientEnd))),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.46f))
+            if (state == BubbleState.IDLE) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(
+                        if (darkTheme) com.tihor.quill.R.drawable.bubble_idle_dark
+                        else com.tihor.quill.R.drawable.bubble_idle_light),
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize(),
+                )
+            } else {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(size * 0.46f))
+            }
         }
     }
 }

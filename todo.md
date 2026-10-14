@@ -504,3 +504,66 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Preserve later accordion/button requests; document factual wording adjustments.
 - [ ] Physical screen comparison pending.
 - [x] Version 1.0.10 (code 11): 392 tests, lint and signed APK/AAB checks pass; bundled copy verified.
+
+### Onboarding checklist clarity
+- [x] Keep overlay pending on the pre-microphone checklist and exclude it from the completed count.
+- [x] Remove notification permission request from Sounds good; retain the Settings shortcut.
+- [ ] Physical permission-flow verification pending.
+
+- Preferences follow-up: consolidated appearance and recording controls, privacy and permission shortcuts; drag-to-bin return choices 1/5/10/30/60 minutes or Never (default 10), with matching toast. Timer/persistence covered by unit tests; physical drag verification pending.
+
+### M8 follow-up: Groq-only key onboarding — October 4, 2026
+- [x] Replace the onboarding accordion with always-visible Groq instructions and key entry.
+- [x] Add a small other-providers Settings reminder; retain Gemini and OpenRouter key setup in Settings.
+- [x] Preserve encrypted drafts, Paste/reveal, authentication checks and verified-key checklist navigation.
+- [x] Debug build, all 396 unit tests, lint and bundled-copy export verification pass (revision 21; verified inside APK).
+- [ ] Physical Groq entry, browser return, draft restoration and Settings-provider checks: no connected phone during implementation.
+
+### M1 follow-up: easier bubble dismissal — October 4, 2026
+- [x] Increase the bottom drop area from 72 dp to 96 dp; dustbin activation and release use the same threshold.
+- [x] Debug build, unit tests and lint pass.
+- [ ] Physical drag/release at all bubble sizes and near the gesture-navigation bar: no connected phone during implementation.
+
+### M8 follow-up: bundled Welcome video — October 4, 2026
+- [x] Put the supplied 1024 × 1024, 60 fps MP4 into Welcome's existing square frame without transcoding.
+- [x] Use one stable Media3 player with built-in repeat, no controls or audio; pause on navigation/background and release on disposal.
+- [x] Inspect representative frames, decode three complete loops and verify the bundled source matches the supplied file by SHA-256.
+- [x] Debug build, all 396 unit tests and lint pass; APK video matches the supplied file byte-for-byte by SHA-256.
+- [ ] Physical repeat smoothness, framing, pause/resume and player ownership on low-end and modern phones: no connected phone during implementation.
+
+### M8 follow-up: accessibility Settings PiP guide — October 4, 2026
+- [x] Bundle the supplied 720 × 1584, 60 fps accessibility MP4 unchanged; inspect frames and decode three complete loops.
+- [x] After explicit Agree, wait for the first frame, enter native PiP and open Settings; preserve full resource-based disclosure on every new request.
+- [x] Keep one repeating player across PiP resizing; close on service enablement and release on dismissal. Preserve normal Settings fallback when video/PiP is unavailable.
+- [x] Eight flow tests cover consent, asynchronous callbacks, fallback, cancellation, enablement and explicit re-entry; existing disclosure checks pass.
+- [x] Debug build, all 404 unit tests and lint pass; APK video matches the supplied 838,736-byte file by SHA-256.
+- [ ] Physical Honor/stock Android checks from [the guide script](docs/accessibility-video-guide.md): no connected phone during implementation.
+
+### M8 follow-up: other-providers popup navigation — October 4, 2026
+- [x] Add a top-left popup Back arrow; retain the Groq form and encrypted draft when returning.
+- [x] Make the bottom primary button Skip for now and open the setup checklist without saving a key.
+- [x] Mention Gemini, OpenRouter and other providers; show an unsaved selected-provider key as pending in the checklist and progress count.
+- [x] Signed version 1.0.18 (code 19), all 404 unit tests, lint, signature/alignment and bundled-copy export checks pass (revision 22; verified inside APK).
+- [ ] Physical popup Back/Skip, draft preservation and pending/connected checklist checks from [key setup](docs/key-setup.md): no connected phone during implementation.
+
+### M1 follow-up: larger dustbin capture area — October 4, 2026
+- [x] Double the bottom drop band from 96 dp to 192 dp; retain the same activation and release threshold.
+- [x] Show the dustbin from 320 dp above the bottom instead of 210 dp, and enlarge its resting circle from 60 dp to 80 dp.
+- [x] Signed version 1.0.19 (code 20), all 404 unit tests, lint and APK signature/alignment checks pass.
+- [ ] Physical drag/release, red-state feedback, bubble sizes, orientation and navigation-bar checks: no connected phone during implementation.
+
+### M8 follow-up: checklist heading line break — October 4, 2026
+- [x] Put "Next: microphone" on a separate line after "Your key works." using bundled copy revision 23.
+- [x] Signed version 1.0.20 (code 21), all 404 unit tests, lint, signature/alignment and packaged two-line heading verification pass (revision 23).
+- [ ] Physical checklist heading/progress layout at narrow widths and large text sizes.
+
+### M8 follow-up: less sensitive microphone-test meter — October 4, 2026
+- [x] Add a 1,000 RMS visual noise floor and raise full scale to 10,000 RMS; retain short bar interpolation.
+- [x] Keep the meter driven by real audio with system animations disabled instead of showing a fixed active level.
+- [x] Signed version 1.0.21 (code 22), all 404 unit tests, lint and APK signature/alignment checks pass.
+- [ ] Physical quiet/background-noise versus speech contrast, typical phone distance and reduced-motion checks: no connected phone during implementation.
+
+### M8 follow-up: overlay permission instructions — October 4, 2026
+- [x] Add five numbered, left-aligned steps above the display-over-other-apps button using bundled copy revision 24, with hanging alignment for wrapped text.
+- [x] Signed version 1.0.22 (code 23), all 404 unit tests, lint, APK signature/alignment and packaged five-step copy checks pass (revision 24).
+- [ ] Physical instruction layout at narrow widths and large text, Settings navigation and permission-return checks: no connected phone during implementation.

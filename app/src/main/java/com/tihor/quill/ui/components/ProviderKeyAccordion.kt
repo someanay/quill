@@ -8,6 +8,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -49,15 +50,38 @@ fun ProviderKeyAccordion(
     activateSpeechProvider: Boolean = true,
     prefillSavedKey: Boolean = false,
 ) {
+    ProviderKeyForm(secretStore, onSaved, keySetupProviders, initialProvider,
+        collapsible = true, activateSpeechProvider = activateSpeechProvider,
+        prefillSavedKey = prefillSavedKey)
+}
+
+/** Always-visible provider instructions and entry, without the Settings accordion. */
+@Composable
+fun ProviderKeySetup(secretStore: SecretStore, provider: SttProvider, onSaved: () -> Unit) {
+    ProviderKeyForm(secretStore, onSaved, listOf(provider), provider,
+        collapsible = false, activateSpeechProvider = true, prefillSavedKey = false)
+}
+
+@Composable
+private fun ProviderKeyForm(
+    secretStore: SecretStore,
+    onSaved: () -> Unit,
+    providers: List<SttProvider>,
+    initialProvider: SttProvider,
+    collapsible: Boolean,
+    activateSpeechProvider: Boolean,
+    prefillSavedKey: Boolean,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val preferences = remember { context.getSharedPreferences("key_setup", Context.MODE_PRIVATE) }
     var expandedId by rememberSaveable {
-        mutableStateOf(preferences.getString("expanded", initialProvider.id).orEmpty())
+        mutableStateOf(if (collapsible) preferences.getString("expanded", initialProvider.id).orEmpty()
+            else initialProvider.id)
     }
     val draftStore = remember(secretStore) { KeySetupDrafts(secretStore) }
-    val drafts = remember(draftStore) { mutableStateMapOf<String, String>().apply {
-        keySetupProviders.forEach { put(it.id, draftStore.read(it).ifEmpty {
+    val drafts = remember(draftStore, providers, prefillSavedKey) { mutableStateMapOf<String, String>().apply {
+        providers.forEach { put(it.id, draftStore.read(it).ifEmpty {
             if (prefillSavedKey) SttKeyStore(secretStore).get(it).orEmpty() else ""
         }) }
     } }
@@ -84,31 +108,39 @@ fun ProviderKeyAccordion(
         refresh()
         onDispose { clipboard.removePrimaryClipChangedListener(listener); lifecycle.removeObserver(observer) }
     }
-    Text(copy(K.KEY_CHOOSE), style = MaterialTheme.typography.titleMedium)
-    Spacer(Modifier.height(12.dp))
+    if (collapsible) {
+        Text(copy(K.KEY_CHOOSE), style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(4.dp))
+    }
     QuillCard {
-        keySetupProviders.forEachIndexed { index, provider ->
+        providers.forEachIndexed { index, provider ->
             if (index > 0) HorizontalDivider(color = MaterialTheme.quill.lineStrong)
-            val expanded = expandedId == provider.id
-            val angle by animateFloatAsState(if (expanded) 180f else 0f, label = "keyAccordion") // copy-exempt
-            val description = copy(if (expanded) K.KEY_EXPANDED else K.KEY_COLLAPSED)
+            val expanded = !collapsible || expandedId == provider.id
             val providerTitle = copy(when (provider) {
                 SttProvider.GEMINI -> K.KEY_EASY
                 SttProvider.GROQ -> K.KEY_MORE_STEPS
                 else -> K.KEY_FREE_OPTIONS
             })
-            Row(Modifier.fillMaxWidth().semantics { stateDescription = description }
-                .clickable(enabled = !saving, role = Role.Button) {
-                    expandedId = if (expanded) "" else provider.id
-                    preferences.edit().putString("expanded", expandedId).commit()
-                }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(providerTitle, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)
-                Icon(Icons.Rounded.ExpandMore, null, Modifier.padding(start = 8.dp).rotate(angle))
+            if (collapsible) {
+                val angle by animateFloatAsState(if (expanded) 180f else 0f, label = "keyAccordion") // copy-exempt
+                val description = copy(if (expanded) K.KEY_EXPANDED else K.KEY_COLLAPSED)
+                Row(Modifier.fillMaxWidth().semantics { stateDescription = description }
+                    .clickable(enabled = !saving, role = Role.Button) {
+                        expandedId = if (expanded) "" else provider.id
+                        preferences.edit().putString("expanded", expandedId).commit()
+                    }.heightIn(min = 56.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(providerTitle, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+                    Icon(Icons.Rounded.ExpandMore, null, Modifier.padding(start = 8.dp).rotate(angle))
+                }
             }
             AnimatedVisibility(expanded) {
-                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                Column(Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f))
+                    .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     ProviderKeyInstructions(provider)
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(color = MaterialTheme.quill.lineStrong)
+                    Spacer(Modifier.height(8.dp))
                     val value = drafts[provider.id].orEmpty()
                     val candidate = value.trim()
                     val plausible = KeySetupValidation.plausible(provider, candidate)
@@ -136,16 +168,16 @@ fun ProviderKeyAccordion(
                     OutlinedTextField(value = value, onValueChange = update, enabled = !saving,
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
                         modifier = Modifier.fillMaxWidth(), singleLine = true,
-                        placeholder = { Text(provider.keyMask) },
+                        supportingText = { if (value.isEmpty()) Text(provider.keyMask) },
                         leadingIcon = { Icon(Icons.Rounded.Key, null) },
                         visualTransformation = if (reveal) VisualTransformation.None else PasswordVisualTransformation(),
                         isError = result == KeyValidation.Rejected,
                         trailingIcon = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(enabled = canPaste && !saving, onClick = {
+                            FilledTonalButton(shape = MaterialTheme.shapes.small, modifier = Modifier.heightIn(min = 48.dp), enabled = canPaste && !saving, onClick = {
                                 clipboard.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()?.let(update)
                             }) { Text(copy(K.KEY_PASTE)) }
-                            IconButton(onClick = { reveal = !reveal }) {
+                            IconButton(modifier = Modifier.size(48.dp), onClick = { reveal = !reveal }) {
                                 Icon(if (reveal) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                                     copy(if (reveal) K.A11Y_HIDE_KEY else K.A11Y_SHOW_KEY))
                             }
@@ -200,17 +232,34 @@ fun ProviderKeyInstructions(provider: SttProvider) {
     val context = LocalContext.current
     val browserError = copy(K.KEY_BROWSER_ERROR)
     provider.keyGuideStepsKey?.let { key ->
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             copy(key).lines().filter { it.isNotBlank() }.forEachIndexed { index, step ->
                 val url = step.split(" ").firstOrNull { it.startsWith("https://") }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text((index + 1).toString() + ")", style = MaterialTheme.typography.bodySmall)
-                    Text(step, style = MaterialTheme.typography.bodySmall,
-                        color = if (url != null) MaterialTheme.quill.brandInk else MaterialTheme.colorScheme.onSurface,
-                        modifier = if (url == null) Modifier else Modifier.clickable(role = Role.Button) {
+                val instruction: @Composable () -> Unit = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                        Text((index + 1).toString() + ")", modifier = Modifier.width(20.dp),
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.quill.muted)
+                        Text(step, style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f),
+                            color = if (url != null) MaterialTheme.quill.brandInk else MaterialTheme.colorScheme.onSurface)
+                        if (url != null) Icon(Icons.Rounded.OpenInNew, null, Modifier.size(20.dp), tint = MaterialTheme.quill.brandInk)
+                        else if (step.contains("Copy", ignoreCase = true))
+                            Icon(Icons.Rounded.ContentCopy, null, Modifier.size(18.dp), tint = MaterialTheme.quill.muted)
+                    }
+                }
+                if (url != null) {
+                    OutlinedButton(
+                        onClick = {
                             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
                                 .onFailure { Toast.makeText(context, browserError, Toast.LENGTH_LONG).show() }
-                        })
+                        },
+                        shape = MaterialTheme.shapes.medium,
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface),
+                        contentPadding = PaddingValues(12.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { instruction() }
+                } else {
+                    Box(Modifier.padding(horizontal = 12.dp)) { instruction() }
                 }
             }
         }
