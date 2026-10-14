@@ -1,10 +1,15 @@
 QUILL — OPEN-SOURCE LICENCES
 ============================
 
-Last updated: 2026-07-14. Applies to: Quill for Android (com.tihor.quill), v1.0.
+Updated October 14, 2026. Applies to Quill for Android (com.quill.quill).
 
 Quill is built with the following open-source components. We're grateful to their authors and
 maintainers. Each component is licensed under its own terms, reproduced or referenced below.
+
+Quill's own source is proprietary and governed by the repository LICENSE.
+Third-party licenses retain their full scope. Historical component notices are
+retained for earlier versions. IBM Plex fonts are licensed by IBM Corp. under
+SIL Open Font License 1.1; the full font notice is in app/src/main/assets/FONT-LICENSE.txt.
 
 
 COMPONENTS

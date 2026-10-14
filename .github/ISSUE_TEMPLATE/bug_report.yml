@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a reproducible problem with the Quill Android preview.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This issue will be public. Do not include API keys, real transcripts, recordings, contacts or private screenshots.
+        For privacy or security matters, email quillapp@agentmail.to instead.
+  - type: input
+    id: app_version
+    attributes:
+      label: Quill version
+      placeholder: "For example, 1.0.22"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone model and Android version
+      placeholder: "For example, HONOR BVL-N49, Android 16"
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name, if relevant
+      description: Provider name only. Never paste an API key.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Use invented text and omit personal information.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Expected and actual behaviour
+    validations:
+      required: true

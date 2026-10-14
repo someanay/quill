@@ -476,3 +476,10 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Remove the separate key-help link and use a single guided setup action.
 - [ ] Physical dismissal animation check: phone not connected.
 - [x] Version 1.0.8 (code 9): 392 tests, lint and signed APK/AAB checks pass.
+
+### M12: public repository readiness - October 14, 2026
+- [x] Bring the verified Android preview onto the default-branch base with package com.quill.quill and version defaults 1.0.22 / code 23.
+- [x] Fix hosted Android checks: supported actions, platform-tools only, published SDK package android-37.0 and portable JDK configuration. Hosted tests, lint, APK and AAB generation passed.
+- [x] Prepare a preview download, README demo/quick start, support route, private security reporting and current privacy/app terms with the supplied publisher/contact details.
+- [x] Preserve proprietary source-viewing terms and third-party licenses; distinguish compiled-app use from source usage.
+- Physical-device and Play production gates remain open in docs/play-readiness.md; this publication is a GitHub preview.

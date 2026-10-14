@@ -1,84 +1,82 @@
-# Quill for Android
+# Quill
 
-**Source viewing only.** Quill's original source is proprietary and all rights
-are reserved. You may read and inspect it; building, running, modifying or
-redistributing it requires written permission from the applicable copyright
-holder. GitHub's platform rights and third-party licenses are preserved.
-See [the source viewing terms](LICENSE).
+Voice dictation for Android, with your own API key. Tap the floating bubble, speak, and Quill inserts your words into a supported text field without switching keyboards.
 
-Voice dictation with your own API key. Tap the floating bubble, speak, and Quill inserts the transcript into a supported text field without switching keyboards.
+[![Android checks](https://github.com/someanay/quill/actions/workflows/android.yml/badge.svg?branch=master)](https://github.com/someanay/quill/actions/workflows/android.yml)
 
-Recordings go directly to your chosen speech provider. Optional cleanup uses your chosen language model. There is no Quill account or server handling your recordings.
+**[Download Android preview 1.0.22](https://github.com/someanay/quill/releases/tag/android-v1.0.22)** · [Quick start](#get-quill) · [Privacy](docs/privacy-policy.md) · [Help](docs/support.md)
 
-## Status
+[![Quill's onboarding demonstration: dictation into a messaging app](docs/media/quill-demo.gif)](app/src/main/assets/onboarding/final-quill-onboarding-1024-60fps.mp4)
 
-Android is the only release target. Version 1.0.8 builds as a signed APK and AAB; final device testing and Google Play submission are pending. See [release readiness](docs/play-readiness.md).
+*The bundled onboarding demonstration uses sample text. Click it to watch the original video.*
 
-## Features
+## Get Quill
 
-- Floating recording bubble, with clipboard fallback where direct insertion is unavailable.
-- Provider keys encrypted with Android Keystore.
-- Optional transcript cleanup, custom words, and local history.
-- Automatic writing-style defaults for [540 app packages](docs/app-styles.md), with per-app overrides.
-- Private mode and configurable history retention.
-- Interface text bundled in the APK. All copy changes ship through app releases.
+The current Android preview is **1.0.22**, version code **23**, package **com.quill.quill**. Android 10 or later is required.
 
-Android 10 or later and a supported provider API key are required. Provider usage may incur charges. Quill needs microphone, overlay, and accessibility permissions. Password fields are excluded; browser fields have additional restrictions. Compatibility varies by app—see the [device test matrix](testing_plan.md).
+1. Download the signed APK from the [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.22). Its SHA-256 checksum is included.
+2. Install it on your Android phone and open Quill.
+3. Add your own Groq key using the onboarding instructions. Other supported provider configurations are available in Settings.
+4. Grant microphone, display-over-other-apps and accessibility access when prompted.
+5. Open a supported text field, tap the Quill bubble and speak.
 
-## Build
+Quill is free to use. Your chosen API provider may charge for usage. Review the [app terms](docs/terms.md) and [privacy policy](docs/privacy-policy.md) before installing.
 
-Open the project in Android Studio with Android SDK 37 installed. Use the checked-in wrapper:
+This is a preview release. The latest automated Android suite has 404 passing tests; the remaining physical-phone and Play submission checks are tracked in [release readiness](docs/play-readiness.md). This repository does not claim a production Play Store release or a completed device compatibility matrix.
 
-```sh
-./gradlew assembleDebug
-./gradlew testDebugUnitTest lint
-./gradlew assembleRelease bundleRelease
-```
+## What it does
 
-On Windows, use `gradlew.bat`. Release signing reads `QUILL_KEYSTORE_PATH`, `QUILL_KEYSTORE_PASSWORD`, `QUILL_KEY_ALIAS`, and `QUILL_KEY_PASSWORD` from local properties or environment variables. Without credentials, the release is unsigned. Keep signing keys and credentials out of Git.
+- Dictates from a floating bubble into supported Android text fields.
+- Encrypts provider keys with Android Keystore.
+- Offers optional AI cleanup, custom words, contacts vocabulary and local history.
+- Applies writing-style defaults for [540 app packages](docs/app-styles.md), with per-app overrides.
+- Provides clipboard fallback when direct insertion is unavailable.
+- Supports private mode and configurable history retention.
 
-Outputs:
+Audio goes directly to the speech provider you select. Optional cleanup sends text to the cleanup provider you select. Quill has no dictation backend, app account, advertising or analytics SDK. Provider data handling is governed by that provider's terms.
 
-- APK: `app/build/outputs/apk/release/app-release.apk`
-- Play bundle: `app/build/outputs/bundle/release/app-release.aab`
+Android and individual apps control which text fields can be accessed. Quill checks for password fields; compatibility and OEM background restrictions vary. See the [device test plan](testing_plan.md).
 
-Keep distributable copies in the ignored `dist/android/` directory, with SHA-256
-checksums. APKs, app bundles, and installers do not belong in the source tree.
+## Help and feedback
 
-Test overlay gestures, accessibility insertion, and background recording on a physical Android device. OEM battery management can affect all three.
+Use [bug reports](https://github.com/someanay/quill/issues/new?template=bug_report.yml) for reproducible problems and [support guidance](docs/support.md) for setup help. For privacy or security matters, email [quillapp@agentmail.to](mailto:quillapp@agentmail.to).
 
-## Copy catalog
+Never put API keys, private recordings, transcripts or personal contact details in public issues. See [security reporting](SECURITY.md).
 
-Interface text is loaded only from the installed APK. Quill does not check a copy
-server, download text bundles, or apply old cached overrides. On upgrade it cancels
-the retired background copy job. Provider calls still go directly to the user's
-configured speech/cleanup providers.
+## Source viewing terms
 
-Use the local Quill Copy Tool to save drafts and **Apply to app source**. Changes
-update `app/src/main/assets/copy/strings.default.json` and `copy-manifest.json`.
-All catalog strings are editable locally, including compliance text. Accessibility disclosure remains in Android XML resources.
+Quill's original source is proprietary and available for viewing only. Building, running, modifying or redistributing the source requires separate written permission. GitHub's platform rights and third-party licenses are preserved.
 
-Build both signed artifacts with `BUILD-ANDROID.cmd`, or:
+Official compiled Quill applications are covered separately by the [app terms](docs/terms.md). Read the [source viewing terms](LICENSE) and [third-party notices](docs/open-source-licenses.md).
 
-```powershell
-./scripts/build-android-release.ps1 -VersionCode 9 -VersionName 1.0.8
-# To apply the copy tool's pending drafts before building:
-./scripts/build-android-release.ps1 -ApplyCopy -VersionCode 10 -VersionName 1.0.9
-```
+## Development for authorized contributors
 
-The script validates copy, runs tests/lint, verifies signatures, and writes APK/AAB
-and SHA-256 checksums into `dist/android/`. Signing credentials must already be
-configured locally; the script fails if signing is unavailable. Upload the AAB to
-Play Console using a version code higher than every previous upload. It does not
-publish copy remotely, commit source, or upload to Play automatically.
-## Project notes
+The instructions below apply to copyright holders and contributors with written permission under the [source viewing terms](LICENSE).
 
+Use a full JDK 21, Android SDK platform **37.0**, build tools **37.0.0**, and the checked-in Gradle wrapper. Keep local SDK and signing configuration outside version control.
+
+~~~sh
+./gradlew testDebugUnitTest lintDebug assembleRelease bundleRelease
+~~~
+
+On Windows, use gradlew.bat. Unsigned builds work without release credentials. Signed releases require the local signing configuration described in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+~~~powershell
+./scripts/build-android-release.ps1 -VersionCode 23 -VersionName 1.0.22
+~~~
+
+Use a higher version code for a new Play upload. The release script checks tests, lint, signatures and alignment, and writes distributable APK/AAB files plus checksums to the ignored dist/android directory. Binaries belong in GitHub Releases, not the source tree.
+
+All interface copy is bundled in the app. After an authorized copy edit, regenerate copy-manifest.json with the generateCopyManifest task and rebuild the app. There is no remote copy update service.
+
+## Project documentation
+
+- [Current Android release readiness](docs/play-readiness.md)
+- [Key setup](docs/key-setup.md)
 - [Product requirements](prd.md)
 - [Architecture](spec.md)
 - [Milestones](todo.md)
 - [Testing](testing_plan.md)
 - [Contributing](CONTRIBUTING.md)
 
-The planning documents include historical decisions; the release checklist records the current shipping scope.
-
-Cleanup supports all five providers independently of transcription. Choose the cleanup provider/model under Settings → Clean up with AI; the selected provider needs its own saved key. Formal, Neutral and Casual styles apply through cleanup. A missing key, failed request or rejected rewrite preserves the original transcript.
+Planning documents retain historical decisions. The current Android preview and release-readiness record take precedence over older version numbers, retired remote-copy plans and platform experiments retained in Git history.

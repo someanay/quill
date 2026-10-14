@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup help
+    url: https://github.com/someanay/quill/blob/master/docs/support.md
+    about: Read setup guidance and find the support email.
+  - name: Private security and privacy reporting
+    url: https://github.com/someanay/quill/blob/master/SECURITY.md
+    about: Use private email for sensitive reports. Do not post keys or personal information.

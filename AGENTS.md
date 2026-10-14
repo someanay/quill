@@ -37,7 +37,7 @@ $adb = "C:\Users\anayt\AppData\Local\Android\Sdk\platform-tools\adb.exe"
 & $adb logcat -s Quill:* AndroidRuntime:E   # Quill tag + crashes only
 
 # Launch / screenshot
-& $adb shell am start -n com.tihor.quill/.MainActivity
+& $adb shell am start -n com.quill.quill/com.tihor.quill.MainActivity
 & $adb exec-out screencap -p > shot.png
 ```
 
@@ -49,11 +49,11 @@ poorly and won't reproduce MagicOS's background-killing.
 
 **Granting permissions for dev via adb (don't tap through Settings):**
 ```powershell
-& $adb shell appops set com.tihor.quill SYSTEM_ALERT_WINDOW allow   # overlay
-& $adb shell pm grant com.tihor.quill android.permission.RECORD_AUDIO
-& $adb shell pm grant com.tihor.quill android.permission.POST_NOTIFICATIONS
+& $adb shell appops set com.quill.quill SYSTEM_ALERT_WINDOW allow   # overlay
+& $adb shell pm grant com.quill.quill android.permission.RECORD_AUDIO
+& $adb shell pm grant com.quill.quill android.permission.POST_NOTIFICATIONS
 # Accessibility service must be enabled via Settings.Secure (see M2):
-& $adb shell settings put secure enabled_accessibility_services com.tihor.quill/com.tihor.quill.accessibility.QuillAccessibilityService
+& $adb shell settings put secure enabled_accessibility_services com.quill.quill/com.tihor.quill.accessibility.QuillAccessibilityService
 & $adb shell settings put secure accessibility_enabled 1
 
 # Trigger text injection without the bubble (debug builds only — M3). Quote the WHOLE am line so
@@ -68,7 +68,7 @@ poorly and won't reproduce MagicOS's background-killing.
   launch / Run in background) + Battery **Unrestricted**. This is a physical Settings step (HONOR
   PowerGenie) — **not** settable via adb; `dumpsys deviceidle whitelist +` and `RUN_IN_BACKGROUND`
   appops do **not** override it. Verify overlay visibility with
-  `adb shell "dumpsys window windows | grep -A40 'u0 com.tihor.quill}:'"` → look at `isOnScreen=`.
+  `adb shell "dumpsys window windows | grep -A40 'u0 com.quill.quill}:'"` → look at `isOnScreen=`.
 - **adb-injected `input tap`/`swipe` do not reach overlay windows.** They follow input focus, so
   they hit the Activity beneath a `FLAG_NOT_FOCUSABLE` overlay, never the bubble. Bubble gestures
   must be tested with a real finger; cover the math with unit tests (`BubbleGeometry`) instead.
@@ -88,7 +88,7 @@ poorly and won't reproduce MagicOS's background-killing.
   Gradle plugin. Compose/serialization/KSP plugins still layer on top; mind version-matching to
   Kotlin **2.2.10**.
 - The wizard pinned `compileSdk = release(36)`, but the future-dated AndroidX libs (`core` 1.19.0)
-  require **compileSdk 37** — already bumped. `android-37` was auto-resolved by AGP.
+  require **compileSdk 37** — already bumped. `android-37.0` is the published SDK platform package resolved by AGP.
 - **Heads-up vs the planning docs:** the docs call this "an empty Jetpack Compose project," but the
   wizard actually produced a **View-based** project (appcompat/Material, no Compose, no
   `MainActivity`). Compose was added in M0. Verify versions empirically (the stack is past the model

@@ -1,14 +1,14 @@
 # Quill — Open-Source Licences
 
-_Last updated: 2026-07-14. Applies to: Quill for Android (`com.tihor.quill`), v1.0._
+_Updated October 14, 2026. Applies to Quill for Android, package `com.quill.quill`._
 
 Quill is built with the following open-source components. We're grateful to their authors and
 maintainers. Each component is licensed under its own terms, reproduced or referenced below.
 
-> Maintenance note (not for publication): this list is derived from the release (`implementation`)
-> dependencies in `app/build.gradle.kts` as of 2026-07-02. Test-only and debug-only tooling (JUnit,
-> Robolectric, MockWebServer, Espresso, Compose tooling/test artifacts) is **not** distributed in the
-> app and is therefore not listed. Regenerate this list whenever release dependencies change.
+Quill's own source is governed by the separate [source viewing terms](../LICENSE).
+Those terms do not restrict rights granted by the third-party licenses below.
+Test-only tooling is not distributed in the app. Historical component notices are
+retained where noted for earlier versions.
 
 ## Components
 
@@ -29,7 +29,8 @@ maintainers. Each component is licensed under its own terms, reproduced or refer
 | Okio (via OkHttp) | Square, Inc. | Apache License 2.0 |
 | Retrofit | Square, Inc. | Apache License 2.0 |
 | Retrofit kotlinx.serialization Converter | Jake Wharton | Apache License 2.0 |
-| EdDSA-Java (`net.i2p.crypto:eddsa`) | str4d and contributors | CC0 1.0 Universal (public-domain dedication) |
+| IBM Plex fonts | IBM Corp., reserved font name Plex | [SIL Open Font License 1.1](../app/src/main/assets/FONT-LICENSE.txt) |
+| EdDSA-Java (`net.i2p.crypto:eddsa`, earlier versions) | str4d and contributors | CC0 1.0 Universal (public-domain dedication) |
 
 ## Apache License 2.0
 

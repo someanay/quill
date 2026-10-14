@@ -1,54 +1,64 @@
-# Android release checklist
+# Android preview and release readiness
 
-> September 7, 2026: Remote copy updates (M13) have been retired. The app uses
-> bundled text only; the local copy tool edits source for the next signed APK/AAB.
-> Earlier OTA milestones below are historical and no longer release requirements.
+Updated October 14, 2026.
 
+## Current preview
 
-Updated September 6, 2026 for Quill 1.0.0 (version code 1).
+| Item | Value |
+| --- | --- |
+| App version | 1.0.22 |
+| Version code | 23 |
+| Android package | com.quill.quill |
+| Minimum Android version | Android 10 / API 29 |
+| Target / compile API | Target 36 / compile 37 |
+| Bundled copy | Revision 24, 437 strings |
+| Distribution | Signed GitHub preview APK |
+| Source usage | Proprietary, viewing only; official app use has separate terms |
 
-The signed build is ready for device testing. This is not yet a completed Google Play submission.
+The [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.22) includes the signed APK and SHA-256 checksum. It is a preview, not a claim of completed physical-device testing or Google Play production approval.
 
-## Verified locally
+The source on the default branch contains the current Android onboarding and package identity. The published APK was signed on October 8, 2026; the repository's publication, documentation and CI updates do not add app features to that binary.
 
-Latest catalog build: 540 app package defaults, 411 unit tests passing, debug lint
-passing (38 warnings and 1 hint remain), and signed APK/AAB generation successful.
-APK signature and 16 KB ZIP alignment checks passed; AAB JAR signature verified.
-The catalog sources and assignment policy are in [app styles](app-styles.md).
-The user confirmed all three styles during physical testing in the preceding pass;
-the broader device matrix and Play submission items remain open. The historical
-checks below describe the earlier release-preparation pass.
+## Automated verification
 
-- 390 Android unit tests passed, including catalog parsing, pagination, ranking, cache isolation, cleanup model persistence, and existing copy/security checks.
-- Android lint completed with 0 errors, 38 warnings, and 1 hint. Warnings remain in the report under `app/build/reports`.
-- Optimized release APK and AAB built successfully.
-- APK signature verified; APK alignment check passed with 16 KB page alignment. This check does not by itself prove every native dependency's ELF alignment.
-- Android copy export and copy-tool manifest match byte-for-byte: 393 keys, revision 5.
-- Live copy metadata was updated and read back successfully; existing overrides and revisions were preserved.
-- Copy-tool tests, type checks, production build, and offline signing/placeholder checks passed.
+- 404 Android unit tests pass locally with no failures.
+- Debug lint passes.
+- Optimized APK and AAB generation, APK signature, 16 KB ZIP alignment and AAB signature checks passed for the preview.
+- The APK package is com.quill.quill, version 1.0.22, code 23.
+- The copy bundle and onboarding assets were checked in the packaged artifacts.
+- The live hosted check is available from the [Android checks workflow](https://github.com/someanay/quill/actions/workflows/android.yml).
 
-## Before distributing the APK
+The hosted workflow installs the published Android 37.0 platform package and build tools 37.0.0. It uses JDK 21, a portable Gradle configuration and no release-signing secrets. Its CI outputs are verification builds, not the signed download offered to users.
 
-- [ ] Install the signed release on the physical Honor phone. No device was connected during this pass.
-- [ ] Review Home, onboarding, Settings, History, the model dropdowns, and the overlay in light/dark themes and large text.
-- [ ] Check bubble taps, drag, dismiss, restore, recording waveform, and disabled system animations with a real finger.
-- [ ] Dictate into three supported apps with the optimized build. Check cleanup on/off, clipboard fallback, sensitive-field refusal, and failure/retry.
-- [ ] Test model refresh with each configured provider key, no network, and an unavailable model. Check custom endpoint refresh before recording.
-- [ ] Confirm background survival and accessibility recovery on the target OEM.
+## Physical-device checks still pending
 
-## Before Google Play submission
+The latest automated pass had no connected phone. Before a production rollout:
 
-- [ ] Complete and host the [privacy policy](privacy-policy.md) and [terms](terms.md). Both still contain publisher/contact placeholders.
-- [ ] Set the real hosted addresses in `LegalLinks.kt`. Both URLs are currently empty.
-- [ ] Update the policy and Data Safety answers against current code, including optional contacts vocabulary, direct provider calls, model-list requests, and automatic signed-copy fetches. Do not reuse historical claims that all data stays on-device.
-- [ ] Record the disclosure and accessibility demo using [the declaration draft](accessibility-declaration.md).
-- [ ] Complete accessibility, foreground-service, Data Safety, content-rating, and audience forms in Play Console.
-- [ ] Prepare store screenshots, feature graphic, icon, and [listing copy](store-listing.md).
-- [ ] Confirm version code 1 has not already been uploaded; increment it if necessary.
-- [ ] Upload the signed AAB to internal testing and review the pre-launch report before production rollout.
+- [ ] Install the signed release on the physical Honor phone.
+- [ ] Check the new onboarding video, provider Back/Skip flow, microphone meter and overlay instructions.
+- [ ] Verify bubble dismissal/restore, all bubble sizes, orientation and gesture navigation with a real finger.
+- [ ] Dictate into supported apps with cleanup on/off; verify actual insertion, clipboard fallback, sensitive-field refusal and retry.
+- [ ] Check offline/provider-error handling, model refresh and encrypted key/draft persistence.
+- [ ] Check aggressive-OEM background survival and accessibility recovery.
+- [ ] Check large text, light/dark themes and reduced motion.
 
-## Release scope
+A passing hosted build does not establish these results. Use the [manual test plan](../testing_plan.md) and [key setup checks](key-setup.md).
 
-Android is the only active release. Windows, macOS, and iOS source remains on the local machine and in Git history, but is removed from the tracked release tree. Repository changes have not been pushed to GitHub during this pass.
+## Before a Google Play production rollout
 
-The copy editor only stages revisions. Publishing remains a separate manual GitHub workflow; no copy update was published during this work. The full device/submission gate is still open.
+- [ ] Complete the physical checks above.
+- [ ] Review the current [privacy policy](privacy-policy.md), [app terms](terms.md), actual provider behaviour and required declarations together.
+- [ ] Use public policy URLs and enable the corresponding in-app legal links in the next app release. The 1.0.22 preview's About shortcuts predate these published documents.
+- [ ] Complete accessibility, foreground-service, Data Safety, content-rating and audience forms.
+- [ ] Upload the required accessibility demonstration and store artwork.
+- [ ] Confirm the Play listing and install link are live before advertising store availability.
+- [ ] Increase the version code for a new upload to the same package.
+- [ ] Review the internal-test/pre-launch report before production rollout.
+
+The package change creates a separate Android installation from the former com.tihor.quill app. Stored keys and permissions do not automatically migrate between those package identities.
+
+## Retired plans and historical records
+
+Remote copy delivery is retired. Current builds use bundled interface text only. Older notes about signed-copy downloads, their compliance allowlists and periodic copy checks are historical, not current behaviour.
+
+Windows, macOS and iOS experiments retained on other branches or in Git history are not included in this Android preview announcement. Older planning documents can contain superseded versions and test counts; this record identifies the current preview status.

@@ -6,7 +6,7 @@
 
 
 **Status:** Draft for review · **Owner:** Anay and Papa (Tihor online) · **Platform:** Android only (v1)
-**Name:** Quill · `applicationId com.tihor.quill`
+**Name:** Quill · `applicationId com.quill.quill`
 
 \---
 
@@ -269,7 +269,7 @@ All build-blocking questions are answered; this is the quick-reference log.
 
 |Decision|Resolution|
 |-|-|
-|App name / package id|**Quill**, `applicationId com.tihor.quill` (verify the name is free on Play before public launch).|
+|App name / package id|**Quill**, `applicationId com.quill.quill` (verify the name is free on Play before public launch).|
 |minSdk|**29** (Android 10).|
 |First STT provider|OpenAI-compatible client; **default Groq** (`whisper-large-v3-turbo`), OpenAI selectable as the drop-in second.|
 |Keys|**One key field per provider**, reused for cleanup when the provider does both (OpenAI/Groq). A second `llm\_api\_key` field appears only when an STT-only provider (e.g. Deepgram) is paired with a different cleanup LLM.|

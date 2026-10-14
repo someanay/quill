@@ -1,134 +1,69 @@
-# Quill — Terms of Use
+# Quill Terms of Use
 
-**DRAFT for counsel review.** _Last updated: 2026-07-02. App: Quill for Android (`com.tihor.quill`)._
-_Contact: **[FILL IN: email]**._
+Updated October 14, 2026. Applies to official Quill Android applications, including the **1.0.22 preview**, package **com.quill.quill**.
 
-> Edit placeholders, host at a stable URL, then set `LegalLinks.TERMS_URL`
-> (`app/src/main/java/com/tihor/quill/ui/LegalLinks.kt`).
+These terms are between you and **Mr. Tikmany, an independent developer based in Mumbai, India**. Contact: **[quillapp@agentmail.to](mailto:quillapp@agentmail.to)**.
 
-## 1. Agreement
+## 1. Agreement and eligibility
 
-These Terms of Use ("Terms") are an agreement between you and **Rohit Tikmany, an individual
-developer based in Mumbai, India** **[confirm legal identity with counsel]** ("we", "us"). By
-installing or using Quill you accept these Terms. If you do not accept them, do not use the app.
-You must be at least **18 years old** (or the age of majority where you live) and legally capable of
-entering into a contract.
+By installing or using an official Quill application, you agree to these terms and acknowledge the [privacy policy](privacy-policy.md). If you do not agree, do not use the app. You must be at least 18 years old, or the age of majority where you live, and legally capable of entering into an agreement.
 
-## 2. What Quill is
+## 2. The service
 
-Quill is a **bring-your-own-key (BYOK)** voice-dictation tool. It records short audio clips on your
-device, sends them to a **third-party speech-to-text provider that you choose and authenticate with
-your own API key**, and inserts the returned text into the app you are using. An optional clean-up
-step sends the transcribed text to a chat model (via Groq, using your Groq key) to tidy it. Quill has
-no account system and operates no server that receives your audio, text, or keys.
+Quill is a bring-your-own-key dictation app. It records audio you request, sends it directly to your selected speech provider, can send transcripts to your selected cleanup provider, and inserts or copies the result.
 
-## 3. Your provider account and your keys
+Quill does not provide an API-provider subscription, a Quill account or a hosted transcript store. Your device and chosen providers perform these operations.
 
-- Supported configurations: **Groq, OpenAI, OpenRouter, Google (Gemini API)**, or a **custom
-  OpenAI-compatible endpoint you specify**. You obtain your own account and API key directly from the
-  provider; **your relationship with the provider is governed by their terms and privacy policy**,
-  not by these Terms. Quill is not a party to that relationship.
-- **You are responsible for all usage, charges, rate limits, and quota consumption on your keys.**
-  Some providers offer free tiers with limits and different data-handling terms; some bill per use.
-  Quill helps where it can (it validates keys before use and can hide models your key cannot
-  access), but it cannot see or control your billing, and we are **not liable for any charges your
-  provider bills you**.
-- By saving a key you authorise Quill to make requests to that provider on your behalf from your
-  device, including a small silent test request to validate the key.
-- If you configure a **custom endpoint**, you are solely responsible for that endpoint — its
-  security, behaviour, availability, and what it does with the audio and key you send it.
-- Keep your keys confidential. Keys are stored encrypted on your device, but you are responsible for
-  your device's security and for rotating a key you believe is compromised.
+The current GitHub download is a preview. Device compatibility and store approval are separate from passing automated tests. See [release readiness](play-readiness.md) for the checks still pending.
 
-## 4. Permissions and the accessibility service
+## 3. Provider accounts, keys and charges
 
-Quill uses an Android **accessibility service solely** to detect the focused text field and insert
-your dictation into it, and an **overlay plus microphone foreground service** to show the bubble and
-record while you are in another app. Each is enabled only after in-app disclosure and your explicit
-consent, and you can revoke any of them at any time in system settings. Quill refuses to type into
-fields Android identifies as password inputs.
+You obtain and maintain your own provider accounts and keys. You are responsible for usage charges, quotas, permissions to access models and compliance with the provider's terms. A free Quill app does not make provider usage free.
 
-## 5. Acceptable use
+Saving a key authorizes the app to use it for the provider operations you request, including authentication checks and model-catalog requests. Speech and cleanup can use different providers and saved keys. A successful authentication check does not guarantee credit, quota or access to every model.
 
-Use Quill lawfully. Do not use it to record any person or audio you have no right to record, to
-violate any third party's rights, to breach your provider's terms, or to input content into systems
-you are not authorised to use. You are responsible for the content you dictate and for where you
-insert it.
+For a custom endpoint, you are responsible for that operator and the data you direct to it. Review provider policies before sending sensitive content. Keep keys confidential and revoke a compromised key through its provider.
 
-## 6. Accuracy — review before you rely
+## 4. Permissions and your content
 
-Speech recognition and AI clean-up are **imperfect**. Transcripts can contain errors, omissions, or
-(with clean-up enabled) rewording. **Always review inserted text before sending or acting on it.** Do
-not use Quill as the sole input method for safety-critical, medical, legal, financial, or other
-high-stakes content. Where a field's content matters, verify it.
+Microphone, overlay, accessibility and optional contacts access are used as described in the privacy policy and the app's disclosures. Permissions can be revoked in Android Settings.
 
-## 7. Third-party services
+You retain ownership of your dictated content. You are responsible for having permission to record and process it, for complying with laws and others' rights, and for reviewing text before sending or submitting it.
 
-Provider availability, accuracy, pricing, latency, and data handling are outside our control, and
-providers may change or discontinue their APIs at any time. Quill may stop working with a given
-provider or model without notice if the provider changes their service. We may add or remove
-supported providers and models in app updates.
+Transcription, cleanup and insertion can be inaccurate or fail. The app's password checks rely on information supplied by Android and the target app. Do not rely on Quill as an emergency, medical or other safety-critical service.
 
-## 8. Updates; interface text
+## 5. Permitted use of official applications
 
-We may update the app from time to time. Quill may also fetch a cryptographically signed bundle of
-**interface wording** (labels, help text, translations) without a full app update. This mechanism
-cannot change these Terms, the privacy policy, or any consent or disclosure wording — those are fixed
-in the app binary. These Terms may be revised with the app; continued use after an update constitutes
-acceptance of the revised Terms. If you do not accept revised Terms, stop using and uninstall the app.
+We grant you a personal, non-exclusive, non-transferable and revocable license to install and use an official compiled Quill app on Android devices you own or control for its intended dictation purpose, subject to these terms.
 
-## 9. Licence and intellectual property
+Do not use Quill unlawfully, record others without necessary permission, abuse provider services, impersonate others, bypass another party's controls or infringe intellectual-property rights.
 
-We grant you a personal, non-exclusive, non-transferable, revocable licence to install and use Quill
-on Android devices you own or control, in accordance with these Terms and Google Play's terms. All
-rights in the app not expressly granted are reserved. Quill includes open-source components listed in
-the app's **open-source licences** notice; those components are licensed under their own terms.
-**You retain all rights to your dictated content.** We claim no ownership of it and — having no
-server — never receive it.
+The original source code, documentation and artwork are governed separately by the repository's [source viewing terms](../LICENSE). Permission to use the official compiled app is not permission to build, modify or redistribute its source. Third-party components retain their own licenses and notices.
 
-## 10. No warranty
+## 6. Updates and availability
 
-Quill is provided **"as is" and "as available", without warranties of any kind**, express or implied,
-including merchantability, fitness for a particular purpose, non-infringement, and uninterrupted or
-error-free operation. Device manufacturers' battery-management behaviour may interrupt the bubble or
-recording; we do not warrant against this.
+Providers, supported models and device behaviour can change. We may update the app or discontinue distribution or support. Interface text is bundled in app releases; this version does not download remote wording updates.
 
-## 11. Limitation of liability
+Do not assume local data is a backup. Review history-retention settings and keep anything you need through an appropriate app or storage location.
 
-To the maximum extent permitted by applicable law: (a) we are not liable for any indirect,
-incidental, special, consequential, or exemplary damages, or for loss of profits, data, or goodwill;
-(b) we are not liable for **provider charges**, provider data-handling, mis-transcribed or
-mis-inserted text, or content you send anywhere using Quill; and (c) our total aggregate liability
-arising out of or relating to Quill shall not exceed **[FILL IN: cap — e.g. the amount you paid us
-for the app in the preceding 12 months (currently ₹0) or a nominal fixed sum, per counsel]**.
-Nothing in these Terms limits liability that cannot be limited under applicable law.
+## 7. Warranty and liability
 
-## 12. Indemnity
+The app is provided "as is" and "as available", without warranties of uninterrupted service, accuracy or compatibility, to the extent permitted by law. A preview may contain defects.
 
-You agree to indemnify us against claims arising from your unlawful use of Quill, your breach of
-these Terms, or your breach of a provider's terms. **[Counsel: confirm scope/enforceability for a
-consumer app under Indian law.]**
+To the maximum extent permitted by applicable law, we are not liable for indirect, incidental, special or consequential damages; loss of profits, data or goodwill; provider charges; provider data handling; or errors in transcription, cleanup or insertion. Our total aggregate liability arising from Quill is limited to Rs. 100 (Rupees One Hundred Only).
 
-## 13. Termination
+Nothing in these terms excludes or limits rights or liability that applicable law does not allow us to exclude or limit.
 
-You may stop using Quill at any time by uninstalling it. We may suspend or terminate distribution or
-support of the app at any time. Sections 5–6 and 9–14 survive termination.
+## 8. Ending use and disputes
 
-## 14. Governing law and disputes
+You can stop using the app and uninstall it at any time. Terms concerning content, intellectual property, liability and disputes survive as necessary to give them effect.
 
-These Terms are governed by the laws of **India**, and the courts at **Mumbai, Maharashtra** shall
-have exclusive jurisdiction, subject to any non-waivable consumer-protection rights in your place of
-residence. **[Counsel: confirm venue/arbitration preference.]**
+These terms are governed by the laws of India. Courts in Mumbai, Maharashtra have jurisdiction, subject to non-waivable consumer-protection or other rights applicable where you live.
 
-## 15. Severability; entire agreement
+If a provision is unenforceable, the remaining provisions continue to apply. These terms and the privacy policy govern use of the official app; they do not replace the source viewing terms or applicable third-party licenses.
 
-If any provision of these Terms is held unenforceable, the remainder stays in effect. These Terms and
-the privacy policy are the entire agreement between you and us regarding the app.
+## 9. Contact
 
-## 16. Contact
+For support, privacy, licensing or other enquiries, email **quillapp@agentmail.to**. Please contact us privately before posting sensitive details.
 
-**[FILL IN: email]**
-
----
-_This document is not legal advice. Have counsel review before publishing — in particular the
-liability cap, indemnity, and governing-law/venue clauses._
+[Privacy policy](privacy-policy.md) · [Support](support.md) · [Third-party notices](open-source-licenses.md)
