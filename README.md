@@ -1,5 +1,11 @@
 # Quill for Android
 
+**Source viewing only.** Quill's original source is proprietary and all rights
+are reserved. You may read and inspect it; building, running, modifying or
+redistributing it requires written permission from the applicable copyright
+holder. GitHub's platform rights and third-party licenses are preserved.
+See [the source viewing terms](LICENSE).
+
 Voice dictation with your own API key. Tap the floating bubble, speak, and Quill inserts the transcript into a supported text field without switching keyboards.
 
 Recordings go directly to your chosen speech provider. Optional cleanup uses your chosen language model. There is no Quill account or server handling your recordings.

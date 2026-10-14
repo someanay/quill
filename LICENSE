@@ -1,0 +1,56 @@
+Quill Source Viewing Terms
+
+Copyright (c) 2026 the Quill authors. All rights reserved.
+
+1. Scope
+
+These terms apply to the original Quill source code, documentation, artwork,
+videos and other original material in this repository (the "Material"), except
+where a file or component carries separate license terms. This is proprietary,
+source-available material, not open-source software.
+
+2. Viewing only
+
+You may read and inspect the Material solely to understand or review Quill.
+Public availability of the Material does not grant permission to use it in a
+product, service, application, library or other project.
+
+3. Rights reserved
+
+Except for the viewing permission above, the platform rights described below,
+rights granted separately in writing by the applicable copyright holder, and
+rights that cannot be restricted under applicable law, no permission is granted
+to copy, build, compile, execute, deploy, host, modify, translate, adapt,
+distribute, sublicense, sell or create derivative works from the Material,
+in whole or in part. This restriction applies to personal, internal,
+educational, noncommercial and commercial use alike.
+
+No patent, trademark or other intellectual-property license is granted by these
+terms. Permission for any additional use must be obtained in writing from the
+applicable copyright holder before that use.
+
+4. GitHub and other hosting platforms
+
+These terms do not restrict rights granted under the applicable hosting
+platform's terms of service, including GitHub's rights to host the Material and
+GitHub users' rights to view and fork a public repository through GitHub's
+functionality. Those platform rights are not an additional license from the
+Quill authors to use the Material outside the rights granted by those terms.
+
+5. Third-party material and separately distributed applications
+
+Third-party software, fonts, dependencies and other material remain subject to
+their own licenses and copyright notices. These terms do not replace or narrow
+those licenses. Keep the applicable third-party notices with that material.
+
+Use of an official Quill application obtained through an authorized distribution
+channel is governed by its applicable app terms or a separate agreement. These
+repository terms do not grant a license to build or distribute your own copy.
+
+6. Disclaimer
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE MATERIAL IS PROVIDED
+"AS IS", WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+THE COPYRIGHT HOLDERS ARE NOT LIABLE FOR CLAIMS, DAMAGES OR OTHER LIABILITY
+ARISING FROM ACCESS TO OR USE OF THE MATERIAL.
