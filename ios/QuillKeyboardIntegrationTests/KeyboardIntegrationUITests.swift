@@ -115,6 +115,14 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private func showQuillKeyboard() throws {
         for _ in 0..<8 {
             if fixture.buttons["keyboard.insert"].waitForExistence(timeout: 2) { return }
+            let introduction = fixture.otherElements["UIContinuousPathIntroductionView"]
+            if introduction.exists {
+                // A fresh simulator presents QuickPath's first-use tutorial over
+                // the real globe key. Complete that system UI before switching.
+                attach("system-keyboard-introduction", app: fixture)
+                tap(introduction.buttons["Continue"], in: fixture)
+                continue
+            }
             let globe = fixture.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Next keyboard' OR label CONTAINS[c] 'Next Keyboard' OR identifier == 'Next keyboard'")).firstMatch
             if globe.exists && globe.isHittable { globe.tap(); continue }
             let language = fixture.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Switch keyboard' OR label CONTAINS[c] 'Change keyboard'")).firstMatch
