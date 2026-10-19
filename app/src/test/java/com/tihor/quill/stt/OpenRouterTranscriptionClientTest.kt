@@ -94,9 +94,9 @@ class OpenRouterTranscriptionClientTest {
     }
 
     @Test
-    fun http403_mapsToBadKey() = runTest {
+    fun http403_mapsToAccessDenied() = runTest {
         server.enqueue(MockResponse().setResponseCode(403))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.BadKey)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.Provider)
     }
 
     @Test

@@ -12,6 +12,7 @@ import com.tihor.quill.reliability.ForegroundRecovery
 import com.tihor.quill.settings.SettingsRepository
 import com.tihor.quill.ui.OnboardingActivity
 import com.tihor.quill.ui.app.QuillApp
+import com.tihor.quill.ui.app.Screen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -22,6 +23,7 @@ import kotlinx.coroutines.runBlocking
  * onboarding (board A) before the control center shows.
  */
 class MainActivity : ComponentActivity() {
+    companion object { const val EXTRA_ERROR_SETTINGS = "error_settings" }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -32,7 +34,12 @@ class MainActivity : ComponentActivity() {
         CrashReporter.install(this, settings.crashReportingEnabled)
         if (!settings.onboardingComplete) startActivity(Intent(this, OnboardingActivity::class.java))
 
-        setContent { QuillRoot { QuillApp() } }
+        val errorSettings = when (intent.getStringExtra(EXTRA_ERROR_SETTINGS)) {
+            "keys" -> Screen.ApiKeys
+            "speech" -> Screen.SpeechModel
+            else -> Screen.Home
+        }
+        setContent { QuillRoot { QuillApp(initialScreen = errorSettings) } }
     }
 
     override fun onStart() {

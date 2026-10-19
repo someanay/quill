@@ -33,7 +33,7 @@ import java.util.Base64
  *    return exactly what the model said. The picker sets honest expectations with a caveat line.
  *
  * Error mapping is Gemini-shaped: an invalid key surfaces as **HTTP 400 with `API_KEY_INVALID`**
- * (not 401) → [TranscriptionError.BadKey]; 429 (RESOURCE_EXHAUSTED) → [TranscriptionError.QuotaExhausted].
+ * (not 401) → [TranscriptionError.BadKey]. Generic 429s use the shared rate-limit mapping.
  *
  * The language hint has no request field here — it is folded into the prompt (decision 7), along
  * with [TranscriptionOptions.prompt] (the Hinglish romanization seed) as style guidance.
@@ -88,6 +88,8 @@ class GeminiTranscriptionClient(
         opts: TranscriptionOptions,
     ): Result<Transcript> = withContext(Dispatchers.IO) {
         try {
+            val key = apiKey()
+            TranscriptionError.validate(audio, opts, key, baseUrl)?.let { return@withContext Result.failure(it) }
             val payload = json.encodeToString(
                 GenerateRequest.serializer(),
                 GenerateRequest(
@@ -111,32 +113,25 @@ class GeminiTranscriptionClient(
 
             val request = Request.Builder()
                 .url("${baseUrl.trimEnd('/')}/v1beta/models/${opts.model}:generateContent")
-                .addHeader("x-goog-api-key", apiKey())
+                .addHeader("x-goog-api-key", key)
                 .post(payload)
                 .build()
 
-            httpClient.newCall(request).execute().use { response ->
+            httpClient.newCall(request).executeCancellable { response ->
                 val body = response.body?.string().orEmpty()
                 when {
                     response.isSuccessful -> parse(body)
-                    response.code == 401 || response.code == 403 -> Result.failure(TranscriptionError.BadKey())
-                    // Gemini reports an invalid key as 400 API_KEY_INVALID, not 401 (decision: map to BadKey).
-                    response.code == 400 && body.contains("API_KEY_INVALID") ->
-                        Result.failure(TranscriptionError.BadKey())
-                    // Gemini's 429 is always RESOURCE_EXHAUSTED (quota semantics — free-tier caps
-                    // included), so it maps to QuotaExhausted, not a burst rate limit.
-                    response.code == 429 -> Result.failure(TranscriptionError.QuotaExhausted())
-                    else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(body)))
+                    else -> Result.failure(TranscriptionError.fromHttp(response.code, body))
                 }
             }
         } catch (e: IOException) {
-            Log.w(TAG, "Gemini transcription network error: ${e.message}")
+            Log.w(TAG, "Transcription transport failed (${e.javaClass.simpleName})")
             Result.failure(TranscriptionError.Network(e))
         } catch (e: IllegalArgumentException) {
             // Request construction can throw for a malformed key/URL; keep the "always return a Result"
             // contract so the caller surfaces an error instead of crashing.
-            Log.w(TAG, "Gemini transcription request could not be built: ${e.message}")
-            Result.failure(TranscriptionError.Network(e))
+            Log.w(TAG, "Transcription request configuration is invalid")
+            Result.failure(TranscriptionError.InvalidEndpoint())
         }
     }
 
@@ -163,15 +158,6 @@ class GeminiTranscriptionClient(
             Log.w(TAG, "Gemini response: invalid structure")
             Result.failure(TranscriptionError.Parse(e))
         }
-
-    private fun providerMessage(payload: String): String? =
-        runCatching { json.decodeFromString<GeminiErrorEnvelope>(payload).error?.message }.getOrNull()
-
-    @Serializable
-    private data class GeminiErrorEnvelope(val error: GeminiErrorBody? = null)
-
-    @Serializable
-    private data class GeminiErrorBody(val message: String? = null, val status: String? = null)
 
     companion object {
         private const val TAG = "Quill.Stt"

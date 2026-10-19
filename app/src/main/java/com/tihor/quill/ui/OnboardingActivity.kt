@@ -80,6 +80,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.audio.AudioRecorder
+import com.tihor.quill.audio.StopReason
+import com.tihor.quill.errors.DictationIssue
 import com.tihor.quill.copy.Copy
 import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.copy.QuillRoot
@@ -487,11 +489,18 @@ private fun MicTestStep(onBack: () -> Unit, onNext: () -> Unit) {
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
     var amplitude by remember { mutableFloatStateOf(0f) }
 
-    DisposableEffect(Unit) {
+    var testIssue by remember { mutableStateOf<DictationIssue?>(null) }
+    var heardAudio by remember { mutableStateOf(false) }
+    var attempt by remember { mutableStateOf(0) }
+    DisposableEffect(attempt) {
         val temp = File(context.cacheDir, "quill_mictest.wav")
         recorder.start(
             output = temp,
+            onFinished = { _, reason -> mainHandler.post {
+                if (reason == StopReason.ERROR) testIssue = recorder.lastIssue ?: DictationIssue.MIC_UNAVAILABLE
+            } },
             onAmplitude = { rms -> mainHandler.post {
+                if (rms > 0) heardAudio = true
                 // Leave quiet background noise at rest; give speech room to rise without saturating.
                 amplitude = ((rms - MIC_TEST_NOISE_FLOOR_RMS) /
                     (MIC_TEST_FULL_SCALE_RMS - MIC_TEST_NOISE_FLOOR_RMS)).coerceIn(0f, 1f)
@@ -502,10 +511,11 @@ private fun MicTestStep(onBack: () -> Unit, onNext: () -> Unit) {
 
     CenteredStep(
         onBack = onBack,
-        title = copy(K.MICTEST_HEARD),
-        body = copy(K.MICTEST_BODY),
-        primaryLabel = copy(K.MICTEST_CTA),
-        onPrimary = onNext,
+        title = copy(if (testIssue != null) K.MIC_TEST_FAILED else K.MICTEST_HEARD),
+        body = copy(testIssue?.messageKey ?: K.MICTEST_BODY),
+        primaryLabel = copy(if (testIssue != null) K.MIC_TEST_RETRY else K.MICTEST_CTA),
+        primaryEnabled = testIssue != null || heardAudio,
+        onPrimary = { if (testIssue != null) { testIssue = null; heardAudio = false; attempt++ } else onNext() },
         illustration = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 StatusPill(copy(K.MICTEST_TITLE), PillKind.LIVE)

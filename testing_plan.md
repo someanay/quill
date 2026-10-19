@@ -205,3 +205,20 @@ Verify multiple same-provider keys can be added, selected, removed and retained 
 # API key onboarding follow-up
 
 The provider accordion, clipboard, browser-return, process-recreation and model-label manual checks are listed in [key setup](docs/key-setup.md). Run these on the physical phone before Play submission. Authentication checks do not prove model quota or successful dictation.
+
+### Specialized dictation errors (M11 follow-up)
+
+Added October 19, 2026 for 1.0.23. Automated classification and adapter checks do not establish physical-device results. Run on the physical Honor; no phone was connected during implementation.
+
+1. Deny/revoke Microphone, then tap and long-press the bubble: see “Microphone access is off”, no capture/upload, and a microphone settings action. Grant access and return: a new take works.
+2. Turn Android’s global microphone switch off: see a muted-microphone message. Turn it off during recording too; there must be no crash or fake saved-audio retry. End another app’s microphone session and retry any unavailable-mic failure.
+3. Disable overlay access: reopening Quill explains overlay access; grant it and restore the bubble. Revoke accessibility: normal dictation explains the missing service, opens the disclosure flow, and explicit clipboard dictation still works.
+4. Deny Notifications and Contacts: ordinary dictation must remain usable; those optional permissions must not be misreported as STT failures.
+5. Remove the selected speech provider key or select a provider without a key: see the provider-key message and API keys shortcut. Correct it and retry the original audio after returning.
+6. Use a controlled provider to return 401, 403, 402, 429, 404/model_not_found, 413, 415, 500, 503, 504, malformed success and empty text: check the distinct message/action against [the error catalog](docs/dictation-errors.md). Never display a response body or key.
+7. Start in airplane mode, speak, then restore connectivity: “No internet connection” and a saved-audio retry. Tap retry: the same utterance returns without microphone capture or a new take. Cancel then tap: a new recording starts.
+8. Check DNS failure, connection refusal, timeout and TLS failure on a controlled endpoint. A failed upload keeps the take for retry; a missing/empty cache file requests a new take instead.
+9. Change target app or disconnect accessibility during transcription: the bubble says text was copied rather than failed transcription; verify actual clipboard content and fallback expiry. Check a protected field remains untouched.
+10. Repeat permission/capture/provider errors in custom-word recording and the onboarding microphone test. The test must not advance as successful before audio arrives and must explain a capture failure.
+11. With a controlled storage-write failure, verify a recording failure explains storage. A History-write failure must still permit insertion of the transcript.
+12. Cancel an in-flight request: no error should appear later, and no cancelled transcript should be inserted. Tap repeatedly while transcribing: only one request should run.

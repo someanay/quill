@@ -32,6 +32,8 @@ class OpenAiCompatibleTranscriptionClient(
         opts: TranscriptionOptions,
     ): Result<Transcript> = withContext(Dispatchers.IO) {
         try {
+            val key = apiKey()
+            TranscriptionError.validate(audio, opts, key, baseUrl)?.let { return@withContext Result.failure(it) }
             val body = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("model", opts.model)
@@ -44,30 +46,26 @@ class OpenAiCompatibleTranscriptionClient(
 
             val request = Request.Builder()
                 .url("${baseUrl.trimEnd('/')}/audio/transcriptions")
-                .addHeader("Authorization", "Bearer ${apiKey()}")
+                .addHeader("Authorization", "Bearer $key")
                 .post(body)
                 .build()
 
-            httpClient.newCall(request).execute().use { response ->
+            httpClient.newCall(request).executeCancellable { response ->
                 val payload = response.body?.string().orEmpty()
                 when {
                     response.isSuccessful -> parse(payload)
-                    response.code == 401 || response.code == 403 -> Result.failure(TranscriptionError.BadKey())
-                    // OpenAI signals exhausted quota as 429 `insufficient_quota`; Groq's daily caps
-                    // are a plain 429 (no marker) and stay RateLimited.
-                    response.code == 429 -> Result.failure(TranscriptionError.fromTooManyRequests(payload))
-                    else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(payload)))
+                    else -> Result.failure(TranscriptionError.fromHttp(response.code, payload))
                 }
             }
         } catch (e: IOException) {
-            Log.w(TAG, "Transcription network error: ${e.message}")
+            Log.w(TAG, "Transcription transport failed (${e.javaClass.simpleName})")
             Result.failure(TranscriptionError.Network(e))
         } catch (e: IllegalArgumentException) {
             // Request construction can throw for a malformed key (a pasted value with a newline or
             // non-ASCII char that OkHttp forbids in a header) or a bad custom base URL. Return a Result
             // so the "never throw" contract holds and KeyValidator/dictation surface an error, not a crash.
-            Log.w(TAG, "Transcription request could not be built: ${e.message}")
-            Result.failure(TranscriptionError.Network(e))
+            Log.w(TAG, "Transcription request configuration is invalid")
+            Result.failure(TranscriptionError.InvalidEndpoint())
         }
     }
 
@@ -76,13 +74,11 @@ class OpenAiCompatibleTranscriptionClient(
             // Whisper/OpenAI-compatible endpoints return the transcript with a leading space (and
             // sometimes trailing whitespace). Trim it so inserted/clipboard text never starts with a
             // stray gap. Interior spacing is untouched.
-            Result.success(Transcript(json.decodeFromString<TranscriptionResponse>(payload).text.trim()))
+            val text = json.decodeFromString<TranscriptionResponse>(payload).text.trim()
+            if (text.isBlank()) Result.failure(TranscriptionError.EmptyResponse()) else Result.success(Transcript(text))
         } catch (e: Exception) {
             Result.failure(TranscriptionError.Parse(e))
         }
-
-    private fun providerMessage(payload: String): String? =
-        runCatching { json.decodeFromString<ProviderErrorEnvelope>(payload).error?.message }.getOrNull()
 
     companion object {
         private const val TAG = "Quill.Stt"

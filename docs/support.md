@@ -4,12 +4,14 @@ For setup help, privacy questions and licensing enquiries, email **[quillapp@age
 
 ## Setup
 
-1. Install the official [Android preview](https://github.com/someanay/quill/releases/tag/android-v1.0.22).
+1. Install the official [Android preview](https://github.com/someanay/quill/releases/tag/android-v1.0.23).
 2. Open Quill and follow the Groq key instructions. Other supported provider configurations are in Settings.
 3. Enable microphone, display-over-other-apps and accessibility access when prompted.
 4. On phones with aggressive battery management, allow Quill to run in the background through the manufacturer's settings.
 
 The app is free; provider API usage may have charges or limits. A valid key does not guarantee quota or access to every model.
+
+See [dictation errors and recovery](dictation-errors.md) for the permission, recording, connection and provider messages shown by Quill.
 
 ## Report a problem
 

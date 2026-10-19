@@ -52,6 +52,8 @@ class OpenRouterTranscriptionClient(
         opts: TranscriptionOptions,
     ): Result<Transcript> = withContext(Dispatchers.IO) {
         try {
+            val key = apiKey()
+            TranscriptionError.validate(audio, opts, key, baseUrl)?.let { return@withContext Result.failure(it) }
             val payload = json.encodeToString(
                 TranscriptionRequest.serializer(),
                 TranscriptionRequest(
@@ -66,41 +68,35 @@ class OpenRouterTranscriptionClient(
 
             val request = Request.Builder()
                 .url("${baseUrl.trimEnd('/')}/audio/transcriptions")
-                .addHeader("Authorization", "Bearer ${apiKey()}")
+                .addHeader("Authorization", "Bearer $key")
                 .post(payload)
                 .build()
 
-            httpClient.newCall(request).execute().use { response ->
+            httpClient.newCall(request).executeCancellable { response ->
                 val body = response.body?.string().orEmpty()
                 when {
                     response.isSuccessful -> parse(body)
-                    response.code == 401 || response.code == 403 -> Result.failure(TranscriptionError.BadKey())
-                    // OpenRouter returns 402 Payment Required when the account's credits run out.
-                    response.code == 402 -> Result.failure(TranscriptionError.QuotaExhausted())
-                    response.code == 429 -> Result.failure(TranscriptionError.fromTooManyRequests(body))
-                    else -> Result.failure(TranscriptionError.Provider(response.code, providerMessage(body)))
+                    else -> Result.failure(TranscriptionError.fromHttp(response.code, body))
                 }
             }
         } catch (e: IOException) {
-            Log.w(TAG, "OpenRouter transcription network error: ${e.message}")
+            Log.w(TAG, "Transcription transport failed (${e.javaClass.simpleName})")
             Result.failure(TranscriptionError.Network(e))
         } catch (e: IllegalArgumentException) {
             // Request construction can throw for a malformed key/URL; keep the "always return a Result"
             // contract so the caller surfaces an error instead of crashing.
-            Log.w(TAG, "OpenRouter transcription request could not be built: ${e.message}")
-            Result.failure(TranscriptionError.Network(e))
+            Log.w(TAG, "Transcription request configuration is invalid")
+            Result.failure(TranscriptionError.InvalidEndpoint())
         }
     }
 
     private fun parse(payload: String): Result<Transcript> =
         try {
-            Result.success(Transcript(json.decodeFromString<TranscriptionResponse>(payload).text.trim()))
+            val text = json.decodeFromString<TranscriptionResponse>(payload).text.trim()
+            if (text.isBlank()) Result.failure(TranscriptionError.EmptyResponse()) else Result.success(Transcript(text))
         } catch (e: Exception) {
             Result.failure(TranscriptionError.Parse(e))
         }
-
-    private fun providerMessage(payload: String): String? =
-        runCatching { json.decodeFromString<ProviderErrorEnvelope>(payload).error?.message }.getOrNull()
 
     companion object {
         private const val TAG = "Quill.Stt"

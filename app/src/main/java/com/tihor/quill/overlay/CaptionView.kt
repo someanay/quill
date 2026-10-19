@@ -7,6 +7,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.view.View
+import android.text.TextUtils
+import com.tihor.quill.copy.Copy
+import com.tihor.quill.errors.DictationIssue
+import com.tihor.quill.errors.Recovery
 import kotlin.math.max
 
 /**
@@ -23,6 +27,9 @@ class CaptionView(context: Context) : View(context) {
 
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Float) = v * density
+
+    private var errorTitle: String = Copy.repository(context).get(DictationIssue.UNKNOWN.titleKey)
+    private var errorAction: String = Copy.repository(context).get(Recovery.RECORD_AGAIN.labelKey)
 
     private var mode: Mode = Mode.TRANSCRIBING
     private var level: Float = 0f
@@ -63,10 +70,18 @@ class CaptionView(context: Context) : View(context) {
 
     fun configure(mode: Mode, level: Float = 0f, seconds: Int = 0) {
         this.mode = mode
+        contentDescription = null
         this.level = level.coerceIn(0f, 1f)
         this.timer = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
         requestLayout()
         invalidate()
+    }
+
+    fun configureError(title: String, action: String, explanation: String) {
+        errorTitle = title
+        errorAction = action
+        configure(Mode.ERROR)
+        contentDescription = "$title. $explanation. $action"
     }
 
     fun setLevel(level: Float) {
@@ -79,7 +94,7 @@ class CaptionView(context: Context) : View(context) {
         Mode.RECORDING -> "" to null
         Mode.TRANSCRIBING -> (if (clipboardTarget) "Transcribing → clipboard" else "Transcribing…") to null
         Mode.PASTE -> if (clipboardTarget) "Copied to clipboard" to "Paste anywhere" else "Tap to paste" to null
-        Mode.ERROR -> "Couldn't transcribe" to "Saved · Tap to retry"
+        Mode.ERROR -> errorTitle to errorAction
         Mode.OFFLINE -> "No connection" to "Saved · Tap to retry"
     }
 
@@ -95,7 +110,8 @@ class CaptionView(context: Context) : View(context) {
         return max(textPaint.measureText(lead), sub?.let { subPaint.measureText(it) } ?: 0f)
     }
 
-    val viewWidth: Int get() = (contentWidth() + padH * 2 + shadowPad * 2).toInt()
+    val viewWidth: Int get() = (contentWidth() + padH * 2 + shadowPad * 2)
+        .coerceAtMost(resources.displayMetrics.widthPixels * 0.72f).toInt()
     val viewHeight: Int get() = (cardH() + shadowPad * 2).toInt()
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -128,7 +144,10 @@ class CaptionView(context: Context) : View(context) {
             return
         }
 
-        val (lead, sub) = lines()
+        val (rawLead, rawSub) = lines()
+        val available = (width - shadowPad * 2 - padH * 2).coerceAtLeast(0f)
+        val lead = TextUtils.ellipsize(rawLead, android.text.TextPaint(textPaint), available, TextUtils.TruncateAt.END).toString()
+        val sub = rawSub?.let { TextUtils.ellipsize(it, android.text.TextPaint(subPaint), available, TextUtils.TruncateAt.END).toString() }
         textPaint.color = leadColor()
         if (sub == null) {
             canvas.drawText(lead, left + padH, cy + textPaint.textSize / 3f, textPaint)

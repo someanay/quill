@@ -25,8 +25,8 @@ android {
         applicationId = "com.quill.quill"
         minSdk = 29
         targetSdk = 36
-        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 23
-        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.22"
+        versionCode = providers.gradleProperty("quillVersionCode").orNull?.toInt() ?: 24
+        versionName = providers.gradleProperty("quillVersionName").orNull ?: "1.0.23"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

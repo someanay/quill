@@ -7,6 +7,9 @@ import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SttKeyStore
 import com.tihor.quill.stt.RomanizePrompt
 import com.tihor.quill.stt.TranscriptionOptions
+import com.tihor.quill.stt.TranscriptionError
+import com.tihor.quill.errors.DictationIssue
+import com.tihor.quill.errors.NetworkStatus
 import kotlinx.coroutines.flow.first
 import java.io.File
 
@@ -21,12 +24,6 @@ import java.io.File
  */
 class VoiceWordCapture(private val context: Context) {
 
-    /** Why a [transcribe] call failed — distinct enough for the UI to give a useful message. */
-    sealed interface Failure {
-        data object NoKey : Failure
-        data object Network : Failure
-    }
-
     private val recorder = AudioRecorder(context)
     private val sttKeyStore = SttKeyStore(KeystoreSecretStore(context))
     private val settingsRepo = SettingsRepository(context)
@@ -34,6 +31,7 @@ class VoiceWordCapture(private val context: Context) {
     fun hasMicPermission(): Boolean = recorder.hasMicPermission()
 
     val isRecording: Boolean get() = recorder.isRecording
+    val recordingIssue: DictationIssue? get() = recorder.lastIssue
 
     /** Start capturing to a temp WAV; [onFinished] fires on the recording thread when it stops. */
     fun startRecording(onFinished: (File, StopReason) -> Unit) {
@@ -43,18 +41,19 @@ class VoiceWordCapture(private val context: Context) {
 
     fun stopRecording() = recorder.requestStop()
 
-    /** Transcribe [wav] against the user's STT provider; returns the trimmed text or a [Failure]. */
+    /** Transcribe [wav] against the user's STT provider; returns the trimmed text or the original typed failure. */
     suspend fun transcribe(wav: File): Result<String> {
         val settings = settingsRepo.settings.first()
         // Per-provider key (decision 3): the active provider's own slot.
         val key = sttKeyStore.get(settings.provider)
-        if (key.isNullOrBlank()) return Result.failure(FailureException(Failure.NoKey))
+        if (key.isNullOrBlank()) return Result.failure(TranscriptionError.MissingKey())
         val client = TranscriptionClientFactory.create(
             settings.provider,
             apiKey = { key },
             customBaseUrl = settings.customBaseUrl,
         )
         val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
+        if (NetworkStatus.isOffline(context)) return Result.failure(TranscriptionError.Offline())
         return client.transcribe(
             audio = wav,
             opts = TranscriptionOptions(
@@ -63,11 +62,8 @@ class VoiceWordCapture(private val context: Context) {
                 prompt = RomanizePrompt.promptFor(language),
             ),
         ).map { it.text.trim() }
-            .recoverCatching { throw FailureException(Failure.Network) }
-    }
 
-    /** Carries a typed [Failure] out through [Result.failure]. */
-    class FailureException(val failure: Failure) : Exception()
+    }
 
     private companion object {
         const val CAP_MS = 8_000L

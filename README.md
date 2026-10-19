@@ -4,7 +4,7 @@ Voice dictation for Android, with your own API key. Tap the floating bubble, spe
 
 [![Android checks](https://github.com/someanay/quill/actions/workflows/android.yml/badge.svg?branch=master)](https://github.com/someanay/quill/actions/workflows/android.yml)
 
-**[Download Android preview 1.0.22](https://github.com/someanay/quill/releases/tag/android-v1.0.22)** · [Quick start](#get-quill) · [Privacy](docs/privacy-policy.md) · [Help](docs/support.md)
+**[Download Android preview 1.0.23](https://github.com/someanay/quill/releases/tag/android-v1.0.23)** · [Quick start](#get-quill) · [Privacy](docs/privacy-policy.md) · [Help](docs/support.md)
 
 [![Quill's onboarding demonstration: dictation into a messaging app](docs/media/quill-demo.gif)](app/src/main/assets/onboarding/final-quill-onboarding-1024-60fps.mp4)
 
@@ -12,9 +12,9 @@ Voice dictation for Android, with your own API key. Tap the floating bubble, spe
 
 ## Get Quill
 
-The current Android preview is **1.0.22**, version code **23**, package **com.quill.quill**. Android 10 or later is required.
+The current Android preview is **1.0.23**, version code **24**, package **com.quill.quill**. Android 10 or later is required.
 
-1. Download the signed APK from the [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.22). Its SHA-256 checksum is included.
+1. Download the signed APK from the [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.23). Its SHA-256 checksum is included.
 2. Install it on your Android phone and open Quill.
 3. Add your own Groq key using the onboarding instructions. Other supported provider configurations are available in Settings.
 4. Grant microphone, display-over-other-apps and accessibility access when prompted.
@@ -22,7 +22,7 @@ The current Android preview is **1.0.22**, version code **23**, package **com.qu
 
 Quill is free to use. Your chosen API provider may charge for usage. Review the [app terms](docs/terms.md) and [privacy policy](docs/privacy-policy.md) before installing.
 
-This is a preview release. The latest automated Android suite has 404 passing tests; the remaining physical-phone and Play submission checks are tracked in [release readiness](docs/play-readiness.md). This repository does not claim a production Play Store release or a completed device compatibility matrix.
+This is a preview release. The latest automated Android suite has 431 passing tests; the remaining physical-phone and Play submission checks are tracked in [release readiness](docs/play-readiness.md). This repository does not claim a production Play Store release or a completed device compatibility matrix.
 
 ## What it does
 
@@ -31,6 +31,7 @@ This is a preview release. The latest automated Android suite has 404 passing te
 - Offers optional AI cleanup, custom words, contacts vocabulary and local history.
 - Applies writing-style defaults for [540 app packages](docs/app-styles.md), with per-app overrides.
 - Provides clipboard fallback when direct insertion is unavailable.
+- Explains permission, recording and provider failures with specific recovery actions.
 - Supports private mode and configurable history retention.
 
 Audio goes directly to the speech provider you select. Optional cleanup sends text to the cleanup provider you select. Quill has no dictation backend, app account, advertising or analytics SDK. Provider data handling is governed by that provider's terms.
@@ -62,7 +63,7 @@ Use a full JDK 21, Android SDK platform **37.0**, build tools **37.0.0**, and th
 On Windows, use gradlew.bat. Unsigned builds work without release credentials. Signed releases require the local signing configuration described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ~~~powershell
-./scripts/build-android-release.ps1 -VersionCode 23 -VersionName 1.0.22
+./scripts/build-android-release.ps1 -VersionCode 24 -VersionName 1.0.23
 ~~~
 
 Use a higher version code for a new Play upload. The release script checks tests, lint, signatures and alignment, and writes distributable APK/AAB files plus checksums to the ignored dist/android directory. Binaries belong in GitHub Releases, not the source tree.
@@ -73,6 +74,7 @@ All interface copy is bundled in the app. After an authorized copy edit, regener
 
 - [Current Android release readiness](docs/play-readiness.md)
 - [Key setup](docs/key-setup.md)
+- [Dictation errors and recovery](docs/dictation-errors.md)
 - [Product requirements](prd.md)
 - [Architecture](spec.md)
 - [Milestones](todo.md)

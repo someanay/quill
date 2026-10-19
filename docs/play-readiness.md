@@ -1,30 +1,30 @@
 # Android preview and release readiness
 
-Updated October 14, 2026.
+Updated October 19, 2026.
 
 ## Current preview
 
 | Item | Value |
 | --- | --- |
-| App version | 1.0.22 |
-| Version code | 23 |
+| App version | 1.0.23 |
+| Version code | 24 |
 | Android package | com.quill.quill |
 | Minimum Android version | Android 10 / API 29 |
 | Target / compile API | Target 36 / compile 37 |
-| Bundled copy | Revision 24, 437 strings |
+| Bundled copy | Revision 25, 533 strings |
 | Distribution | Signed GitHub preview APK |
 | Source usage | Proprietary, viewing only; official app use has separate terms |
 
-The [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.22) includes the signed APK and SHA-256 checksum. It is a preview, not a claim of completed physical-device testing or Google Play production approval.
+The [preview release](https://github.com/someanay/quill/releases/tag/android-v1.0.23) includes the signed APK and SHA-256 checksum. It is a preview, not a claim of completed physical-device testing or Google Play production approval.
 
-The source on the default branch contains the current Android onboarding and package identity. The published APK was signed on October 8, 2026; the repository's publication, documentation and CI updates do not add app features to that binary.
+The source on the default branch contains the current Android onboarding and package identity. The 1.0.23 update adds specific dictation error messages, settings recovery and saved-audio retry. See [error behavior](dictation-errors.md).
 
 ## Automated verification
 
-- 404 Android unit tests pass locally with no failures.
+- 431 Android unit tests pass locally with no failures.
 - Debug lint passes.
 - Optimized APK and AAB generation, APK signature, 16 KB ZIP alignment and AAB signature checks passed for the preview.
-- The APK package is com.quill.quill, version 1.0.22, code 23.
+- The APK package is com.quill.quill, version 1.0.23, code 24.
 - The copy bundle and onboarding assets were checked in the packaged artifacts.
 - The live hosted check is available from the [Android checks workflow](https://github.com/someanay/quill/actions/workflows/android.yml).
 
@@ -38,7 +38,7 @@ The latest automated pass had no connected phone. Before a production rollout:
 - [ ] Check the new onboarding video, provider Back/Skip flow, microphone meter and overlay instructions.
 - [ ] Verify bubble dismissal/restore, all bubble sizes, orientation and gesture navigation with a real finger.
 - [ ] Dictate into supported apps with cleanup on/off; verify actual insertion, clipboard fallback, sensitive-field refusal and retry.
-- [ ] Check offline/provider-error handling, model refresh and encrypted key/draft persistence.
+- [ ] Check all required permission denials/revocations, global microphone mute, offline/provider errors, saved-audio retry and the updated microphone test; check model refresh and encrypted key/draft persistence.
 - [ ] Check aggressive-OEM background survival and accessibility recovery.
 - [ ] Check large text, light/dark themes and reduced motion.
 
@@ -48,7 +48,7 @@ A passing hosted build does not establish these results. Use the [manual test pl
 
 - [ ] Complete the physical checks above.
 - [ ] Review the current [privacy policy](privacy-policy.md), [app terms](terms.md), actual provider behaviour and required declarations together.
-- [ ] Use public policy URLs and enable the corresponding in-app legal links in the next app release. The 1.0.22 preview's About shortcuts predate these published documents.
+- [ ] Use public policy URLs and enable the corresponding in-app legal links in the next app release. The current About shortcuts are still disabled; enable them with the published policy URLs before a Play release.
 - [ ] Complete accessibility, foreground-service, Data Safety, content-rating and audience forms.
 - [ ] Upload the required accessibility demonstration and store artwork.
 - [ ] Confirm the Play listing and install link are live before advertising store availability.

@@ -1,6 +1,9 @@
 package com.tihor.quill.audio
 
 import android.Manifest
+import android.media.AudioManager
+import com.tihor.quill.errors.DictationIssue
+import java.io.IOException
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
@@ -35,6 +38,15 @@ class AudioRecorder(
 
     val isRecording: Boolean get() = recording
 
+    @Volatile var lastIssue: DictationIssue? = null
+        private set
+
+    fun microphoneIssue(): DictationIssue? = when {
+        !hasMicPermission() -> DictationIssue.MIC_PERMISSION
+        runCatching { context.getSystemService(AudioManager::class.java)?.isMicrophoneMute == true }.getOrDefault(false) -> DictationIssue.MIC_PRIVACY
+        else -> null
+    }
+
     fun hasMicPermission(): Boolean =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
             PackageManager.PERMISSION_GRANTED
@@ -52,23 +64,15 @@ class AudioRecorder(
         onFinished: (File, StopReason) -> Unit = { _, _ -> },
     ) {
         if (recording) return
-        if (!hasMicPermission()) {
-            Log.w(TAG, "RECORD_AUDIO not granted.")
+        lastIssue = microphoneIssue()
+        if (lastIssue != null) {
             onFinished(output, StopReason.ERROR)
             return
         }
-
-        val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL, ENCODING)
-        if (minBuf <= 0) {
-            Log.e(TAG, "Invalid min buffer size: $minBuf")
-            onFinished(output, StopReason.ERROR)
-            return
-        }
-        val bufferSize = maxOf(minBuf, SAMPLE_RATE / 5 * BYTES_PER_SAMPLE) // ~200 ms
 
         recording = true
         thread = Thread {
-            runRecordingLoop(output, bufferSize, capMs, onAmplitude, onWarning, onFinished)
+            runRecordingLoop(output, capMs, onAmplitude, onWarning, onFinished)
         }.also { it.start() }
     }
 
@@ -87,102 +91,86 @@ class AudioRecorder(
     @SuppressLint("MissingPermission")
     private fun runRecordingLoop(
         output: File,
-        bufferSize: Int,
         capMs: Long,
         onAmplitude: (Int) -> Unit,
         onWarning: () -> Unit,
         onFinished: (File, StopReason) -> Unit,
     ) {
-        val record = AudioRecord(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-            SAMPLE_RATE,
-            CHANNEL,
-            ENCODING,
-            bufferSize,
-        )
-        if (record.state != AudioRecord.STATE_INITIALIZED) {
-            Log.e(TAG, "AudioRecord failed to initialize.")
-            record.release()
-            recording = false
-            onFinished(output, StopReason.ERROR)
-            return
-        }
-        routing.selectedInput()?.let { record.preferredDevice = it }
-
-        val silence = SilenceDetector()
-        val buffer = ShortArray(bufferSize / BYTES_PER_SAMPLE)
-        var dataBytes = 0
-        var warned = false
-        var reason = StopReason.MANUAL
-
-        // raf + startRecording() live INSIDE the try so a throw there (full cache, mic HAL busy) still
-        // runs the finally: releases the AudioRecord, closes the file, resets `recording`, and fires
-        // onFinished — otherwise the recorder leaks and the service is pinned in RECORDING forever.
+        var record: AudioRecord? = null
         var raf: RandomAccessFile? = null
+        var dataBytes = 0
+        var peakRms = 0.0
+        var reason = StopReason.MANUAL
         try {
+            val minBuf = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL, ENCODING)
+            check(minBuf > 0)
+            val bufferSize = maxOf(minBuf, SAMPLE_RATE / 5 * BYTES_PER_SAMPLE)
+            val input = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, SAMPLE_RATE, CHANNEL, ENCODING, bufferSize)
+            record = input
+            check(input.state == AudioRecord.STATE_INITIALIZED)
+            routing.selectedInput()?.let { input.preferredDevice = it }
+            val silence = SilenceDetector()
+            val buffer = ShortArray(bufferSize / BYTES_PER_SAMPLE)
             val file = RandomAccessFile(output, "rw")
             raf = file
             file.setLength(0)
-            // Placeholder header, patched with the real data size on stop.
             file.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, 0))
-
             val started = clock()
             silence.start(started)
-            record.startRecording()
-
+            input.startRecording()
+            check(input.recordingState == AudioRecord.RECORDSTATE_RECORDING)
+            var warned = false
             var consecutiveErrors = 0
             while (recording) {
+                microphoneIssue()?.let { lastIssue = it }
+                if (lastIssue != null) { reason = StopReason.ERROR; break }
                 val now = clock()
                 val elapsed = now - started
                 if (!warned && RecordingLimits.shouldWarn(elapsed, capMs)) {
                     warned = true
                     onWarning()
                 }
-                // Evaluate the cap every iteration, BEFORE the read guard, so a persistent read error
-                // can never defeat the session cap (the documented backstop).
-                if (RecordingLimits.reachedCap(elapsed, capMs)) {
-                    reason = StopReason.CAP
-                    break
-                }
-
-                val read = record.read(buffer, 0, buffer.size)
+                if (RecordingLimits.reachedCap(elapsed, capMs)) { reason = StopReason.CAP; break }
+                val read = input.read(buffer, 0, buffer.size)
                 if (read <= 0) {
-                    // Negative codes (ERROR_DEAD_OBJECT / ERROR_INVALID_OPERATION) return immediately;
-                    // without this bail a mic death mid-session spins a CPU core at 100% until the cap.
                     if (++consecutiveErrors >= MAX_CONSECUTIVE_READ_ERRORS) {
-                        Log.e(TAG, "AudioRecord.read failed repeatedly ($read); stopping.")
+                        lastIssue = microphoneIssue() ?: DictationIssue.MIC_INTERRUPTED
                         reason = StopReason.ERROR
                         break
                     }
                     continue
                 }
                 consecutiveErrors = 0
-
                 val rms = rms(buffer, read)
+                peakRms = maxOf(peakRms, rms)
                 onAmplitude(rms.toInt())
-
                 file.write(shortsToLeBytes(buffer, read))
                 dataBytes += read * BYTES_PER_SAMPLE
-
-                if (silence.onFrame(rms, now)) {
-                    reason = StopReason.SILENCE
-                    break
-                }
+                if (silence.onFrame(rms, now)) { reason = StopReason.SILENCE; break }
             }
-        } catch (t: Throwable) {
-            Log.e(TAG, "Recording loop error", t)
+            if (reason != StopReason.ERROR && (dataBytes == 0 || peakRms == 0.0)) {
+                lastIssue = microphoneIssue() ?: DictationIssue.AUDIO_EMPTY
+                reason = StopReason.ERROR
+            }
+        } catch (error: Exception) {
+            // Never print exception details: OS paths or other application data can be included.
+            Log.w(TAG, "Recording failed (${error.javaClass.simpleName})")
+            lastIssue = microphoneIssue() ?: if (error is IOException) DictationIssue.AUDIO_STORAGE else DictationIssue.MIC_UNAVAILABLE
             reason = StopReason.ERROR
         } finally {
             recording = false
-            runCatching { record.stop() }
-            record.release()
-            // Patch RIFF/data sizes.
-            runCatching {
+            runCatching { record?.stop() }
+            runCatching { record?.release() }
+            try {
                 raf?.seek(0)
                 raf?.write(WavHeader.build(SAMPLE_RATE, CHANNELS, BITS_PER_SAMPLE, dataBytes))
+                raf?.close()
+            } catch (_: IOException) {
+                runCatching { raf?.close() }
+                lastIssue = DictationIssue.AUDIO_STORAGE
+                reason = StopReason.ERROR
             }
-            runCatching { raf?.close() }
-            Log.i(TAG, "Recording stopped ($reason): ${output.name}, $dataBytes PCM bytes")
+            Log.i(TAG, "Recording stopped ($reason); category=${lastIssue?.name ?: "none"}")
             onFinished(output, reason)
         }
     }

@@ -1,5 +1,5 @@
 {
-  "revision": 24,
+  "revision": 25,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -263,6 +263,570 @@
     },
     "compliance.rationale.overlay": {
       "default": "The floating bubble needs permission to display over other apps. That bubble is also what lets Quill record while you're in another app.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.access_denied.message": {
+      "default": "Your provider refused access to this request. Check your key’s permissions, model access and account or regional restrictions.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.access_denied.title": {
+      "default": "Provider access denied",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.accessibility.message": {
+      "default": "Open Quill’s accessibility setup and enable Quill. If it is already on, turn it off and on again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.accessibility.title": {
+      "default": "Accessibility disconnected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_empty.message": {
+      "default": "The microphone returned no usable sound. Check Android’s microphone switch and your audio input, then record again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_empty.title": {
+      "default": "No audio captured",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_format.message": {
+      "default": "Your speech provider could not use this audio format or recording. Record again; for a custom provider, check that it accepts WAV audio.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_format.title": {
+      "default": "Audio was rejected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_missing.message": {
+      "default": "The temporary recording is missing, empty or no longer readable. Record your dictation again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_missing.title": {
+      "default": "Recording unavailable",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_storage.message": {
+      "default": "Quill could not write the recording to temporary storage. Free some phone storage, reopen Quill and record again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_storage.title": {
+      "default": "Could not save audio",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_too_large.message": {
+      "default": "Your speech provider rejected the upload size. Record a shorter dictation.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.audio_too_large.title": {
+      "default": "Recording is too large",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.background_recording.message": {
+      "default": "Open Quill and try again with the bubble visible. Check microphone access and your phone’s background-app settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.background_recording.title": {
+      "default": "Android blocked recording",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.bad_key.message": {
+      "default": "The speech provider rejected this key. Check that it is complete, active and belongs to the selected provider in Settings → API keys.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.bad_key.title": {
+      "default": "Speech key rejected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.blocked.message": {
+      "default": "The speech provider blocked this recording and returned no transcript. Try a different recording or another configured speech provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.blocked.title": {
+      "default": "Provider blocked audio",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.clipboard_unavailable.message": {
+      "default": "Android did not accept the clipboard copy. Open Quill and check History if history was enabled for this dictation.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.clipboard_unavailable.title": {
+      "default": "Could not copy text",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.connection.message": {
+      "default": "Your phone could not connect to the speech provider. Check your connection or VPN and retry.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.connection.title": {
+      "default": "Could not reach provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.connection_lost.message": {
+      "default": "The speech request could not finish because of a connection problem. Check your internet connection and retry.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.connection_lost.title": {
+      "default": "Connection interrupted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_accessibility.message": {
+      "default": "Quill’s accessibility service disconnected before insertion. Paste your copied dictation within about one minute, then re-enable Quill accessibility.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_accessibility.title": {
+      "default": "Text copied — access lost",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_no_field.message": {
+      "default": "The target field is unavailable or refused insertion. Your dictation was copied for manual paste. Quill clears this fallback copy after about one minute.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_no_field.title": {
+      "default": "Text copied instead",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_sensitive.message": {
+      "default": "Quill did not insert into this protected field. Your dictation was copied for manual paste and clears after about one minute.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.copied_sensitive.title": {
+      "default": "Protected field — copied",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.dns.message": {
+      "default": "Your phone could not find the speech provider’s server. Check your internet connection, VPN or private DNS; for a custom provider, check its address.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.dns.title": {
+      "default": "Provider address not found",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.endpoint.message": {
+      "default": "The speech endpoint could not be used. Check your custom HTTPS base URL and selected provider in Settings → Speech & model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.endpoint.title": {
+      "default": "Provider address failed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.incomplete.message": {
+      "default": "The speech provider stopped before finishing. Record a shorter dictation or choose another speech model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.incomplete.title": {
+      "default": "Transcript was cut short",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.key_format.message": {
+      "default": "The selected speech key contains spaces, line breaks or unsupported characters. Paste the complete key again in Settings → API keys.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.key_format.title": {
+      "default": "Key format is invalid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.key_unreadable.message": {
+      "default": "Quill could not decrypt the selected speech key. Add it again in Settings → API keys.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.key_unreadable.title": {
+      "default": "Saved key could not open",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_interrupted.message": {
+      "default": "The microphone stopped delivering audio. Check microphone access, end other recordings and record again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_interrupted.title": {
+      "default": "Recording interrupted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_permission.message": {
+      "default": "Allow Microphone in Quill’s Android app permissions, then return and tap the bubble. No audio was recorded.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_permission.title": {
+      "default": "Microphone access is off",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_privacy.message": {
+      "default": "Unmute the microphone. Check Microphone access in Android’s Quick Settings or Privacy settings, then record again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_privacy.title": {
+      "default": "Microphone is muted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_unavailable.message": {
+      "default": "Quill could not start the microphone. End any call or other recording, then try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.mic_unavailable.title": {
+      "default": "Microphone unavailable",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.model.message": {
+      "default": "Choose an available speech model in Settings → Speech & model. The current model may have been removed or may not be available to your key.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.model.title": {
+      "default": "Speech model unavailable",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_field.message": {
+      "default": "Tap an editable text field first, or long-press the bubble to dictate to the clipboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_field.title": {
+      "default": "Select a text field",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_key.message": {
+      "default": "Add or select a key for your current speech provider in Settings → API keys. Keys for other providers cannot be used here.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_key.title": {
+      "default": "Speech key is missing",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_speech.message": {
+      "default": "The speech provider returned no words. Speak clearly and record again, or choose another speech model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.no_speech.title": {
+      "default": "No transcript returned",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.offline.message": {
+      "default": "Your phone has no active network connection. Connect to Wi-Fi or mobile data, then try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.offline.title": {
+      "default": "No internet connection",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.overlay_permission.message": {
+      "default": "Allow Quill to display over other apps in Android settings, then return to Quill.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.overlay_permission.title": {
+      "default": "Bubble permission is off",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.provider_busy.message": {
+      "default": "Your speech provider is temporarily unavailable. Wait a moment and retry, or choose another configured provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.provider_busy.title": {
+      "default": "Speech provider is busy",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.quota.message": {
+      "default": "Your speech provider reports exhausted credits or quota. Check your provider’s usage and billing, or select another configured provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.quota.title": {
+      "default": "Provider credits exhausted",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.rate_limit.message": {
+      "default": "Your speech provider is limiting requests. Wait before retrying. If it continues, check your account’s request and daily limits.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.rate_limit.title": {
+      "default": "Provider limit reached",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.request_rejected.message": {
+      "default": "The speech provider rejected the request settings. Check the speech model, language and custom provider address in Settings → Speech & model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.request_rejected.title": {
+      "default": "Request was rejected",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.response_invalid.message": {
+      "default": "The speech provider returned an unexpected response. Retry; if it continues, check that the selected model and endpoint support transcription.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.response_invalid.title": {
+      "default": "Unreadable provider reply",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.secure_connection.message": {
+      "default": "Quill could not establish a secure connection to the speech provider. Check your phone’s date and time, VPN or network, then retry.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.secure_connection.title": {
+      "default": "Secure connection failed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.sensitive_field.message": {
+      "default": "Dictation is disabled in password and other protected fields. Select a normal text field to dictate.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.sensitive_field.title": {
+      "default": "Protected text field",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.server.message": {
+      "default": "Your speech provider had a server error. Wait a moment and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.server.title": {
+      "default": "Provider server error",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.settings_read.message": {
+      "default": "Quill could not load local dictation settings. Reopen Quill and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.settings_read.title": {
+      "default": "Could not read settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.timeout.message": {
+      "default": "The speech request timed out. Check your connection and try again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.timeout.title": {
+      "default": "Provider took too long",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.unknown.message": {
+      "default": "Quill hit an unexpected problem. Try again, or reopen Quill if it continues.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.error.unknown.title": {
+      "default": "Dictation could not finish",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.history_not_saved": {
+      "default": "Your dictation is ready, but Quill could not save it to History. Free some phone storage if this continues.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.accessibility_settings": {
+      "default": "Tap for accessibility",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.app_permissions": {
+      "default": "Tap for mic settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.dismiss": {
+      "default": "Tap to dismiss",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.open_quill": {
+      "default": "Tap to open Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.overlay_settings": {
+      "default": "Tap for overlay settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.privacy_settings": {
+      "default": "Tap for privacy settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.provider_settings": {
+      "default": "Tap for speech settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.record_again": {
+      "default": "Tap to record again",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "dictation.recovery.retry": {
+      "default": "Saved · Tap to retry",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1142,6 +1706,18 @@
     },
     "onboarding.mic.open_settings": {
       "default": "Open microphone settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.test_failed": {
+      "default": "Microphone test failed",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.mic.test_retry": {
+      "default": "Try microphone again",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

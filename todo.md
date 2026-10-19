@@ -483,3 +483,11 @@ See [the audit](ACCESSIBILITY_DISCLOSURE_AUDIT.md) for evidence and the manual s
 - [x] Prepare a preview download, README demo/quick start, support route, private security reporting and current privacy/app terms with the supplied publisher/contact details.
 - [x] Preserve proprietary source-viewing terms and third-party licenses; distinguish compiled-app use from source usage.
 - Physical-device and Play production gates remain open in docs/play-readiness.md; this publication is a GitHub preview.
+
+### M11 follow-up: specialized dictation errors — October 19, 2026
+- [x] Replace the generic transcription caption with 42 safe error categories and the matching recovery action; do not claim saved audio for a failed capture.
+- [x] Guard required permissions and microphone mute, report recording/storage failures, distinguish provider/account/model/network failures and preserve insertion/clipboard outcomes.
+- [x] Make saved-audio retry use the original take; route setup errors to relevant settings, retain accessibility disclosure and preserve cancellation.
+- [x] Reuse typed errors in custom-word recording; show microphone-test failures and avoid advancing before capture delivers audio.
+- [x] Version 1.0.23 (code 24): 431 tests, lint, optimized APK/AAB, signatures and 16 KB APK alignment pass; bundled revision 25 has 533 strings.
+- [ ] Physical permission, retry, microphone and OEM scripts: no connected phone during implementation. This remains an M11 subtask, not completion of the full milestone.

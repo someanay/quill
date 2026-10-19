@@ -13,6 +13,13 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
+import android.provider.Settings
+import com.tihor.quill.MainActivity
+import com.tihor.quill.errors.DictationIssue
+import com.tihor.quill.errors.Recovery
+import com.tihor.quill.errors.NetworkStatus
+import kotlinx.coroutines.CancellationException
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.PixelFormat
@@ -150,6 +157,70 @@ class OverlayService : Service() {
     }
     private val audioRecorder by lazy { AudioRecorder(this) }
     private var currentRecording: File? = null
+    private var activeIssue: DictationIssue? = null
+    private var recoveryOpened = false
+
+    private fun hasRetryAudio(): Boolean = currentRecording?.let { it.isFile && it.length() > 44L } == true
+
+    private fun showIssue(issue: DictationIssue) {
+        activeIssue = issue
+        recoveryOpened = false
+        applyState(BubbleState.ERROR)
+        val copy = Copy.repository(this)
+        toast(copy.get(issue.messageKey))
+        Log.w(TAG, "Dictation issue: ${issue.name}")
+    }
+
+    private fun errorRecovery(): Recovery = if (recoveryOpened) {
+        if (activeIssue?.canRetryAudio == true && hasRetryAudio()) Recovery.RETRY else Recovery.RECORD_AGAIN
+    } else (activeIssue ?: DictationIssue.UNKNOWN).recovery(hasRetryAudio())
+
+    private fun showErrorCaption() {
+        stopTimer()
+        val issue = activeIssue ?: DictationIssue.UNKNOWN
+        val copy = Copy.repository(this)
+        caption?.configureError(copy.get(issue.titleKey), copy.get(errorRecovery().labelKey), copy.get(issue.messageKey))
+        caption?.visibility = View.VISIBLE
+        positionCaption()
+    }
+
+    /** A retry uses the original audio and target, never silently starts a new take. */
+    private fun handleErrorTap(): Boolean {
+        if (bubble?.state != BubbleState.ERROR) return false
+        val issue = activeIssue ?: return false
+        val permissionFixed = when (issue) {
+            DictationIssue.MIC_PERMISSION, DictationIssue.MIC_PRIVACY -> audioRecorder.microphoneIssue() == null
+            DictationIssue.ACCESSIBILITY -> QuillAccessibilityService.instance != null
+            DictationIssue.OVERLAY_PERMISSION -> OverlayPermission.isGranted(this)
+            else -> false
+        }
+        if (permissionFixed) { applyState(BubbleState.IDLE); return false }
+        val recovery = errorRecovery()
+        when (recovery) {
+            Recovery.RETRY -> currentRecording?.let { transcribeAndInject(it) } ?: showIssue(DictationIssue.AUDIO_MISSING)
+            Recovery.RECORD_AGAIN -> { applyState(BubbleState.IDLE); return false }
+            Recovery.DISMISS -> applyState(BubbleState.IDLE)
+            else -> {
+                val intent = when (recovery) {
+                    Recovery.APP_PERMISSIONS -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+                    Recovery.PRIVACY_SETTINGS -> Intent(Settings.ACTION_PRIVACY_SETTINGS)
+                    Recovery.OVERLAY_SETTINGS -> Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+                    Recovery.ACCESSIBILITY_SETTINGS -> AccessibilityUtil.disclosureIntent(this)
+                    Recovery.PROVIDER_SETTINGS -> Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_ERROR_SETTINGS,
+                        if (issue in setOf(DictationIssue.NO_KEY, DictationIssue.KEY_UNREADABLE, DictationIssue.KEY_FORMAT, DictationIssue.BAD_KEY)) "keys" else "speech")
+                    else -> Intent(this, MainActivity::class.java)
+                }
+                try {
+                    startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    recoveryOpened = true
+                    showErrorCaption()
+                } catch (_: Exception) {
+                    toast(Copy.repository(this).get(issue.messageKey))
+                }
+            }
+        }
+        return true
+    }
     private var debugReceiver: BroadcastReceiver? = null
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     private val secretStore: SecretStore by lazy { KeystoreSecretStore(this) }
@@ -340,10 +411,7 @@ class OverlayService : Service() {
         sensitiveActive = sensitive
         bubble?.alpha = if (sensitive) 0.45f else 1f
         if (sensitive) {
-            android.widget.Toast.makeText(
-                this, "Dictation is off in password fields — for your security.",
-                android.widget.Toast.LENGTH_SHORT,
-            ).show()
+            toast(Copy.repository(this).get(DictationIssue.SENSITIVE_FIELD.messageKey))
         }
     }
 
@@ -499,8 +567,16 @@ class OverlayService : Service() {
     }
 
     private fun addBubble() {
+        try { addBubbleWindows() } catch (_: RuntimeException) {
+            val issue = if (OverlayPermission.isGranted(this)) DictationIssue.UNKNOWN else DictationIssue.OVERLAY_PERMISSION
+            toast(Copy.repository(this).get(issue.messageKey))
+            stopSelf()
+        }
+    }
+
+    private fun addBubbleWindows() {
         if (!OverlayPermission.isGranted(this)) {
-            Log.w(TAG, "Overlay permission not granted; cannot show bubble.")
+            toast(Copy.repository(this).get(DictationIssue.OVERLAY_PERMISSION.messageKey))
             stopSelf()
             return
         }
@@ -781,6 +857,8 @@ class OverlayService : Service() {
         val cap = caption ?: return
         when (state) {
             BubbleState.IDLE -> {
+                activeIssue = null
+                recoveryOpened = false
                 stopTimer()
                 clipboardMode = false
                 cap.clipboardTarget = false
@@ -795,7 +873,7 @@ class OverlayService : Service() {
             }
             BubbleState.TRANSCRIBING -> showCaption(CaptionView.Mode.TRANSCRIBING)
             BubbleState.PASTE -> showCaption(CaptionView.Mode.PASTE)
-            BubbleState.ERROR -> showCaption(CaptionView.Mode.ERROR)
+            BubbleState.ERROR -> showErrorCaption()
         }
     }
 
@@ -811,6 +889,8 @@ class OverlayService : Service() {
     private fun onCancel() {
         transcriptionJob?.cancel()
         transcriptionJob = null
+        currentRecording?.delete()
+        currentRecording = null
         mainHandler.removeCallbacks(idleReset)
         applyState(BubbleState.IDLE)
     }
@@ -835,7 +915,8 @@ class OverlayService : Service() {
         val h = cap.viewHeight
         val pad = dpx(34f) // tuck under the bubble's halo/shadow padding
         val onRight = params.x + view.viewSize / 2 > sw / 2
-        captionParams.x = if (onRight) (params.x - w + pad).coerceAtLeast(0) else params.x + view.viewSize - pad
+        captionParams.x = (if (onRight) params.x - w + pad else params.x + view.viewSize - pad)
+            .coerceIn(0, (sw - w).coerceAtLeast(0))
         captionParams.y = params.y + (view.viewSize - h) / 2
         runCatching { windowManager.updateViewLayout(cap, captionParams) }
     }
@@ -865,6 +946,7 @@ class OverlayService : Service() {
      * → stop. The transcript + injection get wired between "stop" and "idle" at M5–M6.
      */
     private fun onBubbleTap(view: BubbleView) {
+        if (bubble?.state == BubbleState.TRANSCRIBING || handleErrorTap()) return
         if (audioRecorder.isRecording) {
             audioRecorder.requestStop() // onFinished updates the UI
             return
@@ -874,20 +956,22 @@ class OverlayService : Service() {
             applyState(BubbleState.IDLE)
             return
         }
+        val micIssue = audioRecorder.microphoneIssue()
+        if (micIssue != null) { showIssue(micIssue); return }
         val accessibility = QuillAccessibilityService.instance
         if (accessibility == null) {
-            toast("Quill accessibility is disconnected — open Accessibility settings and enable Quill.")
+            showIssue(DictationIssue.ACCESSIBILITY)
             return
         }
         val hasInput = accessibility.isEditableFocused()
         if (sensitiveActive) {
             // Board F4: refuse to record into password/banking fields; the bubble is already dimmed.
-            toast("Dictation is off in password fields — for your security.")
+            showIssue(DictationIssue.SENSITIVE_FIELD)
             return
         }
         // Warn up front (not after the recording) if there's nowhere to insert the result.
         if (!hasInput) {
-            toast("No text input selected — long-press to dictate to the clipboard.")
+            showIssue(DictationIssue.NO_FIELD)
             return
         }
         clipboardMode = false
@@ -901,6 +985,7 @@ class OverlayService : Service() {
      * simply stops the current take.
      */
     private fun onBubbleLongPress(view: BubbleView) {
+        if (bubble?.state == BubbleState.TRANSCRIBING) return
         if (audioRecorder.isRecording) {
             audioRecorder.requestStop()
             return
@@ -912,18 +997,27 @@ class OverlayService : Service() {
     }
 
     private fun toast(message: String) =
-        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_LONG).show()
 
     private fun startRecording(view: BubbleView) {
-        if (!audioRecorder.hasMicPermission()) {
-            Log.w(TAG, "Mic permission not granted; cannot record (onboarding handles the grant).")
-            applyState(BubbleState.ERROR)
-            return
-        }
+        val micIssue = audioRecorder.microphoneIssue()
+        val issue = DictationIssue.preflight(audioRecorder.hasMicPermission(), micIssue == DictationIssue.MIC_PRIVACY,
+            OverlayPermission.isGranted(this), QuillAccessibilityService.instance != null, clipboardMode)
+        if (issue != null) { showIssue(issue); return }
+        // The user explicitly chose a new recording; discard the previous temporary take.
+        currentRecording?.delete()
+        currentRecording = null
+        activeIssue = null
         val output = File(cacheDir, "quill_${System.currentTimeMillis()}.wav")
         currentRecording = output
         recordingPackage = QuillAccessibilityService.instance?.focusedPackageName()
-        setForeground(microphone = true)
+        try {
+            setForeground(microphone = true)
+        } catch (_: RuntimeException) {
+            micActive = false
+            showIssue(audioRecorder.microphoneIssue() ?: DictationIssue.BACKGROUND_RECORDING)
+            return
+        }
         applyState(BubbleState.RECORDING)
         audioRecorder.start(
             output = output,
@@ -940,11 +1034,13 @@ class OverlayService : Service() {
     }
 
     private fun onRecordingFinished(file: File, reason: StopReason) {
-        setForeground(microphone = false)
+        runCatching { setForeground(microphone = false) }
         bubble?.let { it.level = 0f }
         Log.i(TAG, "WAV saved: ${file.name} (${file.length()} bytes), reason=$reason")
         if (reason == StopReason.ERROR) {
-            applyState(BubbleState.ERROR)
+            file.delete()
+            currentRecording = null
+            showIssue(audioRecorder.lastIssue ?: DictationIssue.MIC_INTERRUPTED)
             return
         }
         currentRecording = file
@@ -957,14 +1053,19 @@ class OverlayService : Service() {
      * the temp WAV is kept for retry; on a successful transcript+insert it is deleted (spec §4.3).
      */
     private fun transcribeAndInject(wav: File) {
+        if (!wav.isFile || wav.length() <= 44L) { showIssue(DictationIssue.AUDIO_MISSING); return }
         applyState(BubbleState.TRANSCRIBING)
         transcriptionJob = scope.launch {
-            val settings = settingsRepository.settings.first()
+          try {
+            val settings = try { settingsRepository.settings.first() } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                showIssue(DictationIssue.SETTINGS_READ)
+                return@launch
+            }
             // Per-provider key (decision 3): the ACTIVE provider's own slot, never another provider's.
             val key = sttKeyStore.get(settings.provider)
             if (key.isNullOrBlank()) {
-                Log.w(TAG, "No API key set for the active provider — add one in Quill settings.")
-                applyState(BubbleState.ERROR)
+                showIssue(if (secretStore.contains(SttKeyStore.alias(settings.provider))) DictationIssue.KEY_UNREADABLE else DictationIssue.NO_KEY)
                 return@launch
             }
             val customWords = customWordsStore.words.first()
@@ -975,6 +1076,7 @@ class OverlayService : Service() {
             )
             // "auto" → null (let the provider detect). English seeds the Hinglish romanization prompt.
             val language = settings.languageHint.takeUnless { it == QuillSettings.LANGUAGE_AUTO }
+            if (NetworkStatus.isOffline(this@OverlayService)) { showIssue(DictationIssue.OFFLINE); return@launch }
             val result = client.transcribe(
                 audio = wav,
                 opts = TranscriptionOptions(
@@ -1029,7 +1131,7 @@ class OverlayService : Service() {
                     )
                     // Save on a successful transcription (gated), BEFORE insertion — a transcript that
                     // fails to land is exactly when a saved copy is the safety net (M9).
-                    historyRepository.maybeSave(
+                    try { historyRepository.maybeSave(
                         historyEnabled = settings.historyEnabled,
                         privateMode = settings.privateMode,
                         retentionMinutes = settings.historyRetentionMinutes,
@@ -1037,38 +1139,37 @@ class OverlayService : Service() {
                         packageName = pkg,
                         appLabel = appLabelFor(pkg),
                         timestamp = System.currentTimeMillis(),
-                    )
+                    ) } catch (error: Exception) {
+                        if (error is CancellationException) throw error
+                        toast(Copy.repository(this@OverlayService).get(CopyKeys.HISTORY_NOT_SAVED))
+                    }
                     onTranscript(wav, corrected)
                 },
                 onFailure = { err ->
-                    Log.w(TAG, "Transcription failed: ${err.message}") // keep WAV for retry
-                    // Exhausted plan/credits (and Groq's indistinguishable daily-cap 429) get an
-                    // explicit toast — a silent ERROR bubble reads as "the app broke", not "top up".
-                    if (err is TranscriptionError.QuotaExhausted || err is TranscriptionError.RateLimited) {
-                        toast(Copy.repository(this@OverlayService).get(CopyKeys.STT_QUOTA_TOAST))
-                    } else {
-                        // Provider response bodies can echo user content; show only our own messages.
-                        toast(if (err is TranscriptionError && err !is TranscriptionError.Provider) {
-                            err.message ?: "Couldn't transcribe. Try again."
-                        } else "The provider couldn't transcribe this recording. Check Speech & model settings.")
-                    }
-                    applyState(BubbleState.ERROR)
+                    showIssue(DictationIssue.from(err))
                 },
             )
+          } catch (error: Exception) {
+              if (error is CancellationException) throw error
+              showIssue(DictationIssue.from(error))
+          }
         }
     }
 
     private fun onTranscript(wav: File, text: String) {
         if (text.isBlank()) {
             Log.i(TAG, "Empty transcript — didn't catch that.")
-            applyState(BubbleState.ERROR)
+            showIssue(DictationIssue.NO_SPEECH)
             return
         }
         // Long-press path: the transcript belongs on the clipboard, not in a field. Skip injection
         // entirely (no focused field required) and show the "Copied to clipboard" confirmation.
         if (clipboardMode) {
             // User explicitly asked for this on the clipboard to paste — do NOT auto-expire it.
-            copyTranscriptToClipboard(text, autoExpire = false)
+            if (!copyTranscriptToClipboard(text, autoExpire = false)) {
+                showIssue(DictationIssue.CLIPBOARD_UNAVAILABLE)
+                return
+            }
             bubble?.state = BubbleState.PASTE
             updateCancelButton(BubbleState.PASTE)
             caption?.let {
@@ -1088,8 +1189,7 @@ class OverlayService : Service() {
             // We have a transcript but no way to inject it — never lose it: copy + notify. A null
             // service means it was revoked (M11): the notification offers a one-tap re-enable.
             Log.w(TAG, "Accessibility service not connected; copying transcript to clipboard.")
-            injectionFailed(text, InjectionFailure.ServiceRevoked)
-            wav.delete()
+            if (injectionFailed(text, InjectionFailure.ServiceRevoked)) wav.delete()
             return
         }
         when (val result = a11y.injectText(text, expectedPackage = recordingPackage)) {
@@ -1106,24 +1206,31 @@ class OverlayService : Service() {
                 // transcribe — fail to inject" rule: keep the transcript on the clipboard and tell
                 // the user, instead of silently dropping it. Distinguish the cause so the message +
                 // action are correct (no "re-enable" prompt when the service is healthy).
-                injectionFailed(text, InjectionFailure.classify(serviceConnected = true, result = result))
-                wav.delete()
+                if (injectionFailed(text, InjectionFailure.classify(serviceConnected = true, result = result))) wav.delete()
             }
         }
     }
 
     /** Couldn't insert: stash the transcript on the clipboard (auto-expiring) and post a heads-up. */
-    private fun injectionFailed(text: String, failure: InjectionFailure) {
-        copyTranscriptToClipboard(text, autoExpire = true)
+    private fun injectionFailed(text: String, failure: InjectionFailure): Boolean {
+        if (!copyTranscriptToClipboard(text, autoExpire = true)) {
+            showIssue(DictationIssue.CLIPBOARD_UNAVAILABLE)
+            return false
+        }
         notifyInjectionFailed(text, failure)
-        applyState(BubbleState.ERROR)
+        showIssue(when (failure) {
+            InjectionFailure.ServiceRevoked -> DictationIssue.COPIED_ACCESSIBILITY
+            InjectionFailure.SensitiveField -> DictationIssue.COPIED_SENSITIVE
+            InjectionFailure.NoField -> DictationIssue.COPIED_NO_FIELD
+        })
+        return true
     }
 
     /**
      * Put [text] on the clipboard marked sensitive. When [autoExpire], schedule a guarded ~60 s clear
      * (M11) so an involuntary failed-injection copy doesn't linger; user-initiated copies don't expire.
      */
-    private fun copyTranscriptToClipboard(text: String, autoExpire: Boolean) {
+    private fun copyTranscriptToClipboard(text: String, autoExpire: Boolean): Boolean {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val label = ClipboardHygiene.tokenLabel()
         val clip = ClipData.newPlainText(label, text)
@@ -1132,12 +1239,13 @@ class OverlayService : Service() {
                 putBoolean(ClipDescription.EXTRA_IS_SENSITIVE, true)
             }
         }
-        runCatching { clipboard.setPrimaryClip(clip) }
+        if (runCatching { clipboard.setPrimaryClip(clip) }.isFailure) return false
         mainHandler.removeCallbacks(clearSensitiveClip)
         if (autoExpire) {
             pendingClearToken = label
             mainHandler.postDelayed(clearSensitiveClip, ClipboardHygiene.SENSITIVE_CLEAR_DELAY_MS)
         }
+        return true
     }
 
     private fun notifyInjectionFailed(text: String, failure: InjectionFailure) {

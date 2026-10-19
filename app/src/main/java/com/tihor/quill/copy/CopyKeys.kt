@@ -508,6 +508,16 @@ object CopyKeys {
      */
     val OPTIONAL_BLANK: Set<String> = CAROUSEL_CAPTIONS.toSet()
 
+    const val MIC_TEST_FAILED = "onboarding.mic.test_failed"
+    const val MIC_TEST_RETRY = "onboarding.mic.test_retry"
+    const val HISTORY_NOT_SAVED = "dictation.history_not_saved"
+
+    val DICTATION_ERRORS: Set<String> = com.tihor.quill.errors.DictationIssue.entries.flatMap {
+        listOf(it.titleKey, it.messageKey)
+    }.toSet() + com.tihor.quill.errors.Recovery.entries.map { it.labelKey } + setOf(
+        HISTORY_NOT_SAVED, MIC_TEST_FAILED, MIC_TEST_RETRY,
+    )
+
     /** Keys the local source editor may change; all changes require a new app build. */
     const val MODELS_SAVE = "models.save"
     const val MODELS_CUSTOM_REFRESH = "models.custom_refresh"
@@ -650,5 +660,5 @@ object CopyKeys {
             VALUE_ON, VALUE_OFF, VALUE_NONE, VALUE_GRANTED, VALUE_VALID, VALUE_CHECK,
             RATIONALE_MIC, RATIONALE_OVERLAY, RATIONALE_ACCESSIBILITY,
             PRIVACY_PROMISE, KEY_REQUIRED_WARNING_TITLE, KEY_REQUIRED_WARNING_BODY, WELCOME_PRIVACY_PILL,
-        ).toSet() + CAROUSEL_CAPTIONS
+        ).toSet() + CAROUSEL_CAPTIONS + DICTATION_ERRORS
 }

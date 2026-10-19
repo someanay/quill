@@ -84,6 +84,7 @@ import com.tihor.quill.accessibility.AccessibilityUtil
 import com.tihor.quill.copy.CopyKeys as K
 import com.tihor.quill.copy.copy
 import com.tihor.quill.audio.StopReason
+import com.tihor.quill.errors.DictationIssue
 import com.tihor.quill.secrets.KeystoreSecretStore
 import com.tihor.quill.secrets.SecretStore
 import com.tihor.quill.secrets.SttKeyStore
@@ -802,21 +803,18 @@ private fun AddWordDialog(onAdd: (String, String) -> Unit, onDismiss: () -> Unit
             scope.launch {
                 if (reason == StopReason.ERROR) {
                     phase = WordCapturePhase.IDLE
-                    errorKey = K.SETTINGS_WORDS_ERR_RECORD
+                    errorKey = (capture.recordingIssue ?: DictationIssue.MIC_INTERRUPTED).messageKey
                     runCatching { wav.delete() }
                     return@launch
                 }
                 phase = WordCapturePhase.TRANSCRIBING
                 capture.transcribe(wav).fold(
                     onSuccess = { text ->
-                        if (text.isNotBlank()) heard = text
+                        if (text.isNotBlank()) heard = text else errorKey = DictationIssue.NO_SPEECH.messageKey
                         phase = WordCapturePhase.IDLE
                     },
                     onFailure = {
-                        errorKey = when ((it as? VoiceWordCapture.FailureException)?.failure) {
-                            VoiceWordCapture.Failure.NoKey -> K.SETTINGS_WORDS_ERR_KEY
-                            else -> K.SETTINGS_WORDS_ERR_NETWORK
-                        }
+                        errorKey = DictationIssue.from(it).messageKey
                         phase = WordCapturePhase.IDLE
                     },
                 )

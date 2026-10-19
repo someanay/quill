@@ -27,8 +27,10 @@ import com.tihor.quill.ui.screens.WritingStyleScreen
 
 /** Single-activity root: hosts the back stack and dispatches to the current [Screen]. */
 @Composable
-fun QuillApp() {
-    val nav = remember { QuillNav() }
+fun QuillApp(initialScreen: Screen = Screen.Home) {
+    val nav = remember { QuillNav().apply {
+        if (initialScreen != Screen.Home) { switchTab(Screen.Settings); navigate(initialScreen) }
+    } }
     BackHandler(enabled = nav.canGoBack) { nav.back() }
 
     val savedState = rememberSaveableStateHolder()

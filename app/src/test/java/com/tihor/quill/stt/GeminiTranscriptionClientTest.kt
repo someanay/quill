@@ -184,18 +184,18 @@ class GeminiTranscriptionClientTest {
     }
 
     @Test
-    fun http401And403_mapToBadKey() = runTest {
+    fun http401_isBadKey_and403_isAccessDenied() = runTest {
         server.enqueue(MockResponse().setResponseCode(401))
         assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.BadKey)
         server.enqueue(MockResponse().setResponseCode(403))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.BadKey)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.Provider)
     }
 
     @Test
-    fun http429_mapsToQuotaExhausted() = runTest {
-        // Gemini's 429 is always RESOURCE_EXHAUSTED — quota semantics (free-tier caps included).
+    fun http429_withoutExhaustedCreditCode_mapsToRateLimit() = runTest {
+        // A generic RESOURCE_EXHAUSTED response does not prove exhausted credits.
         server.enqueue(MockResponse().setResponseCode(429))
-        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.QuotaExhausted)
+        assertTrue(client().transcribe(audio(), opts).exceptionOrNull() is TranscriptionError.RateLimited)
     }
 
     @Test
