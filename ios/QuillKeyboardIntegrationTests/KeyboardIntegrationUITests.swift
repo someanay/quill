@@ -15,6 +15,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     override func tearDownWithError() throws {
         attach("final-" + stage, app: fixture)
+        if stage.contains("settings") { attach("final-settings-state", app: settings) }
         let report = XCTAttachment(string: "status=\(outcome)\nstage=\(stage)\ntransport=DEBUG synthetic provider; real microphone and installed keyboard extension\n")
         report.name = "Keyboard integration outcome"; report.lifetime = .keepAlways; add(report)
         fixture.terminate(); host.terminate(); settings.terminate()
@@ -37,17 +38,25 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     private func settingsRow(_ title: String, prefix: Bool = false) -> XCUIElement {
         let predicate = NSPredicate(format: prefix ? "label BEGINSWITH[c] %@" : "label == %@", title)
-        let text = settings.staticTexts.matching(predicate).firstMatch
-        let cell = settings.cells.containing(.staticText, identifier: title).firstMatch
-        if cell.exists { return cell }
-        let button = settings.buttons.matching(predicate).firstMatch
-        return button.exists ? button : text
+        // During Settings navigation, a dismissed table can briefly retain an
+        // existing cell whose frame is infinite. Do not ask XCTest to hit-test it.
+        for query in [settings.cells.matching(predicate), settings.buttons.matching(predicate), settings.staticTexts.matching(predicate)] {
+            for row in query.allElementsBoundByIndex where row.exists && usableFrame(row.frame) { return row }
+        }
+        return settings.staticTexts.matching(predicate).firstMatch
+    }
+    private func usableFrame(_ frame: CGRect) -> Bool {
+        frame.origin.x.isFinite && frame.origin.y.isFinite && frame.width > 0 && frame.height > 0
     }
     private func openSettingsRow(_ title: String, prefix: Bool = false) throws {
-        for _ in 0..<8 {
+        for _ in 0..<20 {
             let row = settingsRow(title, prefix: prefix)
-            if row.exists && row.isHittable { row.tap(); return }
-            settings.swipeUp()
+            if row.exists && usableFrame(row.frame) {
+                if row.isHittable { row.tap(); return }
+                settings.swipeUp()
+            } else {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+            }
         }
         try blocked("Simulator Settings did not expose a reachable \(title) row.", app: settings)
     }
@@ -89,6 +98,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
             try openSettingsRow("Add New Keyboard", prefix: true)
             try openSettingsRow("Quill", prefix: true)
         }
+        attach("settings-keyboard-added", app: settings)
         try openSettingsRow("Quill", prefix: true)
         let fullAccess = settings.switches.matching(NSPredicate(format: "label CONTAINS[c] 'Allow Full Access'")).firstMatch
         guard fullAccess.waitForExistence(timeout: 5) else {
