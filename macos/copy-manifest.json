@@ -1,5 +1,5 @@
 {
-  "revision": 14,
+  "revision": 18,
   "placeholderTestVectors": [
     {
       "input": "",
@@ -3159,6 +3159,345 @@
     },
     "value.valid": {
       "default": "Valid",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.progress": {
+      "default": "Step %1$d of %2$d",
+      "placeholders": [
+        "%1$d",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.local": {
+      "default": "Your key. Your provider. Your words.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.welcome_title": {
+      "default": "A little less typing. A lot more flow.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.welcome_body": {
+      "default": "Turn a thought into text without leaving the app you're writing in. Set up Quill for your desktop in a few steps.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.privacy_body": {
+      "default": "Quill connects directly to your speech provider. Choose who processes your recordings before you start.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.provider_title": {
+      "default": "Connect your speech provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.provider_body": {
+      "default": "Add and verify a key. You can change providers, models and cleanup later in Settings.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.audio_title": {
+      "default": "Check your microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.access_title": {
+      "default": "Let your words reach your apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.shortcut_title": {
+      "default": "One shortcut, wherever you write",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.shortcut_body": {
+      "default": "Focus a text field. Press your shortcut to start, speak, then press it again to finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.controls": {
+      "default": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.bubble_choice": {
+      "default": "Show the floating recording control",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.ready_title": {
+      "default": "Make room for your next thought.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.ready_body": {
+      "default": "Your workspace has a practice field. Try a short dictation there, then use the same shortcut in your everyday apps.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.practice": {
+      "default": "Open the practice workspace",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.finish": {
+      "default": "Go to Home",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.demo.label": {
+      "default": "Example dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.demo.spoken": {
+      "default": "Let's move our meeting to Thursday. I'll send the notes before then.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.practice.title": {
+      "default": "Try Quill here",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.practice.body": {
+      "default": "Click the field, then press your dictation shortcut. Your real provider processes the recording.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.title": {
+      "default": "Space for your next thought.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.setup_needed": {
+      "default": "Finish connecting your provider and permissions to start dictating.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.configuration": {
+      "default": "Your setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.recent": {
+      "default": "Recent dictations",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.welcome": {
+      "default": "Welcome",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.welcome": {
+      "default": "From a thought to a finished sentence.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.welcome": {
+      "default": "A shortcut keeps your attention on what you are writing. Quill puts your words in the field you already have open.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.privacy": {
+      "default": "Your data",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.privacy": {
+      "default": "Choose where your voice goes.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.privacy": {
+      "default": "Your provider processes the recording with your own key. Quill does not route it through a Quill server. Check your provider's pricing and privacy terms.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.provider": {
+      "default": "Connect provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.provider": {
+      "default": "Bring the provider you trust.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.provider": {
+      "default": "Keys are encrypted on this device. Verifying a key checks authentication; it does not record speech or prove that model credits are available.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.audio": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.audio": {
+      "default": "A quick sound check.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.audio": {
+      "default": "Test your usual microphone before dictating. This test stays on your device and is discarded; nothing is uploaded.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.access": {
+      "default": "Text insertion",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.access": {
+      "default": "Your cursor is the destination.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.access": {
+      "default": "Quill checks the focused field before inserting. Password fields are excluded. If an app cannot accept insertion, your transcript remains available to copy.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.shortcut": {
+      "default": "Shortcut & practice",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.shortcut": {
+      "default": "Stay in the app you are using.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.shortcut": {
+      "default": "Start and finish with your keyboard shortcut. The floating control is optional. You can always reopen Quill from its desktop menu.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.ready": {
+      "default": "Ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.ready": {
+      "default": "Try it where you already write.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.ready": {
+      "default": "A short sentence is enough for your first try. Change providers, cleanup, writing style and history retention whenever you need to.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.setup.audio_body": {
+      "default": "Allow microphone access, then start a local sound check. This test is discarded and never sent to a provider. If access was denied, enable Quill in System Settings and return.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.setup.access_body": {
+      "default": "Enable Quill in System Settings → Privacy & Security → Accessibility. This lets Quill insert text into the field you choose. Return here after enabling it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.setup.controls": {
+      "default": "Use Command–Option–Space to start and finish. The optional floating control and menu bar are available too. Closing the window keeps Quill in the menu bar.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.setup.finish": {
+      "default": "Keep Quill in the menu bar",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.dictation.stop": {
+      "default": "Stop dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.choose": {
+      "default": "Choose a provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.gemini": {
+      "default": "Google Gemini",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.groq": {
+      "default": "Groq",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.openrouter": {
+      "default": "OpenRouter",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.setup.shortcut_unavailable": {
+      "default": "This shortcut is unavailable. Use the floating control or menu bar. Check other apps and macOS keyboard shortcuts before trying it again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

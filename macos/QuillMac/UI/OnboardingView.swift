@@ -9,112 +9,121 @@ struct OnboardingView: View {
     @State private var step = 0
     @State private var warningReady = false
     @State private var accepted = false
+    @State private var practice = ""
+    private let stages = ["welcome", "privacy", "provider", "audio", "access", "shortcut", "ready"]
     init() {
-        var first = 0
+        var initial = 0
         #if DEBUG
-        let arguments = ProcessInfo.processInfo.arguments
-        if AppPaths.testMode, let index = arguments.firstIndex(of: "--ui-onboarding-stage"), arguments.indices.contains(index + 1), let value = Int(arguments[index + 1]), (0...8).contains(value) { first = value }
+        let args = ProcessInfo.processInfo.arguments
+        if AppPaths.testMode, let index = args.firstIndex(of: "--ui-onboarding-stage"), args.indices.contains(index + 1), let value = Int(args[index + 1]), (0...6).contains(value) { initial = value }
         #endif
-        _step = State(initialValue: first)
+        _step = State(initialValue: initial)
     }
-    private let titles = ["onboarding.splash.tagline","onboarding.welcome.title","compliance.key.required_title","onboarding.key.title","onboarding.checklist.title","onboarding.mictest.title","onboarding.overlay.title","onboarding.accessibility.enable_title","onboarding.allset.title"]
     var body: some View {
         GeometryReader { geometry in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if step < 2 { intro(minHeight: max(0, geometry.size.height - 64)) }
-                else {
-                HStack { Wordmark(); Spacer(); if step > 1 { Button(Copy.text("action.back")) { dictation.stopMicTest(); step -= 1 } } }
-                if step != 3 { HStack { Spacer(); PermissionArt(symbol: symbol); Spacer() }.padding(.top, 10) }
-                CopyText(titles[step]).font(QuillTheme.serif(32)).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
-                Group {
-                    switch step {
-                    case 2:
-                        HelpText(key: "compliance.key.required_body", size: 14)
-                        QuillCard { HelpText(key: "onboarding.key.warning.free_tier"); HelpText(key: "onboarding.key.warning.usage"); HelpText(key: "compliance.privacy.promise") }
-                        QuillButton(key: warningReady ? "onboarding.key.warning.accept" : "onboarding.key.warning.reading") { step = 3 }.disabled(!warningReady)
-                        QuillButton(key: "action.not_now", primary: false) { step = 1 }
-                    case 3:
-                        HelpText(key: "onboarding.key.body", size: 14)
-                        KeyEditor(onboarding: true) { step = 4 }
-                    case 4:
-                        QuillCard {
-                            checklist("onboarding.checklist.key", done: keys.active(settings.value.provider, settings: settings.value) != nil)
-                            checklist("onboarding.checklist.mic", done: dictation.microphoneGranted)
-                            checklist("onboarding.checklist.overlay", done: settings.value.bubbleActive)
-                            checklist("onboarding.checklist.accessibility", done: dictation.accessibilityGranted)
-                        }
-                        HelpText(key: "compliance.rationale.mic")
-                        QuillButton(key: dictation.microphoneGranted ? "onboarding.checklist.cta" : "onboarding.mic.cta") {
-                            Task { let allowed = dictation.microphoneGranted ? true : await AudioCapture.requestPermission(); if allowed { dictation.refreshPermissions(); step = 5 } else { dictation.message = "mac.error.microphone" } }
-                        }
-                        if !dictation.microphoneGranted { Button(Copy.text("onboarding.mic.open_settings")) { SystemLinks.open("Privacy_Microphone") } }
-                    case 5:
-                        BodyCopy(key: "onboarding.mictest.body")
-                        HStack { Spacer(); InkMeter(amplitude: dictation.level); Spacer() }
-                        if dictation.testHeard { Label(Copy.text("onboarding.mictest.heard"), systemImage: "checkmark.circle.fill").foregroundStyle(QuillTheme.success) }
-                        QuillButton(key: dictation.microphoneTest ? "mac.mic.stop_test" : "mac.mic.test") { if dictation.microphoneTest { dictation.stopMicTest() } else { dictation.startMicTest() } }
-                        QuillButton(key: "onboarding.mictest.cta") { dictation.stopMicTest(); step = 6 }.disabled(!dictation.microphoneGranted || !dictation.testCaptureSucceeded)
-                    case 6:
-                        BodyCopy(key: "mac.onboarding.overlay")
-                        QuillButton(key: "mac.bubble.show") { settings.value.bubbleActive = true; settings.value.bubbleVisible = true; step = 7 }
-                    case 7:
-                        QuillCard { HelpText(key: "mac.accessibility.disclosure"); Toggle(Copy.text("mac.accessibility.consent"), isOn: $accepted) }
-                        QuillButton(key: "onboarding.accessibility.enable_cta") { settings.value.accessibilityConsent = true; TextInjector.requestPermission(); SystemLinks.open("Privacy_Accessibility") }.disabled(!accepted)
-                        if dictation.accessibilityGranted { QuillButton(key: "action.continue") { settings.value.accessibilityConsent = true; step = 8 }.disabled(!accepted) }
-                    default:
-                        BodyCopy(key: "onboarding.allset.body")
-                        QuillCard { HStack(spacing: 14) { BubbleFace(state: .idle, diameter: 40); CopyText("onboarding.allset.look").font(QuillTheme.sans(14)) } }
-                        QuillButton(key: "onboarding.allset.cta") { finish(); NSApp.hide(nil) }
-                        QuillButton(key: "onboarding.allset.home_link", primary: false) { finish() }
-                    }
+            HStack(spacing: 0) {
+                if geometry.size.width >= 900 { ScrollView { progressRail }.frame(width: 200); Divider() }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        HStack { Wordmark(); Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
+                        Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
+                        CopyText(title).font(QuillTheme.serif(34)).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
+                        stepContent
+                        if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
+                    }.padding(geometry.size.width < 700 ? 22 : 36).frame(maxWidth: .infinity, alignment: .leading)
+                }.frame(maxWidth: .infinity, maxHeight: .infinity).accessibilityIdentifier("onboarding-content")
+                if geometry.size.width >= 1100 {
+                    Divider()
+                    DesktopExample(title: "desktop.setup.companion.\(stages[step])", bodyKey: "desktop.setup.companion_body.\(stages[step])")
+                        .frame(width: geometry.size.width * 0.34, height: geometry.size.height).background(QuillTheme.soft(scheme == .dark))
                 }
-                if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error) }
-                HStack(spacing: 6) { Spacer(); ForEach(1..<9) { index in Capsule().fill(index == step ? QuillTheme.brand : QuillTheme.brand.opacity(0.15)).frame(width: index == step ? 22 : 7, height: 7) }; Spacer() }.accessibilityHidden(true)
+            }
+        }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
+        .task(id: step) {
+            if step == 1 { warningReady = false; try? await Task.sleep(nanoseconds: 3_000_000_000); if !Task.isCancelled { warningReady = true } }
+        }
+    }
+    private var title: String {
+        ["desktop.setup.welcome_title", "compliance.key.required_title", "desktop.setup.provider_title", "desktop.setup.audio_title", "desktop.setup.access_title", "desktop.setup.shortcut_title", "desktop.setup.ready_title"][step]
+    }
+    private var progressRail: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            Wordmark().padding(.horizontal, 18)
+            VStack(spacing: 4) {
+                ForEach(0..<stages.count, id: \.self) { index in
+                    Button { step = index } label: {
+                        HStack(spacing: 10) { Image(systemName: index < step ? "checkmark.circle.fill" : "\(index + 1).circle"); CopyText("desktop.setup.stage.\(stages[index])"); Spacer(minLength: 0) }
+                            .font(QuillTheme.sans(14)).padding(12).contentShape(Rectangle())
+                    }.buttonStyle(.plain).disabled(index > step)
+                        .foregroundStyle(index == step ? QuillTheme.brandInk(scheme == .dark) : QuillTheme.ink(scheme == .dark))
+                        .background(index == step ? QuillTheme.soft(scheme == .dark) : .clear, in: RoundedRectangle(cornerRadius: 6))
                 }
-            }.padding(32).frame(maxWidth: 590)
-        }.frame(maxWidth: .infinity)
-        }.task(id: step) {
-            #if DEBUG
-            // Presentation coverage only: no keys or permissions are fabricated,
-            // and screenshots must not start the physical microphone or advance setup.
-            if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-onboarding-stage") { return }
-            #endif
-            if step == 0 { try? await Task.sleep(nanoseconds: 1_200_000_000); if !Task.isCancelled { step = 1 } }
-            if step == 2 { warningReady = false; try? await Task.sleep(nanoseconds: 3_000_000_000); if !Task.isCancelled { warningReady = true } }
-            if step == 5 { dictation.startMicTest() }
-        }.onDisappear { dictation.stopMicTest() }
-    }
-    @ViewBuilder private func intro(minHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 24)
-            Wordmark()
-            if step == 0 {
-                CopyText("onboarding.splash.tagline").font(QuillTheme.sans(14)).foregroundStyle(QuillTheme.muted(scheme == .dark))
-                    .multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true).padding(.top, 12).accessibilityIdentifier("onboarding-title")
-            } else {
-                CopyText("onboarding.welcome.title").font(QuillTheme.serif(24)).multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true).padding(.top, 24).accessibilityIdentifier("onboarding-title")
-                BodyCopy(key: "onboarding.welcome.body").multilineTextAlignment(.center).padding(.top, 10)
-                HStack(spacing: 6) {
-                    Circle().fill(scheme == .dark ? QuillTheme.brandInk(true) : QuillTheme.brand).frame(width: 8, height: 8).accessibilityHidden(true)
-                    CopyText("compliance.privacy.welcome_pill").font(QuillTheme.sans(12)).foregroundStyle(QuillTheme.liveInk(scheme == .dark))
-                }.padding(.horizontal, 10).padding(.vertical, 5).background(QuillTheme.soft(scheme == .dark), in: Capsule()).padding(.top, 20)
-                QuillButton(key: "onboarding.welcome.cta") { step = 2 }.padding(.top, 28)
             }
-            Spacer(minLength: 24)
-            if step == 1 {
-                HStack(spacing: 8) {
-                    CopyText("onboarding.welcome.already").font(QuillTheme.sans(14)).foregroundStyle(QuillTheme.muted(scheme == .dark)).accessibilityIdentifier("onboarding.welcome.already")
-                    Button(Copy.text("onboarding.welcome.open")) { settings.value.onboardingComplete = true }
-                        .buttonStyle(.plain).font(QuillTheme.sans(14)).foregroundStyle(QuillTheme.brandInk(scheme == .dark)).accessibilityIdentifier("onboarding.welcome.open")
-                }.padding(.bottom, 4)
-            }
-        }.frame(maxWidth: .infinity, minHeight: minHeight)
+            Spacer(minLength: 12)
+            HelpText(key: "desktop.setup.local").padding(.horizontal, 12)
+        }.padding(.horizontal, 12).padding(.vertical, 30)
     }
-    private var symbol: String { ["pencil.tip","waveform","key.fill","key.fill","checklist","mic.fill","rectangle.on.rectangle","accessibility","checkmark"][step] }
-    private func checklist(_ key: String, done: Bool) -> some View { HStack { CopyText(key); Spacer(); Image(systemName: done ? "checkmark.circle.fill" : "circle").foregroundStyle(done ? QuillTheme.success : Color.secondary) } }
-    private func finish() { settings.value.onboardingComplete = true; settings.value.bubbleActive = true; settings.value.bubbleVisible = true; dictation.configureLogin() }
+    @ViewBuilder private var stepContent: some View {
+        switch step {
+        case 0:
+            BodyCopy(key: "desktop.setup.welcome_body")
+            QuillCard { HelpText(key: "desktop.demo.label"); CopyText("desktop.demo.spoken").font(QuillTheme.serif(23)); HelpText(key: "compliance.privacy.welcome_pill") }
+            QuillButton(key: "onboarding.welcome.cta") { step = 1 }
+            QuillButton(key: "onboarding.welcome.open", primary: false) { settings.value.onboardingComplete = true }
+        case 1:
+            BodyCopy(key: "desktop.setup.privacy_body")
+            QuillCard { HelpText(key: "onboarding.key.warning.free_tier", size: 14); HelpText(key: "onboarding.key.warning.usage", size: 14); HelpText(key: "compliance.privacy.promise", size: 14) }
+            QuillButton(key: "onboarding.key.warning.accept") { step = 2 }.disabled(!warningReady)
+            if !warningReady { HelpText(key: "onboarding.key.warning.reading") }
+            QuillButton(key: "action.not_now", primary: false) { step = 0 }
+        case 2:
+            BodyCopy(key: "desktop.setup.provider_body")
+            KeyEditor(onboarding: true) { step = 3 }
+        case 3:
+            BodyCopy(key: "mac.setup.audio_body")
+            QuillCard {
+                InkMeter(amplitude: dictation.level).frame(maxWidth: .infinity)
+                if dictation.testHeard { Label(Copy.text("onboarding.mictest.heard"), systemImage: "checkmark.circle.fill").foregroundStyle(QuillTheme.success) }
+                QuillButton(key: dictation.microphoneTest ? "mac.mic.stop_test" : "mac.mic.test") {
+                    if dictation.microphoneTest { dictation.stopMicTest() }
+                    else { Task { if !dictation.microphoneGranted { _ = await AudioCapture.requestPermission(); dictation.refreshPermissions() }; if dictation.microphoneGranted { dictation.startMicTest() } } }
+                }
+                Button(Copy.text("onboarding.mic.open_settings")) { SystemLinks.open("Privacy_Microphone") }
+            }
+            QuillButton(key: "action.continue") { step = 4 }.disabled(!dictation.microphoneGranted || !dictation.testCaptureSucceeded).accessibilityIdentifier("onboarding.mictest.cta")
+        case 4:
+            BodyCopy(key: "mac.setup.access_body")
+            QuillCard { HelpText(key: "mac.accessibility.disclosure", size: 14); Toggle(Copy.text("mac.accessibility.consent"), isOn: $accepted) }
+            QuillButton(key: "onboarding.accessibility.enable_cta") { settings.value.accessibilityConsent = true; TextInjector.requestPermission(); SystemLinks.open("Privacy_Accessibility") }.disabled(!accepted)
+            QuillButton(key: "action.continue") { settings.value.accessibilityConsent = true; step = 5 }.disabled(!accepted || !dictation.accessibilityGranted)
+        case 5:
+            BodyCopy(key: "desktop.setup.shortcut_body")
+            QuillCard { if dictation.shortcutAvailable { CopyText("mac.hotkey.label").font(QuillTheme.sans(26)) } else { HelpText(key: "mac.setup.shortcut_unavailable", size: 14, bad: true) }; HelpText(key: "mac.setup.controls", size: 14); Toggle(Copy.text("desktop.setup.bubble_choice"), isOn: $settings.value.bubbleActive) }
+            CopyText("desktop.practice.title").font(QuillTheme.sans(17))
+            HelpText(key: "desktop.practice.body")
+            TextEditor(text: $practice).font(QuillTheme.sans(16)).frame(minHeight: 160).border(QuillTheme.line(scheme == .dark)).accessibilityLabel(Copy.text("desktop.practice.title"))
+            if dictation.state == .recording { InkMeter(amplitude: dictation.level) }
+            if dictation.state == .transcribing { ProgressView() }
+            QuillButton(key: "action.continue") { step = 6 }.disabled(dictation.state == .recording || dictation.state == .transcribing)
+        default:
+            BodyCopy(key: "desktop.setup.ready_body")
+            QuillButton(key: "desktop.setup.practice") { finish() }
+            QuillButton(key: "mac.setup.finish", primary: false) { finish(); NSApp.hide(nil) }
+        }
+    }
+    private func finish() { settings.value.onboardingComplete = true; settings.value.bubbleVisible = settings.value.bubbleActive; dictation.configureLogin() }
+}
+
+struct DesktopExample: View {
+    let title: String
+    let bodyKey: String
+    var body: some View {
+        ScrollView { VStack(alignment: .leading, spacing: 22) {
+            CopyText(title).font(QuillTheme.serif(30)).fixedSize(horizontal: false, vertical: true)
+            BodyCopy(key: bodyKey)
+            QuillCard { HelpText(key: "desktop.demo.label"); CopyText("desktop.demo.spoken").font(QuillTheme.serif(23)); Divider(); Label(Copy.text("mac.hotkey.label"), systemImage: "keyboard") }
+        }.padding(32).frame(maxWidth: .infinity, alignment: .leading) }
+    }
 }
 
 enum SystemLinks {

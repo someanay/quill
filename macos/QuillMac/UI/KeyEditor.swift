@@ -31,7 +31,7 @@ private struct KeySetupContent: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CopyText("onboarding.key.choose").font(QuillTheme.sans(17)).fontWeight(.medium)
+            CopyText("desktop.provider.choose").font(QuillTheme.sans(17)).fontWeight(.medium)
             VStack(spacing: 0) {
                 ForEach(KeySetupController.guidedProviders) { provider in
                     if provider != .gemini { Divider() }
@@ -55,9 +55,9 @@ private struct KeySetupContent: View {
     }
     private func title(_ provider: Provider) -> String {
         switch provider {
-        case .gemini: return Copy.text("onboarding.key.easy")
-        case .groq: return Copy.text("onboarding.key.more_steps")
-        case .openrouter: return Copy.text("onboarding.key.free_options")
+        case .gemini: return Copy.text("desktop.provider.gemini")
+        case .groq: return Copy.text("desktop.provider.groq")
+        case .openrouter: return Copy.text("desktop.provider.openrouter")
         default: return provider.name
         }
     }

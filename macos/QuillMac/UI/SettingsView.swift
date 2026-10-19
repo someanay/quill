@@ -15,6 +15,17 @@ struct SettingsView: View {
     @EnvironmentObject var keys: KeychainStore
     @State private var page: SettingsPage?
     var body: some View {
+        GeometryReader { geometry in
+        HStack(spacing: 0) {
+            if geometry.size.width >= 840 {
+                List {
+                    ForEach(SettingsPage.allCases.filter { $0 != .vocab }) { item in
+                        Button { page = item } label: { Label(Copy.text(item.rowKey), systemImage: item.symbol).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 7) }
+                            .buttonStyle(.plain).accessibilityIdentifier("settings.category.\(item.rawValue)")
+                    }
+                }.listStyle(.sidebar).frame(width: 210)
+                Divider()
+            }
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 HStack { if page != nil { Button { page = nil } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }
@@ -33,12 +44,18 @@ struct SettingsView: View {
                     case .about: AboutSettings()
                     }
                 } else {
-                    listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words, .vocab])
-                    listGroup("settings.group.capture", pages: [.audio, .bubble])
-                    listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 310), spacing: 22)], alignment: .leading, spacing: 22) {
+                        listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words])
+                        listGroup("settings.group.capture", pages: [.audio, .bubble])
+                        listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                    }
                 }
-            }.padding(28).frame(maxWidth: 800)
+            }.padding(28).frame(maxWidth: .infinity, alignment: .leading)
         }.id(page?.rawValue ?? "list").accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
+        }
+        }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark)).background(QuillTheme.paper(scheme == .dark))
+        .preferredColorScheme(settings.value.appTheme == "Dark" ? .dark : settings.value.appTheme == "Light" ? .light : nil)
+        .frame(minWidth: 640, minHeight: 440)
     }
     private func listGroup(_ title: String, pages: [SettingsPage]) -> some View {
         VStack(alignment: .leading, spacing: 10) {

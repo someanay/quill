@@ -32,7 +32,7 @@ def tokens(text):
 def read(file):
     return json.loads((ROOT / file).read_text(encoding="utf-8-sig"))
 
-def check(platform):
+def check(platform, independent_copy=False):
     android = read(SOURCES["android"])
     catalog = read(SOURCES[platform])
     manifest = read("copy-manifest.json" if platform == "android" else f"{platform}/copy-manifest.json")
@@ -46,7 +46,8 @@ def check(platform):
         errors.append("manifest key set differs from bundled source")
     for key, value in android["strings"].items():
         if key not in strings:
-            errors.append(f"missing Android copy key: {key}")
+            if not independent_copy:
+                errors.append(f"missing Android copy key: {key}")
         elif tokens(strings[key]) != tokens(value):
             errors.append(f"changed Android formatting arguments: {key}")
     for key, value in strings.items():
@@ -77,11 +78,12 @@ def check(platform):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--platform", choices=list(SOURCES), action="append")
+    parser.add_argument("--independent-copy", action="store_true", help="Validate native catalogs without requiring unused Android keys; shared placeholder signatures still match")
     args = parser.parse_args()
     success = True
     for platform in args.platform or SOURCES:
         try:
-            success = check(platform) and success
+            success = check(platform, args.independent_copy) and success
         except (OSError, KeyError, ValueError) as error:
             print(f"FAIL {platform}: {error}")
             success = False

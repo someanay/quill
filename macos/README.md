@@ -1,8 +1,26 @@
 # Quill for macOS
 
-This is a fresh native implementation of the current Android app, replacing the old macOS draft. It uses SwiftUI/AppKit, AVAudioEngine, macOS Accessibility, Keychain and SQLite. QuillCore contains the provider contracts and pure policies and is also testable on Windows. No user-data server, copy server, analytics SDK or third-party runtime is involved.
+This is a native Mac dictation app sharing Quill’s provider, privacy and brand foundations. It uses SwiftUI/AppKit, AVAudioEngine, macOS Accessibility, Keychain and SQLite. QuillCore contains the provider contracts and pure policies and is also testable on Windows. No user-data server, copy server, analytics SDK or third-party runtime is involved.
 
 macOS 13 or later is required. Both Apple Silicon and Intel are supported by the project. Start/stop dictation with the floating bubble or **Command–Option–Space**. The bubble does not activate Quill or take keyboard focus. A long press dictates to the clipboard. The menu bar provides show/hide, cancel and quit controls.
+
+## Desktop experience revision — October 19, 2026
+
+The new source uses a resizable desktop window, sidebar navigation and a practice
+workspace. Home adapts between parallel and stacked panes. History has a selectable
+list and a full transcript reader. Settings opens in a separate resizable window,
+also available with Command-comma, with persistent categories at larger widths.
+The inactive contacts candidate importer is hidden from navigation.
+
+Onboarding teaches native microphone/Accessibility access and Command–Option–Space.
+It has seven desktop stages with contextual content at wide sizes; compact and
+short windows scroll without replacing the live provider-key form. The floating
+control is optional. There is no Android overlay-permission or battery-setup step.
+
+This revision passes Swift syntax checks and its unchanged portable core passes
+34 tests on Windows. The revised native views and resize UI test still need a Mac
+build/run; the older packaged universal app does not contain this redesign. See
+[the current platform experience contract](../docs/platform-experience.md).
 
 ## Build and run
 
@@ -32,7 +50,7 @@ The UI test launch option uses a separate application-support directory and Keyc
 
 ## Android behavior carried across
 
-- The same onboarding sequence: welcome, three-second BYOK warning, key entry and verification, setup checklist, live microphone test, bubble explanation, Accessibility disclosure/enable, ready screen.
+- Desktop onboarding: welcome, own-key warning, provider connection, microphone test, Accessibility disclosure/enable, shortcut practice and completion.
 - Shared Android guided key setup: Gemini/Groq/OpenRouter expandable rows, numbered provider instructions, explicit Paste/reveal, 650 ms automatic metadata validation, stale-request cancellation and verified-only Save. Unfinished drafts remain in Keychain and the expanded provider is remembered separately. Speech settings prefill saved keys and activate the chosen speech provider; adding an extra key preserves speech and cleanup selections. OpenAI/custom setup remains available separately; custom endpoints require an explicit check before any draft key is sent.
 - Five speech providers: Groq, OpenAI, OpenRouter, Gemini and custom HTTPS OpenAI-compatible endpoints. Correct multipart, OpenRouter `input_audio`, and Gemini `generateContent` request types are implemented. Verification calls provider metadata endpoints without uploading audio or consuming model tokens.
 - Multiple separately stored key slots per provider, active selection, re-test and removal. Custom keys are bound to the exact validated base URL, so changing endpoints cannot forward an existing key to a different server.

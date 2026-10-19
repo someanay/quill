@@ -1,5 +1,12 @@
 # Native platform rebuild — September 8, 2026
 
+> October 19, 2026: The owner superseded Android screen/order parity. Desktop
+> onboarding, window layouts and navigation must follow Windows/macOS usage;
+> iPhone must teach its keyboard/host recording workflow. Shared DNA means brand,
+> provider/privacy policies and dictation behavior. See
+> [the platform experience contract](platform-experience.md) for the current direction.
+> The historical verification below applies only to its named source revisions.
+
 The owner authorized replacement of the former Windows, macOS, and iOS drafts and continued development/testing across all three platforms. This initiative supersedes the historical Android-only restriction. Android remains the behavioral and visual reference; its current source wins over outdated planning notes. The website work already present in the checkout is outside this initiative.
 
 ## Parity contract

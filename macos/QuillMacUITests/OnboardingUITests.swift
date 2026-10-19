@@ -1,8 +1,9 @@
 import XCTest
+import AppKit
 
 final class OnboardingUITests: XCTestCase {
     func testGuidedKeyRowsRetainDraftAndRememberExpansion() throws {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "3"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
         XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 10))
         for provider in ["groq", "openrouter", "gemini"] {
             let row = app.buttons["key-provider-" + provider]; reveal(row, in: app); row.click()
@@ -25,22 +26,22 @@ final class OnboardingUITests: XCTestCase {
         let gemini = app.buttons["key-provider-gemini"]; reveal(gemini, in: app); gemini.click()
     }
     func testEveryOnboardingStagePresentationInLightAndDark() throws {
-        let stages = ["splash", "welcome", "warning", "key", "checklist", "microphone", "bubble", "accessibility", "ready"]
+        let stages = ["welcome", "warning", "key", "microphone", "accessibility", "shortcut", "ready"]
         for dark in [false, true] {
             for (index, stage) in stages.enumerated() {
                 let app = XCUIApplication()
                 app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(index)] + (dark ? ["--ui-dark"] : [])
                 app.launch()
                 XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
-                if index == 0 { XCTAssertFalse(app.buttons["action.continue"].exists); XCTAssertFalse(app.buttons["onboarding.welcome.cta"].exists) }
-                if index == 1 { XCTAssertTrue(app.staticTexts["onboarding.welcome.already"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
-                if index == 3 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
-                if index == 5 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
-                if index == 7 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
+                if index == 0 { XCTAssertTrue(app.buttons["onboarding.welcome.cta"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
+
+                if index == 2 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
+                if index == 3 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
+                if index == 4 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
                 let shot = XCTAttachment(screenshot: app.screenshot())
                 shot.name = "macOS-onboarding-presentation-" + (dark ? "dark-" : "light-") + stage
                 shot.lifetime = .keepAlways; add(shot)
-                if index == 1 {
+                if index == 0 {
                     app.buttons["onboarding.welcome.open"].click()
                     XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 5))
                     XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
@@ -50,13 +51,32 @@ final class OnboardingUITests: XCTestCase {
         }
     }
     private func reveal(_ row: XCUIElement, in app: XCUIApplication) {
-        let scroll = app.scrollViews.firstMatch
+        let scroll = app.scrollViews["settings-scroll"].exists ? app.scrollViews["settings-scroll"] : app.scrollViews["onboarding-content"]
         for _ in 0..<10 {
             let viewport = scroll.frame.insetBy(dx: 0, dy: 6)
             if row.exists && row.frame.height > 0 && viewport.contains(row.frame) { return }
             scroll.scroll(byDeltaX: 0, deltaY: row.frame.minY < viewport.minY ? 200 : -200)
         }
         XCTAssertTrue(scroll.frame.contains(row.frame), "Settings row must be inside the visible scroll viewport")
+    }
+    func testResizingKeySetupKeepsDraftAndReachableControls() throws {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
+        let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 10))
+        reveal(field, in: app); field.click(); field.typeText("draft-desktop")
+        let window = app.windows.firstMatch
+        let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+        for requested in [CGSize(width: 660, height: 500), CGSize(width: 1160, height: 740), CGSize(width: 760, height: 1000)] {
+            let target = CGSize(width: min(requested.width, screen.width - 40), height: min(requested.height, screen.height - 60))
+            let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+            corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+            XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+            XCTAssertEqual(window.frame.height, target.height, accuracy: 25)
+            reveal(field, in: app); XCTAssertTrue(field.isHittable)
+            app.buttons["key-reveal"].click()
+            XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-desktop")
+            app.buttons["key-reveal"].click()
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-resize-\(Int(target.width))x\(Int(target.height))"; shot.lifetime = .keepAlways; add(shot)
+        }
     }
     func testFirstRunWarningAndKeyFlow() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
@@ -96,7 +116,7 @@ final class OnboardingUITests: XCTestCase {
     func testEverySettingsScreenInDarkAppearance() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-dark"]; app.launch()
         XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
-        for page in ["speech", "keys", "cleanup", "style", "words", "vocab", "audio", "bubble", "privacy", "advanced", "about"] {
+        for page in ["speech", "keys", "cleanup", "style", "words", "audio", "bubble", "privacy", "advanced", "about"] {
             let row = app.buttons["settings." + page]
             reveal(row, in: app)
             XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
