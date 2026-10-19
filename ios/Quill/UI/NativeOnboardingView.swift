@@ -28,7 +28,7 @@ struct OnboardingView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 24) {
                             HStack { Wordmark(); Spacer(); Text(model.c("ios.setup.progress", String(step), "6")).font(Q.sans(14)).foregroundStyle(Q.muted) }
-                            ProgressView(value: Double(step), total: 6).tint(Q.brand)
+                            if step > 1 { ProgressView(value: Double(step), total: 6).tint(Q.brand) }
                             stageContent
                         }.padding(wide ? 40 : 24).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
                     }.scrollDismissesKeyboard(.interactively)
@@ -36,6 +36,7 @@ struct OnboardingView: View {
                 }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans())
             }
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar(step == 1 ? .hidden : .visible, for: .navigationBar)
             .toolbar {
                 if step > 1 {
                     ToolbarItem(placement: .topBarLeading) {
@@ -46,7 +47,7 @@ struct OnboardingView: View {
             }
             .sheet(isPresented: $warning) { keyDisclosure }
         }
-        .onDisappear { model.stopMicTest() }
+        .onDisappear { if model.busy || model.canRetry { model.cancel() } else { model.stopMicTest() } }
         .task {
             while !Task.isCancelled {
                 receipt = KeyboardTransfer.setupReceipt()
@@ -66,7 +67,8 @@ struct OnboardingView: View {
         }
     }
     private func move(to stage: Int) {
-        fieldFocused = false; model.stopMicTest()
+        fieldFocused = false
+        if model.busy || model.canRetry { model.cancel() } else { model.stopMicTest() }
         model.settings.onboardingStep = stage
         if stage == 3 { connectionStarted = Date(); receipt = nil }
     }
@@ -77,13 +79,18 @@ struct OnboardingView: View {
         }
     }
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            Image(systemName: "waveform").font(.system(size: 46, weight: .light)).foregroundStyle(Q.brandInk).padding(.vertical, 12).accessibilityHidden(true)
-            heading("ios.setup.welcome_title", body: "ios.setup.welcome_body", id: "onboarding.welcome")
-            workflow
-            Label(model.c("compliance.privacy.welcome_pill"), systemImage: "lock.shield").font(Q.sans(12)).foregroundStyle(Q.brandInk)
+        VStack(alignment: .leading, spacing: 20) {
+            Text(model.c("ios.setup.welcome_title")).font(Q.serif(38)).fontWeight(.semibold).accessibilityAddTraits(.isHeader).accessibilityIdentifier("onboarding.welcome")
+            Text(model.c("ios.setup.welcome_body")).font(Q.sans(16)).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true)
+            QCard { Text(model.c("ios.setup.example")).font(Q.sans(18)).frame(minHeight: 100, alignment: .topLeading).padding(4) }
+            VStack(alignment: .leading, spacing: 12) {
+                instruction(1, "ios.setup.flow_short_record")
+                instruction(2, "ios.setup.flow_short_send")
+                instruction(3, "ios.setup.flow_short_insert")
+            }
             QButton(title: model.c("onboarding.welcome.cta")) { warning = true }.accessibilityIdentifier("onboarding.getStarted")
             Button(model.c("onboarding.welcome.open")) { model.settings.onboardingComplete = true }.frame(minHeight: 44)
+            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted)
         }
     }
     private var keyDisclosure: some View {

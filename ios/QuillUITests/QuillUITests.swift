@@ -55,7 +55,7 @@ final class QuillUITests: XCTestCase {
     }
     private func openHome(arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
-        tap(app.buttons["Open Quill"], in: app)
+        tap(app.buttons["Open workspace"], in: app)
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
         XCTAssertTrue(settingsTab(app).waitForExistence(timeout: 10))
         return app
@@ -113,6 +113,7 @@ final class QuillUITests: XCTestCase {
         tap(key, in: app); key.typeText("gsk_quill_ui_fixture0000000000")
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["onboarding.key.verify"].isEnabled)
+        if app.buttons["Done"].firstMatch.exists { tap(app.buttons["Done"].firstMatch, in: app) }
         tap(app.buttons["onboarding.key.verify"], in: app)
         XCTAssertTrue(app.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10)); capture(app, "ios-setup-keyboard")
         XCTAssertFalse(app.buttons["onboarding.keyboard.next"].isEnabled)

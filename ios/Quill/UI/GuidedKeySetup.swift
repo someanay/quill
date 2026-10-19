@@ -19,6 +19,7 @@ private struct GuidedKeyRows: View {
     @State private var revealed = false
     @State private var canPaste = UIPasteboard.general.hasStrings
     @Environment(\.scenePhase) private var scenePhase
+    @FocusState private var keyFocused: Bool
     let onSaved: () -> Void
 
     init(model: AppModel, activateSpeechProvider: Bool, prefillSavedKey: Bool, initialProvider: Provider, onSaved: @escaping () -> Void) {
@@ -65,6 +66,7 @@ private struct GuidedKeyRows: View {
                         if revealed { TextField(KeySetupPolicy.mask(provider), text: binding) }
                         else { SecureField(KeySetupPolicy.mask(provider), text: binding) }
                     }.font(Q.sans(14)).textInputAutocapitalization(.never).autocorrectionDisabled().privacySensitive()
+                        .focused($keyFocused).submitLabel(.done).onSubmit { keyFocused = false }
                         .accessibilityLabel(model.c("onboarding.key.field_label"))
                         .accessibilityIdentifier("key.candidate")
                     Button { if let text = UIPasteboard.general.string { setup.update(text, provider: provider) } } label: { Text(model.c("onboarding.key.paste")).font(Q.sans(13)).frame(minWidth: 44, minHeight: 48) }

@@ -25,7 +25,7 @@ jobs:
       - name: Install Android SDK
         run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
       - name: Test, lint, and build
-        run: bash gradlew testDebugUnitTest lint assembleRelease bundleRelease
+        run: bash gradlew -Dorg.gradle.java.home="$JAVA_HOME" testDebugUnitTest lint assembleRelease bundleRelease
       - name: Upload check reports
         if: always()
         uses: actions/upload-artifact@v4

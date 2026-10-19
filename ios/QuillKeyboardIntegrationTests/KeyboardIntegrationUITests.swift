@@ -15,6 +15,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     override func tearDownWithError() throws {
         attach("final-" + stage, app: fixture)
+        attach("final-host-" + stage, app: host)
         if stage.contains("settings") { attach("final-settings-state", app: settings) }
         let report = XCTAttachment(string: "status=\(outcome)\nstage=\(stage)\ntransport=DEBUG synthetic provider; real microphone and installed keyboard extension\n")
         report.name = "Keyboard integration outcome"; report.lifetime = .keepAlways; add(report)
@@ -75,6 +76,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let key = host.secureTextFields["API key"]
         tap(key, in: host); key.typeText("gsk_quill_ui_fixture0000000000")
         XCTAssertTrue(host.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
+        if host.buttons["Done"].firstMatch.exists { tap(host.buttons["Done"].firstMatch, in: host) }
         tap(host.buttons["onboarding.key.verify"], in: host)
         XCTAssertTrue(host.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10))
         XCTAssertFalse(host.buttons["onboarding.keyboard.next"].isEnabled)
@@ -139,6 +141,10 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private func showQuillKeyboard(in app: XCUIApplication) throws {
         for _ in 0..<8 {
             if app.buttons["keyboard.insert"].waitForExistence(timeout: 2) { return }
+            if app.staticTexts["Quickly Change Keyboards"].exists {
+                let choices = app.buttons.matching(NSPredicate(format: "label == %@", "Continue")).allElementsBoundByIndex.filter { $0.isHittable }
+                if let next = choices.max(by: { $0.frame.minY < $1.frame.minY }) { next.tap(); continue }
+            }
             let introduction = app.otherElements["UIContinuousPathIntroductionView"]
             if introduction.exists {
                 // A fresh simulator presents QuickPath's first-use tutorial over

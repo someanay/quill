@@ -198,7 +198,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         do { testingMicrophone = true; try recorder.start(capSeconds: 30, microphoneTest: true) }
         catch { testingMicrophone = false; report(error) }
     }
-    func stopMicTest() { recorder.cancel(); testingMicrophone = false }
+    func stopMicTest() { guard testingMicrophone else { return }; recorder.cancel(); testingMicrophone = false }
     func start(voiceSample: Bool = false) async {
         guard !busy, !canRetry, !cleanupRequired else { return }
         stopMicTest()

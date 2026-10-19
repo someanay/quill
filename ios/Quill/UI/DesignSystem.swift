@@ -42,6 +42,7 @@ struct QCard<Content: View>: View {
     var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
 }
 struct QButton: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let title: String
     var icon: String? = nil
     var secondary = false
@@ -50,10 +51,10 @@ struct QButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center) }
-                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 18).padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 48)
+                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular ? 320 : .infinity, minHeight: 50)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
                 .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 struct QBanner: View {
@@ -79,7 +80,7 @@ struct QHeading: View {
 }
 struct QSection: View {
     let title: String
-    var body: some View { Text(title.uppercased()).font(Q.sans(12)).fontWeight(.medium).tracking(0.8).foregroundStyle(Q.muted).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 14).accessibilityAddTraits(.isHeader) }
+    var body: some View { Text(title).font(Q.sans(14)).fontWeight(.medium).foregroundStyle(Q.muted).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 18).accessibilityAddTraits(.isHeader) }
 }
 struct QRow: View {
     let title: String

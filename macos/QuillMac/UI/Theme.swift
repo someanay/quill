@@ -60,9 +60,22 @@ struct QuillButton: View {
     var arguments: [String] = []
     var action: () -> Void
     var body: some View {
-        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 50).contentShape(RoundedRectangle(cornerRadius: 4)) }
+        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).padding(.horizontal, 22).frame(minHeight: 44).contentShape(RoundedRectangle(cornerRadius: 6)) }
         .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
-        .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 4)).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
+        .background(primary ? QuillTheme.brand : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+        .opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key).frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+struct ShortcutKeycaps: View {
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(["⌥", "⌘", "Space"], id: \.self) { key in
+                Text(key).font(QuillTheme.sans(20)).padding(.horizontal, 18).frame(minHeight: 52)
+                    .background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
+            }
+        }.accessibilityElement(children: .ignore).accessibilityLabel(Copy.text("mac.hotkey.label"))
     }
 }
 struct SectionLabel: View {

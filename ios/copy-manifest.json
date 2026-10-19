@@ -1,5 +1,5 @@
 {
-  "revision": 15,
+  "revision": 16,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -1151,13 +1151,13 @@
       "optionalBlank": false
     },
     "onboarding.welcome.cta": {
-      "default": "Get started",
+      "default": "Set up Quill",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.welcome.open": {
-      "default": "Open Quill",
+      "default": "Open workspace",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1550,7 +1550,7 @@
       "optionalBlank": false
     },
     "settings.group.capture": {
-      "default": "Capture & bubble",
+      "default": "Recording & appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1816,7 +1816,7 @@
       "optionalBlank": false
     },
     "settings.row.bubble": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2790,7 +2790,7 @@
       "optionalBlank": false
     },
     "ios.mic.test_private": {
-      "default": "This microphone test stays on your iPhone. It is deleted when the test stops and is never uploaded.",
+      "default": "This microphone test stays on your device. It is deleted when the test stops and is never uploaded.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2808,7 +2808,7 @@
       "optionalBlank": false
     },
     "ios.keys.security": {
-      "default": "Keys are stored in this iPhone's Keychain and excluded from backups and iCloud sync. A key is sent only to its selected provider over HTTPS. Keys never appear in logs or reach the keyboard.",
+      "default": "Keys are stored in this device's Keychain and excluded from backups and iCloud sync. A key is sent only to its selected provider over HTTPS. Keys never appear in logs or reach the keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2850,7 +2850,7 @@
       "optionalBlank": false
     },
     "ios.home.subtitle": {
-      "default": "Tap, speak, and let your words flow.",
+      "default": "Record here. Insert with your keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2986,7 +2986,7 @@
       "optionalBlank": false
     },
     "ios.recording.retry_retention": {
-      "default": "Your recording stays on this iPhone until Retry succeeds or you tap Cancel, including in private mode.",
+      "default": "Your recording stays on this device until Retry succeeds or you tap Cancel, including in private mode.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3088,7 +3088,7 @@
       "optionalBlank": false
     },
     "ios.audio.trigger_help": {
-      "default": "Tap the recording bubble in Quill to start. Tap it again to stop and transcribe.",
+      "default": "Use the microphone button in Quill to start a recording. Tap it again to stop and transcribe.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3156,7 +3156,7 @@
       "optionalBlank": false
     },
     "ios.visual.help": {
-      "default": "Size changes the recording bubble inside Quill. Theme follows this preference; larger text and Reduce Motion follow your iPhone's accessibility settings.",
+      "default": "Control size applies to the microphone button inside Quill. Text size and Reduce Motion follow system accessibility settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3308,7 +3308,7 @@
       "optionalBlank": false
     },
     "ios.error.storage": {
-      "default": "Couldn't save data on this iPhone. Check available storage and try again.",
+      "default": "Couldn't save data on this device. Check available storage and try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3395,7 +3395,7 @@
       "optionalBlank": false
     },
     "ios.setup.welcome_body": {
-      "default": "Speak in Quill, then bring your words into Messages, Mail, Notes and other apps with the Quill keyboard.",
+      "default": "Record in Quill, then bring your words into other apps with the Quill keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3563,7 +3563,7 @@
       "optionalBlank": false
     },
     "ios.setup.no_account": {
-      "default": "No Quill account. Your own provider.",
+      "default": "Your provider. No Quill account.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3612,6 +3612,30 @@
     },
     "ios.settings.appearance": {
       "default": "Appearance",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.example": {
+      "default": "Let’s move our meeting to Thursday.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_record": {
+      "default": "Record in Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_send": {
+      "default": "Send to keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_insert": {
+      "default": "Return to your app and insert",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

@@ -25,17 +25,18 @@ struct OnboardingView: View {
                 if geometry.size.width >= 900 { ScrollView { progressRail }.frame(width: 200); Divider() }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
-                        HStack { Wordmark(); Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
-                        Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
-                        CopyText(title).font(QuillTheme.serif(34)).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
+                        HStack { if geometry.size.width < 900 { Wordmark() }; Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
+                        if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
+                        CopyText(title).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 ? 46 : 34)).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
                         stepContent
                         if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
-                    }.padding(geometry.size.width < 700 ? 22 : 36).frame(maxWidth: .infinity, alignment: .leading)
+                    }.padding(geometry.size.width < 700 ? 24 : 44).frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(minHeight: step == 0 ? geometry.size.height : 0, alignment: .center)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity).accessibilityIdentifier("onboarding-content")
-                if geometry.size.width >= 1100 {
+                if step > 0 && geometry.size.width >= 1200 {
                     Divider()
                     DesktopExample(title: "desktop.setup.companion.\(stages[step])", bodyKey: "desktop.setup.companion_body.\(stages[step])")
-                        .frame(width: geometry.size.width * 0.34, height: geometry.size.height).background(QuillTheme.soft(scheme == .dark))
+                        .frame(width: geometry.size.width * 0.3, height: geometry.size.height).background(QuillTheme.paper(scheme == .dark))
                 }
             }
         }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
@@ -52,11 +53,10 @@ struct OnboardingView: View {
             VStack(spacing: 4) {
                 ForEach(0..<stages.count, id: \.self) { index in
                     Button { step = index } label: {
-                        HStack(spacing: 10) { Image(systemName: index < step ? "checkmark.circle.fill" : "\(index + 1).circle"); CopyText("desktop.setup.stage.\(stages[index])"); Spacer(minLength: 0) }
+                        HStack(spacing: 14) { Image(systemName: index <= step ? "circle.fill" : "circle").font(.system(size: 11)); CopyText("desktop.setup.stage.\(stages[index])"); Spacer(minLength: 0) }
                             .font(QuillTheme.sans(14)).padding(12).contentShape(Rectangle())
                     }.buttonStyle(.plain).disabled(index > step)
                         .foregroundStyle(index == step ? QuillTheme.brandInk(scheme == .dark) : QuillTheme.ink(scheme == .dark))
-                        .background(index == step ? QuillTheme.soft(scheme == .dark) : .clear, in: RoundedRectangle(cornerRadius: 6))
                 }
             }
             Spacer(minLength: 12)
@@ -66,10 +66,15 @@ struct OnboardingView: View {
     @ViewBuilder private var stepContent: some View {
         switch step {
         case 0:
-            BodyCopy(key: "desktop.setup.welcome_body")
-            QuillCard { HelpText(key: "desktop.demo.label"); CopyText("desktop.demo.spoken").font(QuillTheme.serif(23)); HelpText(key: "compliance.privacy.welcome_pill") }
-            QuillButton(key: "onboarding.welcome.cta") { step = 1 }
-            QuillButton(key: "onboarding.welcome.open", primary: false) { settings.value.onboardingComplete = true }
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 36) { welcomeInstructions.frame(minWidth: 310); welcomeExample.frame(minWidth: 290) }
+                VStack(alignment: .leading, spacing: 26) { welcomeInstructions; welcomeExample }
+            }
+            HStack(spacing: 18) {
+                QuillButton(key: "onboarding.welcome.cta") { step = 1 }.fixedSize(horizontal: true, vertical: false)
+                QuillButton(key: "onboarding.welcome.open", primary: false) { settings.value.onboardingComplete = true }.fixedSize(horizontal: true, vertical: false)
+            }.padding(.top, 18)
+            HelpText(key: "desktop.setup.privacy_line", size: 13).padding(.top, 8)
         case 1:
             BodyCopy(key: "desktop.setup.privacy_body")
             QuillCard { HelpText(key: "onboarding.key.warning.free_tier", size: 14); HelpText(key: "onboarding.key.warning.usage", size: 14); HelpText(key: "compliance.privacy.promise", size: 14) }
@@ -109,6 +114,19 @@ struct OnboardingView: View {
             BodyCopy(key: "desktop.setup.ready_body")
             QuillButton(key: "desktop.setup.practice") { finish() }
             QuillButton(key: "mac.setup.finish", primary: false) { finish(); NSApp.hide(nil) }
+        }
+    }
+    private var welcomeInstructions: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            BodyCopy(key: "desktop.setup.welcome_body")
+            ShortcutKeycaps()
+            HelpText(key: "desktop.setup.shortcut_caption", size: 14)
+        }
+    }
+    private var welcomeExample: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HelpText(key: "desktop.demo.label", size: 13)
+            QuillCard { CopyText("desktop.demo.spoken").font(QuillTheme.sans(20)).lineSpacing(6).frame(minHeight: 130, alignment: .topLeading) }
         }
     }
     private func finish() { settings.value.onboardingComplete = true; settings.value.bubbleVisible = settings.value.bubbleActive; dictation.configureLogin() }
