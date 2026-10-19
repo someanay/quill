@@ -3,6 +3,8 @@ name: iOS installed keyboard integration
 on:
   push:
     paths:
+      - "ios/Quill/**"
+      - "ios/QuillCore/**"
       - "ios/QA/**"
       - "ios/QuillKeyboardIntegrationTests/**"
       - "ios/project.yml"
@@ -22,6 +24,10 @@ concurrency:
 
 jobs:
   installed-keyboard:
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [iPhone, iPad]
     runs-on: macos-15
     timeout-minutes: 40
     steps:
@@ -32,9 +38,11 @@ jobs:
         run: brew install xcodegen
       - name: Boot an isolated iPhone simulator
         id: destination
+        env:
+          SIMULATOR_FAMILY: ${{ matrix.device }}
         run: |
           defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
-          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys,os; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith(os.environ["SIMULATOR_FAMILY"])))')
           test -n "$UDID"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
@@ -92,7 +100,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-installed-keyboard-verification
+          name: ios-installed-keyboard-verification-${{ matrix.device }}
           path: |
             ios/keyboard-build.log
             ios/keyboard-integration.log

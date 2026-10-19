@@ -67,7 +67,44 @@ struct RootView: View {
 
 struct MainTabs: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
     var body: some View {
+        GeometryReader { geometry in
+            if sizeClass == .regular && geometry.size.width >= 760 {
+                NavigationSplitView {
+                    List {
+                        Section {
+                            sidebarItem(0, title: "nav.home", icon: "waveform", identifier: "nav.home")
+                            sidebarItem(1, title: "nav.history", icon: "clock", identifier: "nav.history")
+                        }
+                        Section {
+                            sidebarItem(2, title: "nav.settings", icon: "gearshape", identifier: "nav.settings")
+                        }
+                    }.listStyle(.sidebar).navigationTitle("Quill")
+                        .navigationSplitViewColumnWidth(min: 180, ideal: 210, max: 240)
+                } detail: {
+                    NavigationStack {
+                        Group {
+                            switch model.tab {
+                            case 1: HistoryView()
+                            case 2: SettingsView()
+                            default: HomeView()
+                            }
+                        }.navigationTitle(model.c(model.tab == 1 ? "nav.history" : model.tab == 2 ? "nav.settings" : "nav.home"))
+                            .navigationBarTitleDisplayMode(.inline)
+                    }
+                }.navigationSplitViewStyle(.balanced)
+            } else { compactTabs }
+        }.font(Q.sans())
+    }
+    private func sidebarItem(_ tab: Int, title: String, icon: String, identifier: String) -> some View {
+        Button { model.tab = tab } label: {
+            Label(model.c(title), systemImage: icon).frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
+        }.listRowBackground(model.tab == tab ? Q.brandSoft : Color.clear)
+            .foregroundStyle(model.tab == tab ? Q.brandInk : Q.ink)
+            .accessibilityIdentifier(identifier).accessibilityAddTraits(model.tab == tab ? .isSelected : [])
+    }
+    private var compactTabs: some View {
         TabView(selection: $model.tab) {
             NavigationStack { HomeView() }.tabItem { Label(model.c("nav.home"), systemImage: "house") }.tag(0)
             NavigationStack { HistoryView() }.tabItem { Label(model.c("nav.history"), systemImage: "clock") }.tag(1)

@@ -1,8 +1,8 @@
 import Foundation
 import QuillCore
 
-/// This file is the sole shared data boundary. The container holds only an explicitly published,
-/// single-use transcript. No keys, history, recordings, or destination field text are shared.
+/// The shared boundary holds an explicitly published, single-use transcript and a setup receipt
+/// (time + opaque insertion ID). No keys, history, recordings, or destination text are shared.
 enum KeyboardTransfer {
     static let groupID = "group.com.tihor.quill.ios"
     private static var store: CoordinatedHandoffStore? {
@@ -10,11 +10,27 @@ enum KeyboardTransfer {
             CoordinatedHandoffStore(url: $0.appendingPathComponent("pending-dictation.json"))
         }
     }
-    static func publish(_ text: String) throws { guard let store else { throw QuillError.storage }; try store.publish(text) }
+    @discardableResult static func publish(_ text: String) throws -> UUID { guard let store else { throw QuillError.storage }; return try store.publish(text) }
     static func peek() -> KeyboardHandoff? { store?.peek() }
     static func consume(_ id: UUID) throws -> String { guard let store else { throw QuillError.storage }; return try store.consume(id) }
     static func clear() throws { try store?.clear() }
     static func prune() { store?.prune() }
+    private static var setupURL: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID)?.appendingPathComponent("keyboard-setup.json")
+    }
+    static func setupReceipt() -> KeyboardSetupReceipt? {
+        guard let url = setupURL, let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(KeyboardSetupReceipt.self, from: data)
+    }
+    static func markConnected() { writeReceipt(KeyboardSetupReceipt(insertedTransferID: setupReceipt()?.insertedTransferID)) }
+    static func markInserted(_ id: UUID) { writeReceipt(KeyboardSetupReceipt(insertedTransferID: id)) }
+    private static func writeReceipt(_ receipt: KeyboardSetupReceipt) {
+        guard let url = setupURL, let data = try? JSONEncoder().encode(receipt) else { return }
+        try? data.write(to: url, options: [.atomic, .completeFileProtection])
+        var directory = url.deletingLastPathComponent()
+        var values = URLResourceValues(); values.isExcludedFromBackup = true
+        try? directory.setResourceValues(values)
+    }
 }
 
 /// The actual file adapter accepts a location so native tests can verify coordination, protection
@@ -25,7 +41,7 @@ struct CoordinatedHandoffStore {
     init(url: URL, writeFile: @escaping (Data, URL, Data.WritingOptions) throws -> Void = { data, target, options in try data.write(to: target, options: options) }) {
         self.url = url; self.writeFile = writeFile
     }
-    func publish(_ text: String) throws {
+    @discardableResult func publish(_ text: String) throws -> UUID {
         let handoff = KeyboardHandoff(text: text)
         guard handoff.isValid() else { throw QuillError.noSpeech }
         var directory = url.deletingLastPathComponent()
@@ -40,6 +56,7 @@ struct CoordinatedHandoffStore {
         }
         if let coordinationError { throw coordinationError }
         if let writeError { throw writeError }
+        return handoff.id
     }
     func peek() -> KeyboardHandoff? {
         guard let data = try? Data(contentsOf: url), let item = try? JSONDecoder().decode(KeyboardHandoff.self, from: data), item.isValid() else { return nil }

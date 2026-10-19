@@ -10,6 +10,8 @@ struct KeyboardEnvironment {
     let peek: () -> KeyboardHandoff?
     let consume: (UUID) throws -> String
     let prune: () -> Void
+    var didConnect: () -> Void = {}
+    var didInsert: (UUID) -> Void = { _ in }
 }
 
 final class KeyboardViewController: UIInputViewController {
@@ -38,6 +40,8 @@ final class KeyboardViewController: UIInputViewController {
     private var current: KeyboardHandoff?
     private var uppercase = true
     private var numbers = false
+    private var connected = false
+    private var globe: UIButton?
     private var copy = CopyCatalog(strings: [:])
     private func c(_ key: String) -> String { copy.text(key) }
 
@@ -58,7 +62,7 @@ final class KeyboardViewController: UIInputViewController {
         let wordmark = NSMutableAttributedString(string: "quill.", attributes: [.foregroundColor: ink, .kern: -1.2])
         wordmark.addAttribute(.foregroundColor, value: Self.adaptive(0x234DCE, 0xB6C9FF), range: NSRange(location: 5, length: 1))
         title.attributedText = wordmark; title.accessibilityLabel = "Quill"; toolbar.addArrangedSubview(title)
-        let globe = key("🌐", action: #selector(nextKeyboard)); globe.accessibilityLabel = c("ios.keyboard.next")
+        let globe = key("🌐", action: #selector(nextKeyboard)); self.globe = globe; globe.accessibilityLabel = c("ios.keyboard.next")
         globe.removeTarget(self, action: #selector(nextKeyboard), for: .touchUpInside)
         globe.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
         globe.widthAnchor.constraint(equalToConstant: 48).isActive = true; toolbar.addArrangedSubview(globe)
@@ -75,12 +79,18 @@ final class KeyboardViewController: UIInputViewController {
         renderKeys(); refresh()
     }
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated); refresh()
+        super.viewWillAppear(animated); connected = false; refresh()
+        globe?.isHidden = !needsInputModeSwitchKey
         timer?.invalidate(); timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.refresh() }
     }
     override func viewDidDisappear(_ animated: Bool) { super.viewDidDisappear(animated); timer?.invalidate(); timer = nil; current = nil }
     override func textDidChange(_ textInput: UITextInput?) { super.textDidChange(textInput); refresh() }
     private func refresh() {
+        if fullAccess && !connected {
+            if let environment { environment.didConnect() } else { KeyboardTransfer.markConnected() }
+            connected = true
+        }
+        if !fullAccess { connected = false }
         current = fullAccess ? (environment != nil ? environment?.peek() : KeyboardTransfer.peek()) : nil
         if current?.isValid() != true { current = nil }
         if fullAccess { if let environment { environment.prune() } else { KeyboardTransfer.prune() } }
@@ -97,6 +107,7 @@ final class KeyboardViewController: UIInputViewController {
             let text = try environment?.consume(current.id) ?? KeyboardTransfer.consume(current.id)
             let insertion = InsertionComposer.compose(text, before: proxy.documentContextBeforeInput, after: proxy.documentContextAfterInput, replacingSelection: !(proxy.selectedText ?? "").isEmpty)
             proxy.insertText(insertion)
+            if let environment { environment.didInsert(current.id) } else { KeyboardTransfer.markInserted(current.id) }
             self.current = nil; refresh()
         } catch { refresh(); status.text = c("ios.keyboard.transfer_error") }
     }

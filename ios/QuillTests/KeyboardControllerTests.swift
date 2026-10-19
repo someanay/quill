@@ -101,6 +101,22 @@ import QuillCore
         XCTAssertEqual(proxy.content, ""); XCTAssertNotNil(store.item)
         XCTAssertEqual(store.consumed, 0)
     }
+    func testSetupReceiptsRequireAccessAndASuccessfulInsertion() throws {
+        let proxy = TextProxyFixture(), store = HandoffFixture()
+        store.fullAccess = false
+        var connections = 0, inserted: [UUID] = []
+        let keyboard = KeyboardViewController()
+        keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { store.fullAccess }, peek: { store.item }, consume: store.consume, prune: {}, didConnect: { connections += 1 }, didInsert: { inserted.append($0) })
+        keyboard.loadViewIfNeeded(); XCTAssertEqual(connections, 0)
+        store.fullAccess = true; keyboard.textDidChange(nil); keyboard.textDidChange(nil)
+        XCTAssertEqual(connections, 1)
+        store.failConsume = true; try insert(keyboard).sendActions(for: .touchUpInside)
+        XCTAssertTrue(inserted.isEmpty)
+        store.failConsume = false
+        let id = try XCTUnwrap(store.item?.id)
+        try insert(keyboard).sendActions(for: .touchUpInside)
+        XCTAssertEqual(inserted, [id]); XCTAssertEqual(proxy.content, "world")
+    }
     func testKeyboardCompactWidthInLightAndDark() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let keyboard = harness(TextProxyFixture(), HandoffFixture())

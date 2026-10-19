@@ -70,7 +70,6 @@ struct QBanner: View {
             }
         }.font(Q.sans(13)).foregroundStyle(error ? Q.danger : Q.brandInk)
             .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            // Android's Banner explicitly overrides its theme's small shape with 12 dp.
             .background(error ? Q.danger.opacity(0.09) : Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.largeRadius))
     }
 }
@@ -155,5 +154,13 @@ struct RecordingBubble: View {
 struct QPage<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
-    var body: some View { ScrollView { VStack(alignment: .leading, spacing: 14) { content }.padding(16).frame(maxWidth: 680).frame(maxWidth: .infinity) }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans()) }
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) { content }
+                    .padding(geometry.size.width >= 700 ? 28 : 20)
+                    .frame(maxWidth: 980).frame(maxWidth: .infinity)
+            }.scrollDismissesKeyboard(.interactively)
+        }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans())
+    }
 }

@@ -21,6 +21,7 @@ final class QuillUITests: XCTestCase {
     private func settingsTab(_ app: XCUIApplication) -> XCUIElement {
         let phoneTab = app.tabBars.buttons["Settings"]
         if phoneTab.exists { return phoneTab }
+        if app.buttons["nav.settings"].exists { return app.buttons["nav.settings"] }
         // iPad's native floating tab strip exposes nested buttons, not a TabBar.
         // Both observed nodes have the same frame; firstMatch avoids ambiguity.
         return app.buttons.matching(identifier: "gearshape").matching(NSPredicate(format: "label == %@", "Settings")).firstMatch
@@ -113,8 +114,10 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["onboarding.key.verify"].isEnabled)
         tap(app.buttons["onboarding.key.verify"], in: app)
-        XCTAssertTrue(app.staticTexts["onboarding.checklist"].waitForExistence(timeout: 10)); capture(app, "ios-setup-checklist")
-        tap(app.buttons["onboarding.permission"], in: app)
+        XCTAssertTrue(app.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10)); capture(app, "ios-setup-keyboard")
+        XCTAssertFalse(app.buttons["onboarding.keyboard.next"].isEnabled)
+        tap(app.buttons["onboarding.keyboard.later"], in: app)
+        if app.buttons["onboarding.permission"].exists { tap(app.buttons["onboarding.permission"], in: app) }
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let permission = springboard.alerts.firstMatch
         if permission.waitForExistence(timeout: 3) {
@@ -123,22 +126,54 @@ final class QuillUITests: XCTestCase {
         }
         XCTAssertTrue(app.staticTexts["onboarding.microphone"].waitForExistence(timeout: 10)); capture(app, "ios-setup-microphone")
         tap(app.buttons["onboarding.microphone.next"], in: app)
-        XCTAssertTrue(app.staticTexts["onboarding.record"].waitForExistence(timeout: 5)); capture(app, "ios-setup-recording")
-        tap(app.buttons["onboarding.record.next"], in: app)
-        XCTAssertTrue(app.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 5)); capture(app, "ios-setup-keyboard")
-        tap(app.buttons["onboarding.keyboard.later"], in: app)
+        XCTAssertTrue(app.staticTexts["onboarding.practice"].waitForExistence(timeout: 5)); capture(app, "ios-setup-practice")
+        XCTAssertFalse(app.buttons["onboarding.practice.next"].isEnabled)
+        tap(app.buttons["onboarding.practice.later"], in: app)
         XCTAssertTrue(app.staticTexts["onboarding.ready"].waitForExistence(timeout: 5)); capture(app, "ios-setup-ready")
         tap(app.buttons["onboarding.finish"], in: app)
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
     }
     func testEverySettingsDetailScreen() throws {
         let app = openHome(); settingsTab(app).tap()
-        for section in ["speech", "keys", "cleanup", "style", "words", "contacts", "audio", "visual", "keyboard", "privacy", "advanced", "about"] {
+        for section in ["speech", "keys", "cleanup", "style", "words", "audio", "visual", "keyboard", "privacy", "advanced", "about"] {
             tap(app.buttons["settings." + section], in: app)
             XCTAssertTrue(app.staticTexts["screen." + section].waitForExistence(timeout: 5), section)
             capture(app, "ios-settings-" + section)
             let back = app.navigationBars.buttons.element(boundBy: 0)
             XCTAssertTrue(back.waitForExistence(timeout: 5)); back.tap()
+        }
+    }
+    func testEveryNativeSetupStageInLightAndDark() throws {
+        for dark in [false, true] {
+            for stage in 1...6 {
+                let app = XCUIApplication()
+                app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(stage)] + (dark ? ["--ui-dark"] : [])
+                app.launch()
+                let identifier = ["welcome", "provider", "keyboard", "microphone", "practice", "ready"][stage - 1]
+                XCTAssertTrue(app.staticTexts["onboarding." + identifier].waitForExistence(timeout: 10))
+                capture(app, "ios-native-setup-\(stage)-\(dark ? "dark" : "light")")
+                app.terminate()
+            }
+        }
+    }
+    func testPopulatedHistoryInBothOrientationsAndThemes() throws {
+        for dark in [false, true] {
+            let app = openHome(arguments: ["--ui-history-fixtures"] + (dark ? ["--ui-dark"] : []))
+            capture(app, "ios-workspace-\(dark ? "dark" : "light")")
+            let history = app.tabBars.buttons["History"].exists ? app.tabBars.buttons["History"] : app.buttons["nav.history"]
+            tap(history, in: app)
+            let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "history.entry.")).firstMatch
+            tap(entry, in: app)
+            XCTAssertTrue(app.staticTexts["transcript.text"].waitForExistence(timeout: 5))
+            capture(app, "ios-history-reader-\(dark ? "dark" : "light")")
+            if app.navigationBars.buttons["Done"].exists { app.navigationBars.buttons["Done"].tap() }
+            XCUIDevice.shared.orientation = .landscapeLeft
+            waitForLandscape(app)
+            tap(entry, in: app)
+            XCTAssertTrue(app.staticTexts["transcript.text"].waitForExistence(timeout: 5))
+            capture(app, "ios-history-landscape-\(dark ? "dark" : "light")")
+            XCUIDevice.shared.orientation = .portrait
+            app.terminate()
         }
     }
     func testLargerTextDarkSettingsAndLandscapeLayout() throws {

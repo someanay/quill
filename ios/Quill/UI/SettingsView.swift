@@ -5,36 +5,26 @@ import QuillCore
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
-        QPage {
-            QHeading(title: model.c("nav.settings"))
-            QSection(title: model.c("settings.group.dictation"))
-            QCard {
-                VStack {
-                    NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.row.speech_model"), icon: "waveform", value: model.settings.provider.title) }.accessibilityIdentifier("settings.speech"); Divider()
-                    NavigationLink { APIKeysView() } label: { QRow(title: model.c("settings.row.api_keys"), icon: "key", value: String(model.keys.count)) }.accessibilityIdentifier("settings.keys"); Divider()
-                    NavigationLink { CleanupSettingsView() } label: { QRow(title: model.c("settings.row.cleanup"), icon: "sparkles") }.accessibilityIdentifier("settings.cleanup"); Divider()
-                    NavigationLink { WritingStyleView() } label: { QRow(title: model.c("settings.row.writing_style"), icon: "textformat", value: model.c("settings.style.\(model.settings.writingStyle.rawValue)")) }.accessibilityIdentifier("settings.style"); Divider()
-                    NavigationLink { CustomWordsView() } label: { QRow(title: model.c("settings.row.custom_words"), icon: "text.book.closed", value: String(model.words.count)) }.accessibilityIdentifier("settings.words"); Divider()
-                    NavigationLink { ContactsView() } label: { QRow(title: model.c("settings.row.contacts_vocab"), icon: "person.crop.rectangle", value: String(model.contactNames.count)) }.accessibilityIdentifier("settings.contacts")
-                }
+        Form {
+            Section(model.c("settings.group.dictation")) {
+                NavigationLink { SpeechSettingsView() } label: { Label(model.c("settings.row.speech_model"), systemImage: "waveform") }.accessibilityIdentifier("settings.speech")
+                NavigationLink { APIKeysView() } label: { Label(model.c("settings.row.api_keys"), systemImage: "key") }.accessibilityIdentifier("settings.keys")
+                NavigationLink { CleanupSettingsView() } label: { Label(model.c("settings.row.cleanup"), systemImage: "sparkles") }.accessibilityIdentifier("settings.cleanup")
+                NavigationLink { WritingStyleView() } label: { Label(model.c("settings.row.writing_style"), systemImage: "textformat") }.accessibilityIdentifier("settings.style")
+                NavigationLink { CustomWordsView() } label: { Label(model.c("settings.row.custom_words"), systemImage: "text.book.closed") }.accessibilityIdentifier("settings.words")
             }
-            QSection(title: model.c("settings.group.capture"))
-            QCard {
-                VStack {
-                    NavigationLink { AudioSettingsView() } label: { QRow(title: model.c("settings.row.audio"), icon: "mic") }.accessibilityIdentifier("settings.audio"); Divider()
-                    NavigationLink { VisualSettingsView() } label: { QRow(title: model.c("settings.row.bubble"), icon: "paintpalette") }.accessibilityIdentifier("settings.visual"); Divider()
-                    NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), icon: "keyboard") }.accessibilityIdentifier("settings.keyboard")
-                }
+            Section(model.c("settings.group.capture")) {
+                NavigationLink { AudioSettingsView() } label: { Label(model.c("settings.row.audio"), systemImage: "mic") }.accessibilityIdentifier("settings.audio")
+                NavigationLink { VisualSettingsView() } label: { Label(model.c("ios.settings.appearance"), systemImage: "paintpalette") }.accessibilityIdentifier("settings.visual")
+                NavigationLink { KeyboardHelpView() } label: { Label(model.c("ios.keyboard.title"), systemImage: "keyboard") }.accessibilityIdentifier("settings.keyboard")
             }
-            QSection(title: model.c("settings.group.privacy"))
-            QCard {
-                VStack {
-                    NavigationLink { PrivacySettingsView() } label: { QRow(title: model.c("settings.row.privacy"), icon: "lock.shield") }.accessibilityIdentifier("settings.privacy"); Divider()
-                    NavigationLink { AdvancedSettingsView() } label: { QRow(title: model.c("settings.row.advanced"), icon: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced"); Divider()
-                    NavigationLink { AboutView() } label: { QRow(title: model.c("settings.row.about"), icon: "info.circle") }.accessibilityIdentifier("settings.about")
-                }
+            Section(model.c("settings.group.privacy")) {
+                NavigationLink { PrivacySettingsView() } label: { Label(model.c("settings.row.privacy"), systemImage: "lock.shield") }.accessibilityIdentifier("settings.privacy")
+                NavigationLink { AdvancedSettingsView() } label: { Label(model.c("settings.row.advanced"), systemImage: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced")
+                NavigationLink { AboutView() } label: { Label(model.c("settings.row.about"), systemImage: "info.circle") }.accessibilityIdentifier("settings.about")
             }
-        }.toolbar(.hidden, for: .navigationBar)
+        }.navigationTitle(model.c("nav.settings")).navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden).background(Q.paper)
     }
 }
 
