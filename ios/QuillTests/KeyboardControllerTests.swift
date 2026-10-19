@@ -141,4 +141,22 @@ import QuillCore
             attachment.lifetime = .keepAlways; add(attachment)
         }
     }
+    func testLandscapeKeyboardKeepsInsertionAndKeysInsideItsShortViewport() throws {
+        let keyboard = harness(TextProxyFixture(), HandoffFixture())
+        let container = UIViewController()
+        container.addChild(keyboard); container.view.addSubview(keyboard.view); keyboard.didMove(toParent: container)
+        container.setOverrideTraitCollection(UITraitCollection(verticalSizeClass: .compact), forChild: keyboard)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 760, height: 300))
+        window.rootViewController = container; window.isHidden = false
+        defer { window.isHidden = true; window.rootViewController = nil }
+        keyboard.viewWillLayoutSubviews()
+        let size = keyboard.view.systemLayoutSizeFitting(CGSize(width: 760, height: 0), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+        XCTAssertLessThanOrEqual(size.height, 300)
+        keyboard.view.frame = CGRect(origin: .zero, size: size); keyboard.view.layoutIfNeeded()
+        let button = try insert(keyboard)
+        XCTAssertTrue(keyboard.view.bounds.contains(button.convert(button.bounds, to: keyboard.view)))
+        XCTAssertTrue(button.isEnabled); button.sendActions(for: .touchUpInside)
+        let image = UIGraphicsImageRenderer(size: size).image { context in keyboard.view.layer.render(in: context.cgContext) }
+        let attachment = XCTAttachment(image: image); attachment.name = "Keyboard landscape compact height"; attachment.lifetime = .keepAlways; add(attachment)
+    }
 }

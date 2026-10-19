@@ -72,7 +72,7 @@ struct TranscriptResult: View {
                 QButton(title: model.c("ios.result.copy"), icon: "doc.on.doc", secondary: true) { model.copyText(text) }
                 if dismissible { Button(model.c("ios.result.dismiss")) { model.result = "" }.frame(minHeight: 44) }
             }
-        }.accessibilityIdentifier("transcript.reader")
+        }
     }
 }
 

@@ -129,6 +129,7 @@ struct OnboardingView: View {
                     instruction(3, "ios.setup.keyboard_return")
                 }
             }
+            DisclosureGroup(model.c("ios.setup.keyboard_missing")) { Text(model.c("ios.keyboard.setup_steps")).font(Q.sans(14)).foregroundStyle(Q.muted) }
             QBanner(title: model.c("ios.keyboard.full_access_title"), text: model.c("ios.keyboard.full_access_body"), icon: "lock.shield")
             QButton(title: model.c("ios.settings.open"), icon: "arrow.up.forward.app") { openSettings() }.accessibilityIdentifier("onboarding.keyboard.settings")
             Text(model.c("ios.setup.keyboard_switch")).font(Q.sans(14)).foregroundStyle(Q.muted)

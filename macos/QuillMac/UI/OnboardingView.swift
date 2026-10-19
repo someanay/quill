@@ -7,7 +7,6 @@ struct OnboardingView: View {
     @EnvironmentObject var dictation: Dictation
     @Environment(\.colorScheme) private var scheme
     @State private var step = 0
-    @State private var warningReady = false
     @State private var accepted = false
     @State private var practice = ""
     private let stages = ["welcome", "privacy", "provider", "audio", "access", "shortcut", "ready"]
@@ -27,7 +26,7 @@ struct OnboardingView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         HStack { if geometry.size.width < 900 { Wordmark() }; Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
                         if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
-                        CopyText(title).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 ? 46 : 34)).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
+                        Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
                         stepContent
                         if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
                     }.padding(geometry.size.width < 700 ? 24 : 44).frame(maxWidth: .infinity, alignment: .leading)
@@ -40,9 +39,6 @@ struct OnboardingView: View {
                 }
             }
         }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
-        .task(id: step) {
-            if step == 1 { warningReady = false; try? await Task.sleep(nanoseconds: 3_000_000_000); if !Task.isCancelled { warningReady = true } }
-        }
     }
     private var title: String {
         ["desktop.setup.welcome_title", "compliance.key.required_title", "desktop.setup.provider_title", "desktop.setup.audio_title", "desktop.setup.access_title", "desktop.setup.shortcut_title", "desktop.setup.ready_title"][step]
@@ -78,8 +74,7 @@ struct OnboardingView: View {
         case 1:
             BodyCopy(key: "desktop.setup.privacy_body")
             QuillCard { HelpText(key: "onboarding.key.warning.free_tier", size: 14); HelpText(key: "onboarding.key.warning.usage", size: 14); HelpText(key: "compliance.privacy.promise", size: 14) }
-            QuillButton(key: "onboarding.key.warning.accept") { step = 2 }.disabled(!warningReady)
-            if !warningReady { HelpText(key: "onboarding.key.warning.reading") }
+            QuillButton(key: "onboarding.key.warning.accept") { step = 2 }
             QuillButton(key: "action.not_now", primary: false) { step = 0 }
         case 2:
             BodyCopy(key: "desktop.setup.provider_body")

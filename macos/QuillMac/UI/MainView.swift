@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import QuillCore
 
 extension Notification.Name { static let quillOpenSettings = Notification.Name("QuillOpenSettings") }
@@ -40,11 +41,16 @@ struct MainView: View {
         }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark))
             .background(QuillTheme.paper(scheme == .dark)).tint(QuillTheme.brandInk(scheme == .dark))
             .preferredColorScheme(settings.value.appTheme == "Dark" ? .dark : settings.value.appTheme == "Light" ? .light : nil)
+            .onAppear { applyNativeAppearance() }
+            .onChange(of: settings.value.appTheme) { _ in applyNativeAppearance() }
             .frame(minWidth: 640, minHeight: 440)
             .onChange(of: settings.value.bootRestore) { _ in dictation.configureLogin() }
             .sheet(isPresented: Binding(get: { crashReports.pendingReport != nil }, set: { if !$0 { crashReports.discard() } })) {
                 DiagnosticReportView(reportText: crashReports.pendingReport, onClose: { crashReports.discard() })
             }
+    }
+    private func applyNativeAppearance() {
+        NSApp.appearance = settings.value.appTheme == "Dark" ? NSAppearance(named: .darkAqua) : settings.value.appTheme == "Light" ? NSAppearance(named: .aqua) : nil
     }
     private func openSettings() { NotificationCenter.default.post(name: .quillOpenSettings, object: nil) }
     private func nav(_ id: String, icon: String) -> some View {

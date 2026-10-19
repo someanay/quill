@@ -66,6 +66,10 @@ struct QuillButton: View {
         .opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+struct QuillFormSection<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View { VStack(alignment: .leading, spacing: 20) { content }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading) }
+}
 struct ShortcutKeycaps: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {

@@ -145,6 +145,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12))
         app.buttons["nav.settings"].click()
         XCTAssertTrue(app.buttons["settings.speech"].waitForExistence(timeout: 5)); app.buttons["settings.speech"].click()
+        XCTAssertTrue(app.buttons["model-manual"].waitForExistence(timeout: 5)); app.buttons["model-manual"].click()
         XCTAssertTrue(app.textFields["model-id"].waitForExistence(timeout: 5))
         reveal(app.textFields["model-id"], in: app)
         let speech = XCTAttachment(screenshot: app.screenshot()); speech.name = "macOS-speech-settings"; speech.lifetime = .keepAlways; add(speech)
@@ -158,17 +159,28 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["No dictations yet"].waitForExistence(timeout: 5))
     }
-    func testEverySettingsScreenInDarkAppearance() throws {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-dark"]; app.launch()
-        XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
-        for page in ["speech", "keys", "cleanup", "style", "words", "audio", "bubble", "privacy", "advanced", "about"] {
-            let row = app.buttons["settings." + page]
-            reveal(row, in: app)
-            XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
-            XCTAssertTrue(app.staticTexts["settings.page." + page].waitForExistence(timeout: 6))
-            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-dark-" + page; shot.lifetime = .keepAlways; add(shot)
-            app.buttons["settings-back"].click()
-            XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 4))
+    func testEverySettingsScreenAcrossSizesAndAppearances() throws {
+        for dark in [false, true] {
+            let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"] + (dark ? ["--ui-dark"] : []); app.launch()
+            XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
+            let window = app.windows["QuillSettings"]
+            XCTAssertTrue(window.waitForExistence(timeout: 6))
+            for target in [CGSize(width: 1160, height: 760), CGSize(width: 680, height: 520)] {
+                let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+                corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+                XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+                for page in ["speech", "keys", "cleanup", "style", "words", "audio", "bubble", "privacy", "advanced", "about"] {
+                    let row = app.buttons["settings." + page]
+                    reveal(row, in: app)
+                    XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
+                    XCTAssertTrue(app.staticTexts["settings.page." + page].waitForExistence(timeout: 6))
+                    let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-" + page; shot.lifetime = .keepAlways; add(shot)
+                    reveal(app.buttons["settings-back"], in: app)
+                    app.buttons["settings-back"].click()
+                    XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 4))
+                }
+            }
+            app.terminate()
         }
     }
     func testCustomWordEditingAndPrivateHistoryGate() throws {

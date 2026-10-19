@@ -50,7 +50,7 @@ struct SettingsView: View {
                         listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
                     }
                 }
-            }.padding(28).frame(maxWidth: .infinity, alignment: .leading)
+            }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
         }.id(page?.rawValue ?? "list").accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
         }
         }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark)).background(QuillTheme.paper(scheme == .dark))
@@ -101,12 +101,14 @@ struct ModelPicker: View {
     @State private var models: [ModelOption] = []
     @State private var loading = false
     @State private var failed = false
+    @State private var manual = false
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Picker(Copy.text(use == .dictation ? "settings.speech.model" : "settings.cleanup.model"), selection: $selection) {
                 ForEach(choices) { model in Text(model.id + (model.isFree ? " · " + Copy.text("onboarding.key.console_free") : model.isPaid ? " · " + Copy.text("models.paid") : "")).tag(model.id) }
             }
-            TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder).accessibilityIdentifier("model-id")
+            if provider != .custom { Button(Copy.text("desktop.models.manual")) { manual.toggle() }.accessibilityIdentifier("model-manual") }
+            if provider == .custom || manual { TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder).accessibilityIdentifier("model-id") }
             HStack { Button(Copy.text("mac.models.refresh")) { Task { await refresh() } }.disabled(loading); if loading { ProgressView().controlSize(.small) }; if failed { HelpText(key: "mac.models.offline") } }
         }.task(id: provider.rawValue + use.rawValue + (provider == .custom ? settings.value.customBaseURL : "")) {
             models = cached()
@@ -135,11 +137,13 @@ struct ModelPicker: View {
 struct SpeechSettings: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
+    @State private var connecting = false
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-        KeyEditor(activateSpeechProvider: true, prefillSavedKey: true)
-        QuillCard {
+        HelpText(key: "desktop.speech.body", size: 16)
+        QuillFormSection {
             Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.provider }, set: { settings.value.selectProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
+            Button(Copy.text("desktop.speech.manage_key")) { connecting = true }
             if settings.value.provider == .custom {
                 TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder)
                 HelpText(key: "mac.custom.key_scope")
@@ -153,6 +157,15 @@ struct SpeechSettings: View {
             if settings.value.provider == .gemini { HelpText(key: "settings.speech.gemini_caveat") }
         }
         }.onChange(of: settings.value.speechModel) { model in if settings.value.provider == .custom { settings.value.customModel = model } }
+        .sheet(isPresented: $connecting) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    CopyText("desktop.setup.provider_title").font(QuillTheme.serif(30))
+                    KeyEditor(activateSpeechProvider: true, prefillSavedKey: true) { connecting = false }
+                    Button(Copy.text("action.cancel")) { connecting = false }
+                }.padding(32)
+            }.frame(width: 620, height: 700)
+        }
     }
 }
 
@@ -203,7 +216,7 @@ struct CleanupSettings: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             Toggle(Copy.text("settings.cleanup.tidy_title"), isOn: Binding(get: { settings.value.shouldClean }, set: { settings.value.setCleanupEnabled($0) })).toggleStyle(.switch)
             HelpText(key: "settings.cleanup.tidy_sub")
             Toggle(Copy.text("settings.cleanup.automatic"), isOn: Binding(get: { settings.value.cleanupAutomatic }, set: { settings.value.setCleanupAutomatic($0) })).toggleStyle(.switch).accessibilityIdentifier("cleanup-automatic")

@@ -9,8 +9,11 @@ final class QuillUITests: XCTestCase {
         app.terminate()
     }
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
-        XCTAssertTrue(element.waitForExistence(timeout: 10))
-        for _ in 0..<5 { if element.isHittable { break }; app.swipeUp() }
+        for _ in 0..<12 {
+            if element.waitForExistence(timeout: 1) && element.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(element.exists)
         XCTAssertTrue(element.isHittable); element.tap()
     }
     private func capture(_ app: XCUIApplication, _ name: String) {
@@ -68,7 +71,7 @@ final class QuillUITests: XCTestCase {
         let privacyPromise = "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose."
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", privacyPromise)).firstMatch.exists)
         capture(app, "ios-required-key-warning")
-        let next = app.buttons["Help me get & add a key"]
+        let next = app.buttons["Choose a provider"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         let predicate = NSPredicate(format: "enabled == true")
         expectation(for: predicate, evaluatedWith: next); waitForExpectations(timeout: 6)
@@ -101,7 +104,7 @@ final class QuillUITests: XCTestCase {
     func testCompleteOnboardingWithSyntheticProviderAndRealMicrophonePermission() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-provider-fixtures"]; app.launch()
         tap(app.buttons["onboarding.getStarted"], in: app)
-        let accept = app.buttons["Help me get & add a key"]
+        let accept = app.buttons["Choose a provider"]
         XCTAssertTrue(accept.waitForExistence(timeout: 5))
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: accept); waitForExpectations(timeout: 6)
         tap(accept, in: app)
@@ -135,13 +138,16 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
     }
     func testEverySettingsDetailScreen() throws {
-        let app = openHome(); settingsTab(app).tap()
-        for section in ["speech", "keys", "cleanup", "style", "words", "audio", "visual", "keyboard", "privacy", "advanced", "about"] {
-            tap(app.buttons["settings." + section], in: app)
-            XCTAssertTrue(app.staticTexts["screen." + section].waitForExistence(timeout: 5), section)
-            capture(app, "ios-settings-" + section)
-            let back = app.navigationBars.buttons.element(boundBy: 0)
-            XCTAssertTrue(back.waitForExistence(timeout: 5)); back.tap()
+        for dark in [false, true] {
+            let app = openHome(arguments: dark ? ["--ui-dark"] : []); settingsTab(app).tap()
+            for section in ["speech", "keys", "cleanup", "style", "words", "audio", "visual", "keyboard", "privacy", "advanced", "about"] {
+                tap(app.buttons["settings." + section], in: app)
+                XCTAssertTrue(app.staticTexts["screen." + section].waitForExistence(timeout: 5), section)
+                capture(app, "ios-settings-\(dark ? "dark" : "light")-" + section)
+                let back = app.navigationBars.buttons.element(boundBy: 0)
+                XCTAssertTrue(back.waitForExistence(timeout: 5)); back.tap()
+            }
+            app.terminate()
         }
     }
     func testEveryNativeSetupStageInLightAndDark() throws {

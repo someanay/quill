@@ -1633,7 +1633,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Help me get & add a key",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2134,7 +2134,7 @@
       "optionalBlank": false
     },
     "settings.cleanup.title": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2418,7 +2418,7 @@
       "optionalBlank": false
     },
     "settings.row.cleanup": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2436,7 +2436,7 @@
       "optionalBlank": false
     },
     "settings.row.privacy": {
-      "default": "Privacy and History",
+      "default": "Privacy & history",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2648,7 +2648,7 @@
       "optionalBlank": false
     },
     "settings.speech.provider": {
-      "default": "Provider",
+      "default": "Speech provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3510,6 +3510,24 @@
     },
     "desktop.setup.shortcut_caption": {
       "default": "Start and stop dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.speech.body": {
+      "default": "Choose how your recordings become text.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.speech.manage_key": {
+      "default": "Manage provider key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.models.manual": {
+      "default": "Enter a model ID",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
