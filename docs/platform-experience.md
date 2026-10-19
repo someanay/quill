@@ -78,13 +78,20 @@ October 19 verification: Windows Release build, 250 screen renders, 35 setup/sta
 retention checks and seven focused first-launch/theme/font tests passed. The full
 Windows suite passed 360/361; the existing shortcut-reopen foreground assertion
 remains failed. See [Windows evidence](../windows/VERIFICATION.md). All 49 iOS and
-34 Mac portable core tests passed on Windows. Revised Mac sources and UI tests
-pass Swift parsing; native Mac UI compilation/execution remains pending. No new
-Mac binary or redesigned iOS keyboard behavior is claimed.
+34 Mac portable core tests also passed on Windows.
+
+October 20 Apple execution: 34 Mac core, 43 native and eight UI tests pass, as do
+real TextEdit/Safari/native secure-field probes. The new universal Mac Release
+contains the desktop redesign and was inspected against source. iOS passes 49
+core, 45 native, five real simulator recorder, six iPhone UI and six iPad UI tests;
+the actual installed keyboard also completes recording/publication/insertion in
+a separate app. See [Apple validation](apple-validation.md) for exact runs,
+screenshots, package hashes and remaining hardware/design scope.
 
 Preserve real permission/key gates and all dictation/storage safeguards. Render
 compact, wide, tall and short windows in both themes. Check navigation, readable
 wrapping, reachable actions, preserved key drafts on resize, complete history text,
 and no duplicate live recorders. Native Mac compilation, permissions, shortcuts
 and real editor integration require a Mac; Swift parsing/portable tests are not
-a substitute. iOS remains a proposed flow until its recording/keyboard loop passes.
+a substitute. The existing explicit iOS transfer loop now passes; the proposed
+keyboard-start/return redesign has not been implemented or validated.

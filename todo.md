@@ -2,16 +2,21 @@
 
 ## M14 — Native platform rebuild (authorized September 8, 2026)
 
+October 20: the revised Mac desktop experience, final Apple native regressions,
+iPhone/iPad UI and installed-keyboard integration passed on GitHub Actions.
+See [Apple validation](docs/apple-validation.md) for exact source, screenshot
+review, package checks and remaining physical-device/design work.
+
 The owner superseded Android-only scope and requested complete fresh Windows, macOS and iOS implementations plus copy-tool support, with continuous work across implementation/test passes. Track the new initiative in [platform rebuild](docs/platform-rebuild.md); earlier Android milestone history remains below.
 
 - [x] Map current Android behavior, navigation, bundled copy and visual tokens.
 - [x] Verify Android baseline build, unit tests and lint.
 - [x] Replace Windows draft, publish both architectures and verify x64 install, first launch/reopen, microphone, native editor, Chrome and Notepad interactions (361 tests, 14 native checks, 54 renders; ARM64 execution remains a hardware gate).
 - [x] Replace macOS draft; compile universal app and pass core/native/UI tests plus real TextEdit and native secure-field probes on Mac runners.
-- [ ] Natively rebuild/test the final macOS Safari, cancellation/recovery and Welcome corrections; 34 portable tests passed, 43 native tests are authored. GitHub currently refuses new Mac jobs because of account billing/spending limits.
+- [x] Natively rebuild/test the Mac Safari and cancellation/recovery corrections plus October desktop UI: 34 core, 43 native and eight UI tests passed on Actions; universal Release inspected. The former billing block no longer prevents execution. See [Apple validation](docs/apple-validation.md).
 - [x] Replace iOS draft; build host/keyboard on Apple simulators, verify core/native/recorder/iPhone UI and record unavoidable iOS differences.
-- [ ] Rerun the corrected iPad provider-row hit area and final Welcome flow; complete actual installed-keyboard recording/publication/insertion after the QA session lifecycle fix. Latest run passed 43 core, 36 native, five recorder, six iPhone UI and five of six iPad UI tests.
-- [ ] Execute the final iOS terminal-recovery native regressions on Apple; 49 portable tests passed locally, 45 native tests are authored. Failed recording cleanup must remain visible and cannot silently recreate a completed/discarded take.
+- [x] Rerun corrected iPad provider-row/Welcome flows and actual installed keyboard: 49 core, 45 native, five real recorder, six iPhone UI and six iPad UI tests pass; separate-app keyboard insertion and consume-once pass. See [Apple validation](docs/apple-validation.md).
+- [x] Execute iOS terminal-recovery regressions on Apple: all 45 native tests pass, including failed terminal storage, cleanup-only recovery, private completion and blocked restart/reset. Failed recording cleanup stays visible and cannot silently recreate a completed/discarded take.
 - [x] Expand local Copy Studio to all four platforms and verify independent edits.
 - [ ] Complete failure/cancellation/privacy/key-storage and cross-app test matrices; record exact evidence and remaining hardware/account gates.
 

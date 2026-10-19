@@ -6,6 +6,12 @@
 > provider/privacy policies and dictation behavior. See
 > [the platform experience contract](platform-experience.md) for the current direction.
 > The historical verification below applies only to its named source revisions.
+>
+> October 20, 2026: GitHub Mac runners are executing again. The revised Mac UI,
+> final recovery regressions, real editor probes, iPhone/iPad UI and the installed
+> iOS keyboard transfer now pass. [Apple validation](apple-validation.md) records
+> the exact source revisions, native results and screenshot review, superseding
+> the historical billing block and pending Apple verification below.
 
 The owner authorized replacement of the former Windows, macOS, and iOS drafts and continued development/testing across all three platforms. This initiative supersedes the historical Android-only restriction. Android remains the behavioral and visual reference; its current source wins over outdated planning notes. The website work already present in the checkout is outside this initiative.
 
