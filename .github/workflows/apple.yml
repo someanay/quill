@@ -46,6 +46,9 @@ jobs:
         id: project
         working-directory: ${{ matrix.platform }}
         run: xcodegen generate
+      - name: Prepare desktop for compact and expanded UI tests
+        if: matrix.platform == 'macos'
+        run: swift macos/QA/configure-ci-display.swift
       - name: Pick native test destination
         id: destination
         env:

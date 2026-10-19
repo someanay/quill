@@ -27,10 +27,10 @@ struct MainView: View {
                         }.toolbar {
                             ToolbarItemGroup {
                                 if geometry.size.width < 800 {
-                                    Button { tab = "home" } label: { Label(Copy.text("nav.home"), systemImage: "house") }
-                                    Button { tab = "history" } label: { Label(Copy.text("nav.history"), systemImage: "clock") }
+                                    Button { tab = "home" } label: { Label(Copy.text("nav.home"), systemImage: "house") }.accessibilityIdentifier("compact.home")
+                                    Button { tab = "history" } label: { Label(Copy.text("nav.history"), systemImage: "clock") }.accessibilityIdentifier("compact.history")
                                 }
-                                Button(action: openSettings) { Label(Copy.text("nav.settings"), systemImage: "gearshape") }
+                                Button(action: openSettings) { Label(Copy.text("nav.settings"), systemImage: "gearshape") }.accessibilityIdentifier("toolbar.settings")
                             }
                         }
                     }.onAppear { columns = geometry.size.width < 800 ? .detailOnly : .all }
@@ -69,7 +69,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     HStack { CopyText("desktop.workspace.title").font(QuillTheme.serif(34)); Spacer(); if settings.value.privateMode { Image(systemName: "eye.slash").accessibilityLabel(Copy.text("settings.privacy.private_mode")) } }
                     if !dictation.microphoneGranted || !dictation.accessibilityGranted || keys.active(settings.value.provider, settings: settings.value) == nil {
-                        QuillCard { CopyText("desktop.workspace.setup_needed").fontWeight(.medium); QuillButton(key: "nav.settings", primary: false, action: openSettings) }
+                        QuillCard { CopyText("desktop.workspace.setup_needed").fontWeight(.medium); QuillButton(key: "nav.settings", primary: false, action: openSettings).accessibilityIdentifier("workspace.setup.settings") }
                     }
                     if geometry.size.width >= 960 {
                         HStack(alignment: .top, spacing: 24) { workspace.frame(maxWidth: .infinity); supporting.frame(width: max(300, geometry.size.width * 0.32)) }
@@ -102,7 +102,7 @@ struct HomeView: View {
                 CopyText("desktop.workspace.configuration").font(QuillTheme.sans(17)).fontWeight(.medium)
                 Text(settings.value.provider.name + " · " + settings.value.speechModel).font(QuillTheme.sans(14)).textSelection(.enabled)
                 Toggle(Copy.text("desktop.setup.bubble_choice"), isOn: Binding(get: { settings.value.bubbleActive && settings.value.bubbleVisible }, set: { value in NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = value; settings.value.bubbleVisible = value }))
-                QuillButton(key: "nav.settings", primary: false, action: openSettings)
+                QuillButton(key: "nav.settings", primary: false, action: openSettings).accessibilityIdentifier("workspace.configuration.settings")
             }
             QuillCard {
                 CopyText("desktop.workspace.recent").font(QuillTheme.sans(17)).fontWeight(.medium)

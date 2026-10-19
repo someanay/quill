@@ -78,6 +78,8 @@ def inspect(path):
         if mac or device:
             flag = b"--ui-onboarding-stage" if mac else b"--ui-provider-fixtures"
             assert flag not in binary, "Debug presentation/provider fixture in Release executable"
+            if mac:
+                assert b"--ui-history-fixtures" not in binary, "Debug history fixture in Release executable"
             result["releaseDebugFixturesAbsent"] = True
         if not mac:
             keyboard = next(n for n in names if n.endswith("QuillKeyboard.appex/Info.plist"))

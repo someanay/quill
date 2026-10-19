@@ -2,6 +2,15 @@ import XCTest
 import AppKit
 
 final class OnboardingUITests: XCTestCase {
+    override func setUpWithError() throws { continueAfterFailure = false }
+    override func tearDownWithError() throws {
+        let app = XCUIApplication()
+        if app.state != .notRunning {
+            let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
+            let hierarchy = XCTAttachment(string: app.debugDescription); hierarchy.name = "macOS UI hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+            app.terminate()
+        }
+    }
     func testGuidedKeyRowsRetainDraftAndRememberExpansion() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
         XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 10))
@@ -62,7 +71,7 @@ final class OnboardingUITests: XCTestCase {
     func testResizingKeySetupKeepsDraftAndReachableControls() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
         let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 10))
-        reveal(field, in: app); field.click(); field.typeText("draft-desktop")
+        reveal(field, in: app); field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-desktop")
         let window = app.windows.firstMatch
         let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
         for requested in [CGSize(width: 660, height: 500), CGSize(width: 1160, height: 740), CGSize(width: 760, height: 1000)] {
@@ -76,6 +85,36 @@ final class OnboardingUITests: XCTestCase {
             XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-desktop")
             app.buttons["key-reveal"].click()
             let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-resize-\(Int(target.width))x\(Int(target.height))"; shot.lifetime = .keepAlways; add(shot)
+        }
+    }
+    func testWorkspaceAndPopulatedHistoryAcrossWindowSizes() throws {
+        for dark in [false, true] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-history-fixtures"] + (dark ? ["--ui-dark"] : [])
+            app.launch()
+            XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 10))
+            let window = app.windows.firstMatch
+            let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+            for requested in [CGSize(width: 1160, height: 740), CGSize(width: 660, height: 500), CGSize(width: 760, height: 1000)] {
+                let target = CGSize(width: min(requested.width, screen.width - 40), height: min(requested.height, screen.height - 60))
+                let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+                corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+                XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+                XCTAssertEqual(window.frame.height, target.height, accuracy: 25)
+                for page in ["home", "history"] {
+                    let navigation = app.buttons[(window.frame.width < 800 ? "compact." : "nav.") + page]
+                    XCTAssertTrue(navigation.waitForExistence(timeout: 5)); XCTAssertTrue(navigation.isHittable); navigation.click()
+                    if page == "history" {
+                        XCTAssertTrue(app.descendants(matching: .any)["history-list"].waitForExistence(timeout: 5))
+                        XCTAssertTrue(app.scrollViews["history-reader"].exists)
+                        XCTAssertTrue(app.buttons["Copy text"].isHittable)
+                    }
+                    let shot = XCTAttachment(screenshot: app.screenshot())
+                    shot.name = "macOS-\(page)-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))"
+                    shot.lifetime = .keepAlways; add(shot)
+                }
+            }
+            app.terminate()
         }
     }
     func testFirstRunWarningAndKeyFlow() throws {
@@ -110,6 +149,8 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["settings.cleanup"].click()
         XCTAssertTrue(app.descendants(matching: .any)["cleanup-automatic"].waitForExistence(timeout: 5))
         let cleanup = XCTAttachment(screenshot: app.screenshot()); cleanup.name = "macOS-cleanup-settings"; cleanup.lifetime = .keepAlways; add(cleanup)
+        app.typeKey("w", modifierFlags: .command)
+        XCTAssertFalse(app.windows["QuillSettings"].exists)
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["No dictations yet"].waitForExistence(timeout: 5))
     }
@@ -142,6 +183,8 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(privacy.isHittable); privacy.click()
         let toggle = app.descendants(matching: .any)["privacy-private-mode"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5)); toggle.click()
+        app.typeKey("w", modifierFlags: .command)
+        XCTAssertFalse(app.windows["QuillSettings"].exists)
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["History is off"].waitForExistence(timeout: 5))
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-private-history"; shot.lifetime = .keepAlways; add(shot)

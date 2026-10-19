@@ -29,6 +29,13 @@ import QuillCore
         #if DEBUG
         if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-settings") { settings.value.onboardingComplete = true }
         if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-dark") { settings.value.appTheme = "Dark" }
+        if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-history-fixtures") {
+            // Synthetic presentation data in the isolated UI-test store only.
+            let paragraph = "Review the desktop onboarding, then send the revised plan to the team. Keep the keyboard shortcut easy to find and the transcript easy to read."
+            for (index, text) in ["A short dictation for the weekly update.", Array(repeating: paragraph, count: 12).joined(separator: "\n\n")].enumerated() {
+                history.insert(HistoryEntry(text: text, created: Date().addingTimeInterval(Double(index - 2) * 60), provider: .groq, appName: "Quill UI fixture", duration: 15), settings: settings.value)
+            }
+        }
         #endif
         let root = MainView().environmentObject(settings).environmentObject(keys).environmentObject(history).environmentObject(dictation).environmentObject(crashReports)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1120, height: 760), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
@@ -38,7 +45,9 @@ import QuillCore
         let menu = NSMenu(); let appMenu = NSMenu(); let item = NSMenuItem(); item.submenu = appMenu; menu.addItem(item)
         let preferences = NSMenuItem(title: Copy.text("nav.settings") + "…", action: #selector(showSettings), keyEquivalent: ","); preferences.target = self; appMenu.addItem(preferences); appMenu.addItem(.separator())
         appMenu.addItem(withTitle: Copy.text("mac.menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        let edit = NSMenu(title: "Edit"); let editItem = NSMenuItem(); editItem.submenu = edit; menu.addItem(editItem)
+        let file = NSMenu(title: "File"); let fileItem = NSMenuItem(title: "File", action: nil, keyEquivalent: ""); fileItem.submenu = file; menu.addItem(fileItem)
+        file.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        let edit = NSMenu(title: "Edit"); let editItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: ""); editItem.submenu = edit; menu.addItem(editItem)
         for (title, action, key) in [("Undo", "undo:", "z"), ("Cut", "cut:", "x"), ("Copy", "copy:", "c"), ("Paste", "paste:", "v"), ("Select All", "selectAll:", "a")] { edit.addItem(withTitle: title, action: Selector(action), keyEquivalent: key) }
         NSApp.mainMenu = menu
         if !AppPaths.testMode {

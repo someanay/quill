@@ -3,7 +3,6 @@ name: macOS editor integration
 on:
   push:
     paths:
-      - ".github/workflows/apple.yml"
       - "macos/QA/**"
       - "macos/scripts/test-textedit.sh"
       - "macos/scripts/test-fields.sh"

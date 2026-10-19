@@ -3,7 +3,6 @@ name: iOS installed keyboard integration
 on:
   push:
     paths:
-      - ".github/workflows/apple.yml"
       - "ios/QA/**"
       - "ios/QuillKeyboardIntegrationTests/**"
       - "ios/project.yml"
