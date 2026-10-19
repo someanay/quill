@@ -95,6 +95,7 @@ final class OnboardingUITests: XCTestCase {
             XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 10))
             let window = app.windows.firstMatch
             let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+            if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" { XCTAssertGreaterThanOrEqual(screen.width, 1440, "Expanded desktop coverage requires a larger CI display") }
             for requested in [CGSize(width: 1160, height: 740), CGSize(width: 660, height: 500), CGSize(width: 760, height: 1000)] {
                 let target = CGSize(width: min(requested.width, screen.width - 40), height: min(requested.height, screen.height - 60))
                 let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
@@ -102,8 +103,11 @@ final class OnboardingUITests: XCTestCase {
                 XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
                 XCTAssertEqual(window.frame.height, target.height, accuracy: 25)
                 for page in ["home", "history"] {
-                    let navigation = app.buttons[(window.frame.width < 800 ? "compact." : "nav.") + page]
-                    XCTAssertTrue(navigation.waitForExistence(timeout: 5)); XCTAssertTrue(navigation.isHittable); navigation.click()
+                    let query = app.buttons.matching(identifier: (window.frame.width < 800 ? "compact." : "nav.") + page)
+                    XCTAssertTrue(query.firstMatch.waitForExistence(timeout: 5))
+                    // Native toolbars expose a container button and its actual control.
+                    let navigation = try XCTUnwrap(query.allElementsBoundByIndex.first(where: { $0.isHittable }))
+                    navigation.click()
                     if page == "history" {
                         XCTAssertTrue(app.descendants(matching: .any)["history-list"].waitForExistence(timeout: 5))
                         XCTAssertTrue(app.scrollViews["history-reader"].exists)

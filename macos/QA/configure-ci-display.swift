@@ -9,6 +9,10 @@ let candidates = modes.filter { $0.width >= 1440 && $0.height >= 900 && $0.width
 guard let mode = candidates.min(by: {
     abs($0.width - 1600) + abs($0.height - 1200) < abs($1.width - 1600) + abs($1.height - 1200)
 }) else { fatalError("No display mode large enough for expanded desktop UI coverage") }
-let result = CGDisplaySetDisplayMode(display, mode, nil)
-guard result == .success else { fatalError("Cannot set CI display mode: \(result.rawValue)") }
+var configuration: CGDisplayConfigRef?
+guard CGBeginDisplayConfiguration(&configuration) == .success,
+      CGConfigureDisplayWithDisplayMode(configuration, display, mode, nil) == .success,
+      CGCompleteDisplayConfiguration(configuration, .forSession) == .success else {
+    fatalError("Cannot persist the larger display mode for the CI login session")
+}
 print("CI desktop:", CGDisplayPixelsWide(display), "x", CGDisplayPixelsHigh(display))

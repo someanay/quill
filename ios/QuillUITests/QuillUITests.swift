@@ -64,7 +64,8 @@ final class QuillUITests: XCTestCase {
         let start = app.buttons["onboarding.getStarted"]
         XCTAssertTrue(start.waitForExistence(timeout: 10)); start.tap()
         XCTAssertTrue(app.staticTexts["You'll need your own API key"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose."].exists)
+        let privacyPromise = "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose."
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", privacyPromise)).firstMatch.exists)
         capture(app, "ios-required-key-warning")
         let next = app.buttons["Help me get & add a key"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))

@@ -6,7 +6,28 @@ import QuillCore
 
 @main struct QuillMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    var body: some Scene { Settings { EmptyView() } }
+    var body: some Scene { Settings { EmptyView() }.commands { QuillCommands() } }
+}
+
+@MainActor struct QuillCommands: Commands {
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(Copy.text("nav.settings") + "…") { NotificationCenter.default.post(name: .quillOpenSettings, object: nil) }.keyboardShortcut(",", modifiers: .command)
+        }
+        CommandGroup(replacing: .newItem) {
+            Button("Close Window") { NSApp.keyWindow?.performClose(nil) }.keyboardShortcut("w", modifiers: .command)
+        }
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") { NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) }.keyboardShortcut("z", modifiers: .command)
+            Button("Redo") { NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) }.keyboardShortcut("z", modifiers: [.command, .shift])
+        }
+        CommandGroup(replacing: .pasteboard) {
+            Button("Cut") { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }.keyboardShortcut("x", modifiers: .command)
+            Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }.keyboardShortcut("c", modifiers: .command)
+            Button("Paste") { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }.keyboardShortcut("v", modifiers: .command)
+            Button("Select All") { NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil) }.keyboardShortcut("a", modifiers: .command)
+        }
+    }
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -42,14 +63,6 @@ import QuillCore
         if let area = NSScreen.main?.visibleFrame { window.setContentSize(NSSize(width: min(1120,area.width - 40), height: min(760,area.height - 80))) }
         NotificationCenter.default.addObserver(self, selector: #selector(showSettings), name: .quillOpenSettings, object: nil)
         window.title = "Quill"; window.identifier = NSUserInterfaceItemIdentifier("QuillMain"); window.contentView = NSHostingView(rootView: root); window.center(); window.isReleasedWhenClosed = false; mainWindow = window
-        let menu = NSMenu(); let appMenu = NSMenu(); let item = NSMenuItem(); item.submenu = appMenu; menu.addItem(item)
-        let preferences = NSMenuItem(title: Copy.text("nav.settings") + "…", action: #selector(showSettings), keyEquivalent: ","); preferences.target = self; appMenu.addItem(preferences); appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: Copy.text("mac.menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        let file = NSMenu(title: "File"); let fileItem = NSMenuItem(title: "File", action: nil, keyEquivalent: ""); fileItem.submenu = file; menu.addItem(fileItem)
-        file.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-        let edit = NSMenu(title: "Edit"); let editItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: ""); editItem.submenu = edit; menu.addItem(editItem)
-        for (title, action, key) in [("Undo", "undo:", "z"), ("Cut", "cut:", "x"), ("Copy", "copy:", "c"), ("Paste", "paste:", "v"), ("Select All", "selectAll:", "a")] { edit.addItem(withTitle: title, action: Selector(action), keyEquivalent: key) }
-        NSApp.mainMenu = menu
         if !AppPaths.testMode {
             bubble = BubbleController(settings: settings, dictation: dictation)
             createStatusMenu(); hotkey = GlobalHotkey { [weak self] in self?.dictation.toggle() }

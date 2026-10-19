@@ -17,10 +17,10 @@ It has seven desktop stages with contextual content at wide sizes; compact and
 short windows scroll without replacing the live provider-key form. The floating
 control is optional. There is no Android overlay-permission or battery-setup step.
 
-This revision passes Swift syntax checks and its unchanged portable core passes
-34 tests on Windows. The revised native views and resize UI test still need a Mac
-build/run; the older packaged universal app does not contain this redesign. See
-[the current platform experience contract](../docs/platform-experience.md).
+Native build, logic, UI, editor-insertion and package verification now run on
+GitHub Actions. See [current Apple validation](../docs/apple-validation.md) for
+the exact tested revisions, screenshot findings and remaining hardware checks,
+and [the platform experience contract](../docs/platform-experience.md) for scope.
 
 ## Build and run
 
@@ -84,7 +84,8 @@ The native history gate deliberately preserves the privacy choice at recording s
 - **Universal Release built and packaged:** the same run produced `Quill.app` with both `arm64` and `x86_64` architectures. The package contains the current Android font bytes, requires macOS 13 or later and excludes debug onboarding shortcuts. It is unsigned and has not been notarized.
 - **Passed against real TextEdit on macOS 15.7.9 (snapshot `7bd67ec`, [run `34168019571`](https://github.com/someanay/quill/actions/runs/34168019571)):** all 11 checks passed with actual Accessibility trust enabled and secure input inactive. Seven AX insertions confirmed empty/end/middle/zero caret behavior, selected replacement and Hindi/emoji text. Three real selection/content/application changes were refused without modifying TextEdit, and direct insertion left the clipboard unchanged. The separate QA process used the runner's existing effective trust; no permission was fabricated or changed, and installed Quill still requires the user's Accessibility grant.
 - **Observed in real Safari/AppKit integration (snapshot `bc2a86b`, [run `34168471685`](https://github.com/someanay/quill/actions/runs/34168471685), artifact `10034950943`):** all three native fixture checks passed: actual `NSTextField` Unicode insertion, `NSSecureTextField` refusal and unchanged clipboard. Safari also correctly refused its real password field (`AXSecureTextField`, secure input active) and left the clipboard unchanged. Its three ordinary textarea/contenteditable direct-insertion cases failed because accepted selected-text writes did not change the field. A second run (`564ac71`, `34168762768`) confirmed that the text was still unchanged after 500 ms. The transcripts remained unconfirmed and recoverable; no success was falsely reported.
-- **Latest source verification pending:** Safari now selects a writable whole-value strategy before sending any write, with bounded asynchronous text/caret confirmation. Fourteen additional native regressions cover strategy selection, delayed confirmation/failure, focus/security/cancellation, caret placement, suspend/restart recovery, Copy during confirmation, durable audio retirement and failed Discard; the native suite now contains 43 tests. Splash/welcome now match Android's centered wordmark, tagline-only automatic splash, privacy status pill and Already set up/Open Quill footer. Open Quill enters Home without enabling the bubble, inventing keys or accepting Accessibility consent. The existing six UI walkthroughs include new assertions for these layouts. The 34 portable tests and native Swift parser/copy/font checks pass locally. GitHub reported an account billing/spending-limit restriction when starting further Mac jobs, so these latest native changes must not be described as executed or packaged. The last fully tested universal package is still the `63977e0` app and excludes these later source changes.
+- **September source corrections:** Safari selects a writable whole-value strategy before sending any write, with bounded asynchronous text/caret confirmation. Fourteen additional native regressions cover strategy selection, delayed confirmation/failure, focus/security/cancellation, caret placement, suspend/restart recovery, Copy during confirmation, durable audio retirement and failed Discard; the native suite contains 43 tests. September's billing restriction prevented their execution then. October's desktop experience supersedes the earlier welcome design, and [current Apple validation](../docs/apple-validation.md) records the resumed native execution and package evidence.
+
 - **Requires a physical Mac and user provider accounts:** real microphone fidelity, insertion across the wider editor matrix, secure fields, provider quota/access behavior, sleep/wake, login restore, clipboard fallback ownership changes and long-running recording/bubble behavior. Adapter tests and the TextEdit probe do not establish these remaining results.
 
 ### Real TextEdit integration probe
