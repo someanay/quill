@@ -1,0 +1,223 @@
+name: Apple current OS build and test
+
+on:
+  push:
+    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", ".github/workflows/apple-current.yml"]
+  pull_request:
+    paths: ["macos/**", "ios/**", ".github/workflows/apple-current.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apple-current-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  apple:
+    name: ${{ matrix.platform }} current OS native build and tests
+    runs-on: macos-26
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            project: QuillMac
+            scheme: QuillMac
+          - platform: ios
+            project: Quill
+            scheme: Quill
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record Apple toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Verify bundled copy and fonts
+        run: python3 scripts/verify-platform-parity.py --platform ${{ matrix.platform }} --independent-copy
+      - name: Test portable provider and policy core on Apple
+        working-directory: ${{ matrix.platform }}
+        run: swift test --package-path QuillCore
+      - name: Generate native project
+        id: project
+        working-directory: ${{ matrix.platform }}
+        run: xcodegen generate
+      - name: Prepare desktop for compact and expanded UI tests
+        if: matrix.platform == 'macos'
+        run: swift macos/QA/configure-ci-display.swift
+      - name: Pick native test destination
+        id: destination
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          if [ "$PLATFORM" = macos ]; then
+            echo 'value=platform=macOS' >> "$GITHUB_OUTPUT"
+          else
+            UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+            test -n "$UDID"
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+            echo "value=id=$UDID" >> "$GITHUB_OUTPUT"
+            echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build and test native app
+        id: native
+        working-directory: ${{ matrix.platform }}
+        env:
+          PROJECT: ${{ matrix.project }}
+          SCHEME: ${{ matrix.scheme }}
+          DESTINATION: ${{ steps.destination.outputs.value }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -o pipefail
+          SIGNING=(CODE_SIGNING_ALLOWED=NO)
+          TEST_FILTER=()
+          if [ "$PLATFORM" = ios ]; then
+            SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
+            TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
+          fi
+          xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
+            -destination "$DESTINATION" -derivedDataPath DerivedData \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
+            -resultBundlePath TestResults.xcresult "${SIGNING[@]}" "${TEST_FILTER[@]}" \
+            2>&1 | tee native-build.log
+      - name: Test actual iOS simulator recording
+        if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          if [ ! -d DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ]; then
+            echo 'Host app was not built; recorder verification cannot run.'
+            exit 1
+          fi
+          xcrun simctl install "$UDID" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -destination "id=$UDID" -derivedDataPath DerivedData \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
+            -resultBundlePath RecordingResults.xcresult -only-testing:QuillTests/RecorderTests \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee recording-test.log
+      - name: Test iPad navigation and adaptive layout
+        if: success() && matrix.platform == 'ios'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          IPAD=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPad")))')
+          xcrun simctl boot "$IPAD"
+          xcrun simctl bootstatus "$IPAD" -b
+          xcrun simctl install "$IPAD" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl privacy "$IPAD" grant microphone com.tihor.quill.ios
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -destination "id=$IPAD" -derivedDataPath DerivedData \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
+            -resultBundlePath iPadResults.xcresult -only-testing:QuillUITests \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee ipad-test.log
+          xcrun simctl shutdown "$IPAD"
+      - name: Inspect iOS simulator entitlements
+        if: always() && matrix.platform == 'ios'
+        run: |
+          for APP in ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app/PlugIns/QuillKeyboard.appex; do
+            if [ -d "$APP" ]; then
+              codesign -d --entitlements :- "$APP"
+            fi
+          done
+      - name: Archive iOS Release for physical devices
+        id: device_archive
+        # Build evidence is useful even when a separate UI assertion failed.
+        # This does not change or suppress the test step's failure.
+        if: always() && !cancelled() && matrix.platform == 'ios' && steps.project.outcome == 'success'
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild archive -project Quill.xcodeproj -scheme Quill -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath ReleaseDevice \
+            -archivePath Quill-unsigned.xcarchive CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee release-build.log
+          ditto -c -k --sequesterRsrc --keepParent Quill-unsigned.xcarchive Quill-iOS-device-unsigned.zip
+      - name: Capture iOS simulator
+        if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: xcrun simctl io "$UDID" screenshot ios/simulator.png
+      - name: Export screenshots from native tests
+        if: always()
+        working-directory: ${{ matrix.platform }}
+        run: |
+          if [ -d TestResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path TestResults.xcresult --output-path screenshots
+          fi
+          if [ -d RecordingResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path RecordingResults.xcresult --output-path recording-screenshots
+          fi
+          if [ -d iPadResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path iPadResults.xcresult --output-path ipad-screenshots
+          fi
+      - name: Upload native logs and test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-current-verification
+          retention-days: 14
+          path: |
+            ${{ matrix.platform }}/native-build.log
+            ${{ matrix.platform }}/release-build.log
+            ${{ matrix.platform }}/TestResults.xcresult
+            ${{ matrix.platform }}/RecordingResults.xcresult
+            ${{ matrix.platform }}/recording-test.log
+            ${{ matrix.platform }}/recording-screenshots
+            ${{ matrix.platform }}/iPadResults.xcresult
+            ${{ matrix.platform }}/ipad-test.log
+            ${{ matrix.platform }}/ipad-screenshots
+            ${{ matrix.platform }}/simulator.png
+            ${{ matrix.platform }}/screenshots
+      - name: Upload screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-current-screenshots
+          retention-days: 14
+          path: |
+            ${{ matrix.platform }}/screenshots
+            ${{ matrix.platform }}/ipad-screenshots
+            ${{ matrix.platform }}/recording-screenshots
+      - name: Package iOS simulator build
+        if: always() && matrix.platform == 'ios'
+        run: |
+          if [ -d ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ]; then
+            ditto -c -k --sequesterRsrc --keepParent ios/DerivedData/Build/Products/Debug-iphonesimulator/Quill.app ios/Quill-iOS-simulator.zip
+          fi
+      - name: Upload iOS simulator app for verification
+        if: always() && matrix.platform == 'ios'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-current-iOS-simulator
+          path: ios/Quill-iOS-simulator.zip
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload unsigned iOS device archive
+        if: always() && matrix.platform == 'ios' && steps.device_archive.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-current-iOS-device-unsigned
+          path: ios/Quill-iOS-device-unsigned.zip
+          retention-days: 14
+      - name: Build and package universal macOS release
+        id: mac_release
+        if: always() && !cancelled() && matrix.platform == 'macos' && steps.project.outcome == 'success'
+        working-directory: macos
+        run: bash scripts/build-release.sh
+      - name: Upload macOS app for verification
+        if: always() && matrix.platform == 'macos' && steps.mac_release.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quill-current-macOS-universal
+          path: dist/macos
+          retention-days: 14
