@@ -43,7 +43,10 @@ struct OnboardingView: View {
                         Button { move(to: step - 1) } label: { Label(model.c("action.back"), systemImage: "chevron.left") }.accessibilityIdentifier("onboarding.back")
                     }
                 }
-                ToolbarItem(placement: .keyboard) { Button(model.c("status.done")) { fieldFocused = false } }
+                ToolbarItem(placement: .keyboard) { Button(model.c("status.done")) {
+                    fieldFocused = false
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                } }
             }
             .sheet(isPresented: $warning) { keyDisclosure }
         }
