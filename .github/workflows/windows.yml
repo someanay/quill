@@ -29,6 +29,18 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Verify bundled copy and fonts
         run: python scripts/verify-platform-parity.py --platform windows --independent-copy
+      - name: Prepare the isolated ARM runner desktop
+        if: matrix.runner == 'windows-11-arm'
+        run: |
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows') { throw 'Hosted-runner setup only.' }
+          # The ARM image starts a fullscreen WWAHost window above ordinary apps.
+          # Close that disposable runner window; do not alter foreground policy,
+          # permissions, lock-screen settings or Quill's activation assertions.
+          foreach ($setupHost in @(Get-Process WWAHost -ErrorAction SilentlyContinue)) {
+            Write-Output "Closing hosted desktop window: $($setupHost.MainWindowTitle)"
+            [void]$setupHost.CloseMainWindow()
+            if (-not $setupHost.WaitForExit(3000)) { Stop-Process -Id $setupHost.Id }
+          }
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
       - name: Verify every native screen and retained setup state
@@ -39,6 +51,8 @@ jobs:
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-all-ui dist/verification/windows-ui
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-setup-window dist/verification/windows-setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe dist/verification/windows-native.json
           exit $LASTEXITCODE
       - name: Verify installer integrity and safe uninstall
         if: always() && !cancelled()
@@ -67,5 +81,6 @@ jobs:
             dist/verification/windows-tests
             dist/verification/windows-ui
             dist/verification/windows-setup
+            dist/verification/windows-native.json
             dist/verification/installer-tests/**/results.json
           retention-days: 14
