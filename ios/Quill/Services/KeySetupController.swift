@@ -61,11 +61,12 @@ private struct KeySetupPreferences: Codable { let expanded: String }
     private var verifiedCandidate: String?
 
     init(model: AppModel, activateSpeechProvider: Bool, prefillSavedKey: Bool = false, initialProvider: Provider = .gemini,
-         store: (any KeyDraftStorage)? = nil, preferencesName: String = "key-setup.json", debounce: UInt64 = 650_000_000) {
+         store: (any KeyDraftStorage)? = nil, preferencesName: String = "key-setup.json", debounce: UInt64 = 650_000_000, fixedProvider: Provider? = nil) {
         self.model = model; self.activateSpeechProvider = activateSpeechProvider; self.prefillSavedKey = prefillSavedKey
         self.store = store ?? KeyDraftVault(); self.preferencesName = preferencesName; self.debounce = debounce
         let remembered = AppFiles.resetsUISettingsOnLaunch ? nil : AppFiles.read(KeySetupPreferences.self, name: preferencesName)
-        if let remembered { expanded = Provider(rawValue: remembered.expanded) } else { expanded = initialProvider }
+        if let fixedProvider { expanded = fixedProvider }
+        else if let remembered { expanded = Provider(rawValue: remembered.expanded) } else { expanded = initialProvider }
         if let expanded, !KeySetupPolicy.guidedProviders.contains(expanded) { self.expanded = .gemini }
         for provider in KeySetupPolicy.guidedProviders {
             do {

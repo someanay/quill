@@ -11,7 +11,7 @@ struct KeyEditor: View {
     var prefillSavedKey = false
     var saved: (() -> Void)?
     var body: some View {
-        KeySetupContent(settings: settings, keys: keys, client: dictation.client, activateSpeech: onboarding || activateSpeechProvider, prefill: prefillSavedKey, saved: saved)
+        KeySetupContent(settings: settings, keys: keys, client: dictation.client, activateSpeech: onboarding || activateSpeechProvider, prefill: prefillSavedKey, onboarding: onboarding, saved: saved)
     }
 }
 
@@ -24,24 +24,25 @@ private struct KeySetupContent: View {
     @State private var advanced = false
     @State private var browserError = false
     let saved: (() -> Void)?
+    let onboarding: Bool
     private let clipboardTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
-    init(settings: SettingsStore, keys: KeychainStore, client: ProviderClient, activateSpeech: Bool, prefill: Bool, saved: (() -> Void)?) {
-        self.settings = settings; self.saved = saved
-        _model = StateObject(wrappedValue: KeySetupController(settings: settings, keys: keys, client: client, activateSpeech: activateSpeech, prefill: prefill))
+    init(settings: SettingsStore, keys: KeychainStore, client: ProviderClient, activateSpeech: Bool, prefill: Bool, onboarding: Bool, saved: (() -> Void)?) {
+        self.settings = settings; self.saved = saved; self.onboarding = onboarding
+        _model = StateObject(wrappedValue: KeySetupController(settings: settings, keys: keys, client: client, activateSpeech: activateSpeech, prefill: prefill, initialProvider: onboarding ? .groq : .gemini, fixedProvider: onboarding ? .groq : nil))
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CopyText("desktop.provider.choose").font(QuillTheme.sans(17)).fontWeight(.medium)
+            if !onboarding { CopyText("desktop.provider.choose").font(QuillTheme.sans(17)).fontWeight(.medium) }
             VStack(spacing: 0) {
-                ForEach(KeySetupController.guidedProviders) { provider in
-                    if provider != .gemini { Divider() }
+                ForEach(onboarding ? [.groq] : KeySetupController.guidedProviders) { provider in
+                    if !onboarding && provider != .gemini { Divider() }
                     providerRow(provider)
                 }
             }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
-            DisclosureGroup(Copy.text("mac.key.other_providers"), isExpanded: $advanced) {
+            if !onboarding { DisclosureGroup(Copy.text("mac.key.other_providers"), isExpanded: $advanced) {
                 VStack(spacing: 0) { ForEach([Provider.openai, .custom]) { provider in providerRow(provider) } }.padding(.top, 8)
-            }.disclosureGroupStyle(QuillDisclosureStyle()).font(QuillTheme.sans(12))
+            }.disclosureGroupStyle(QuillDisclosureStyle()).font(QuillTheme.sans(12)) }
             if model.storageError { HelpText(key: "onboarding.key.storage_error", bad: true) }
             if browserError { HelpText(key: "onboarding.key.browser_error", bad: true) }
         }.onAppear { refreshClipboardMetadata(); advanced = ["openai", "custom"].contains(model.expanded); model.appear() }
@@ -65,10 +66,10 @@ private struct KeySetupContent: View {
     @ViewBuilder private func providerRow(_ provider: Provider) -> some View {
         let expanded = model.expanded == provider.rawValue
         VStack(alignment: .leading, spacing: 0) {
-            Button { model.expand(provider); reveal.remove(provider) } label: {
+            if !onboarding { Button { model.expand(provider); reveal.remove(provider) } label: {
                 HStack { Text(title(provider)).font(QuillTheme.sans(12)).fixedSize(horizontal: false, vertical: true); Spacer(minLength: 8); Image(systemName: expanded ? "chevron.up" : "chevron.down").font(.system(size: 12)) }.padding(16).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(.plain).disabled(model.saving).accessibilityIdentifier("key-provider-" + provider.rawValue)
-            .accessibilityValue(Copy.text(expanded ? "onboarding.key.expanded" : "onboarding.key.collapsed"))
+            .accessibilityValue(Copy.text(expanded ? "onboarding.key.expanded" : "onboarding.key.collapsed")) }
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
                     instructions(provider)
@@ -91,7 +92,7 @@ private struct KeySetupContent: View {
                     QuillButton(key: "onboarding.key.save_provider", arguments: [title(provider).components(separatedBy: " (").first ?? provider.name]) { model.save(provider) { saved?() } }
                         .disabled(model.checks[provider] != .valid || model.saving).accessibilityIdentifier("key-save-" + provider.rawValue)
                     if model.saving { ProgressView().progressViewStyle(.linear) }
-                }.padding(.horizontal, 16).padding(.bottom, 16)
+                }.padding(.horizontal, 16).padding(.bottom, 16).padding(.top, onboarding ? 16 : 0)
             }
         }
     }

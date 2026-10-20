@@ -9,6 +9,7 @@ struct OnboardingView: View {
     @State private var step = 0
     @State private var accepted = false
     @State private var practice = ""
+    @State private var otherProviders = false
     private let stages = ["welcome", "privacy", "provider", "audio", "access", "shortcut", "ready"]
     init() {
         var initial = 0
@@ -39,6 +40,13 @@ struct OnboardingView: View {
                 }
             }
         }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
+        .sheet(isPresented: $otherProviders) {
+            VStack(spacing: 0) {
+                HStack { HelpText(key: "onboarding.key.settings_help"); Spacer(); QuillButton(key: "onboarding.key.resume_setup", primary: false) { otherProviders = false } }.padding(20)
+                Divider()
+                SettingsView(initialPage: .keys)
+            }.frame(minWidth: 640, idealWidth: 960, minHeight: 500, idealHeight: 740)
+        }
     }
     private var title: String {
         ["desktop.setup.welcome_title", "compliance.key.required_title", "desktop.setup.provider_title", "desktop.setup.audio_title", "desktop.setup.access_title", "desktop.setup.shortcut_title", "desktop.setup.ready_title"][step]
@@ -83,6 +91,8 @@ struct OnboardingView: View {
         case 2:
             BodyCopy(key: "desktop.setup.provider_body")
             KeyEditor(onboarding: true) { step = 3 }
+            QuillButton(key: "onboarding.key.other_providers", primary: false) { otherProviders = true }.accessibilityIdentifier("onboarding.other-providers")
+            if keys.active(settings.value.provider, settings: settings.value) != nil { QuillButton(key: "action.continue") { step = 3 } }
         case 3:
             BodyCopy(key: "mac.setup.audio_body")
             QuillCard {

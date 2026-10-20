@@ -1,5 +1,5 @@
 {
-  "revision": 23,
+  "revision": 24,
   "placeholderTestVectors": [
     {
       "input": "",
@@ -1633,7 +1633,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Choose a provider",
+      "default": "Continue with Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3197,13 +3197,13 @@
       "optionalBlank": false
     },
     "desktop.setup.provider_title": {
-      "default": "Connect your speech provider",
+      "default": "Add your Groq key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "desktop.setup.provider_body": {
-      "default": "Add and verify a key. You can change providers, models and cleanup later in Settings.",
+      "default": "Groq turns your voice into text. Create an API key below, then paste it into Quill. You can add other providers and choose models in Settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3528,6 +3528,24 @@
     },
     "desktop.models.manual": {
       "default": "Enter a model ID",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.other_providers": {
+      "default": "Add other providers later in Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.resume_setup": {
+      "default": "Continue setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.settings_help": {
+      "default": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

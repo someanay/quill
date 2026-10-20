@@ -5,6 +5,7 @@ struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var warning = false
+    @State private var otherProviders = false
     @State private var keyboardText = ""
     @State private var practiceText = ""
     @State private var receipt: KeyboardSetupReceipt?
@@ -49,6 +50,14 @@ struct OnboardingView: View {
                 } }
             }
             .sheet(isPresented: $warning) { keyDisclosure }
+            .sheet(isPresented: $otherProviders) {
+                NavigationStack {
+                    SettingsView(openAPIKeys: true)
+                        .toolbar { ToolbarItem(placement: .confirmationAction) {
+                            Button(model.c("onboarding.key.resume_setup")) { otherProviders = false }.accessibilityIdentifier("onboarding.resume")
+                        } }
+                }.presentationDetents([.large]).presentationDragIndicator(.visible)
+            }
         }
         .onDisappear { if model.busy || model.canRetry { model.cancel() } else { model.stopMicTest() } }
         .task {
@@ -118,7 +127,8 @@ struct OnboardingView: View {
     private var provider: some View {
         VStack(alignment: .leading, spacing: 22) {
             heading("ios.setup.provider_title", body: "ios.setup.provider_body", id: "onboarding.provider")
-            GuidedKeySetup(activateSpeechProvider: true, onSaved: { move(to: 3) })
+            GuidedKeySetup(activateSpeechProvider: true, onboarding: true, onSaved: { move(to: 3) })
+            Button(model.c("onboarding.key.other_providers")) { otherProviders = true }.frame(minHeight: 48).accessibilityIdentifier("onboarding.other-providers")
             if model.hasActiveKey { QButton(title: model.c("action.continue")) { move(to: 3) } }
         }
     }

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "revision": 23,
+  "revision": 24,
   "locale": "en",
-  "updatedAt": "2026-10-20T00:00:00Z",
+  "updatedAt": "2026-10-21T00:00:00Z",
   "strings": {
     "onboarding.checklist.provider_connected": "%1$s connected",
     "onboarding.mic.open_settings": "Open microphone settings",
@@ -22,7 +22,7 @@
     "onboarding.key.warning.free_tier": "You bring the key - some providers (like Groq) have a free tier to start.",
     "onboarding.key.warning.usage": "Your provider may charge for usage - Quill itself is free.",
     "onboarding.key.warning.reading": "Take a moment to read this",
-    "onboarding.key.warning.accept": "Choose a provider",
+    "onboarding.key.warning.accept": "Continue with Groq",
     "onboarding.howitworks.eyebrow": "Three steps",
     "onboarding.howitworks.title": "From voice to text, on your terms",
     "onboarding.howitworks.t1": "Click & speak",
@@ -516,8 +516,8 @@
     "desktop.setup.welcome_title": "Your voice, wherever you write.",
     "desktop.setup.welcome_body": "Click a text field. Press your shortcut. Speak, then press again to insert your words.",
     "desktop.setup.privacy_body": "Quill connects directly to your speech provider. Choose who processes your recordings before you start.",
-    "desktop.setup.provider_title": "Connect your speech provider",
-    "desktop.setup.provider_body": "Add and verify a key. You can change providers, models and cleanup later in Settings.",
+    "desktop.setup.provider_title": "Add your Groq key",
+    "desktop.setup.provider_body": "Groq turns your voice into text. Create an API key below, then paste it into Quill. You can add other providers and choose models in Settings.",
     "desktop.setup.audio_title": "Check your microphone",
     "desktop.setup.access_title": "Let your words reach your apps",
     "desktop.setup.shortcut_title": "One shortcut, wherever you write",
@@ -571,6 +571,9 @@
     "desktop.setup.shortcut_caption": "Start and stop dictation",
     "desktop.speech.body": "Choose how your recordings become text.",
     "desktop.speech.manage_key": "Manage provider key",
-    "desktop.models.manual": "Enter a model ID"
+    "desktop.models.manual": "Enter a model ID",
+    "onboarding.key.other_providers": "Add other providers later in Settings",
+    "onboarding.key.resume_setup": "Continue setup",
+    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready."
   }
 }

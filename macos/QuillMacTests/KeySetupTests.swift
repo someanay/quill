@@ -50,6 +50,16 @@ private final class KeySetupProtocol: URLProtocol, @unchecked Sendable {
 }
 
 final class KeySetupTests: XCTestCase {
+    @MainActor func testGroqOnboardingIgnoresSettingsExpansionAndKeepsBothDrafts() throws {
+        let fixture = try KeySetupFixture(); defer { fixture.dispose() }
+        try fixture.drafts.rememberExpansion("openrouter"); try fixture.drafts.write(.openrouter, value: "router-draft")
+        let setup = KeySetupController(settings: fixture.settings, keys: fixture.keys, client: fixture.client, draftStore: fixture.drafts, activateSpeech: true, fixedProvider: .groq)
+        XCTAssertEqual(setup.expanded, "groq"); XCTAssertEqual(setup.drafts[.openrouter], "router-draft")
+        setup.update(.groq, value: "groq-draft"); setup.disappear()
+        XCTAssertEqual(fixture.drafts.expanded(default: .gemini), "openrouter")
+        XCTAssertEqual(try fixture.drafts.read(.groq), "groq-draft")
+        XCTAssertEqual(fixture.settings.value.provider, .groq)
+    }
     private let candidate = "AIza123456789012345678901234"
     @MainActor func testCustomEndpointChangeCannotSendOrSavePreviouslyVerifiedDraft() async throws {
         let fixture = try KeySetupFixture(); defer { fixture.dispose() }

@@ -4,23 +4,24 @@ using System.Windows.Media;
 using Clipboard = System.Windows.Clipboard;
 namespace Quill.Windows;
 public sealed partial class MainWindow {
- private void GuidedKeys(StackPanel destination,bool activateSpeech,bool prefill,Action saved) {
-  var drafts = new KeySetupDraftStore(app.Folder); var initial = activateSpeech && prefill ? S.Provider : Provider.Gemini;
-  destination.Children.Add(Text(C("desktop.provider.choose","Choose a provider"),17));
+ private void GuidedKeys(StackPanel destination,bool activateSpeech,bool prefill,Action saved,bool onboarding = false) {
+  var drafts = new KeySetupDraftStore(app.Folder); var initial = onboarding ? Provider.Groq : activateSpeech && prefill ? S.Provider : Provider.Gemini;
+  if (!onboarding) destination.Children.Add(Text(C("desktop.provider.choose","Choose a provider"),17));
   var host = new StackPanel(); var border = new Border { Child = host,CornerRadius = new(8),BorderThickness = new(1),Margin = new(0,8,0,8) }; border.SetResourceReference(Border.BorderBrushProperty,"Line"); border.SetResourceReference(Border.BackgroundProperty,"Surface"); destination.Children.Add(border);
   var sessions = new List<KeySetupSession>(); var timers = new List<PageLifetime>();
   void Render() {
    foreach (var session in sessions) { session.Dispose(); pageLifetimes.Remove(session); } sessions.Clear(); foreach (var timer in timers) { timer.Dispose(); pageLifetimes.Remove(timer); } timers.Clear(); host.Children.Clear();
    var otherHost = new StackPanel();
-   foreach (var provider in KeySetupSession.GuidedProviders.Concat(new[] {Provider.OpenAI,Provider.Custom})) {
+   foreach (var provider in onboarding ? new[] {Provider.Groq} : KeySetupSession.GuidedProviders.Concat(new[] {Provider.OpenAI,Provider.Custom})) {
     if (provider == Provider.OpenAI) host.Children.Add(new Expander { Header = Text(C("windows.keys.other","Other providers: OpenAI and custom"),13,true),Content = otherHost,IsExpanded = drafts.Expanded(initial) is "OpenAI" or "Custom",Margin = new(16,8,16,8) });
     var rowHost = provider is Provider.OpenAI or Provider.Custom ? otherHost : host;
-    var expanded = drafts.Expanded(initial) == provider.ToString();
+    var expanded = onboarding || drafts.Expanded(initial) == provider.ToString();
     if (rowHost.Children.Count > 0) { var divider = new Border { Height = 1 }; divider.SetResourceReference(Border.BackgroundProperty,"Line"); rowHost.Children.Add(divider); }
     var title = provider switch { Provider.Gemini => C("desktop.provider.gemini","Google Gemini"),Provider.Groq => C("desktop.provider.groq","Groq"),Provider.OpenRouter => C("desktop.provider.openrouter","OpenRouter"),_ => provider.ToString() };
     var header = Action(title,() => { drafts.Expand(expanded ? "" : provider.ToString()); Render(); }); header.Background = Brushes.Transparent; header.HorizontalContentAlignment = HorizontalAlignment.Stretch; header.Content = new TextBlock { Text = title + (expanded ? "  ⌃" : "  ⌄"),FontFamily = Theme.Sans,FontWeight = FontWeights.Medium,FontSize = 15,TextWrapping = TextWrapping.Wrap }; header.Margin = new(0); header.Padding = new(16); System.Windows.Automation.AutomationProperties.SetHelpText(header,C(expanded ? "onboarding.key.expanded" : "onboarding.key.collapsed",expanded ? "Expanded" : "Collapsed")); rowHost.Children.Add(header);
+    if (onboarding) rowHost.Children.Remove(header);
     if (!expanded) continue;
-    var body = new StackPanel { Margin = new(16,0,16,16) }; rowHost.Children.Add(body);
+    var body = new StackPanel { Margin = new(16,onboarding ? 16 : 0,16,16) }; rowHost.Children.Add(body);
     var guideKey = provider switch { Provider.Gemini => "onboarding.key.guide.gemini_steps",Provider.Groq => "onboarding.key.guide.groq_steps",Provider.OpenRouter => "onboarding.key.guide.openrouter_steps",Provider.OpenAI => "onboarding.key.guide.openai_steps",_ => "" };
     if (guideKey.Length > 0) { var lines = C(guideKey,"").Split('\n').Where(l => !string.IsNullOrWhiteSpace(l)).ToArray(); for (int i = 0;i < lines.Length;i++) { var line = lines[i]; var caption = (i + 1) + ") " + line; var url = System.Text.RegularExpressions.Regex.Match(line,@"https://[^\s]+"); if (url.Success) { var link = Action(caption,() => Open(url.Value)); var linkText = new TextBlock { Text = caption,FontFamily = Theme.Sans,FontWeight = FontWeights.Normal,FontSize = 13,TextAlignment = TextAlignment.Left,HorizontalAlignment = HorizontalAlignment.Left,TextWrapping = TextWrapping.Wrap }; linkText.SetResourceReference(TextBlock.ForegroundProperty,"BrandInk"); link.Content = linkText; link.Background = Brushes.Transparent; link.HorizontalContentAlignment = HorizontalAlignment.Left; link.Margin = new(0); link.Padding = new(0,4,0,4); body.Children.Add(link); } else body.Children.Add(Text(caption,13)); } }
     string endpoint = S.CustomBaseUrl; TextBox? endpointBox = null; TextBox? customModel = null;

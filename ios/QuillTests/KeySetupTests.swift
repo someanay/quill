@@ -39,6 +39,17 @@ private actor KeySetupTransport: HTTPTransport {
 }
 
 @MainActor final class KeySetupTests: XCTestCase {
+    func testGroqOnboardingIgnoresSettingsExpansionAndKeepsBothDrafts() throws {
+        let model = AppModel(), memory = MemoryKeyDrafts(), preferences = UUID().uuidString + ".json"
+        let settings = KeySetupController(model: model, activateSpeechProvider: false, store: memory, preferencesName: preferences)
+        settings.toggle(.openrouter); settings.update("router-draft", provider: .openrouter); settings.stopValidation()
+        let onboarding = KeySetupController(model: model, activateSpeechProvider: true, store: memory, preferencesName: preferences, fixedProvider: .groq)
+        XCTAssertEqual(onboarding.expanded, .groq); XCTAssertEqual(onboarding.drafts[.openrouter], "router-draft")
+        onboarding.update("groq-draft", provider: .groq); onboarding.stopValidation()
+        let restored = KeySetupController(model: model, activateSpeechProvider: false, store: memory, preferencesName: preferences)
+        XCTAssertEqual(restored.expanded, .openrouter); XCTAssertEqual(restored.drafts[.groq], "groq-draft")
+        XCTAssertEqual(model.settings.provider, .groq)
+    }
     private let candidate = "gsk_abcdefghijklmnop0123456789"
     private func controller(_ model: AppModel, store: MemoryKeyDrafts? = nil, activate: Bool = false, prefill: Bool = false, preferences: String = UUID().uuidString + ".json") -> KeySetupController {
         KeySetupController(model: model, activateSpeechProvider: activate, prefillSavedKey: prefill, store: store ?? MemoryKeyDrafts(), preferencesName: preferences, debounce: 5_000_000)

@@ -14,6 +14,7 @@ struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     @State private var page: SettingsPage?
+    init(initialPage: SettingsPage? = nil) { _page = State(initialValue: initialPage) }
     private func select(_ next: SettingsPage?) {
         trace("select " + (next?.rawValue ?? "list"))
         page = next

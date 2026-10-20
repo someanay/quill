@@ -4,6 +4,8 @@ import QuillCore
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var showKeys: Bool
+    init(openAPIKeys: Bool = false) { _showKeys = State(initialValue: openAPIKeys) }
     var body: some View {
         Form {
             Section(model.c("settings.group.dictation")) {
@@ -25,6 +27,7 @@ struct SettingsView: View {
             }
         }.navigationTitle(model.c("nav.settings")).navigationBarTitleDisplayMode(.inline)
             .scrollContentBackground(.hidden).background(Q.paper)
+            .navigationDestination(isPresented: $showKeys) { APIKeysView() }
     }
 }
 

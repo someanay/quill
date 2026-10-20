@@ -84,13 +84,13 @@ final class QuillUITests: XCTestCase {
         let privacyPromise = "Quill has no account and runs no server. Your audio and transcripts stay on this device except for the direct, encrypted call to the provider you chose."
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label == %@", privacyPromise)).firstMatch.exists)
         capture(app, "ios-required-key-warning")
-        let next = app.buttons["Choose a provider"]
+        let next = app.buttons["Continue with Groq"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))
         let predicate = NSPredicate(format: "enabled == true")
         expectation(for: predicate, evaluatedWith: next); waitForExpectations(timeout: 6)
         next.tap()
         XCTAssertTrue(app.secureTextFields["API key"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["key.provider.gemini"].isSelected)
+        XCTAssertFalse(app.buttons["key.provider.gemini"].exists)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "ios-onboarding-key"; shot.lifetime = .keepAlways; add(shot)
     }
     func testHomeSettingsPrivacyAndKeyboardHelp() throws {
@@ -106,6 +106,24 @@ final class QuillUITests: XCTestCase {
         app.switches["Private mode"].tap()
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "ios-privacy"; shot.lifetime = .keepAlways; add(shot)
     }
+    func testGroqSetupSettingsRouteRetainsDraftInBothAppearances() throws {
+        for dark in [false, true] {
+            let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"] + (dark ? ["--ui-dark"] : []); app.launch()
+            let key = app.secureTextFields["key.candidate"]; XCTAssertTrue(key.waitForExistence(timeout: 10))
+            XCTAssertFalse(app.buttons["key.provider.gemini"].exists); XCTAssertFalse(app.buttons["key.provider.groq"].exists)
+            tap(key, in: app); key.typeText("draft-groq")
+            if app.buttons["Done"].firstMatch.exists { tap(app.buttons["Done"].firstMatch, in: app) }
+            capture(app, "ios-groq-onboarding-\(dark ? "dark" : "light")")
+            tap(app.buttons["onboarding.other-providers"], in: app)
+            XCTAssertTrue(app.staticTexts["screen.keys"].waitForExistence(timeout: 10))
+            tap(app.buttons["keys.add"], in: app)
+            XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
+            capture(app, "ios-setup-provider-settings-\(dark ? "dark" : "light")")
+            tap(app.buttons["onboarding.resume"], in: app)
+            XCTAssertTrue(key.waitForExistence(timeout: 5)); XCTAssertEqual(key.value as? String, "••••••••••", "The Groq draft remains in the secure form.")
+            XCTAssertFalse(app.buttons["key.provider.gemini"].exists); app.terminate()
+        }
+    }
     func testSettingsScreensAndDarkAppearance() throws {
         let app = openHome()
         settingsTab(app).tap()
@@ -117,14 +135,13 @@ final class QuillUITests: XCTestCase {
     func testCompleteOnboardingWithSyntheticProviderAndRealMicrophonePermission() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-provider-fixtures"]; app.launch()
         tap(app.buttons["onboarding.getStarted"], in: app)
-        let accept = app.buttons["Choose a provider"]
+        let accept = app.buttons["Continue with Groq"]
         XCTAssertTrue(accept.waitForExistence(timeout: 5))
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: accept); waitForExpectations(timeout: 6)
         tap(accept, in: app)
-        XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["key.provider.gemini"].isSelected)
-        tap(app.buttons["key.provider.groq"], in: app)
-        XCTAssertTrue(app.buttons["key.provider.groq"].isSelected, "The whole provider row, including its center, must expand the requested provider.")
+        XCTAssertTrue(app.secureTextFields["API key"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["key.provider.gemini"].exists)
+        XCTAssertFalse(app.buttons["key.provider.groq"].exists, "Onboarding must not contain a provider accordion.")
         let key = app.secureTextFields["API key"]
         tap(key, in: app); key.typeText("gsk_quill_ui_fixture0000000000")
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
@@ -250,7 +267,7 @@ final class QuillUITests: XCTestCase {
         let arguments = dark ? ["--ui-dark"] : []
         let welcome = XCUIApplication(); welcome.launchArguments = ["--ui-testing"] + arguments; welcome.launch()
         tap(welcome.buttons["onboarding.getStarted"], in: welcome)
-        XCTAssertTrue(welcome.buttons["Choose a provider"].waitForExistence(timeout: 5))
+        XCTAssertTrue(welcome.buttons["Continue with Groq"].waitForExistence(timeout: 5))
         capture(welcome, "ios-key-disclosure-\(dark ? "dark" : "light")"); welcome.terminate()
         let words = openHome(arguments: arguments); tap(settingsTab(words), in: words); tap(words.buttons["settings.words"], in: words)
         tap(words.buttons["Add a word"], in: words)

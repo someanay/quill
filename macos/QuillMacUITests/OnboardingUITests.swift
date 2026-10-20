@@ -15,28 +15,23 @@ final class OnboardingUITests: XCTestCase {
             app.terminate()
         }
     }
-    func testGuidedKeyRowsRetainDraftAndRememberExpansion() throws {
+    func testGroqOnboardingOpensAllProviderSettingsAndResumesDraft() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
-        XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 10))
-        for provider in ["groq", "openrouter", "gemini"] {
-            let row = app.buttons["key-provider-" + provider]; reveal(row, in: app); row.click()
-            let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 5)); reveal(field, in: app)
-            if provider == "openrouter" {
-                field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-router")
-                XCTAssertFalse(app.buttons["key-save-openrouter"].isEnabled)
-                app.buttons["key-reveal"].click(); XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-router")
-                app.buttons["key-reveal"].click()
-            }
-            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-guided-key-" + provider; shot.lifetime = .keepAlways; add(shot)
-        }
-        let router = app.buttons["key-provider-openrouter"]; reveal(router, in: app); router.click()
+        let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
+        XCTAssertFalse(app.buttons["key-provider-groq"].exists)
+        reveal(field, in: app); field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-groq")
+        let other = app.buttons["onboarding.other-providers"]; reveal(other, in: app); other.click()
+        XCTAssertTrue(app.staticTexts["settings.page.keys"].waitForExistence(timeout: 10))
+        let speech = app.buttons["settings.speech"]; XCTAssertTrue(speech.exists)
+        let resume = app.buttons["onboarding.key.resume_setup"]; XCTAssertTrue(resume.exists); resume.click()
+        XCTAssertTrue(field.waitForExistence(timeout: 5)); reveal(field, in: app); app.buttons["key-reveal"].click()
+        XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-groq")
+        XCTAssertFalse(app.buttons["key-save-groq"].isEnabled)
         app.terminate(); app.launch()
         XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 10))
         reveal(app.secureTextFields["key-input"], in: app); app.buttons["key-reveal"].click()
-        XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-router")
-        XCTAssertFalse(app.buttons["key-save-openrouter"].isEnabled)
-        // Restore the default expansion for the independent welcome flow.
-        let gemini = app.buttons["key-provider-gemini"]; reveal(gemini, in: app); gemini.click()
+        XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-groq")
     }
     func testEveryOnboardingStagePresentationInLightAndDark() throws {
         let stages = ["welcome", "warning", "key", "microphone", "accessibility", "shortcut", "ready"]
@@ -49,9 +44,9 @@ final class OnboardingUITests: XCTestCase {
                 if index == 0 { XCTAssertTrue(app.buttons["onboarding.welcome.cta"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
 
                 if index == 2 {
-                    let gemini = app.buttons["key-provider-gemini"]
-                    reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
-                    XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
+                    XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
+                    XCTAssertFalse(app.buttons["key-provider-groq"].exists)
+                    reveal(app.buttons["key-save-groq"], in: app); XCTAssertFalse(app.buttons["key-save-groq"].isEnabled)
                 }
                 if index == 3 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
                 if index == 4 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
@@ -151,14 +146,13 @@ final class OnboardingUITests: XCTestCase {
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: accept)
         wait(for: [enabled], timeout: 6); accept.click()
         XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 6))
-        let gemini = app.buttons["key-provider-gemini"]
-        reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
-        XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
+        XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
+        XCTAssertFalse(app.buttons["key-save-groq"].isEnabled)
         let key = XCTAttachment(screenshot: app.screenshot()); key.name = "macOS-key-setup"; key.lifetime = .keepAlways; add(key)
         app.secureTextFields["key-input"].click()
         app.secureTextFields["key-input"].typeText("invalid")
         XCTAssertTrue(app.staticTexts["key-format-help"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
+        XCTAssertFalse(app.buttons["key-save-groq"].isEnabled)
         XCTAssertTrue(app.secureTextFields["key-input"].exists)
     }
     func testSettingsNavigationAndHistory() throws {
@@ -269,7 +263,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(heard.waitForExistence(timeout: 5)); heard.click(); heard.typeText("tihor")
         replacement.click(); replacement.typeText("Quill")
         app.buttons["settings.words.save"].click()
-        XCTAssertTrue(app.staticTexts["tihor"].waitForExistence(timeout: 5)); XCTAssertTrue(app.staticTexts["→ Quill"].exists)
+        XCTAssertTrue(app.staticTexts["tihor"].waitForExistence(timeout: 5)); XCTAssertTrue(app.staticTexts["â†’ Quill"].exists)
         app.buttons["word-delete"].firstMatch.click(); XCTAssertFalse(app.staticTexts["tihor"].exists)
         app.buttons["settings-back"].click()
         let privacy = app.buttons["settings.privacy"]

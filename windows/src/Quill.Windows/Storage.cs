@@ -23,6 +23,47 @@ public sealed class SettingsStore {
  public QuillSettings Value { get; private set; }
  public event Action? Changed;
  public SettingsStore(string folder) { path = Path.Combine(folder, "settings.json"); Value = JsonFiles.Read(path, () => new QuillSettings()); Value.Validate(); }
+ public bool TryImportLegacy(string legacyPath) {
+  // Never replace a native user's choices. The old file remains untouched.
+  if (File.Exists(path) || !File.Exists(legacyPath)) return true;
+  try {
+   var legacy = JsonSerializer.Deserialize<LegacySettings>(File.ReadAllText(legacyPath),JsonFiles.Options);
+   if (legacy == null) return false;
+   Value = new QuillSettings {
+    Provider = legacy.Provider, SpeechModel = legacy.Model, Language = legacy.Language,
+    CustomBaseUrl = legacy.CustomBaseUrl, CustomModel = legacy.Provider == Provider.Custom ? legacy.Model : "",
+    CleanupEnabled = legacy.CleanupEnabled, CleanupAutomatic = string.IsNullOrWhiteSpace(legacy.CleanupModel),
+    CleanupProvider = legacy.Provider, CleanupModel = string.IsNullOrWhiteSpace(legacy.CleanupModel) ? Providers.Get(legacy.Provider).CleanupModel : legacy.CleanupModel,
+    OnboardingComplete = legacy.OnboardingComplete, Theme = legacy.Theme,
+    DictationShortcut = string.Join(" + ",legacy.Hotkey.Split('+',StringSplitOptions.TrimEntries)),
+    HistoryEnabled = legacy.HistoryEnabled, PrivateMode = legacy.PrivateMode,
+    HistoryRetentionMinutes = legacy.HistoryRetentionMinutes, SessionCapSeconds = legacy.SessionCapSeconds,
+    DefaultStyle = legacy.DefaultWritingStyle, AppStyles = legacy.PerAppStyles, CustomWords = legacy.CustomWords,
+    StartAtLogin = legacy.StartWithWindows
+   };
+   // Native insertion has its own disclosure; importing preferences cannot grant consent.
+   Save(); return true;
+  } catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException) { return false; }
+ }
+ private sealed class LegacySettings {
+  public Provider Provider { get; set; } = Provider.Groq;
+  public string Model { get; set; } = "";
+  public string Language { get; set; } = "en";
+  public string CustomBaseUrl { get; set; } = "";
+  public bool CleanupEnabled { get; set; }
+  public string CleanupModel { get; set; } = "";
+  public bool OnboardingComplete { get; set; }
+  public string Theme { get; set; } = "Match system";
+  public string Hotkey { get; set; } = "Ctrl + Win + Space";
+  public bool HistoryEnabled { get; set; } = true;
+  public bool PrivateMode { get; set; }
+  public int HistoryRetentionMinutes { get; set; } = 60;
+  public int SessionCapSeconds { get; set; } = 300;
+  public WritingStyle DefaultWritingStyle { get; set; }
+  public Dictionary<string,WritingStyle> PerAppStyles { get; set; } = [];
+  public List<CustomWord> CustomWords { get; set; } = [];
+  public bool StartWithWindows { get; set; } = true;
+ }
  public void Save() { Value.Validate(); JsonFiles.Write(path, Value); Changed?.Invoke(); }
  public void SetProvider(Provider provider) { Value.Provider = provider; Value.SpeechModel = provider == Provider.Custom ? Value.CustomModel : Providers.Get(provider).SpeechModel; Save(); }
  public void SetCleanupAutomatic(bool automatic) { if (!automatic && Value.CleanupAutomatic) { Value.CleanupProvider = Value.Provider; Value.CleanupModel = Providers.Get(Value.Provider).CleanupModel; } Value.CleanupAutomatic = automatic; if (automatic) Value.CleanupEnabled = true; Save(); }

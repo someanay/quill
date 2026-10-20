@@ -8,7 +8,7 @@ public sealed partial class MainWindow {
  private static readonly string[] SetupLabels = ["welcome", "privacy", "provider", "audio", "access", "shortcut", "ready"];
 
  private void ShowStep(int value) {
-  step = Math.Clamp(value,0,6); Clear(); page.MaxWidth = double.PositiveInfinity;
+  setupSettings = false; step = Math.Clamp(value,0,6); Clear(); page.MaxWidth = double.PositiveInfinity;
   scroll.VerticalContentAlignment = step is 0 or 6 ? VerticalAlignment.Center : VerticalAlignment.Top;
   SetDesktopNavigationVisible(false); BuildSetupNavigation(); BuildSetupCompanion();
   if (step > 0) page.Children.Add(Action(C("action.back","Back"),() => ShowStep(step - 1)));
@@ -30,7 +30,10 @@ public sealed partial class MainWindow {
     break;
    case 2:
     Heading(C("desktop.setup.provider_title","Connect your speech provider"),C("desktop.setup.provider_body","Add and verify a key. You can change providers, models and cleanup later in Settings."));
-    GuidedKeys(page,true,false,() => ShowStep(3)); break;
+    GuidedKeys(page,true,false,() => ShowStep(3),onboarding:true);
+    page.Children.Add(Action(C("onboarding.key.other_providers","Add other providers later in Settings"),() => { setupSettings = true; Navigate("keys"); }));
+    if (app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) != null) page.Children.Add(Action(C("action.continue","Continue"),() => ShowStep(3)));
+    break;
    case 3:
     Heading(C("desktop.setup.audio_title","Check your microphone"),C("windows.onboarding.mic_help","Start the mic test and speak. Test audio stays on this PC and is discarded."));
     var audio = Card();

@@ -13,6 +13,19 @@ public sealed class TestFolder : IDisposable {
  }
 }
 public sealed class StorageTests {
+ [Fact] public void LegacyPreferencesKeepProviderModelShortcutAndPrivacyWithoutGrantingNativeConsent() {
+  using var f = new TestFolder(); var legacy = System.IO.Path.Combine(f.Path,"legacy.json");
+  var source = """{"Provider":"Gemini","Model":"chosen-model","CleanupEnabled":false,"CleanupModel":"chosen-cleanup","Hotkey":"Alt+E","Theme":"Dark","OnboardingComplete":true,"PrivateMode":true,"HistoryEnabled":false,"HistoryRetentionMinutes":1440,"SessionCapSeconds":120,"DefaultWritingStyle":"Formal","StartWithWindows":false,"CustomWords":[{"Heard":"quill","Replacement":"Quill"}],"PerAppStyles":{"notepad":"Casual"}}""";
+  File.WriteAllText(legacy,source); var store = new SettingsStore(f.Path); Assert.True(store.TryImportLegacy(legacy));
+  var value = new SettingsStore(f.Path).Value;
+  Assert.Equal(Provider.Gemini,value.Provider); Assert.Equal("chosen-model",value.SpeechModel); Assert.False(value.CleanupEnabled); Assert.False(value.CleanupAutomatic); Assert.Equal("chosen-cleanup",value.CleanupModel);
+  Assert.Equal("Alt + E",value.DictationShortcut); Assert.Equal("Dark",value.Theme); Assert.True(value.OnboardingComplete); Assert.False(value.InjectionConsent); Assert.True(value.PrivateMode); Assert.False(value.HistoryEnabled); Assert.Equal(1440,value.HistoryRetentionMinutes); Assert.Equal(120,value.SessionCapSeconds); Assert.Equal(WritingStyle.Formal,value.DefaultStyle); Assert.False(value.StartAtLogin); Assert.Equal("Quill",Assert.Single(value.CustomWords).Replacement); Assert.Equal(WritingStyle.Casual,value.AppStyles["notepad"]); Assert.Equal(source,File.ReadAllText(legacy));
+  store.SetProvider(Provider.OpenAI); Assert.True(store.TryImportLegacy(legacy)); Assert.Equal(Provider.OpenAI,store.Value.Provider);
+ }
+ [Fact] public void InvalidLegacyPreferencesNeverReplaceNativeStateOrTouchLegacyFile() {
+  using var f = new TestFolder(); var legacy = System.IO.Path.Combine(f.Path,"legacy.json"); File.WriteAllText(legacy,"{bad");
+  var store = new SettingsStore(f.Path); Assert.False(store.TryImportLegacy(legacy)); Assert.Equal(Provider.Groq,store.Value.Provider); Assert.Equal("{bad",File.ReadAllText(legacy)); Assert.False(File.Exists(System.IO.Path.Combine(f.Path,"settings.json")));
+ }
  [Fact] public void LegacyKeysMigrateOnceWithoutReplacingCurrentKeysOrReturningAfterClear() {
   using var f = new TestFolder(); var legacy = System.IO.Path.Combine(f.Path,"legacy"); Directory.CreateDirectory(legacy);
   void SaveLegacy(Provider provider,string text) { var data = System.Text.Encoding.UTF8.GetBytes(text); try { File.WriteAllBytes(System.IO.Path.Combine(legacy,provider.ToString().ToLowerInvariant() + ".bin"),System.Security.Cryptography.ProtectedData.Protect(data,System.Text.Encoding.UTF8.GetBytes("Quill.Windows.BYOK.v1"),System.Security.Cryptography.DataProtectionScope.CurrentUser)); } finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(data); } }

@@ -7,9 +7,10 @@ struct GuidedKeySetup: View {
     var activateSpeechProvider = true
     var prefillSavedKey = false
     var initialProvider: Provider = .gemini
+    var onboarding = false
     var onSaved: () -> Void = {}
     var body: some View {
-        GuidedKeyRows(model: model, activateSpeechProvider: activateSpeechProvider, prefillSavedKey: prefillSavedKey, initialProvider: initialProvider, onSaved: onSaved)
+        GuidedKeyRows(model: model, activateSpeechProvider: activateSpeechProvider, prefillSavedKey: prefillSavedKey, initialProvider: initialProvider, onboarding: onboarding, onSaved: onSaved)
     }
 }
 
@@ -21,19 +22,20 @@ private struct GuidedKeyRows: View {
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var keyFocused: Bool
     let onSaved: () -> Void
+    let onboarding: Bool
 
-    init(model: AppModel, activateSpeechProvider: Bool, prefillSavedKey: Bool, initialProvider: Provider, onSaved: @escaping () -> Void) {
-        self.model = model; self.onSaved = onSaved
-        _setup = StateObject(wrappedValue: KeySetupController(model: model, activateSpeechProvider: activateSpeechProvider, prefillSavedKey: prefillSavedKey, initialProvider: initialProvider))
+    init(model: AppModel, activateSpeechProvider: Bool, prefillSavedKey: Bool, initialProvider: Provider, onboarding: Bool, onSaved: @escaping () -> Void) {
+        self.model = model; self.onSaved = onSaved; self.onboarding = onboarding
+        _setup = StateObject(wrappedValue: KeySetupController(model: model, activateSpeechProvider: activateSpeechProvider, prefillSavedKey: prefillSavedKey, initialProvider: onboarding ? .groq : initialProvider, fixedProvider: onboarding ? .groq : nil))
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(model.c("onboarding.key.choose")).font(Q.sans(17)).fontWeight(.medium)
+            if !onboarding { Text(model.c("onboarding.key.choose")).font(Q.sans(17)).fontWeight(.medium) }
             QCard {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(KeySetupPolicy.guidedProviders) { provider in
-                        if provider != .gemini { Divider().padding(.vertical, 4) }
-                        Button { revealed = false; setup.toggle(provider) } label: {
+                    ForEach(onboarding ? [.groq] : KeySetupPolicy.guidedProviders) { provider in
+                        if !onboarding && provider != .gemini { Divider().padding(.vertical, 4) }
+                        if !onboarding { Button { revealed = false; setup.toggle(provider) } label: {
                             HStack(spacing: 8) {
                                 Text(model.c(KeySetupPolicy.titleKey(provider))).font(Q.sans(14)).multilineTextAlignment(.leading)
                                 Spacer(minLength: 4)
@@ -42,7 +44,7 @@ private struct GuidedKeyRows: View {
                         }.buttonStyle(.plain).disabled(setup.phase == .saving)
                             .accessibilityIdentifier("key.provider.\(provider.rawValue)")
                             .accessibilityValue(model.c(setup.expanded == provider ? "onboarding.key.expanded" : "onboarding.key.collapsed"))
-                            .accessibilityAddTraits(setup.expanded == provider ? [.isSelected] : [])
+                            .accessibilityAddTraits(setup.expanded == provider ? [.isSelected] : []) }
                         if setup.expanded == provider {
                             expanded(provider).padding(.bottom, 12)
                         }

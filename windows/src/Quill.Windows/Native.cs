@@ -174,8 +174,8 @@ public sealed class ClipboardService : IClipboardService {
 public sealed class HotkeyService : IDisposable {
  private HwndSource? source; private const int Id = 0x514c; public event Action? Pressed; public bool Registered { get; private set; } public string Label { get; private set; } = "Ctrl + Win + Space"; public int RegistrationError { get; private set; }
  public const uint Modifiers = 0x4000 | 0x0002 | 0x0008;
- public static readonly IReadOnlyList<(string Label,uint Modifiers)> Bindings = new[] { ("Ctrl + Win + Space",Modifiers),("Ctrl + Alt + Space",0x4000U | 0x0002U | 0x0001U),("Ctrl + Shift + Space",0x4000U | 0x0002U | 0x0004U) };
- public HotkeyService(nint hwnd,string preferred = "Ctrl + Win + Space") { source = HwndSource.FromHwnd(hwnd); source?.AddHook(Hook); foreach (var binding in Bindings.OrderByDescending(b => b.Label == preferred)) { if (Native.RegisterHotKey(hwnd,Id,binding.Modifiers,0x20)) { Registered = true; Label = binding.Label; break; } RegistrationError = Marshal.GetLastWin32Error(); } }
+ public static readonly IReadOnlyList<(string Label,uint Modifiers,uint Key)> Bindings = new[] { ("Ctrl + Win + Space",Modifiers,0x20U),("Ctrl + Alt + Space",0x4000U | 0x0002U | 0x0001U,0x20U),("Ctrl + Shift + Space",0x4000U | 0x0002U | 0x0004U,0x20U),("Alt + E",0x4000U | 0x0001U,0x45U) };
+ public HotkeyService(nint hwnd,string preferred = "Ctrl + Win + Space") { source = HwndSource.FromHwnd(hwnd); source?.AddHook(Hook); foreach (var binding in Bindings.OrderByDescending(b => b.Label == preferred)) { if (Native.RegisterHotKey(hwnd,Id,binding.Modifiers,binding.Key)) { Registered = true; Label = binding.Label; break; } RegistrationError = Marshal.GetLastWin32Error(); } }
  private nint Hook(nint hwnd, int message, nint wparam, nint lparam, ref bool handled) { if (message == 0x0312 && wparam == Id) { handled = true; Pressed?.Invoke(); } return 0; }
  public void Dispose() { if (source != null) { Native.UnregisterHotKey(source.Handle, Id); source.RemoveHook(Hook); source = null; } }
 }

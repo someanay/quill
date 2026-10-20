@@ -59,9 +59,9 @@ enum KeyCheckState: Equatable { case empty, format, waiting, checking, valid, re
     private var saveTask: Task<Void,Never>?
     private var generation = UUID()
     private var verified: [Provider:(candidate: String, baseURL: String)] = [:]
-    init(settings: SettingsStore, keys: KeychainStore, client: ProviderClient, draftStore: KeySetupDraftStore = KeySetupDraftStore(), activateSpeech: Bool, prefill: Bool = false, initialProvider: Provider = .gemini) {
+    init(settings: SettingsStore, keys: KeychainStore, client: ProviderClient, draftStore: KeySetupDraftStore = KeySetupDraftStore(), activateSpeech: Bool, prefill: Bool = false, initialProvider: Provider = .gemini, fixedProvider: Provider? = nil) {
         self.settings = settings; self.keys = keys; self.client = client; self.draftStore = draftStore; self.activateSpeech = activateSpeech; self.prefill = prefill
-        expanded = draftStore.expanded(default: initialProvider)
+        expanded = fixedProvider?.rawValue ?? draftStore.expanded(default: initialProvider)
         for provider in Provider.allCases {
             do { let draft = try draftStore.read(provider); drafts[provider] = draft.isEmpty && prefill ? keys.active(provider, settings: settings.value) ?? "" : draft }
             catch { drafts[provider] = ""; storageError = true }

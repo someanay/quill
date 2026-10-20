@@ -1,5 +1,5 @@
 {
-  "revision": 23,
+  "revision": 24,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -1037,7 +1037,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Choose a provider",
+      "default": "Continue with Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3401,13 +3401,13 @@
       "optionalBlank": false
     },
     "ios.setup.provider_title": {
-      "default": "Choose who transcribes your voice",
+      "default": "Add your Groq key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.provider_body": {
-      "default": "Choose a speech provider, then add your API key. Quill saves it in your device's Keychain and sends recordings directly to that provider.",
+      "default": "Groq turns your voice into text. Create an API key below, then paste it into Quill. You can add other providers and choose models in Settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3767,6 +3767,24 @@
       "optionalBlank": false,
       "default": "The session is unavailable. Open Quill to start a new keyboard session.",
       "placeholders": []
+    },
+    "onboarding.key.other_providers": {
+      "default": "Add other providers later in Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.resume_setup": {
+      "default": "Continue setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.settings_help": {
+      "default": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
     }
   },
   "placeholderTestVectors": [

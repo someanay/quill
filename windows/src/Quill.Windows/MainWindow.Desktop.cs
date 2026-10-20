@@ -81,8 +81,8 @@ public sealed partial class MainWindow {
    System.Windows.Automation.AutomationProperties.SetItemStatus(button,selected ? "Selected" : "");
    nav.Children.Add(button);
   }
-  Destination("home","\uE80F",C("nav.home","Home"));
-  Destination("history","\uE81C",C("nav.history","History"));
+  if (!setupSettings) { Destination("home","\uE80F",C("nav.home","Home"));
+  Destination("history","\uE81C",C("nav.history","History")); }
   Destination("settings","\uE713",C("nav.settings","Settings"));
   if (route is not "home" and not "history") {
    var divider = new Border { Height = 1, Margin = new(10,12,10,12) }; divider.SetResourceReference(Border.BackgroundProperty,"Line"); nav.Children.Add(divider);
@@ -200,7 +200,7 @@ public sealed partial class MainWindow {
   workspaceActions.Children.Clear();
   if (app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) == null || !S.InjectionConsent) {
    workspaceActions.Children.Add(Text(C("desktop.workspace.setup_needed","Finish connecting your provider and permissions to start dictating."),13,true));
-   workspaceActions.Children.Add(Action(C("windows.advanced.setup","Review setup"),() => ShowStep(0)));
+   workspaceActions.Children.Add(Action(C("windows.advanced.setup","Review setup"),() => ShowStep(app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) != null && !S.InjectionConsent ? 4 : 0)));
   }
   if (state == DictationState.Recording) workspaceActions.Children.Add(AsyncAction(C("desktop.dictation.stop","Stop dictation"),app.Dictation.StopRecording,true));
   if (state is DictationState.Paste or DictationState.Error) {

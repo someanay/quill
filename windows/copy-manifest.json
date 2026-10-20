@@ -1,5 +1,5 @@
 {
-  "revision": 23,
+  "revision": 24,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -1067,7 +1067,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Choose a provider",
+      "default": "Continue with Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2664,7 +2664,7 @@
       "optionalBlank": false
     },
     "windows.advanced.active_shortcut": {
-      "default": "Active shortcut: %1$s. If Windows or another app reserves your preferred shortcut, Quill uses an available alternative.",
+      "default": "Active shortcut: %1$s.",
       "placeholders": [
         "%1$s"
       ],
@@ -2714,7 +2714,7 @@
       "optionalBlank": false
     },
     "windows.advanced.shortcut": {
-      "default": "Preferred dictation shortcut",
+      "default": "Dictation shortcut",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3543,13 +3543,13 @@
       "optionalBlank": false
     },
     "desktop.setup.provider_title": {
-      "default": "Connect your speech provider",
+      "default": "Add your Groq key",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "desktop.setup.provider_body": {
-      "default": "Choose a speech provider, then connect and verify your own API key. You can change the provider or model later.",
+      "default": "Groq turns your voice into text. Create an API key below, then paste it into Quill. You can add other providers and choose models in Settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3875,6 +3875,33 @@
     "windows.error.focus_to_paste": {
       "default": "Click an editable text field, then click the floating control to insert your dictation.",
       "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.other_providers": {
+      "default": "Add other providers later in Settings",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.resume_setup": {
+      "default": "Continue setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "onboarding.key.settings_help": {
+      "default": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.advanced.shortcut_fallback": {
+      "default": "%1$s is unavailable. Quill is using %2$s.",
+      "placeholders": [
+        "%1$s",
+        "%2$s"
+      ],
       "overridable": true,
       "optionalBlank": false
     }
