@@ -1,5 +1,5 @@
 {
-  "revision": 21,
+  "revision": 22,
   "placeholderTestVectors": [
     {
       "input": "",
@@ -774,7 +774,7 @@
       "optionalBlank": false
     },
     "mac.error.no_field": {
-      "default": "Focus a text field in another app before tapping the bubble. Long-press the bubble to dictate to the clipboard.",
+      "default": "Click a text field in another app, then use your dictation shortcut. To dictate to the clipboard, click and hold the floating control.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -842,7 +842,7 @@
       "optionalBlank": false
     },
     "mac.home.tip": {
-      "default": "Click to speak, then click again to send. Drag the bubble to either screen edge. Drag to the bottom to hide it for 10 minutes. Long-press to dictate to the clipboard.",
+      "default": "Use your shortcut, or click the floating control to start and finish. Drag it to a screen edge, or to the bottom to hide it for 10 minutes. Click and hold to dictate to the clipboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

@@ -1,5 +1,5 @@
 {
-  "revision": 21,
+  "revision": 22,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -867,7 +867,7 @@
       "optionalBlank": false
     },
     "onboarding.key.browser_error": {
-      "default": "The browser could not open. Try again after choosing a default browser in Android settings.",
+      "default": "The browser could not open. Choose a default browser in Windows Settings, then try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3868,6 +3868,12 @@
     },
     "windows.keys.empty_body": {
       "default": "Add a key from your speech provider to start dictating. Saved keys stay protected on this PC, and you can switch or remove them here.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.error.focus_to_paste": {
+      "default": "Click an editable text field, then click the floating control to insert your dictation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

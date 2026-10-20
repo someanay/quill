@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
+  "revision": 22,
   "locale": "en",
   "updatedAt": "2026-10-20T00:00:00Z",
   "strings": {
@@ -442,7 +442,7 @@
     "mac.error.model": "Choose a model or enter its exact model ID.",
     "mac.error.microphone": "Microphone access is off. Allow Quill in System Settings → Privacy & Security → Microphone.",
     "mac.error.accessibility": "Allow Quill in System Settings → Privacy & Security → Accessibility to insert into apps.",
-    "mac.error.no_field": "Focus a text field in another app before tapping the bubble. Long-press the bubble to dictate to the clipboard.",
+    "mac.error.no_field": "Click a text field in another app, then use your dictation shortcut. To dictate to the clipboard, click and hold the floating control.",
     "mac.error.sensitive": "Dictation is off in password and secure fields.",
     "mac.error.focus_changed": "The text field changed. Your dictation is ready to copy; focus the intended field before pasting.",
     "mac.error.storage": "Quill could not save data securely. Check available storage and access to this Mac.",
@@ -479,7 +479,7 @@
     "mac.accessibility.consent": "I understand and allow Quill to use Accessibility for dictation.",
     "mac.home.count": "%1$d dictations today",
     "mac.home.words": "%1$d words written today",
-    "mac.home.tip": "Click to speak, then click again to send. Drag the bubble to either screen edge. Drag to the bottom to hide it for 10 minutes. Long-press to dictate to the clipboard.",
+    "mac.home.tip": "Use your shortcut, or click the floating control to start and finish. Drag it to a screen edge, or to the bottom to hide it for 10 minutes. Click and hold to dictate to the clipboard.",
     "mac.hotkey.label": "⌘ Option Space — start or stop dictation",
     "mac.history.empty": "Your dictation transcripts show up here. Saved on this Mac only.",
     "mac.history.off": "Turn on Save dictation history in Privacy and History to keep transcripts on this Mac. Private mode always prevents saving.",

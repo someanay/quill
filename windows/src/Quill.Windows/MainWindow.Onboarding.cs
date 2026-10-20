@@ -43,7 +43,7 @@ public sealed partial class MainWindow {
     audio.Children.Add(Text(C("windows.onboarding.mic_settings","If capture is blocked, allow desktop microphone access in Windows Settings, then return."),13,true));
     page.Children.Add(next); break;
    case 4:
-    Heading(C("desktop.setup.access_title","Let your words reach your apps"),C("desktop.setup.access_body","Windows needs your consent here. There is no Accessibility service or overlay permission to enable."));
+    Heading(C("desktop.setup.access_title","Let your words reach your apps"),C("desktop.setup.access_body","Quill can insert your finished dictation into the text field you selected. Review and allow text insertion below."));
     var consent = Card(); consent.Children.Add(Text(C("windows.onboarding.disclosure","Quill identifies the focused editable field and inserts your dictation. Password and sensitive fields are excluded. Unsupported apps may require manual paste.")));
     var agree = Action(C("windows.onboarding.allow_insert","Allow text insertion & continue"),() => { S.InjectionConsent = true; app.Settings.Save(); ShowStep(5); },true); agree.IsEnabled = S.InjectionConsent;
     Toggle(consent,C("windows.onboarding.consent","I allow Quill to insert my dictations into supported apps"),S.InjectionConsent,on => agree.IsEnabled = on);
