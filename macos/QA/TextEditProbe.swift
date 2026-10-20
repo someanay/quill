@@ -89,10 +89,10 @@ private struct ProbeFailure: Error, CustomStringConvertible {
                 try Data(before.utf8).write(to: document, options: .atomic)
                 editor = try await open(document: document, editorURL: editorURL)
                 phase = name + ": initial field"
-                let initial = try await focused(injector: injector, editor: editor!, expected: before)
+                let initial = try await focused(injector: injector, editor: editor!, expected: before, document: document)
                 phase = name + ": requested selection"
                 try setSelection(selection, element: initial.element)
-                let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection)
+                let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection, document: document)
                 phase = name + ": insertion confirmation"
                 let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
@@ -168,7 +168,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         }
     }
 
-    private static func focused(injector: TextInjector, editor: NSRunningApplication, expected: String, selection: NSRange? = nil) async throws -> FocusSnapshot {
+    private static func focused(injector: TextInjector, editor: NSRunningApplication, expected: String, selection: NSRange? = nil, document: URL? = nil) async throws -> FocusSnapshot {
         var captured: FocusSnapshot?
         var last = "no snapshot"
         do { try await waitUntil("TextEdit focused text and selection") {
@@ -176,6 +176,19 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             last = "bundle=\(snapshot.bundleID ?? "none"), textLength=\(snapshot.originalText?.utf16.count ?? -1), range=\(String(describing: snapshot.originalRange)), expectedLength=\(expected.utf16.count), expectedRange=\(String(describing: selection))"
             guard snapshot.process == editor.processIdentifier,
                   snapshot.bundleID == "com.apple.TextEdit", snapshot.originalText == expected else { return false }
+            if let document {
+                // Opening a document completes before its window necessarily becomes
+                // focused. Two adjacent cases intentionally share the same text; an
+                // old window must not satisfy readiness for the next synthetic file.
+                let application = AXUIElementCreateApplication(editor.processIdentifier)
+                guard let focusedWindow = attribute(application, kAXFocusedWindowAttribute), CFGetTypeID(focusedWindow) == AXUIElementGetTypeID() else { return false }
+                let window = focusedWindow as! AXUIElement
+                let title = attribute(window, kAXTitleAttribute) as? String ?? ""
+                let location = (attribute(window, kAXDocumentAttribute) as? String).flatMap(URL.init(string:))
+                let sameFile = location?.standardizedFileURL == document.standardizedFileURL
+                last += ", expectedDocument=\(document.lastPathComponent), focusedTitle=\(title)"
+                guard sameFile || title == document.lastPathComponent || title.hasPrefix(document.lastPathComponent + " —") else { return false }
+            }
             if let selection {
                 guard snapshot.originalRange?.location == selection.location, snapshot.originalRange?.length == selection.length else { return false }
             }
