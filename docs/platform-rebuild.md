@@ -7,15 +7,20 @@
 > [the platform experience contract](platform-experience.md) for the current direction.
 > The historical verification below applies only to its named source revisions.
 >
-> October 20, 2026: GitHub Mac runners are executing again. The revised Mac UI,
-> final recovery regressions, real editor probes, iPhone/iPad UI and the installed
-> iOS keyboard transfer now pass. [Apple validation](apple-validation.md) records
-> the exact source revisions, native results and screenshot review, superseding
-> the historical billing block and pending Apple verification below.
+> October 20, 2026: The approved all-page native redesign is implemented. Windows
+> x64/ARM64 both pass 362 tests, 300 renders, 42 setup checks, 14 native editor
+> checks and 11 installer checks per package at 7f22dff; the final version 2.0.3
+> update is installed locally, with Start, Installed apps and preserved data verified.
+> The expanded Apple baseline/current and Intel/Apple Silicon matrix is green,
+> including actual Mac editors and all four installed-keyboard journeys. Final
+> screenshots and device/simulator/universal packages are reviewed and inspected.
+> [Apple validation](apple-validation.md) records exact source revisions, results,
+> screenshot findings and remaining physical-device/distribution checks,
+> superseding the historical billing block and pending verification below.
 
 The owner authorized replacement of the former Windows, macOS, and iOS drafts and continued development/testing across all three platforms. This initiative supersedes the historical Android-only restriction. Android remains the behavioral and visual reference; its current source wins over outdated planning notes. The website work already present in the checkout is outside this initiative.
 
-## Parity contract
+## Historical parity contract — superseded October 19, 2026
 
 All implementations follow the same boundaries: recorder → provider client → optional cleanup → insertion/handoff; secure provider key store; local settings, history and vocabulary; bundled copy repository; native permission and reliability adapters. Native frameworks necessarily differ (Android services/Keystore, Windows desktop/UI Automation/DPAPI, Apple AVFoundation/Keychain).
 

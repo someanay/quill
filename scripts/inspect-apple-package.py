@@ -62,6 +62,10 @@ def inspect(path):
         if expected_cpu:
             assert {t["architecture"] for t in targets} == expected_cpu, "Wrong architectures"
         assert info["CFBundleIdentifier"] == ("com.tihor.quill.mac" if mac else "com.tihor.quill.ios")
+        source_info = plistlib.loads((ROOT / ("macos/QuillMac/App/Info.plist" if mac else "ios/Quill/App/Info.plist")).read_bytes())
+        for key, value in source_info.items():
+            if key.endswith("UsageDescription"):
+                assert info.get(key) == value, f"Packaged {key} differs from checkout"
         source = ROOT / ("macos/QuillMac/Resources/copy/strings.default.json" if mac else "ios/Quill/Resources/copy/strings.default.json")
         expected_copy = json.loads(source.read_text(encoding="utf-8-sig"))
 
@@ -92,7 +96,8 @@ def inspect(path):
             result["keyboardBundleId"] = extension["CFBundleIdentifier"]
         result.update(bundleId=info["CFBundleIdentifier"], version=info["CFBundleShortVersionString"],
                       minimumOS=info.get("LSMinimumSystemVersion", info.get("MinimumOSVersion")),
-                      targets=targets, catalogStrings=len(expected_copy["strings"]),
+                      targets=targets, catalogStrings=len(expected_copy["strings"]), catalogRevision=expected_copy.get("revision"),
+                      usageDescriptionsMatchCheckout=True,
                       catalogMatchesCheckout=True, androidFontsVerified=True, zipEntries=len(names))
     return result
 

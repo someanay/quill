@@ -8,28 +8,58 @@ sections, with framing reserved for editors and separate credentials.
 
 Verification at this presentation revision:
 
-- Full .NET suite: **362 passed, zero skipped**. A separate native foreground
+- Full .NET suite on both final CI architectures: **362 passed, zero skipped**. A separate native foreground
   launcher exercises the Windows activation-permission handoff to the existing
   process. Normal and maximized reopening require the same process, window,
   foreground handle and preserved maximized state. No foreground assertion is skipped.
 - **300 native renders passed**: 13 destinations, seven setup stages and five
   provider forms, in Light/Dark at 640×600, 1000×500, 1200×800, 1600×900,
   900×1200 and 1920×650. Original images and bounds results are in
-  `dist/native-redesign/windows-final/`.
+  `dist/native-redesign/windows-final-row-typeface/`.
 - **42 setup checks passed**, including preserved window size, live key form,
   practice editor text/selection and keycaps refreshing with the actual shortcut.
-  Evidence: `dist/native-redesign/windows-final-setup/result.json`.
-- All 14 controlled native insertion/clipboard checks passed. The physical
+  Evidence: `dist/native-redesign/windows-final-row-setup/result.json`.
+- All 14 controlled native insertion/clipboard checks passed locally and on both
+  CI architectures. The physical
   microphone capture and lifecycle probes passed without upload or retained audio.
   Evidence: `dist/windows-native-revision/`.
-- Ten installer integrity, upgrade and uninstall boundary checks passed, preserving
+- Ten local and eleven CI installer integrity, upgrade and uninstall boundary checks passed, preserving
   the actual installation registration and unrelated files.
 - The real per-user installation is version 2.0.3 under
   `%LOCALAPPDATA%\Programs\Quill`; its Start shortcut and Installed apps entry
   are verified. Close-to-tray and same-instance reopening are exercised separately
   from portable test processes. Package hashes are recorded with installation evidence.
-- Catalog/default/placeholder/font checks pass. ARM64 is cross-compiled; hardware
-  execution and live provider requests require environments not present here.
+- Native Windows x64 and ARM64 both passed **362 tests, zero skipped**, all 300
+  renders, 42 setup checks, 14 editor/clipboard checks and 11 installer checks in
+  [run 39405184046](https://github.com/someanay/quill/actions/runs/39405184046)
+  at `7f22dff`, including the final desktop recovery/privacy instructions, Light
+  error contrast and 640-string revision 23 catalog. This repeats the green
+  `6967604`, `ae500b2` and `2153459` matrices.
+  Both package architectures built on both runners. The ARM runner's
+  pre-opened system menus are dismissed in its disposable desktop setup; production
+  activation assertions and permission checks remain unchanged. Original evidence:
+  `dist/native-redesign/windows-ci-final/`. All fifty 1200×800 page/setup/provider
+  captures were reviewed again in both appearances; all 300 bounds checks pass.
+
+The installed final executable SHA-256 is
+`4a98a41a25ea552127d60ed2e32d05eb701dd211a5198ef33143fba955795f16`.
+Archive hashes are recorded beside each ZIP and app-file checksums inside each
+package. After the owner closed Quill and authorized the update, all ten
+installed app files were compared with the final package, including the external
+revision 23 catalog. Local history hashes are unchanged. Start and Installed apps
+are verified, and the application was left closed as requested.
+Evidence: `dist/native-redesign/windows-installation-theme-final.json`.
+Actual Close-to-tray and Start same-process/window reopening were verified on
+the preceding presentation build in `windows-row-start-reopen.json`; activation
+code is unchanged, and the complete activation suite passes again at `7f22dff`.
+- The latest local run passed 361 tests but the maximized-reopen launcher received
+  an active-desktop foreground-permission refusal (Windows error 5). This is
+  recorded in `dist/native-redesign/windows-final-theme-publish.log`; it is not
+  described as an all-green local run. Both isolated final CI suites pass all
+  362 without skipping or weakening the activation assertion.
+- Catalog/default/placeholder/font checks pass. Physical ARM hardware, multiple
+  monitor/DPI transitions, wider third-party editor coverage and live provider
+  requests remain release acceptance work.
 
 See `docs/native-design-review.md` for the concept comparison and corrections.
 Earlier dated results below describe their own versions and are historical.

@@ -4,7 +4,7 @@ This is a native Mac dictation app sharing Quill’s provider, privacy and brand
 
 macOS 13 or later is required. Both Apple Silicon and Intel are supported by the project. Start/stop dictation with the floating bubble or **Command–Option–Space**. The bubble does not activate Quill or take keyboard focus. A long press dictates to the clipboard. The menu bar provides show/hide, cancel and quit controls.
 
-## Desktop experience revision — October 19, 2026
+## Desktop experience revision — October 20, 2026
 
 The new source uses a resizable desktop window, sidebar navigation and a practice
 workspace. Home adapts between parallel and stacked panes. History has a selectable
@@ -77,6 +77,13 @@ The native history gate deliberately preserves the privacy choice at recording s
 
 ## Verification record
 
+The following dated snapshots document earlier integration work. For the current
+redesign, use [Apple validation](../docs/apple-validation.md): the authored suite
+contains 34 portable core, 43 native and eleven UI tests, with all settings/setup
+screens in both appearances, compact/expanded/tall windows, and separate real
+TextEdit/Safari/AppKit probes on Intel and Apple Silicon runners. Historical
+counts and pending statements below do not override that current report.
+
 - **Passed on Windows, Swift 6.3.3:** 34 QuillCore tests, including all 195 authoritative Android cleanup vectors evaluated by the Android JVM implementation. Coverage includes default/settings round trips, contact filtering, Unicode selection/insertion, history pruning, WAV headers, silence timing, custom URL rejection, key metadata requests, all provider request shapes, typed provider errors, a real four-second drip-fed cleanup deadline, Gemini response safety states, cancellation of unfinished streams above 4 MiB, 20-page catalog bounds, custom-word upsert, copy formatting and visible-bottom bubble-dismiss geometry.
 - **Passed:** Swift parser check over every native source file, catalog/manifest generation and deterministic app-icon generation from Android artwork.
 - **Passed on macOS CI (snapshot `63977e0`, run `34166907074`):** 34 core tests, 29 native tests and all six UI walkthroughs. Native coverage includes real AVFoundation stereo-to-mono resampling, Keychain/SQLite/settings, encrypted recovery and tamper rejection, microphone revocation, raw vocabulary capture, private retry, stale audio-route callbacks and nine insertion-adapter mutation/refusal/readback cases. Five guided-key regressions verify debounce/stale responses, Keychain draft persistence, verified-only save, preserving speech settings when adding another key and custom-endpoint changes.
@@ -100,13 +107,13 @@ Evidence is written to `macos/TextEditEvidence/textedit-report.json`, `probe.log
 
 `bash macos/scripts/test-fields.sh` builds the separate `QuillFieldProbe` and `QuillAXFixture` QA targets on an isolated GitHub macOS runner. It tests Safari using local synthetic HTML textarea/contenteditable/password pages, then tests real AppKit `NSTextField` insertion and `NSSecureTextField` refusal in a separate fixture process. The fixture contains only fixed QA text, disables saved state and is not included in Quill's app or scheme. The probe never reads the password value, including failure diagnostics. It checks actual Accessibility trust, compiles the unchanged production adapter and leaves the clipboard untouched.
 
-The browser and native fixture each produce their own JSON and log in `macos/FieldEvidence`; build output is `build.log`. Exit **0** requires both reports to pass, **78** represents actual permission blocking, and other nonzero exits indicate a real build/test failure. Existing browser or fixture processes cause refusal to touch that state. The observed first-run results and pending source correction are recorded above; TextEdit's completed evidence remains separate. The additional fresh-page AXValue diagnostic is explicitly labeled as direct API investigation, not a production-adapter pass.
+The browser and native fixture each produce their own JSON and log in `macos/FieldEvidence`; build output is `build.log`. Exit **0** requires both reports to pass, **78** represents actual permission blocking, and other nonzero exits indicate a real build/test failure. Existing browser or fixture processes cause refusal to touch that state. The observed first-run failures are historical; all four corrected Safari/AppKit configurations and four TextEdit configurations pass in the October report. The additional fresh-page AXValue diagnostic is explicitly labeled as direct API investigation, not a production-adapter pass.
 
-The Safari correction is informed by [WebKit's empty selected-text implementation](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/accessibility/AccessibilityObject.h) and [its native input/textarea value setter](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/accessibility/AccessibilityRenderObject.cpp), together with the real failed selected-text experiments. Source inspection supports the strategy choice; the corrected native browser behavior still requires the queued runtime verification.
+The Safari correction is informed by [WebKit's empty selected-text implementation](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/accessibility/AccessibilityObject.h) and [its native input/textarea value setter](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/accessibility/AccessibilityRenderObject.cpp), together with the real failed selected-text experiments. Source inspection supports the strategy choice; the corrected runtime behavior is verified in [the final Apple matrix](../docs/apple-validation.md).
 
 ## Manual release gate
 
-1. Fresh setup in light/dark/large-text modes; warning cannot be acknowledged before three seconds, empty/malformed keys are refused, metadata/network failures retain typed input, microphone denial and Accessibility revocation provide recovery.
+1. Fresh setup in light/dark/large-text modes; the own-key explanation is explicit without a reading timer, empty/malformed keys are refused, metadata/network failures retain typed input, microphone denial and Accessibility revocation provide recovery.
 2. Test dictation at empty caret, middle caret, end caret and nonempty selection in TextEdit, Notes, Mail, Safari, Chrome, Slack and a terminal editor. Change application and edit field contents while transcription is pending: no text may be sent to the wrong field and the transcript must remain recoverable.
 3. Focus password and secure-entry fields. Bubble and hotkey dictation must refuse capture. Deny Accessibility while a request is pending; verify recovery without lost transcript.
 4. Record with natural pauses, then sustained silence. Test the 60/120/180/240/300-second caps, cancel during recording/STT/cleanup, provider rejection/offline retry, headphone disconnect and sleep while recording.

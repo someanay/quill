@@ -2,7 +2,7 @@
 
 Native SwiftUI app and UIKit keyboard extension sharing Quill's provider, privacy and brand foundations. iOS 17 or later is required. It uses the shared cobalt palette, IBM Plex Sans and Serif font files, the `quill.` wordmark, recording bubble and ink meter, and Home / History / Settings navigation. iOS copy is bundled locally and can evolve independently while preserving formatting contracts.
 
-Current resumed Actions execution, screenshot review and exact source results are
+Completed Actions execution, screenshot review and exact source results are
 tracked in [Apple validation](../docs/apple-validation.md). The older September
 verification paragraph below is historical evidence.
 
@@ -29,7 +29,13 @@ For a physical iPhone, choose your development team in both targets, register `c
 
 The portable `QuillCore` package also builds and tests with Swift 6.3.3 on Windows. It has no UIKit, AVFoundation, Security or SQLite dependency. Its tests include all 195 actual Android cleanup decisions, Android formatter-signature vectors, endpoint validation, provider request/authentication shapes, error mapping, Gemini response hardening, custom words, contacts filtering, insertion spacing, retention and keyboard handoff lifetime. The source fixture must match `tests/parity/cleanup.json` in the repository root.
 
-Verification at source `9b1a11e`: 43 core tests, 36 native tests, five real simulator recorder tests and all six iPhone UI tests passed. Five of six iPad UI tests passed, including the stable landscape/largest-text checks; the remaining provider-row hit-area failure is corrected in subsequent source and awaits a native rerun. The installed-keyboard experiment enabled Full Access and rendered the actual extension in another app, then stopped at a host process-recreation issue; its persistence fix also awaits a rerun. The current terminal-recovery changes pass all 49 portable tests and Swift syntax checks; their nine additional native regressions are not yet executed. Keep these boundaries separate from the older fully passing `532bc34` run and its unsigned physical-device archive. `dist/ios/verification-9b1a11e.json` records the inspected simulator artifact and source boundaries.
+Current verification and source boundaries are maintained in
+[Apple validation](../docs/apple-validation.md). The native suite now contains
+51 portable core tests, 47 host/keyboard logic tests, five real simulator recorder
+tests and thirteen UI walkthroughs for each phone/tablet destination. The separate
+installed-keyboard matrix runs on iPhone and iPad on both baseline and current
+simulator runtimes; its outcome gate rejects skipped or incomplete walkthroughs.
+Do not infer physical-device or App Store readiness from simulator/ad hoc builds.
 
 `QuillTests` tests actual SQLite storage and deletion, the bundle/fonts, Keychain isolation, failed-recording recovery, protected file coordination, the real keyboard controller with an injected text proxy, and the host pipeline with synthetic provider responses. Keyboard tests include selected-text replacement, Unicode preservation, expired transfers, consume once, secure/unavailable fields and revoked Full Access. Pipeline tests cover cleanup failure, cancellation, private retry, voice vocabulary and failed history storage. These use isolated files and synthetic keys in the real Keychain; no production validation is bypassed. Simulator builds use ad hoc signing so Keychain and App Group entitlements remain present.
 

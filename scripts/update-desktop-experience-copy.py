@@ -18,7 +18,7 @@ COPY = {
     "desktop.setup.provider_body": "Add and verify a key. You can change providers, models and cleanup later in Settings.",
     "desktop.setup.audio_title": "Check your microphone",
     "desktop.setup.access_title": "Let your words reach your apps",
-    "desktop.setup.access_body": "Windows needs your consent here. There is no Accessibility service or overlay permission to enable.",
+    "desktop.setup.access_body": "Quill can insert your finished dictation into the text field you selected. Review and allow text insertion below.",
     "desktop.setup.shortcut_title": "One shortcut, wherever you write",
     "desktop.setup.shortcut_body": "Focus a text field. Press your shortcut to start, speak, then press it again to finish.",
     "desktop.setup.controls": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",

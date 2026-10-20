@@ -1,4 +1,4 @@
-# Platform experience — October 19, 2026
+# Native platform experience — October 20, 2026
 
 The owner's direction supersedes Android screen/order parity in `platform-rebuild.md`.
 Windows, macOS and iOS are separate products with Quill's DNA: user-owned provider
@@ -8,11 +8,11 @@ permissions, screen proportions and setup steps are not a cross-platform templat
 
 The native cores are worth retaining. Windows already has working WPF, recording,
 UI Automation and protected storage. Mac has native SwiftUI/AppKit, recording,
-Accessibility and Keychain adapters, with real TextEdit evidence and a Safari fix
-still awaiting native verification. iOS has native host recording, provider and
+Accessibility and Keychain adapters, with verified real TextEdit and Safari insertion probes. iOS has native host recording, provider and
 storage code plus a keyboard transfer implementation. Replacing those foundations
 would discard integration work without solving the experience problem. Rebuild
-the desktop presentation and validate the iPhone recording/keyboard journey.
+the presentation around those foundations. The desktop, iPhone and iPad design
+pass is implemented; exact native acceptance results live in the reports below.
 
 ## Desktop design
 
@@ -41,30 +41,43 @@ compact windows stack these. Settings uses persistent categories on larger windo
 The contacts candidate importer is hidden from desktop navigation until those
 names actually influence dictation; its existing stored data is retained.
 
-## iPhone proposal (research, not an implemented keyboard redesign)
+## Implemented iPhone and iPad experience
 
 Wispr's current first-party guides teach keyboard enablement and Full Access,
 microphone access and a successful practice insertion. Borrow that progression
 and the explicit return-to-app guidance, while retaining Quill's own-key/privacy
 explanations. Do not borrow account/subscription screens or privacy promises.
 
-1. Welcome: demonstrate how Quill works from the iPhone keyboard.
+1. Welcome: introduce recording in Quill and inserting with its keyboard.
 2. Connect a speech provider: explain costs, save and verify the user's key.
-3. Enable Quill in Settings → General → Keyboard → Keyboards → Add New Keyboard.
-4. Explain Full Access accurately and guide the user to enable it. Quill uses it
-   for a one-use shared transcript transfer; credentials remain in the host.
-5. Request microphone access from the host app and recover from denial.
-6. Practise with a real text field: switch keyboards using the globe, start
+3. Enable Quill in Settings → General → Keyboard → Keyboards → Add New Keyboard,
+   then Full Access. Explain the protected one-use transcript transfer;
+   credentials remain in the host.
+4. Request microphone access from the host app, test locally and recover from denial.
+5. Practise with a real text field: switch keyboards using the globe, start
    recording in Quill, transcribe, return and insert. Success means visible text,
    not an "I've done this" checkbox.
-7. Confirm readiness; offer Copy for apps/fields that reject custom keyboards.
+6. Confirm readiness; offer Copy for apps/fields that reject custom keyboards.
+
+Continue from practice requires the actual matching keyboard insertion receipt.
+Typing in the practice field cannot complete the gate. The protected receipt
+contains a connection time and inserted handoff identifier, never audio,
+credentials or destination text. Keyboard setup requires a recent receipt.
+
+iPhone uses native tabs, navigation and sheets. iPad uses split navigation, a
+wider workspace and a list/reader history layout. At accessibility text sizes,
+native tabs preserve readable content width. Rows/cards grow vertically with
+their text; the final action scrolls above current iOS floating navigation.
+Provider forms have native keyboard dismissal, and landscape extension rows adapt
+independently. Inactive contacts candidates are hidden from navigation.
 
 The existing Quill workflow records in the host, explicitly publishes a transcript,
 then consumes it in the keyboard within 60 seconds. It does not yet implement
 Wispr's keyboard-initiated recording/return session. That requires a distinct
 platform feasibility and installed-keyboard acceptance milestone before onboarding
 may promise it. Do not imply an Android overlay or microphone inside the extension.
-Keep iPhone navigation compact; adapt iPad independently with wider panes.
+This explicit app-switching loop is less seamless than keyboard-initiated
+recording. The redesigned onboarding describes the loop the app actually supports.
 
 Sources checked October 19, 2026:
 - https://docs.wisprflow.ai/articles/7453988911-set-up-the-flow-keyboard-on-iphone
@@ -74,24 +87,40 @@ Sources checked October 19, 2026:
 
 ## Acceptance
 
-October 19 verification: Windows Release build, 250 screen renders, 35 setup/state
-retention checks and seven focused first-launch/theme/font tests passed. The full
-Windows suite passed 360/361; the existing shortcut-reopen foreground assertion
-remains failed. See [Windows evidence](../windows/VERIFICATION.md). All 49 iOS and
-34 Mac portable core tests also passed on Windows.
+Windows x64 and ARM64 each pass 362 tests with zero skipped, 300 screen renders,
+42 setup/state checks, 14 native editor/clipboard checks and 11 installer checks
+in [run 39405184046](https://github.com/someanay/quill/actions/runs/39405184046).
+The actual local 2.0.3 installation, Start shortcut, Installed apps entry and
+same-instance reopening are verified. See [Windows evidence](../windows/VERIFICATION.md).
 
-October 20 Apple execution: 34 Mac core, 43 native and eight UI tests pass, as do
-real TextEdit/Safari/native secure-field probes. The new universal Mac Release
-contains the desktop redesign and was inspected against source. iOS passes 49
-core, 45 native, five real simulator recorder, six iPhone UI and six iPad UI tests;
-the actual installed keyboard also completes recording/publication/insertion in
-a separate app. See [Apple validation](apple-validation.md) for exact runs,
-screenshots, package hashes and remaining hardware/design scope.
+The final Apple suites pass 34 Mac core, 43 native and eleven UI tests on all four
+Mac configurations; 51 iOS core, 47 native, five real recorder and thirteen UI tests
+per device on both runtimes. All eight TextEdit/Safari/AppKit jobs and all four
+installed-keyboard journeys pass. Final screenshots and packages are inspected.
+See [Apple validation](apple-validation.md) for exact runs, package hashes and
+physical-hardware limits.
 
 Preserve real permission/key gates and all dictation/storage safeguards. Render
 compact, wide, tall and short windows in both themes. Check navigation, readable
 wrapping, reachable actions, preserved key drafts on resize, complete history text,
 and no duplicate live recorders. Native Mac compilation, permissions, shortcuts
 and real editor integration require a Mac; Swift parsing/portable tests are not
-a substitute. The existing explicit iOS transfer loop now passes; the proposed
-keyboard-start/return redesign has not been implemented or validated.
+a substitute. Public release also requires signing/notarization, physical-device
+microphone/permission/interrupt testing and live provider/editor acceptance.
+Windows is closest to a usable installed release. Mac and iOS retain credible
+native foundations and a coherent redesigned interface; their exact execution
+gates must be assessed separately from visual polish.
+
+### Product assessment
+
+| App | Honest assessment | Remaining release work |
+| --- | --- | --- |
+| Windows | The strongest candidate for a private beta. The presentation is consistent, the shortcut is central, resizing is useful, and setup is a real per-user installation with Start and Installed apps integration. Retain the native core. | Signed distribution, physical ARM and multiple-monitor/DPI checks, and broader real editor/provider acceptance. The latest active-desktop foreground refusal is recorded separately from green isolated CI. |
+| macOS | A coherent Mac app with native windows, menus and Settings, rather than a phone layout in a desktop window. TextEdit, Safari and native secure fields pass actual integration on Intel and Apple Silicon. Retain the core. | Physical microphone/permission-denial/Settings-return, global shortcut, login and sleep/wake acceptance; signed and notarized distribution; more third-party editors. |
+| iPhone | A native, readable own-key setup and app, with actual keyboard connection/practice gates. The largest product weakness is still switching to Quill to record, sending, returning and inserting. A new visual shell alone cannot remove that friction. Retain the host, storage/provider and keyboard foundations. | Physical-device keyboard/audio/lock/interruption and live-provider acceptance, distribution signing, and a separate feasibility milestone if a keyboard-initiated recording session is desired. |
+| iPad | Meaningful split navigation, workspace and history layouts, plus readable accessibility navigation and a compact landscape keyboard. It uses the tablet's space without stretching phone controls. | Physical split-view/window resizing, rotation with real audio/keyboard use, external-keyboard and interruption acceptance, plus the iPhone release gates. |
+
+These are private-beta/readiness judgments, not App Store, Gatekeeper or public
+release approval. Minimum deployment targets do not establish execution on every
+older supported OS. The disconnected Honor phone also prevents a fresh Android
+physical retest; its existing UI was preserved as the design reference.

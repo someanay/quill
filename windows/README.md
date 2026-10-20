@@ -1,12 +1,12 @@
 # Quill for Windows
 
-Native Windows dictation with Quill's shared visual identity and provider pipeline. Requires Windows 10 or 11 on an x64 PC, a microphone, and the user's provider key. No Quill account or server.
+Native Windows dictation with Quill's shared visual identity and provider pipeline. Requires Windows 10 or 11 on an x64 or ARM64 PC, a microphone, and the user's provider key. No Quill account or server.
 
 ## Install
 
 Extract `Quill-Windows-2.0.3-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. After installation, open **Quill** from the Start menu; installation is a one-time step. A portable launch from `app/Quill.exe` is also available. The self-contained package includes .NET; no runtime download is required.
 
-The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. The separately compiled `win-arm64` download targets ARM Windows PCs; it has not been executed on ARM hardware.
+The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. Both x64 and ARM64 builds pass native Windows CI execution; physical ARM microphone/editor and wider device acceptance remain separate checks. See [verification](VERIFICATION.md).
 
 This build is unsigned. Windows may show its normal unknown-publisher prompt. The source and SHA-256 checksum are provided for review; no signing identity is fabricated.
 
@@ -65,6 +65,6 @@ dotnet test windows/Quill.Windows.slnx -c Release
 
 `Publish-Quill.ps1 -RunNativeSmoke` additionally tests actual UI Automation and SendInput against a separate controlled editor process. It needs an unlocked interactive desktop and temporarily focuses only that fixture. Tests refuse to type if another app owns focus. The harness restores clipboard data afterward. It is a separate test executable; production builds contain no authentication bypass or fake provider mode.
 
-The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`; all 423 current Android keys and exact formatting signatures are retained, with Windows copy additions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
+The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`. The 640-string revision 23 catalog retains formatting contracts and uses Windows-specific instructions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
 
 See `VERIFICATION.md` for actual test evidence and remaining external verification requirements.
