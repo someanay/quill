@@ -159,6 +159,19 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         configuration.activates = true
         configuration.addsToRecentItems = false
         configuration.arguments = ["-ApplePersistenceIgnoreState", "YES"]
+        // Cold launch and document opening are separate native operations. On
+        // current Intel runners, the combined request can launch TextEdit without
+        // opening its first document. This only opens the owned synthetic file.
+        if NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.TextEdit").isEmpty {
+            let application: NSRunningApplication = try await withCheckedThrowingContinuation { continuation in
+                NSWorkspace.shared.openApplication(at: editorURL, configuration: configuration) { app, error in
+                    if let error { continuation.resume(throwing: error) }
+                    else if let app { continuation.resume(returning: app) }
+                    else { continuation.resume(throwing: ProbeFailure("TextEdit launch returned neither app nor error.")) }
+                }
+            }
+            _ = application.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+        }
         return try await withCheckedThrowingContinuation { continuation in
             NSWorkspace.shared.open([document], withApplicationAt: editorURL, configuration: configuration) { app, error in
                 if let error { continuation.resume(throwing: error) }
@@ -172,7 +185,12 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         var captured: FocusSnapshot?
         var last = "no snapshot"
         do { try await waitUntil("TextEdit focused text and selection") {
-            guard let snapshot = try injector.snapshot() else { last = "no editable focused snapshot"; return false }
+            guard let snapshot = try injector.snapshot() else {
+                let application = AXUIElementCreateApplication(editor.processIdentifier)
+                let windows = attribute(application, kAXWindowsAttribute) as? [AXUIElement] ?? []
+                last = "no editable focused snapshot; TextEdit windows=\(windows.count)"
+                return false
+            }
             last = "bundle=\(snapshot.bundleID ?? "none"), textLength=\(snapshot.originalText?.utf16.count ?? -1), range=\(String(describing: snapshot.originalRange)), expectedLength=\(expected.utf16.count), expectedRange=\(String(describing: selection))"
             guard snapshot.process == editor.processIdentifier,
                   snapshot.bundleID == "com.apple.TextEdit", snapshot.originalText == expected else { return false }
