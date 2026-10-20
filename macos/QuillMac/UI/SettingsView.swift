@@ -14,13 +14,25 @@ struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     @State private var page: SettingsPage?
+    private func select(_ next: SettingsPage?) {
+        trace("select " + (next?.rawValue ?? "list"))
+        page = next
+    }
+    private func trace(_ event: String) {
+        #if DEBUG
+        guard AppPaths.testMode else { return }
+        let path = AppPaths.root.appendingPathComponent("settings-navigation.txt")
+        let previous = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+        try? (previous + event + "\n").write(to: path, atomically: true, encoding: .utf8)
+        #endif
+    }
     var body: some View {
         GeometryReader { geometry in
         HStack(spacing: 0) {
             if geometry.size.width >= 840 {
                 List {
                     ForEach(SettingsPage.allCases.filter { $0 != .vocab }) { item in
-                        Button { page = item } label: { Label(Copy.text(item.rowKey), systemImage: item.symbol).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 7) }
+                        Button { select(item) } label: { Label(Copy.text(item.rowKey), systemImage: item.symbol).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 7) }
                             .buttonStyle(.plain).accessibilityIdentifier("settings.category.\(item.rawValue)")
                     }
                 }.listStyle(.sidebar).frame(width: 210)
@@ -29,7 +41,7 @@ struct SettingsView: View {
         ScrollViewReader { scroll in
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                HStack { if page != nil { Button { page = nil } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }.id("settings-top")
+                HStack { if page != nil { Button { select(nil) } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }.id("settings-top")
                 if let page {
                     switch page {
                     case .speech: SpeechSettings()
@@ -64,7 +76,7 @@ struct SettingsView: View {
                 }
             }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
         }.accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
-            .onChange(of: page) { _ in scroll.scrollTo("settings-top", anchor: .top) }
+            .onChange(of: page) { next in trace("changed " + (next?.rawValue ?? "list")); scroll.scrollTo("settings-top", anchor: .top) }
         }
         }
         }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark)).background(QuillTheme.paper(scheme == .dark))
@@ -77,7 +89,7 @@ struct SettingsView: View {
             VStack(spacing: 0) {
                 ForEach(pages) { item in
                     if item != pages.first { Divider().padding(.leading, 68) }
-                    Button { page = item } label: {
+                    Button { select(item) } label: {
                         HStack(spacing: 12) {
                             Image(systemName: item.symbol).font(.system(size: 20)).foregroundStyle(QuillTheme.brandInk(scheme == .dark)).frame(width: 40, height: 40).background(QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading, spacing: 3) {
@@ -88,7 +100,7 @@ struct SettingsView: View {
                             Text(rowValue(item)).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
                             Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(.secondary)
                         }.padding(.horizontal, 14).frame(minHeight: 66).background(QuillTheme.surface(scheme == .dark)).contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityIdentifier("settings.\(item.rawValue)")
+                    }.buttonStyle(.borderless).accessibilityIdentifier("settings.\(item.rawValue)")
                 }
             }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
         }

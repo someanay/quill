@@ -4,6 +4,10 @@ import AppKit
 final class OnboardingUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
+        let tracePath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QuillUITests/settings-navigation.txt")
+        if let trace = try? String(contentsOf: tracePath, encoding: .utf8) {
+            let attachment = XCTAttachment(string: trace); attachment.name = "Settings navigation actions"; attachment.lifetime = .keepAlways; add(attachment)
+        }
         let app = XCUIApplication()
         if app.state != .notRunning {
             let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
