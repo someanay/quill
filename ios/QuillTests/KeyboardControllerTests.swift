@@ -250,4 +250,30 @@ import QuillCore
             }
         }
     }
+    func testPendingSessionResultKeepsOneReachableActionInBothAppearances() throws {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let proxy = TextProxyFixture(), handoff = HandoffFixture()
+            let item = try XCTUnwrap(handoff.item)
+            var session = KeyboardRecordingSession(); session.transferID = item.id; session.captureID = UUID()
+            let keyboard = KeyboardViewController()
+            keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { true }, peek: { handoff.item }, consume: handoff.consume, prune: {}, session: { session })
+            keyboard.loadViewIfNeeded()
+            let container = UIViewController(); container.addChild(keyboard); container.view.addSubview(keyboard.view); keyboard.didMove(toParent: container)
+            container.setOverrideTraitCollection(UITraitCollection(verticalSizeClass: .compact), forChild: keyboard)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 760, height: 300)); window.overrideUserInterfaceStyle = style
+            keyboard.overrideUserInterfaceStyle = style; window.rootViewController = container; window.isHidden = false
+            defer { window.isHidden = true; window.rootViewController = nil }
+            keyboard.viewWillLayoutSubviews()
+            let size = keyboard.view.systemLayoutSizeFitting(CGSize(width: 760, height: 0), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+            XCTAssertLessThanOrEqual(size.height, 300)
+            keyboard.view.frame = CGRect(origin: .zero, size: size); keyboard.view.layoutIfNeeded()
+            let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+            XCTAssertTrue(record.isHidden)
+            let insert = try insert(keyboard); XCTAssertFalse(insert.isHidden); XCTAssertTrue(insert.isEnabled)
+            XCTAssertTrue(keyboard.view.bounds.contains(insert.convert(insert.bounds, to: keyboard.view)))
+            let image = UIGraphicsImageRenderer(size: size).image { context in keyboard.view.layer.render(in: context.cgContext) }
+            let attachment = XCTAttachment(image: image); attachment.name = "Keyboard session pending landscape " + (style == .dark ? "dark" : "light")
+            attachment.lifetime = .keepAlways; add(attachment)
+        }
+    }
 }

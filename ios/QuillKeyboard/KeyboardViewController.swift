@@ -148,7 +148,7 @@ final class KeyboardViewController: UIInputViewController {
         if session?.isLive() != true { session = nil }
         if let pendingCommand, session?.acknowledgedCommandID == pendingCommand.id || Date().timeIntervalSince(pendingCommand.createdAt) > 4 { self.pendingCommand = nil }
         endButton.isHidden = session == nil
-        recordButton.isHidden = session == nil
+        recordButton.isHidden = session == nil || current != nil
         insertButton.isHidden = session != nil && current == nil
         if let session {
             let title: String
