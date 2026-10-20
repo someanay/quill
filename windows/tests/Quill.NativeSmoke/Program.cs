@@ -233,6 +233,7 @@ public static partial class Program {
   while (await reader.ReadLineAsync() is string line) {
    var command = JsonSerializer.Deserialize<Command>(line)!; if (command.Action == "quit") break;
    if (command.Action == "prepare") { ActivateFixture(window); if (command.Field == "password") sensitive.Focus(); else { var field = command.Field == "alternate" ? alternate : normal; field.Text = command.Text; field.IsReadOnly = command.ReadOnly; field.Select(command.Start,command.Length); field.Focus(); } await Task.Delay(250); }
+   if (command.Action == "focus") { ActivateFixture(window); normal.Focus(); await Task.Delay(250); }
    await writer.WriteLineAsync(JsonSerializer.Serialize(new Reply(normal.Text,sensitive.Password == "fixture-secret",new WindowInteropHelper(window).Handle.ToInt64())));
   }
   window.Close();

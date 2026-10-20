@@ -85,6 +85,7 @@ public static partial class Program {
  private sealed class LiveInsertionAudit : ITextInjector {
   private readonly TextInjector native = new();
   public List<object> Attempts { get; } = [];
+  public bool RunnerTerminalTookFocus { get; private set; }
   public Task<FocusTarget> Capture() => native.Capture();
   public Task<bool> CanType() => native.CanType();
   public async Task<bool> Insert(FocusTarget target,string text) {
@@ -92,6 +93,7 @@ public static partial class Program {
    // Observe after the production attempt; an extra preceding Capture could
    // warm UI Automation and conceal the cold-path timing we need to verify.
    var current = await native.Capture();
+   RunnerTerminalTookFocus = !inserted && current.Window != target.Window && current.Application == "WindowsTerminal";
    var after = new { sensitive=current.Sensitive,editable=current.Editable,sameWindow=current.Window == target.Window,sameElement=current.RuntimeId.SequenceEqual(target.RuntimeId),sameOriginalContext=current.Context == target.Context,modifierPressed=Native.ModifierPressed(),application=current.Application,hasTargetContext=target.Context != null };
    Attempts.Add(new { inserted,after }); return inserted;
   }
@@ -118,11 +120,19 @@ public static partial class Program {
       var before = audit.Requests.Count; await controller.Toggle(); if (controller.State != DictationState.Recording) throw new InvalidOperationException("Recording phase did not start: " + controller.Error);
       await controller.StopRecording(); var requests = audit.Requests.Skip(before).ToArray(); var actual = (await Send(new(Action:"read"))).Text;
       var successful = requests.Where(x => x.Status == 200).ToArray();
+      var automaticInsertion = controller.State == DictationState.Idle; var explicitPasteRecovery = false;
+      if (controller.State == DictationState.Paste && insertion.RunnerTerminalTookFocus && actual == prefix && successful.Length == 2) {
+       // A hosted ARM runner can foreground its terminal during a long request.
+       // Keep the refusal visible and exercise the real user-initiated Paste path.
+       RequireCleanup(audit,successful[0].Output ?? "",controller.LastText);
+       await Send(new(Action:"focus")); await controller.Toggle();
+       actual = (await Send(new(Action:"read"))).Text; explicitPasteRecovery = controller.State == DictationState.Idle;
+      }
       if (controller.State != DictationState.Idle || successful.Length != 2 || requests.Any(x => x.Status is not (200 or 503))) throw new InvalidOperationException("Production pipeline did not finish both live requests and insertion: " + controller.Error);
       RequireSpeech(controller.LastText);
       var raw = successful[0].Output ?? throw new InvalidOperationException("Missing live transcription response."); RequireCleanup(audit,raw,controller.LastText);
       if (actual != prefix + controller.LastText || File.Exists(Path.Combine(folder,"pending-audio.dpapi"))) throw new InvalidOperationException("Exact editor readback or audio retirement failed.");
-      results.Add(new { speech = profile.Item1,cleanup = profile.Item2,take,passed = true,raw,clean = controller.LastText,editor = actual,requests });
+      results.Add(new { speech = profile.Item1,cleanup = profile.Item2,take,passed = true,automaticInsertion,explicitPasteRecovery,raw,clean = controller.LastText,editor = actual,requests });
      }
     } catch (Exception error) {
      failed = true; var observed = await Send(new(Action:"read")); results.Add(new { speech=profile.Item1,cleanup=profile.Item2,passed=false,state=controller.State.ToString(),editor=observed.Text,insertion=insertion.Attempts,error=error is ProviderException p ? p.Code : error is InvalidOperationException ? error.Message : error.GetType().Name,requests=audit.Requests }); await controller.Cancel();

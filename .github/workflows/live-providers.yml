@@ -61,8 +61,12 @@ jobs:
             [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
             [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
             [DllImport("user32.dll")] public static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra);
+            [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr window,int command);
           }
           '@
+          foreach ($terminal in @(Get-Process WindowsTerminal -ErrorAction SilentlyContinue)) {
+            if ($terminal.MainWindowHandle -ne [IntPtr]::Zero) { [void][QuillLiveDesktop]::ShowWindowAsync($terminal.MainWindowHandle,6) }
+          }
           for ($attempt = 0; $attempt -lt 6; $attempt++) {
             [uint32]$owner = 0
             [void][QuillLiveDesktop]::GetWindowThreadProcessId([QuillLiveDesktop]::GetForegroundWindow(),[ref]$owner)
