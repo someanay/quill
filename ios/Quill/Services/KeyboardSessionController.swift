@@ -77,7 +77,7 @@ import QuillCore
         // Its result remains available for explicit insertion even after the mic lease closes.
         if ownsCapture && model.busy {
             timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in Task { @MainActor in self?.finishAfterEnd() } }
-        }
+        } else { ownsCapture = false }
     }
     private func finishAfterEnd() {
         guard let model, !model.busy else { return }

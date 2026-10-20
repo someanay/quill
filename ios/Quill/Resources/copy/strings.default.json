@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 22,
+  "revision": 23,
   "locale": "en",
   "updatedAt": "2026-10-20T11:05:00Z",
   "strings": {
@@ -488,7 +488,7 @@
     "ios.result.dismiss": "Dismiss transcript",
     "ios.result.copied": "Copied. Paste into the field you choose. This copy stays until you replace or clear it.",
     "ios.result.sent": "Ready in the Quill keyboard for 60 seconds. Return to your app, switch to Quill, and tap Insert dictation.",
-    "ios.transfer.clear": "Clear pending keyboard text",
+    "ios.transfer.clear": "Clear keyboard text and end session",
     "ios.transfer.cleared": "Pending keyboard text cleared.",
     "ios.recording.start": "Start dictation",
     "ios.recording.stop": "Stop and transcribe",

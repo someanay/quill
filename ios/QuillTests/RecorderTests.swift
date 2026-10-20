@@ -1,7 +1,20 @@
 import XCTest
+import Foundation
 import AVFoundation
 import QuillCore
 @testable import Quill
+
+private actor DelayedSessionProvider: HTTPTransport {
+    private(set) var started = false
+    func send(_ request: URLRequest) async throws -> HTTPResult {
+        started = true
+        // Deliberately finish after cancellation to exercise the delivery generation guard.
+        return try await Task.detached {
+            try await Task.sleep(nanoseconds: 1_000_000_000)
+            return HTTPResult(data: Data(#"{"text":"This cancelled take must never be delivered."}"#.utf8), status: 200)
+        }.value
+    }
+}
 
 /// Run after `simctl privacy <device> grant microphone com.tihor.quill.ios` on an installed host.
 /// This exercises the real native recorder; it sends no audio or credentials over the network.
@@ -114,5 +127,37 @@ import QuillCore
         try await Task.sleep(nanoseconds: 400_000_000)
         XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
         XCTAssertFalse(model.recorder.keepsAudioSessionActive)
+    }
+    func testClearingKeyboardTextCancelsAnInFlightRealTakeWithoutLateDelivery() async throws {
+        let provider = DelayedSessionProvider()
+        let model = AppModel(providerAPI: ProviderAPI(transport: provider))
+        model.cancel(); model.settings = QuillSettings(); model.settings.selectProvider(.groq); model.settings.cleanupEnabled = false
+        try model.vault.save("session-clear-" + UUID().uuidString, provider: .groq, endpoint: Provider.groq.baseURL, label: "Session cancellation test")
+        let key = try XCTUnwrap(model.vault.active(.groq, endpoint: Provider.groq.baseURL))
+        defer { model.keyboardSession.end(cancelCapture: true); try? model.vault.delete(key); try? KeyboardTransfer.clear() }
+        try KeyboardTransfer.clear()
+        await model.keyboardSession.enable(duration: 30)
+        for _ in 0..<30 {
+            if model.keyboardSession.ready { break }; try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertTrue(model.keyboardSession.ready)
+        let session = try XCTUnwrap(model.keyboardSession.state)
+        try KeyboardSessionBridge.send(KeyboardSessionCommand(sessionID: session.id, kind: .start))
+        for _ in 0..<30 {
+            if model.phase == .recording { break }; try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(model.phase, .recording)
+        try await Task.sleep(nanoseconds: 250_000_000)
+        model.stopAndTranscribe(); XCTAssertEqual(model.phase, .transcribing)
+        for _ in 0..<30 {
+            if await provider.started { break }; try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        let reachedProvider = await provider.started
+        XCTAssertTrue(reachedProvider, "The real recorded WAV must reach the delayed transport before clearing.")
+        model.clearTransfer()
+        try await Task.sleep(nanoseconds: 1_200_000_000)
+        XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
+        XCTAssertFalse(model.recorder.isRecording); XCTAssertFalse(model.recorder.keepsAudioSessionActive)
+        XCTAssertEqual(model.result, ""); XCTAssertNil(KeyboardTransfer.peek()); XCTAssertEqual(model.phase, .idle)
     }
 }

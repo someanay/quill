@@ -1,5 +1,5 @@
 {
-  "revision": 22,
+  "revision": 23,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -2938,7 +2938,7 @@
       "optionalBlank": false
     },
     "ios.transfer.clear": {
-      "default": "Clear pending keyboard text",
+      "default": "Clear keyboard text and end session",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

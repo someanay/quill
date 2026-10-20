@@ -368,7 +368,10 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         do { let id = try KeyboardTransfer.publish(text); notice = c("ios.result.sent"); return id }
         catch { report(error); return nil }
     }
-    func clearTransfer() { do { try KeyboardTransfer.clear(); notice = c("ios.transfer.cleared") } catch { report(error) } }
+    func clearTransfer() {
+        keyboardSession.end(cancelCapture: true)
+        do { try KeyboardTransfer.clear(); notice = c("ios.transfer.cleared") } catch { report(error) }
+    }
     func refreshHistory() { do { history = try historyStore?.entries(retentionMinutes: settings.retentionMinutes) ?? [] } catch { report(error) } }
     func deleteHistory(_ entry: HistoryEntry) { do { try historyStore?.delete(entry.id); refreshHistory() } catch { report(error) } }
     func clearHistory() { do { try historyStore?.clear(); refreshHistory() } catch { report(error) } }

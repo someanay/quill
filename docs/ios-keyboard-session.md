@@ -57,6 +57,8 @@ chain URL trick, automatic app return or microphone use in the extension.
   dictation commands. No automatic replay follows extension/process restart.
 - Provider/storage failure preserves the normal retry/cleanup behavior. Private
   mode and reset end the session and prevent late delivery.
+- Clearing pending keyboard text also ends the live session and cancels a take
+  already reaching its provider. A late response cannot republish cleared text.
 - Core tests cover lease/command/anchor invariants. Native tests cover actual
   idle input, two real recorder takes, protected file coordination and keyboard
   auto-insertion/refusal. Installed-keyboard tests require two actual background
