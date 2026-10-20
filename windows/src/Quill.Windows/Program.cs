@@ -36,7 +36,9 @@ public sealed class AppServices : IDisposable {
  public MainWindow? MainWindow { get; set; } public BubbleWindow? Bubble { get; private set; }
  private System.Windows.Forms.NotifyIcon? tray; private HotkeyService? hotkey; private readonly DispatcherTimer prune; private CancellationTokenSource? autoReturn; public bool HotkeyAvailable => hotkey?.Registered == true; public bool HotkeyChecked => hotkey != null; public string HotkeyLabel => hotkey?.Label ?? Settings.Value.DictationShortcut;
  public AppServices(string folder, bool isolated) {
-  Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder); History = new(folder);
+  Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder);
+  if (!isolated) Secrets.TryImportLegacy(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Quill","secrets"));
+  History = new(folder);
   Dictation = new(Settings, Secrets, History, Provider, Recorder, Injector, Clipboard, folder);
   Recorder.AutoStop += () => Application.Current.Dispatcher.BeginInvoke(async () => await Dictation.StopRecording());
   Dictation.Changed += () => Application.Current.Dispatcher.BeginInvoke(() => { MainWindow?.RefreshStatus(); Bubble?.Refresh(); });

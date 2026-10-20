@@ -164,7 +164,7 @@ struct OnboardingView: View {
             KeyboardSessionPanel(session: model.keyboardSession)
             DictationControls(recorder: model.recorder)
             if !model.result.isEmpty {
-                QCard { Text(model.result).textSelection(.enabled).privacySensitive() }
+                QCard { Text(model.result).textSelection(.enabled).privacySensitive().accessibilityIdentifier("dictation.result") }
                 QButton(title: model.c("ios.result.send_keyboard"), icon: "keyboard") {
                     practiceTranscript = model.result
                     practiceTransfer = model.sendToKeyboard(model.result)

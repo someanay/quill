@@ -6,6 +6,11 @@ on:
   pull_request:
     paths: ["windows/**", "tests/parity/**", ".github/workflows/windows.yml"]
   workflow_dispatch:
+    inputs:
+      live_providers:
+        description: Run owner-authorized live providers instead of ordinary verification
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -15,7 +20,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  live:
+    if: inputs.live_providers == true
+    uses: ./.github/workflows/live-providers.yml
+    with:
+      platform: windows
+    secrets:
+      QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+      QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
   windows:
+    if: inputs.live_providers != true
     strategy:
       fail-fast: false
       matrix:

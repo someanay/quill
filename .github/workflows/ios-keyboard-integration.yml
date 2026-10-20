@@ -14,6 +14,11 @@ on:
   pull_request:
     paths: ["ios/**", ".github/workflows/ios-keyboard-integration.yml"]
   workflow_dispatch:
+    inputs:
+      live_providers:
+        description: Run actual providers with synthetic speech through the real microphone
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,7 +28,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  live:
+    if: inputs.live_providers == true
+    uses: ./.github/workflows/live-providers.yml
+    with:
+      platform: ios
+    secrets:
+      QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+      QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
   installed-keyboard:
+    if: inputs.live_providers != true
     strategy:
       fail-fast: false
       matrix:

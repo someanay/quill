@@ -13,6 +13,16 @@ public sealed class TestFolder : IDisposable {
  }
 }
 public sealed class StorageTests {
+ [Fact] public void LegacyKeysMigrateOnceWithoutReplacingCurrentKeysOrReturningAfterClear() {
+  using var f = new TestFolder(); var legacy = System.IO.Path.Combine(f.Path,"legacy"); Directory.CreateDirectory(legacy);
+  void SaveLegacy(Provider provider,string text) { var data = System.Text.Encoding.UTF8.GetBytes(text); try { File.WriteAllBytes(System.IO.Path.Combine(legacy,provider.ToString().ToLowerInvariant() + ".bin"),System.Security.Cryptography.ProtectedData.Protect(data,System.Text.Encoding.UTF8.GetBytes("Quill.Windows.BYOK.v1"),System.Security.Cryptography.DataProtectionScope.CurrentUser)); } finally { System.Security.Cryptography.CryptographicOperations.ZeroMemory(data); } }
+  SaveLegacy(Provider.Gemini,"legacy-gemini-fixture-key"); SaveLegacy(Provider.OpenRouter,"legacy-router-fixture-key"); SaveLegacy(Provider.Custom,"never-import-unbound-custom-key"); File.WriteAllText(System.IO.Path.Combine(legacy,"groq.bin"),"invalid encrypted file");
+  var store = new SecretStore(f.Path); store.Add(Provider.OpenRouter,"current-router-fixture-key","Current");
+  Assert.True(store.TryImportLegacy(legacy)); Assert.Equal("legacy-gemini-fixture-key",store.Read(Provider.Gemini)); Assert.Equal("current-router-fixture-key",store.Read(Provider.OpenRouter)); Assert.Null(store.Read(Provider.Groq)); Assert.Null(store.Read(Provider.Custom)); Assert.Single(store.List(Provider.Gemini));
+  Assert.True(new SecretStore(f.Path).TryImportLegacy(legacy)); Assert.Single(new SecretStore(f.Path).List(Provider.Gemini));
+  Assert.True(File.Exists(System.IO.Path.Combine(legacy,"gemini.bin"))); Assert.DoesNotContain("legacy-gemini-fixture-key",File.ReadAllText(System.IO.Path.Combine(f.Path,"keys.dpapi.json")));
+  store.Clear(); Assert.True(new SecretStore(f.Path).TryImportLegacy(legacy)); Assert.Null(new SecretStore(f.Path).Read(Provider.Gemini));
+ }
  [Fact] public void CustomProviderMayUseShortValidatedCredentials() { using var f = new TestFolder(); var store = new SecretStore(f.Path); store.Add(Provider.Custom,"abc","custom","https://custom.example/v1"); Assert.Equal("abc",store.Read(Provider.Custom,"https://custom.example/v1")); }
  [Fact] public void CleanupAutomaticTransitionsSnapshotEffectiveSelectionAndEnableCleanup() { using var f = new TestFolder(); var store = new SettingsStore(f.Path); store.SetProvider(Provider.Gemini); store.SetCleanupAutomatic(false); Assert.False(store.Value.CleanupAutomatic); Assert.Equal(Provider.Gemini,store.Value.CleanupProvider); Assert.Equal("gemini-3.5-flash-lite",store.Value.CleanupModel); store.SetCleanupEnabled(false); store.SetCleanupAutomatic(true); Assert.True(store.Value.UseCleanup); Assert.True(store.Value.CleanupEnabled); }
  [Fact] public void DeliberateCleanupOnOptsIntoManualPaidProvider() { using var f = new TestFolder(); var store = new SettingsStore(f.Path); store.SetProvider(Provider.OpenAI); Assert.False(store.Value.UseCleanup); store.SetCleanupEnabled(true); Assert.False(store.Value.CleanupAutomatic); Assert.True(store.Value.UseCleanup); Assert.Equal(Provider.OpenAI,store.Value.CleanupProvider); Assert.Equal("gpt-4o-mini",store.Value.CleanupModel); }

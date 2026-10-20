@@ -25,6 +25,7 @@ targets:
       - path: Quill
         excludes: [Resources]
       - path: Shared
+      - path: ../tests/live/AppleLiveAudit.swift
       - path: Quill/Resources
         buildPhase: resources
     settings:

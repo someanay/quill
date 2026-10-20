@@ -52,7 +52,11 @@ public sealed class ProviderClient : IDisposable {
   var model = p == Provider.Custom ? settings.CustomModel : settings.SpeechModel;
   if (string.IsNullOrWhiteSpace(model)) throw new ProviderException("model_missing");
   var request = Request(HttpMethod.Post, baseUrl + (p == Provider.Gemini ? "/v1beta/models/" + Uri.EscapeDataString(model) + ":generateContent" : "/audio/transcriptions"), p, key);
-  if (p == Provider.Gemini) request.Content = JsonContent.Create(new { contents = new[] { new { role = "user", parts = new object[] { new { text = TranscriptionPrompt(settings.Language) }, new { inline_data = new { mime_type = "audio/wav", data = Convert.ToBase64String(wav) } } } } }, generationConfig = new { temperature = 0 } });
+  if (p == Provider.Gemini) {
+   var generation = new Dictionary<string,object> { ["temperature"] = 0 };
+   if (model.StartsWith("gemini-3",StringComparison.Ordinal) && model.Contains("flash",StringComparison.Ordinal)) generation["thinkingConfig"] = new { thinkingLevel = "minimal" };
+   request.Content = JsonContent.Create(new { contents = new[] { new { role = "user", parts = new object[] { new { text = TranscriptionPrompt(settings.Language) }, new { inline_data = new { mime_type = "audio/wav", data = Convert.ToBase64String(wav) } } } } }, generationConfig = generation });
+  }
   else if (p == Provider.OpenRouter) {
    var payload = new Dictionary<string,object> { ["model"] = model, ["input_audio"] = new { data = Convert.ToBase64String(wav), format = "wav" } }; if (settings.Language != "auto") payload["language"] = settings.Language; request.Content = JsonContent.Create(payload);
   } else {
@@ -105,7 +109,10 @@ public sealed class ProviderClient : IDisposable {
   var baseUrl = Providers.BaseUrl(p, settings.CustomBaseUrl) + (p == Provider.Gemini ? "/v1beta/openai" : "");
   // Gemini's OpenAI-compatible endpoint accepts bearer authentication; use it only on Google's host.
   var request = Request(HttpMethod.Post, baseUrl + "/chat/completions", p == Provider.Gemini ? Provider.OpenAI : p, key);
-  request.Content = JsonContent.Create(new { model, temperature = 0, messages = new[] { new { role = "system", content = CleanupGuard.Prompt(settings.StyleFor(destination)) }, new { role = "user", content = raw } } });
+  var payload = new Dictionary<string,object> { ["model"] = model,["temperature"] = 0,["messages"] = new[] { new { role = "system", content = CleanupGuard.Prompt(settings.StyleFor(destination)) },new { role = "user",content = raw } } };
+  if (p == Provider.Gemini && model.StartsWith("gemini-3",StringComparison.Ordinal) && model.Contains("flash",StringComparison.Ordinal)) payload["reasoning_effort"] = "minimal";
+  if (p == Provider.OpenRouter) payload["provider"] = new { sort = "latency" };
+  request.Content = JsonContent.Create(payload);
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(4));
   try { using var json = await Send(request, p, deadline.Token); var choice = json.RootElement.GetProperty("choices")[0]; if (choice.TryGetProperty("finish_reason",out var finish) && finish.GetString() is string reason && reason != "stop") return raw; var text = choice.GetProperty("message").GetProperty("content").GetString()?.Trim() ?? ""; return CleanupGuard.PreservesMeaning(raw,text) ? text : raw; }
   catch (Exception e) when (e is ProviderException or JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or OperationCanceledException && !cancellation.IsCancellationRequested) { return raw; }
@@ -122,6 +129,7 @@ public static class CleanupGuard {
  public static bool PreservesMeaning(string raw, string clean) {
   var a = Tokens(raw); var b = Tokens(clean); if (a.Length == 0 || b.Length == 0) return false;
   var budget = a.GroupBy(t => t).ToDictionary(g => g.Key, g => g.Count()); var matched = 0;
+  if (b.Any(token => !budget.ContainsKey(token))) return false;
   foreach (var token in b) if (budget.GetValueOrDefault(token) > 0) { budget[token]--; matched++; }
   return (double)matched / b.Length >= 0.7 && (double)matched / a.Length >= 0.5;
  }

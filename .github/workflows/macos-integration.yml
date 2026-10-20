@@ -14,6 +14,11 @@ on:
   pull_request:
     paths: ["macos/**", ".github/workflows/macos-integration.yml"]
   workflow_dispatch:
+    inputs:
+      live_providers:
+        description: Run owner-authorized live providers instead of ordinary editor verification
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,7 +28,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  live:
+    if: inputs.live_providers == true
+    uses: ./.github/workflows/live-providers.yml
+    with:
+      platform: macos
+    secrets:
+      QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+      QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
   textedit:
+    if: inputs.live_providers != true
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +69,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
   browser-and-secure-fields:
+    if: inputs.live_providers != true
     strategy:
       fail-fast: false
       matrix:

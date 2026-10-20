@@ -113,6 +113,7 @@ public enum CleanupGuard {
         guard !a.isEmpty, !b.isEmpty else { return false }
         var budget = a.reduce(into: [String:Int]()) { $0[$1, default: 0] += 1 }
         var matched = 0
+        guard b.allSatisfy({ budget[$0] != nil }) else { return false }
         for token in b where budget[token, default: 0] > 0 { budget[token, default: 0] -= 1; matched += 1 }
         return Double(matched) / Double(b.count) >= 0.7 && Double(matched) / Double(a.count) >= 0.5
     }

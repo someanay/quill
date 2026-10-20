@@ -1,0 +1,187 @@
+name: Live recording transcription cleanup and insertion
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        type: string
+        default: all
+    secrets:
+      QUILL_LIVE_GEMINI_KEY:
+        required: true
+      QUILL_LIVE_OPENROUTER_KEY:
+        required: true
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to exercise with the owner's temporary provider secrets
+        type: choice
+        options: [all, windows, macos, ios]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-providers-${{ github.ref }}-${{ inputs.platform }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    if: inputs.platform == 'all' || inputs.platform == 'windows'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build native test harness
+        run: dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
+      - name: Exercise production controller and real editor with live providers
+        env:
+          QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+          QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
+        run: |
+          New-Item -ItemType Directory -Path dist/live/windows -Force | Out-Null
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --live-pipeline tests/live/speech.wav dist/live/windows/result.json
+          exit $LASTEXITCODE
+      - name: Preserve safe live results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-windows-${{ matrix.runner }}
+          path: dist/live/windows/*.json
+          if-no-files-found: error
+          retention-days: 7
+
+  macos:
+    if: inputs.platform == 'all' || inputs.platform == 'macos'
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel, macos-26, macos-26-intel]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install project generator
+        run: brew install xcodegen
+      - name: Prepare real virtual audio input
+        run: bash tests/live/prepare-apple-audio.sh
+      - name: Build production native recorder and pipeline probe
+        working-directory: macos
+        run: |
+          set -o pipefail
+          xcodegen generate
+          xcodebuild -project QuillMac.xcodeproj -scheme QuillLiveProbe -configuration Debug \
+            -destination 'platform=macOS' -derivedDataPath LiveBuild CODE_SIGNING_ALLOWED=NO \
+            > "$RUNNER_TEMP/quill-live-mac-build.log" 2>&1 || { tail -80 "$RUNNER_TEMP/quill-live-mac-build.log"; exit 1; }
+      - name: Record speech and insert actual live cleanup into TextEdit
+        env:
+          QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+          QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
+        run: |
+          mkdir -p dist/live/macos
+          macos/LiveBuild/Build/Products/Debug/QuillLiveProbe "$PWD/tests/live/speech.wav" "$PWD/dist/live/macos"
+      - name: Preserve safe live results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-macos-${{ matrix.runner }}
+          path: |
+            dist/live/macos/*.json
+            ${{ runner.temp }}/quill-live-audio-devices.json
+            ${{ runner.temp }}/quill-live-mac-build.log
+          retention-days: 7
+
+  ios:
+    if: inputs.platform == 'all' || inputs.platform == 'ios'
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [iPhone, iPad]
+        runner: [macos-15, macos-26]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install project generator and prepare actual input
+        run: |
+          brew install xcodegen
+          bash tests/live/prepare-apple-audio.sh
+      - name: Boot an isolated simulator
+        id: destination
+        env:
+          SIMULATOR_FAMILY: ${{ matrix.device }}
+        run: |
+          defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys,os; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith(os.environ["SIMULATOR_FAMILY"])))')
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl launch "$UDID" com.apple.Preferences
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+      - name: Build and install real host keyboard and separate editor
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          xcodegen generate
+          xcodebuild build-for-testing -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
+            -configuration Debug -destination "id=$UDID" -derivedDataPath LiveDerivedData \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            > "$RUNNER_TEMP/quill-live-ios-build.log" 2>&1 || { tail -80 "$RUNNER_TEMP/quill-live-ios-build.log"; exit 1; }
+          xcrun simctl install "$UDID" LiveDerivedData/Build/Products/Debug-iphonesimulator/Quill.app
+          xcrun simctl install "$UDID" LiveDerivedData/Build/Products/Debug-iphonesimulator/QuillKeyboardFieldFixture.app
+          xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
+      - name: Seed owner-authorized keys into isolated private simulator storage
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+          DEVICE: ${{ matrix.device }}
+          QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
+          QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
+        run: |
+          PROVIDER=gemini
+          if [ "$DEVICE" = iPad ]; then PROVIDER=openrouter; fi
+          python3 tests/live/prepare-ios-live.py "$UDID" ios/LiveDerivedData "$PROVIDER"
+      - name: Enable keyboard and complete real recording live providers and insertion
+        working-directory: ios
+        env:
+          UDID: ${{ steps.destination.outputs.udid }}
+        run: |
+          set -o pipefail
+          python3 ../tests/live/speech-server.py ../tests/live/speech.wav > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
+          SPEECH_PID=$!
+          trap 'kill "$SPEECH_PID" 2>/dev/null || true' EXIT
+          xcodebuild test-without-building -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
+            -destination "id=$UDID" -derivedDataPath LiveDerivedData \
+            -resultBundlePath LiveKeyboardResults.xcresult \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 900 \
+            -maximum-test-execution-time-allowance 1200 \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            > "$RUNNER_TEMP/quill-live-ios-test.log" 2>&1 || { tail -80 "$RUNNER_TEMP/quill-live-ios-test.log"; exit 1; }
+      - name: Export and verify exact live output and editor readbacks
+        if: always()
+        run: |
+          if [ -d ios/LiveKeyboardResults.xcresult ]; then
+            xcrun xcresulttool export attachments --path ios/LiveKeyboardResults.xcresult --output-path ios/live-keyboard-evidence
+          fi
+          python3 tests/live/collect-ios-live.py dist/live/ios
+      - name: Preserve safe results and screenshots only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-ios-${{ matrix.device }}-${{ matrix.runner }}
+          path: |
+            dist/live/ios/*.json
+            ios/live-keyboard-evidence/*.png
+            ios/live-keyboard-evidence/*.json
+            ${{ runner.temp }}/quill-live-ios-build.log
+            ${{ runner.temp }}/quill-live-ios-test.log
+            ${{ runner.temp }}/quill-live-audio-devices.json
+          retention-days: 7

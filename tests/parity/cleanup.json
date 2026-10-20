@@ -1,7 +1,7 @@
 {
   "reference": "app/src/main/java/com/tihor/quill/cleanup/CleanupGuard.kt",
   "sourceSha256": "8d60afe38101e0d14d447964f1da1bec33558f8b11e6dec6f9af9bde4881fda6",
-  "description": "Android regression tests plus every Android contraction in both directions. Native apps must use the same acceptance decision.",
+  "description": "Android regression/contraction basis plus native live-provider safety regressions; native apps share acceptance decisions.",
   "cases": [
     {
       "raw": "type my email",
@@ -977,6 +977,11 @@
       "raw": "let us",
       "cleaned": "lets",
       "accepted": true
+    },
+    {
+      "raw": "Um please send the updated project notes to my uh tomorrow and include the budget of 42 dollars uh thank you",
+      "cleaned": "Please send the updated project notes to my email tomorrow and include the budget of 42 dollars. Thank you.",
+      "accepted": false
     }
   ]
 }

@@ -6,7 +6,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private let host = XCUIApplication(bundleIdentifier: "com.tihor.quill.ios")
     private let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
     private let fixture = XCUIApplication(bundleIdentifier: "com.tihor.quill.ios.qa.keyboard-field")
-    private let sessionID = UUID().uuidString
+    private let sessionID = ProcessInfo.processInfo.environment["QUILL_LIVE_SESSION_ID"] ?? UUID().uuidString
+    private var isLive: Bool { ProcessInfo.processInfo.environment["QUILL_LIVE_SESSION_ID"] != nil }
+    private var liveReadbacks: [[String: String]] = []
     private var stage = "starting"
     private var outcome = "incomplete"
     override func setUpWithError() throws {
@@ -17,8 +19,12 @@ final class KeyboardIntegrationUITests: XCTestCase {
         attach("final-" + stage, app: fixture)
         attach("final-host-" + stage, app: host)
         if stage.contains("settings") { attach("final-settings-state", app: settings) }
-        let report = XCTAttachment(string: "status=\(outcome)\nstage=\(stage)\ntransport=DEBUG synthetic provider; real microphone and installed keyboard extension\n")
+        let transport = isLive ? "LIVE HTTPS providers; actual loopback microphone and installed keyboard" : "DEBUG synthetic provider; real microphone and installed keyboard extension"
+        let report = XCTAttachment(string: "status=\(outcome)\nstage=\(stage)\ntransport=\(transport)\n")
         report.name = "Keyboard integration outcome"; report.lifetime = .keepAlways; add(report)
+        if isLive, let data = try? JSONSerialization.data(withJSONObject: liveReadbacks, options: [.prettyPrinted,.sortedKeys]) {
+            let readbacks = XCTAttachment(data: data, uniformTypeIdentifier: "public.json"); readbacks.name = "Live provider exact readbacks"; readbacks.lifetime = .keepAlways; add(readbacks)
+        }
         fixture.terminate(); host.terminate(); settings.terminate()
     }
     private func attach(_ name: String, app: XCUIApplication) {
@@ -51,7 +57,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         throw XCTSkip(reason)
     }
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
-        if !element.exists { XCTAssertTrue(element.waitForExistence(timeout: 10)) }
+        if !element.exists { XCTAssertTrue(element.waitForExistence(timeout: isLive ? 120 : 10)) }
         for _ in 0..<6 { if element.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(element.isHittable); element.tap()
     }
@@ -94,8 +100,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     private func completeOnboarding() throws {
         stage = "synthetic-key-onboarding"
-        host.launchArguments = ["--ui-testing", "--ui-provider-fixtures", "--ui-session-id", sessionID]
+        host.launchArguments = ["--ui-testing", isLive ? "--ui-live-providers" : "--ui-provider-fixtures", "--ui-session-id", sessionID]
         host.launch()
+        if !isLive {
         tap(host.buttons["onboarding.getStarted"], in: host)
         let next = host.buttons["Choose a provider"]
         XCTAssertTrue(next.waitForExistence(timeout: 5))
@@ -109,6 +116,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         XCTAssertTrue(host.descendants(matching: .any).matching(identifier: "key.verified").firstMatch.waitForExistence(timeout: 10))
         if host.buttons["Done"].firstMatch.exists { tap(host.buttons["Done"].firstMatch, in: host) }
         tap(host.buttons["onboarding.key.verify"], in: host)
+        }
         XCTAssertTrue(host.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10))
         XCTAssertFalse(host.buttons["onboarding.keyboard.next"].isEnabled)
         try enableKeyboardThroughSettings()
@@ -136,13 +144,15 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let record = host.buttons["dictation.record"]
         tap(record, in: host)
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))
-        RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+        captureSpeech()
         tap(record, in: host)
+        let practiceExpected = expectedLiveResult()
         tap(host.buttons["onboarding.practice.send"], in: host)
         try showQuillKeyboard(in: host)
         tap(host.buttons["keyboard.insert"], in: host)
         let practiceField = host.textFields["onboarding.practice.field"]
-        expectation(for: NSPredicate(format: "value == %@", "This is a simulated provider response."), evaluatedWith: practiceField); waitForExpectations(timeout: 10)
+        expectation(for: NSPredicate(format: "value == %@", practiceExpected), evaluatedWith: practiceField); waitForExpectations(timeout: 10)
+        if isLive { liveReadbacks.append(["stage":"practice","text":practiceField.value as? String ?? ""]) }
         attach("native-onboarding-practice-inserted", app: host)
         if host.buttons["Done"].firstMatch.exists { tap(host.buttons["Done"].firstMatch, in: host) }
         let practiceNext = host.buttons["onboarding.practice.next"]
@@ -150,6 +160,25 @@ final class KeyboardIntegrationUITests: XCTestCase {
         tap(practiceNext, in: host)
         tap(host.buttons["onboarding.finish"], in: host)
         XCTAssertTrue(host.buttons["dictation.record"].waitForExistence(timeout: 10))
+    }
+    private func captureSpeech(defaultDelay: Double = 1.5) {
+        if !isLive { RunLoop.current.run(until: Date().addingTimeInterval(defaultDelay)); return }
+        guard let address = ProcessInfo.processInfo.environment["QUILL_LIVE_AUDIO_URL"], let url = URL(string: address), url.host == "127.0.0.1", url.path == "/play" else { XCTFail("Missing isolated loopback playback server."); return }
+        let played = expectation(description: "Start actual synthetic speech playback on the Mac runner")
+        URLSession.shared.dataTask(with: url) { _, response, error in
+            XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode,204); played.fulfill()
+        }.resume()
+        wait(for: [played], timeout: 8)
+        RunLoop.current.run(until: Date().addingTimeInterval(7.5))
+    }
+    private func expectedLiveResult() -> String {
+        if !isLive { return "This is a simulated provider response." }
+        let onboarding = host.staticTexts["dictation.result"]
+        let result = onboarding.exists ? onboarding : host.staticTexts["transcript.text"]
+        XCTAssertTrue(result.waitForExistence(timeout: 120))
+        let text = result.label
+        for word in ["project","notes","tomorrow","budget"] { XCTAssertTrue(text.lowercased().contains(word)) }
+        return text
     }
     private func enableKeyboardThroughSettings() throws {
         stage = "enable-keyboard-in-settings"
@@ -253,8 +282,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let record = host.buttons["dictation.record"]
         tap(record, in: host)
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))
-        RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+        captureSpeech()
         tap(record, in: host)
+        let liveResult = expectedLiveResult()
         let send = host.buttons["Send to keyboard"]
         XCTAssertTrue(send.waitForExistence(timeout: 15))
         tap(send, in: host)
@@ -269,8 +299,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: insert)
         waitForExpectations(timeout: 10)
         tap(insert, in: fixture)
-        let expected = "Before This is a simulated provider response."
+        let expected = "Before " + liveResult
         requireEditorText(expected)
+        if isLive { liveReadbacks.append(["stage":"foreground","text":expected]) }
         XCTAssertFalse(insert.isEnabled, "A consumed handoff must not be insertable again.")
         attach("real-extension-inserted-and-consumed", app: fixture)
         stage = "protected-fields-with-pending-transcript"
@@ -288,8 +319,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let remaining = fixture.buttons["keyboard.insert"]
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: remaining); waitForExpectations(timeout: 8)
         tap(remaining, in: fixture)
-        let repeated = expected + " This is a simulated provider response."
+        let repeated = expected + " " + liveResult
         requireEditorText(repeated)
+        if isLive { liveReadbacks.append(["stage":"manual-reinsert","text":repeated]) }
         XCTAssertFalse(remaining.isEnabled)
         attach("pending-handoff-survives-protected-fields", app: fixture)
         stage = "enable-one-live-keyboard-session"
@@ -315,9 +347,20 @@ final class KeyboardIntegrationUITests: XCTestCase {
             expectation(for: NSPredicate(format: "label == %@ AND enabled == true", "Stop dictation"), evaluatedWith: dictate)
             waitForExpectations(timeout: 10)
             XCTAssertEqual(host.state, .runningBackground)
-            RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+            captureSpeech(defaultDelay: 1.2)
             tap(dictate, in: fixture)
-            seamlessExpected += " This is a simulated provider response."
+            if isLive {
+                let original = seamlessExpected
+                let delivered = NSPredicate { [self] _, _ in
+                    guard let text = fixture.textViews["quill.qa.editor"].value as? String else { return false }
+                    return text.hasPrefix(original + " ") && text.count > original.count + 10
+                }
+                expectation(for: delivered, evaluatedWith: fixture); waitForExpectations(timeout: 120)
+                seamlessExpected = fixture.textViews["quill.qa.editor"].value as? String ?? ""
+                let addition = String(seamlessExpected.dropFirst(original.count))
+                for word in ["project","notes","tomorrow","budget"] { XCTAssertTrue(addition.lowercased().contains(word)) }
+                liveReadbacks.append(["stage":"background-\(take)","text":seamlessExpected])
+            } else { seamlessExpected += " This is a simulated provider response." }
             requireEditorText(seamlessExpected)
             XCTAssertEqual(host.state, .runningBackground, "No app switch or manual Send/Insert is permitted in the new path.")
             attach("keyboard-auto-inserted-background-\(take)", app: fixture)
@@ -328,6 +371,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         waitForExpectations(timeout: 10)
         XCTAssertEqual(host.state, .runningBackground)
         requireEditorText(seamlessExpected)
+        if isLive { liveReadbacks.append(["stage":"ended","text":seamlessExpected]) }
         attach("keyboard-session-ended-no-duplicate", app: fixture)
         outcome = "passed"
     }

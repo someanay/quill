@@ -10,7 +10,7 @@ namespace Quill.NativeSmoke;
 public record Command(string Field = "normal",string Text = "",int Start = 0,int Length = 0,bool ReadOnly = false,string Action = "prepare");
 public record Reply(string Text,bool SensitiveUnchanged,long Handle);
 public record ExternalInsertion(string App,string Expected,string Insert,string Output,bool ExpectSensitive = false,bool CopyDiagnostic = false,bool SurrogateDiagnostic = false);
-public static class Program {
+public static partial class Program {
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetForegroundWindow(nint hwnd);
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool AttachThreadInput(uint from,uint to,bool attach);
  [System.Runtime.InteropServices.DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
@@ -34,6 +34,8 @@ public static class Program {
   try { SetForegroundWindow(new WindowInteropHelper(window).Handle); window.Activate(); } finally { if (attached) AttachThreadInput(own,other,false); }
  }
  [STAThread] public static int Main(string[] args) {
+  if (args.Length == 2 && args[0] == "--live-cleanup-models") return LiveCleanupModels(args[1]).GetAwaiter().GetResult();
+  if (args.Length == 3 && args[0] == "--live-requests") return LiveRequests(args[1],args[2]).GetAwaiter().GetResult();
   if (args.Length == 3 && args[0] == "--generate-icon") { GenerateIcon(args[1],args[2]); return 0; }
   if (args.Length == 2 && args[0] == "--render-ui") { RenderUi(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--render-all-ui") { RenderAllUi(args[1]); return 0; }
@@ -45,7 +47,7 @@ public static class Program {
   // can complete asynchronously on ARM, so starting directly inside Startup allowed
   // later window operations to resume on a worker thread.
   app.Startup += (_,_) => app.Dispatcher.BeginInvoke(new Action(async () => {
-   try { if (args.Length == 4 && args[0] == "--activation-launcher") await ActivationLauncher(args[1],args[2],args[3]); else if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
+   try { if (args.Length == 3 && args[0] == "--live-pipeline") await LivePipeline(args[1],args[2]); else if (args.Length == 4 && args[0] == "--activation-launcher") await ActivationLauncher(args[1],args[2],args[3]); else if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
    catch (Exception e) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"),e.ToString()); Console.Error.WriteLine(e); code = 1; }
    finally { app.Shutdown(); }
   })); app.Run(); return code;

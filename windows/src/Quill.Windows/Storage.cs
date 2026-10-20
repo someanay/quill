@@ -39,6 +39,28 @@ public sealed class SecretStore {
  private Dictionary<Provider, KeyRing> rings;
  private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("Quill.Windows.v2/provider-keys");
  public SecretStore(string folder) { path = Path.Combine(folder, "keys.dpapi.json"); rings = JsonFiles.Read(path, () => new Dictionary<Provider, KeyRing>()); }
+ // The original Windows app used one DPAPI file per provider. Copy once into
+ // the new key ring, preserving both existing selections and the original files.
+ // The marker survives Clear, so deleting keys cannot resurrect an old credential.
+ public bool TryImportLegacy(string legacyFolder) {
+  var marker = Path.Combine(Path.GetDirectoryName(path)!,"legacy-key-import.json");
+  lock (gate) {
+   if (File.Exists(marker) || !Directory.Exists(legacyFolder)) return true;
+   try {
+    foreach (var provider in new[] {Provider.Groq,Provider.OpenAI,Provider.OpenRouter,Provider.Gemini}) {
+     if (List(provider).Count > 0) continue;
+     var legacy = Path.Combine(legacyFolder,provider.ToString().ToLowerInvariant() + ".bin"); if (!File.Exists(legacy)) continue;
+     byte[]? clear = null;
+     try {
+      clear = ProtectedData.Unprotect(File.ReadAllBytes(legacy),Encoding.UTF8.GetBytes("Quill.Windows.BYOK.v1"),DataProtectionScope.CurrentUser);
+      var secret = Encoding.UTF8.GetString(clear).Trim(); if (secret.Length >= 6 && !secret.Any(char.IsWhiteSpace)) Add(provider,secret,"Imported Windows key");
+     } catch (CryptographicException) { /* An unreadable legacy key must not block startup or other providers. */ }
+     finally { if (clear != null) CryptographicOperations.ZeroMemory(clear); }
+    }
+    JsonFiles.Write(marker,new { completed = true }); return true;
+   } catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return false; }
+  }
+ }
  private static string? Scope(Provider provider,string? endpoint) { if (provider != Provider.Custom) return null; try { return Providers.ValidateEndpoint(endpoint ?? ""); } catch (ArgumentException) { return null; } }
  public IReadOnlyList<SavedKey> List(Provider provider,string? endpoint = null) { lock (gate) { var scope = Scope(provider,endpoint); return rings.GetValueOrDefault(provider)?.Keys.Where(k => provider != Provider.Custom || scope != null && k.Endpoint == scope).ToArray() ?? []; } }
  public string? ActiveId(Provider provider,string? endpoint = null) { lock (gate) { var ring = rings.GetValueOrDefault(provider); var scope = Scope(provider,endpoint); return provider == Provider.Custom ? scope == null ? null : ring?.ActiveByEndpoint.GetValueOrDefault(scope) : ring?.ActiveId; } }

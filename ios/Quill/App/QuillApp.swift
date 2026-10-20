@@ -6,11 +6,15 @@ import QuillCore
     @Environment(\.scenePhase) private var scenePhase
     init() {
         #if DEBUG
-        let api = UITestProvider.makeIfRequested() ?? ProviderAPI()
+        let api = LiveProviderSession.apiIfRequested() ?? UITestProvider.makeIfRequested() ?? ProviderAPI()
         #else
         let api = ProviderAPI()
         #endif
-        _model = StateObject(wrappedValue: AppModel(providerAPI: api))
+        let instance = AppModel(providerAPI: api)
+        #if DEBUG
+        do { try LiveProviderSession.configure(instance) } catch { instance.report(error) }
+        #endif
+        _model = StateObject(wrappedValue: instance)
     }
     var body: some Scene {
         WindowGroup {

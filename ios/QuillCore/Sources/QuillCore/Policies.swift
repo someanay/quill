@@ -70,6 +70,7 @@ public enum CleanupGuard {
         var budget: [String: Int] = [:]
         for token in a { budget[token, default: 0] += 1 }
         var overlap = 0
+        guard b.allSatisfy({ budget[$0] != nil }) else { return false }
         for token in b where budget[token, default: 0] > 0 { budget[token, default: 0] -= 1; overlap += 1 }
         return Double(overlap) / Double(b.count) >= 0.7 && Double(overlap) / Double(a.count) >= 0.5
     }

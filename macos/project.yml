@@ -128,6 +128,30 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.fields
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
+  QuillLiveProbe:
+    type: tool
+    platform: macOS
+    sources:
+      - path: QA/LiveProviderProbe.swift
+      - path: ../tests/live/AppleLiveAudit.swift
+      - path: QuillMac/Services
+    dependencies:
+      - package: QuillCore
+      - sdk: AppKit.framework
+      - sdk: AVFoundation.framework
+      - sdk: Carbon.framework
+      - sdk: ApplicationServices.framework
+      - sdk: Security.framework
+      - sdk: ServiceManagement.framework
+      - sdk: Contacts.framework
+      - sdk: libsqlite3.tbd
+    settings:
+      base:
+        PRODUCT_NAME: QuillLiveProbe
+        PRODUCT_BUNDLE_IDENTIFIER: com.tihor.quill.mac.qa.live
+        GENERATE_INFOPLIST_FILE: YES
+        CREATE_INFOPLIST_SECTION_IN_BINARY: YES
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Quill live provider QA records synthetic loopback speech on an isolated test runner.
 schemes:
   QuillMac:
     build:
@@ -145,3 +169,7 @@ schemes:
       targets:
         QuillFieldProbe: all
         QuillAXFixture: all
+  QuillLiveProbe:
+    build:
+      targets:
+        QuillLiveProbe: all
