@@ -2,7 +2,7 @@
 
 Native SwiftUI app and UIKit keyboard extension sharing Quill's provider, privacy and brand foundations. iOS 17 or later is required. It uses the shared cobalt palette, IBM Plex Sans and Serif font files, the `quill.` wordmark, recording bubble and ink meter, and Home / History / Settings navigation. iOS copy is bundled locally and can evolve independently while preserving formatting contracts.
 
-Current resumed Actions execution, screenshot review and exact source results are
+Completed Actions execution, screenshot review and exact source results are
 tracked in [Apple validation](../docs/apple-validation.md). The older September
 verification paragraph below is historical evidence.
 

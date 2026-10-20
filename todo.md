@@ -2,16 +2,36 @@
 
 ## M14 — Native platform rebuild (authorized September 8, 2026)
 
-The owner superseded Android-only scope and requested complete fresh Windows, macOS and iOS implementations plus copy-tool support, with continuous work across implementation/test passes. Track the new initiative in [platform rebuild](docs/platform-rebuild.md); earlier Android milestone history remains below.
+### Platform experience revision — October 19, 2026
+
+The owner replaced Android UI parity with independent native experiences sharing
+Quill's DNA. Scope this pass to M14 native presentation, iOS onboarding and validation;
+[the current contract](docs/platform-experience.md) supersedes the old screen order.
+
+- [x] Research Wispr's current iPhone keyboard/Full Access/host recording setup; document Quill's relevant steps and the missing keyboard-start/return behavior separately.
+- [x] Implement resizable Windows onboarding, contextual wide layout, compact navigation, practice workspace and responsive history reader; preserve key forms and practice text through layout/status changes.
+- [x] Implement Mac desktop onboarding, sidebar/compact navigation, practice workspace, split history and a separate resizable Settings window with Command-comma.
+- [x] Add desktop copy locally; validate native catalog references, formatting contracts and fonts without requiring unused Android permission strings.
+- [x] Verify final Windows source: Release build, 300 light/dark renders at six window shapes, 42 setup layouts, retained key form/practice editor, and all 362 tests pass on both final CI architectures. The preceding local presentation run passed 362; the latest local run passed 361 with one active-desktop foreground-permission refusal, recorded separately.
+- [x] Resolve shortcut-reopen activation: native CI x64/ARM64 each pass all 362 tests, including a real foreground launcher and preserved maximized state. Both CI architectures also pass 300 renders, 42 setup checks, 14 native editor checks and 11 installer checks (7f22dff / run 39405184046). Actual Start reopening passed locally on the preceding build; activation code is unchanged.
+- [x] Compile/exercise the revised Mac UI on Apple Silicon Actions: 34 core, 43 native, eight UI tests, resized drafts and Settings lifecycle pass. The expanded Intel/baseline/current and real-editor matrix is tracked below; see [Apple validation](docs/apple-validation.md).
+- [x] Apply the approved design across Windows/Mac/iOS settings, provider forms, workspace and history, with platform-specific copy and relevant navigation.
+- [x] Implement native iOS six-stage setup with actual keyboard/Full Access receipt and successful practice insertion; adapt iPad split panes, accessibility navigation and landscape keyboard sizing.
+- [x] Install Windows 2.0.3 through the real package, preserve app data, verify Installed apps and Start, and reopen the same PID/HWND after Close.
+- [x] Finish the expanded native x64/ARM Windows, Intel/Apple Silicon macOS 15/26 and iPhone/iPad baseline/current matrix; inspect final screenshots and release packages. All final jobs pass, including eight Mac real-editor jobs and four installed-keyboard journeys; final Mac 109+109 and iOS 178+178 captures reviewed. Exact source revisions, package hashes and physical/distribution limits are in [Apple validation](docs/apple-validation.md).
+- [ ] Complete physical Mac microphone, permission-denial/Settings-return and global-shortcut acceptance.
+- [ ] Physically validate a redesigned iOS keyboard/start/return/insertion loop before implementing onboarding that promises it.
+
+The owner superseded Android-only scope and requested complete fresh Windows, macOS and iOS implementations plus copy-tool support, with continuous work across implementation/test passes. Track the new initiative in [platform rebuild](docs/platform-rebuild.md). The following completed snapshots are historical; the October design revision and expanded matrix above supersede their counts and pending hardware statements. Earlier Android milestone history follows.
 
 - [x] Map current Android behavior, navigation, bundled copy and visual tokens.
 - [x] Verify Android baseline build, unit tests and lint.
 - [x] Replace Windows draft, publish both architectures and verify x64 install, first launch/reopen, microphone, native editor, Chrome and Notepad interactions (361 tests, 14 native checks, 54 renders; ARM64 execution remains a hardware gate).
 - [x] Replace macOS draft; compile universal app and pass core/native/UI tests plus real TextEdit and native secure-field probes on Mac runners.
-- [ ] Natively rebuild/test the final macOS Safari, cancellation/recovery and Welcome corrections; 34 portable tests passed, 43 native tests are authored. GitHub currently refuses new Mac jobs because of account billing/spending limits.
+- [x] Natively rebuild/test the Mac Safari and cancellation/recovery corrections plus October desktop UI: 34 core, 43 native and eight UI tests passed on Actions; universal Release inspected. The former billing block no longer prevents execution. See [Apple validation](docs/apple-validation.md).
 - [x] Replace iOS draft; build host/keyboard on Apple simulators, verify core/native/recorder/iPhone UI and record unavoidable iOS differences.
-- [ ] Rerun the corrected iPad provider-row hit area and final Welcome flow; complete actual installed-keyboard recording/publication/insertion after the QA session lifecycle fix. Latest run passed 43 core, 36 native, five recorder, six iPhone UI and five of six iPad UI tests.
-- [ ] Execute the final iOS terminal-recovery native regressions on Apple; 49 portable tests passed locally, 45 native tests are authored. Failed recording cleanup must remain visible and cannot silently recreate a completed/discarded take.
+- [x] Rerun corrected iPad provider-row/Welcome flows and actual installed keyboard: 49 core, 45 native, five real recorder, six iPhone UI and six iPad UI tests pass; separate-app keyboard insertion and consume-once pass. See [Apple validation](docs/apple-validation.md).
+- [x] Execute iOS terminal-recovery regressions on Apple: all 45 native tests pass, including failed terminal storage, cleanup-only recovery, private completion and blocked restart/reset. Failed recording cleanup stays visible and cannot silently recreate a completed/discarded take.
 - [x] Expand local Copy Studio to all four platforms and verify independent edits.
 - [ ] Complete failure/cancellation/privacy/key-storage and cross-app test matrices; record exact evidence and remaining hardware/account gates.
 

@@ -6,15 +6,31 @@ redistributing it requires written permission from the applicable copyright
 holder. GitHub's platform rights and third-party licenses are preserved.
 See [the source viewing terms](LICENSE).
 
-Voice dictation with your own API key. Tap the floating bubble, speak, and Quill inserts the transcript into a supported text field without switching keyboards.
+Voice dictation with your own API key. Use a keyboard shortcut on Windows and Mac,
+the floating control on Android, or record in Quill and insert with its iOS keyboard.
 
 Recordings go directly to your chosen speech provider. Optional cleanup uses your chosen language model. There is no Quill account or server handling your recordings.
 
 ## Status
 
-Android version 1.0.10 builds as a signed APK and AAB; final device testing and Google Play submission are pending. The former Windows, macOS and iOS source drafts have been replaced with native implementations based on Android's current behavior and design. Windows is built, installed and exercised on this workstation. Apple builds and simulator tests have run on Mac runners; the final Apple corrections await another native run because GitHub has blocked jobs on the account's billing/spending limit. See [platform rebuild and exact verification status](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md). iOS uses host-app recording and an explicit keyboard handoff because its system APIs differ.
+Windows, macOS, iPhone and iPad now use independent native layouts with Quill's
+shared typography, colours, provider and privacy foundations. Desktop setup
+teaches keyboard shortcuts and native permissions. iOS setup teaches the actual
+host-recording and installed-keyboard handoff, with a required practice insertion.
+The approved design pass covers setup, workspace, history and every relevant
+settings page. See [the design review](docs/native-design-review.md) and
+[platform experience](docs/platform-experience.md).
 
-## Features
+Windows 2.0.3 is installed normally on this workstation with a Start shortcut and
+Installed apps entry. Native verification runs on Windows x64/ARM, macOS 15/26
+on Intel/Apple Silicon, and iPhone/iPad simulators. Exact results and limitations
+are recorded in [Windows verification](windows/VERIFICATION.md) and
+[Apple validation](docs/apple-validation.md); an unsigned CI package is not a
+public release sign-off.
+
+Android version 1.0.10 builds as a signed APK and AAB; final device testing and Google Play submission are pending. The native Windows, Mac and iOS redesigns pass their complete available CI matrices, including baseline/current Apple runners, real Mac editors and installed iOS keyboards. Exact producing revisions and remaining physical-device, provider-account and distribution checks are recorded in [platform validation](docs/platform-rebuild.md) and [Android release readiness](docs/play-readiness.md).
+
+## Android features
 
 - Floating recording bubble, with clipboard fallback where direct insertion is unavailable.
 - Provider keys encrypted with Android Keystore.
