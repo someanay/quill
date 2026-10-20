@@ -1,3 +1,59 @@
+# Approved native design — October 20, 2026 (version 2.0.3)
+
+The approved design is implemented in native WPF across setup, workspace, history,
+settings and provider forms. IBM Plex typography and Quill colours match Android;
+copy describes Windows shortcuts, microphone settings and UI Automation consent.
+Native caption appearance follows the selected theme. Forms use aligned open
+sections, with framing reserved for editors and separate credentials.
+
+Verification at this presentation revision:
+
+- Full .NET suite: **361 passed, zero skipped**. The shortcut reopen test waits
+  for the dispatched activation to finish, then still requires the same process,
+  window and foreground handle. It no longer asserts midway through activation.
+- **300 native renders passed**: 13 destinations, seven setup stages and five
+  provider forms, in Light/Dark at 640×600, 1000×500, 1200×800, 1600×900,
+  900×1200 and 1920×650. Original images and bounds results are in
+  `dist/native-redesign/windows-final/`.
+- **42 setup checks passed**, including preserved window size, live key form,
+  practice editor text/selection and keycaps refreshing with the actual shortcut.
+  Evidence: `dist/native-redesign/windows-final-setup/result.json`.
+- All 14 controlled native insertion/clipboard checks passed. The physical
+  microphone capture and lifecycle probes passed without upload or retained audio.
+  Evidence: `dist/windows-native-revision/`.
+- Ten installer integrity, upgrade and uninstall boundary checks passed, preserving
+  the actual installation registration and unrelated files.
+- The real per-user installation is version 2.0.3 under
+  `%LOCALAPPDATA%\Programs\Quill`; its Start shortcut and Installed apps entry
+  are verified. Close-to-tray and same-instance reopening are exercised separately
+  from portable test processes. Package hashes are recorded with installation evidence.
+- Catalog/default/placeholder/font checks pass. ARM64 is cross-compiled; hardware
+  execution and live provider requests require environments not present here.
+
+See `docs/native-design-review.md` for the concept comparison and corrections.
+Earlier dated results below describe their own versions and are historical.
+
+# Setup window sizing — version 2.0.2, September 9, 2026
+
+Setup is locked to a compact monitor-scaled window, with a 600×650 logical-pixel baseline. It respects the monitor work area and Windows DPI, recenters on monitor/DPI changes, and disables resize/maximize only during setup. Welcome spacing is tightened. Opening Home restores the desktop size/resizing; reviewing setup from the desktop also restores its prior maximized state afterward.
+
+Validation: Release build passed with zero warnings/errors. The actual fresh-process splash/Welcome regression passed. The setup-window harness checked all eight steps for constant locked dimensions, fit within the work area, and restoration of desktop dimensions/resizing, saving eight renders under `dist/windows/verification/setup-window/`. Live computer-use review confirmed the compact Welcome window and disabled maximize button. Multiple physical monitors/DPI transitions were not available for direct testing.
+
+# Windows desktop layout — September 9, 2026
+
+Version 2.0.1 replaces the portrait shell with desktop navigation, responsive Home/Settings groups, compact controls and a split history browser. Dictation, providers, storage and consent behavior are unchanged. Existing bundled copy is reused; no remote updates or new copy-tool schema are required.
+
+Validation for this change:
+- Release solution builds with zero warnings/errors.
+- 162 native WPF renders: 14 destinations, eight onboarding steps and five provider states, in Light/Dark at 780×560, 1060×700 and 1440×900. Destination navigation is exercised through the actual sidebar button handlers. Checks cover horizontal control bounds, compact multiline history rows, complete selected transcripts and reader bounds. Evidence: `dist/windows/verification/desktop-layout/`.
+- 360 of 361 .NET tests passed. The existing shortcut-reopen test successfully reopened the original window but failed its foreground-window assertion: Affinity remained foreground on this active desktop. The assertion has not been weakened or skipped. Evidence: `windows/tests/Quill.Windows.Tests/TestResults/desktop-layout-tests.trx`. This is not an all-green suite.
+- All 14 controlled native editor/clipboard checks passed again: `dist/windows/verification/desktop-native-smoke.json`.
+- Live Windows Home and Settings were reviewed with computer use. Review caught a stale Home shortcut label after fallback registration; the final code refreshes it when registration changes.
+- Version 2.0.1 x64 was installed with the verified package installer; keys/settings were preserved. The actual installed window was closed into the tray and relaunched through computer use: original PID 5300 / HWND 133702 returned, with no second instance. Ten installer integrity/uninstall-boundary checks passed. Both x64 and ARM64 archives include checksums.
+- No live provider requests or new microphone capture were needed for this presentation change. ARM64 packaging does not establish ARM hardware execution.
+
+Earlier release evidence follows; its all-green test counts apply to September 8, not this run.
+
 # Windows verification — September 8, 2026
 
 The fresh Windows app was built and exercised on the local Windows x64 host with .NET SDK 10.0.400/runtime 10.0.11. This report distinguishes real native checks from mocked provider checks. No live provider credentials were used.

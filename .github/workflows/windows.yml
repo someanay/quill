@@ -24,7 +24,7 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Verify bundled copy and fonts
-        run: python scripts/verify-platform-parity.py --platform windows
+        run: python scripts/verify-platform-parity.py --platform windows --independent-copy
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
       - name: Verify installer integrity and safe uninstall

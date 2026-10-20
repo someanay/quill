@@ -16,12 +16,16 @@ public sealed class FirstLaunchTests(Xunit.Abstractions.ITestOutputHelper output
    first.Refresh(); var firstHandle = first.MainWindowHandle; Assert.NotEqual(IntPtr.Zero,firstHandle); Assert.True(first.CloseMainWindow());
    await WaitUntil(() => { first.Refresh(); return first.MainWindowHandle == IntPtr.Zero; },"Close should hide the tray instance.");
    second = Launch(folder.Path); await second.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15)); Assert.Equal(0,second.ExitCode);
-   await WaitUntil(() => { first.Refresh(); return first.MainWindowHandle != IntPtr.Zero; },"Second shortcut launch did not reopen the existing window."); Assert.Equal(firstHandle,first.MainWindowHandle); Assert.False(first.HasExited); Assert.Equal(firstHandle,Quill.Windows.Native.GetForegroundWindow());
+   await WaitUntil(() => { first.Refresh(); return first.MainWindowHandle != IntPtr.Zero; },"Second shortcut launch did not reopen the existing window."); Assert.Equal(firstHandle,first.MainWindowHandle); Assert.False(first.HasExited);
+   // The queued dispatcher request makes the HWND visible before Activate runs. Observe the
+   // completed activation, rather than racing the middle of the same ShowMain callback.
+   await WaitUntil(() => Quill.Windows.Native.GetForegroundWindow() == firstHandle,"The reopened window did not become foreground.");
+   Assert.Equal(firstHandle,Quill.Windows.Native.GetForegroundWindow());
    independent = Launch(independentFolder.Path); await WaitUntil(() => File.Exists(Path.Combine(independentFolder.Path,"actual-window.png")) || independent.HasExited,"Independent directory did not launch."); Assert.False(independent.HasExited); Assert.NotEqual(first.Id,independent.Id);
    output.WriteLine($"Shortcut process {second.Id} exited cleanly; original PID {first.Id}/HWND {firstHandle} reopened. Separate data directory PID {independent.Id} remained independent.");
   } finally { foreach (var process in new[] {second,independent,first}) if (process != null) { if (!process.HasExited) process.Kill(); await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10)); if (!ReferenceEquals(process,first)) process.Dispose(); } }
  }
- [Fact] public async Task FreshApplicationSurvivesSplashBeforeDispatcherContextExists() {
+ [Fact] public async Task FreshApplicationRendersDesktopWelcomeWithUnseededSettings() {
   using var folder = new TestFolder(); var start = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory,"Quill.exe")) { UseShellExecute = false,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Hidden };
   start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(folder.Path);
   using var process = Process.Start(start) ?? throw new InvalidOperationException("Fresh Quill test process did not start."); var clock = Stopwatch.StartNew();
@@ -30,14 +34,15 @@ public sealed class FirstLaunchTests(Xunit.Abstractions.ITestOutputHelper output
    while (!File.Exists(firstRender) && !process.HasExited && clock.Elapsed < TimeSpan.FromSeconds(45)) await Task.Delay(100);
    output.WriteLine($"Fresh process first render after {clock.Elapsed.TotalSeconds:F3}s; exited={process.HasExited}");
    Assert.False(process.HasExited,"Fresh Quill exited before its first render."); Assert.True(File.Exists(firstRender),"Fresh Quill did not render within 45 seconds.");
-   // The constructor starts before Application.Run installs its synchronization context.
-   // Wait beyond the real splash delay so a continuation on the wrong thread fails this test.
+   // Remain alive after the initial render without seeding settings or credentials.
    await Task.Delay(3000); process.Refresh();
-   Assert.False(process.HasExited,"Fresh Quill exited during splash-to-Welcome transition."); Assert.NotEqual(IntPtr.Zero,process.MainWindowHandle);
+   Assert.False(process.HasExited,"Fresh Quill exited after rendering Welcome."); Assert.NotEqual(IntPtr.Zero,process.MainWindowHandle);
    using var visualTree = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(folder.Path,"actual-font-tree.json")));
    Assert.Contains(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString() == new Quill.Windows.CopyCatalog().Get("onboarding.welcome.cta"));
    Assert.Contains(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString() == new Quill.Windows.CopyCatalog().Get("onboarding.welcome.open"));
-   Assert.Contains(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString()?.Contains(new Quill.Windows.CopyCatalog().Get("compliance.privacy.welcome_pill"),StringComparison.Ordinal) == true);
+   Assert.Contains(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString() == new Quill.Windows.CopyCatalog().Get("desktop.setup.privacy_line"));
+   Assert.Contains(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString() == new Quill.Windows.CopyCatalog().Get("desktop.setup.welcome_body"));
+   Assert.DoesNotContain(visualTree.RootElement.EnumerateArray(),item => item.GetProperty("text").GetString()?.Contains("Tap it",StringComparison.OrdinalIgnoreCase) == true);
    Assert.False(File.Exists(Path.Combine(folder.Path,"startup-failure.txt"))); Assert.True(File.Exists(Path.Combine(folder.Path,"history.sqlite3")));
    Assert.False(File.Exists(Path.Combine(folder.Path,"settings.json")),"This regression must exercise unseeded first-run settings.");
    output.WriteLine($"Unseeded first-run process remained alive after {clock.Elapsed.TotalSeconds:F3}s.");
