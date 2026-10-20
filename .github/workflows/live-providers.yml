@@ -42,6 +42,32 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Build native test harness
         run: dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
+      - name: Prepare isolated ARM desktop
+        if: matrix.runner == 'windows-11-arm'
+        run: |
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows') { throw 'Hosted-runner setup only.' }
+          foreach ($setupHost in @(Get-Process WWAHost -ErrorAction SilentlyContinue)) {
+            [void]$setupHost.CloseMainWindow()
+            if (-not $setupHost.WaitForExit(3000)) { Stop-Process -Id $setupHost.Id }
+          }
+          Add-Type @'
+          using System;
+          using System.Runtime.InteropServices;
+          public static class QuillLiveDesktop {
+            [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+            [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
+            [DllImport("user32.dll")] public static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra);
+          }
+          '@
+          for ($attempt = 0; $attempt -lt 6; $attempt++) {
+            [uint32]$owner = 0
+            [void][QuillLiveDesktop]::GetWindowThreadProcessId([QuillLiveDesktop]::GetForegroundWindow(),[ref]$owner)
+            $foregroundProcess = Get-Process -Id $owner -ErrorAction SilentlyContinue
+            if ($foregroundProcess.ProcessName -notin @('SearchHost','StartMenuExperienceHost')) { break }
+            [QuillLiveDesktop]::keybd_event(0x1b,0,0,[UIntPtr]::Zero)
+            [QuillLiveDesktop]::keybd_event(0x1b,0,2,[UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 300
+          }
       - name: Exercise production controller and real editor with live providers
         env:
           QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}

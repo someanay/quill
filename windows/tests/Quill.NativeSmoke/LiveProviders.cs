@@ -97,6 +97,7 @@ public static partial class Program {
     try {
      for (var take = 1;take <= 2;take++) {
       const string prefix = "Quill live fixture: "; var prepared = await Send(new(Text:prefix,Start:prefix.Length));
+      for (var attempt = 0;attempt < 10 && Native.GetForegroundWindow() != (nint)prepared.Handle;attempt++) { await Task.Delay(300); prepared = await Send(new(Text:prefix,Start:prefix.Length)); }
       if (Native.GetForegroundWindow() != (nint)prepared.Handle) throw new InvalidOperationException("Disposable editor does not own focus.");
       var before = audit.Requests.Count; await controller.Toggle(); if (controller.State != DictationState.Recording) throw new InvalidOperationException("Recording phase did not start: " + controller.Error);
       await controller.StopRecording(); var requests = audit.Requests.Skip(before).ToArray(); var actual = (await Send(new(Action:"read"))).Text;

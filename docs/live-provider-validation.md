@@ -28,7 +28,11 @@ contraction normalization. Existing overlap/duplication limits still apply.
 The observed added-word response is a shared regression fixture. Targeted local
 Windows storage/domain tests pass 254 checks with no skips. Native Gemini Flash
 requests now ask for documented minimal reasoning to avoid unnecessary latency;
-the fixed wall-clock deadline and safe fallback remain in place.
+the wall-clock deadline and safe fallback remain in place. Actual cleanup on the
+existing Gemini account took 13.266 seconds in a separate latency diagnostic,
+so the original four-second budget prevented completion even for a valid reply.
+The three apps now allow a bounded 15 seconds for optional cleanup. Cancellation
+still stops immediately; a timeout or rejected response retains the raw words.
 
 The manual-only `live-providers.yml` workflow exercises live HTTPS providers and
 exact output readback from disposable editor fields. Windows CI supplies a

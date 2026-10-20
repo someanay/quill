@@ -135,6 +135,7 @@ targets:
       - path: QA/LiveProviderProbe.swift
       - path: ../tests/live/AppleLiveAudit.swift
       - path: QuillMac/Services
+        excludes: [CrashReports.swift]
     dependencies:
       - package: QuillCore
       - sdk: AppKit.framework

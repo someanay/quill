@@ -113,7 +113,7 @@ public sealed class ProviderClient : IDisposable {
   if (p == Provider.Gemini && model.StartsWith("gemini-3",StringComparison.Ordinal) && model.Contains("flash",StringComparison.Ordinal)) payload["reasoning_effort"] = "minimal";
   if (p == Provider.OpenRouter) payload["provider"] = new { sort = "latency" };
   request.Content = JsonContent.Create(payload);
-  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(4));
+  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(15));
   try { using var json = await Send(request, p, deadline.Token); var choice = json.RootElement.GetProperty("choices")[0]; if (choice.TryGetProperty("finish_reason",out var finish) && finish.GetString() is string reason && reason != "stop") return raw; var text = choice.GetProperty("message").GetProperty("content").GetString()?.Trim() ?? ""; return CleanupGuard.PreservesMeaning(raw,text) ? text : raw; }
   catch (Exception e) when (e is ProviderException or JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or OperationCanceledException && !cancellation.IsCancellationRequested) { return raw; }
  }

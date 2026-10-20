@@ -70,7 +70,7 @@ public enum ProviderRequests {
         return req
     }
     public static func cleanup(_ config: ProviderConfiguration, key: String, raw: String, style: WritingStyle) throws -> URLRequest {
-        var req = try request(config, key: key, path: config.provider == .gemini ? "/v1beta/openai/chat/completions" : "/chat/completions", timeout: 4)
+        var req = try request(config, key: key, path: config.provider == .gemini ? "/v1beta/openai/chat/completions" : "/chat/completions", timeout: 15)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: Any] = ["model": config.model, "temperature": 0,

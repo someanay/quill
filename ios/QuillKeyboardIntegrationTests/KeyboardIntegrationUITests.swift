@@ -146,7 +146,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))
         captureSpeech()
         tap(record, in: host)
-        let practiceExpected = expectedLiveResult()
+        let practiceExpected = expectedLiveResult(onboarding: true)
         tap(host.buttons["onboarding.practice.send"], in: host)
         try showQuillKeyboard(in: host)
         tap(host.buttons["keyboard.insert"], in: host)
@@ -171,10 +171,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
         wait(for: [played], timeout: 8)
         RunLoop.current.run(until: Date().addingTimeInterval(7.5))
     }
-    private func expectedLiveResult() -> String {
+    private func expectedLiveResult(onboarding: Bool = false) -> String {
         if !isLive { return "This is a simulated provider response." }
-        let onboarding = host.staticTexts["dictation.result"]
-        let result = onboarding.exists ? onboarding : host.staticTexts["transcript.text"]
+        let result = host.staticTexts[onboarding ? "dictation.result" : "transcript.text"]
         XCTAssertTrue(result.waitForExistence(timeout: 120))
         let text = result.label
         for word in ["project","notes","tomorrow","budget"] { XCTAssertTrue(text.lowercased().contains(word)) }
