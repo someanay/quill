@@ -186,6 +186,7 @@ public static class StartupService {
 public static class Native {
  [DllImport("user32.dll")] public static extern uint GetClipboardSequenceNumber();
  [DllImport("user32.dll")] public static extern nint GetForegroundWindow();
+ [DllImport("user32.dll",SetLastError=true)] public static extern bool AllowSetForegroundWindow(uint processId);
  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(nint hwnd, out uint processId);
  [DllImport("user32.dll",SetLastError=true)] public static extern bool RegisterHotKey(nint hwnd, int id, uint modifiers, uint key);
  [DllImport("user32.dll")] public static extern bool UnregisterHotKey(nint hwnd, int id);

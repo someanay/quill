@@ -8,9 +8,10 @@ sections, with framing reserved for editors and separate credentials.
 
 Verification at this presentation revision:
 
-- Full .NET suite: **361 passed, zero skipped**. The shortcut reopen test waits
-  for the dispatched activation to finish, then still requires the same process,
-  window and foreground handle. It no longer asserts midway through activation.
+- Full .NET suite: **362 passed, zero skipped**. A separate native foreground
+  launcher exercises the Windows activation-permission handoff to the existing
+  process. Normal and maximized reopening require the same process, window,
+  foreground handle and preserved maximized state. No foreground assertion is skipped.
 - **300 native renders passed**: 13 destinations, seven setup stages and five
   provider forms, in Light/Dark at 640×600, 1000×500, 1200×800, 1600×900,
   900×1200 and 1920×650. Original images and bounds results are in

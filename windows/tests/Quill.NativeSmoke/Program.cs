@@ -27,7 +27,7 @@ public static class Program {
   if (args.Length == 1 && args[0] == "--font-check") { _ = new Application(); foreach (var filename in new[] {"ibm_plex_sans.ttf","ibm_plex_serif.ttf"}) { var glyph = new System.Windows.Media.GlyphTypeface(new Uri("pack://application:,,,/Quill;component/Assets/Fonts/" + filename)); Console.WriteLine(filename + " => " + string.Join(",",glyph.FamilyNames.Values)); } foreach (var f in System.Windows.Media.Fonts.GetFontFamilies(new Uri("pack://application:,,,/Quill;component/"),"./Assets/Fonts/")) Console.WriteLine("Enumerated " + f.Source); foreach (var family in new[] {Theme.Sans,Theme.Serif}) { var typeface = new System.Windows.Media.Typeface(family,FontStyles.Normal,FontWeights.Normal,FontStretches.Normal); if (!typeface.TryGetGlyphTypeface(out var glyph)) throw new InvalidOperationException("Font resolution failed: " + family.Source); Console.WriteLine(family.Source + " => " + string.Join(",",glyph.FamilyNames.Values)); } return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; int code = 0;
   app.Startup += async (_,_) => {
-   try { if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
+   try { if (args.Length == 4 && args[0] == "--activation-launcher") await ActivationLauncher(args[1],args[2],args[3]); else if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
    catch (Exception e) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"),e.ToString()); Console.Error.WriteLine(e); code = 1; }
    finally { app.Shutdown(); }
   }; app.Run(); return code;
@@ -170,6 +170,21 @@ public static class Program {
   var drawing = new System.Windows.Media.DrawingVisual(); using (var dc = drawing.RenderOpen()) { dc.DrawRoundedRectangle(Theme.Hex("#F5F7F5"),null,new Rect(0,0,256,256),50,50); dc.PushTransform(new System.Windows.Media.ScaleTransform(256.0/108,256.0/108)); foreach (var path in xml.Root!.Elements("path")) dc.DrawGeometry(Theme.Hex(path.Attribute(android+"fillColor")!.Value),new System.Windows.Media.Pen(Theme.Hex(path.Attribute(android+"strokeColor")!.Value),.42),System.Windows.Media.Geometry.Parse(path.Attribute(android+"pathData")!.Value)); dc.Pop(); }
   var image = new System.Windows.Media.Imaging.RenderTargetBitmap(256,256,96,96,System.Windows.Media.PixelFormats.Pbgra32); image.Render(drawing); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image)); using var png = new MemoryStream(); encoder.Save(png); var bytes = png.ToArray(); Directory.CreateDirectory(output); File.WriteAllBytes(Path.Combine(output,"quill.png"),bytes);
   using var file = File.Create(Path.Combine(output,"quill.ico")); using var writer = new BinaryWriter(file); writer.Write((short)0); writer.Write((short)1); writer.Write((short)1); writer.Write((byte)0); writer.Write((byte)0); writer.Write((byte)0); writer.Write((byte)0); writer.Write((short)1); writer.Write((short)32); writer.Write(bytes.Length); writer.Write(22); writer.Write(bytes);
+ }
+ private static async Task ActivationLauncher(string pipeName,string executable,string folder) {
+  if (!string.Equals(Path.GetFullPath(executable),Path.Combine(AppContext.BaseDirectory,"Quill.exe"),StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("The launcher fixture can only open its adjacent Quill test build.");
+  var window = new Window { Title = "Quill shortcut launcher fixture",Width = 400,Height = 180,Content = new TextBlock { Text = "Controlled foreground shortcut launcher",Margin = new(24) } }; window.Show();
+  using var pipe = new NamedPipeClientStream(".",pipeName,PipeDirection.InOut,PipeOptions.Asynchronous); await pipe.ConnectAsync(10_000); using var reader = new StreamReader(pipe); using var writer = new StreamWriter(pipe) { AutoFlush = true };
+  while (await reader.ReadLineAsync() is string command) {
+   if (command == "quit") break;
+   if (command != "launch") throw new InvalidOperationException("Unexpected launcher command.");
+   ActivateFixture(window); var handle = new WindowInteropHelper(window).Handle;
+   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException("The controlled shortcut launcher did not own foreground.");
+   var start = new ProcessStartInfo(executable) { UseShellExecute = false,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Hidden }; start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(folder);
+   using var child = Process.Start(start) ?? throw new InvalidOperationException("Shortcut child did not start."); await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
+   await writer.WriteLineAsync(JsonSerializer.Serialize(new { foregroundLauncher = true,exitCode = child.ExitCode,launcherHandle = handle.ToInt64() }));
+  }
+  window.Close();
  }
  private static async Task Editor(string pipeName) {
   var normal = new TextBox { MinHeight = 60, Margin = new(12), AcceptsReturn = true }; var alternate = new TextBox { MinHeight = 60,Margin = new(12) }; var sensitive = new PasswordBox { MinHeight = 50,Margin = new(12),Password = "fixture-secret" };

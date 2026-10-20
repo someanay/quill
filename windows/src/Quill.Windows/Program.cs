@@ -11,7 +11,7 @@ public static class Program {
   var folder = dataArg >= 0 && dataArg + 1 < args.Length ? Path.GetFullPath(args[dataArg + 1]) : Environment.GetEnvironmentVariable("QUILL_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Quill", "NativeV2");
   Directory.CreateDirectory(folder); bool isolated = dataArg >= 0 || Environment.GetEnvironmentVariable("QUILL_DATA_DIR") != null;
   using var instance = new SingleInstanceActivation(folder);
-  if (!instance.IsPrimary) { instance.RequestActivation(); return 0; }
+  if (!instance.IsPrimary) { var granted = instance.RequestActivation(); if (isolated) File.WriteAllText(Path.Combine(folder,"activation-request.json"),System.Text.Json.JsonSerializer.Serialize(new { foregroundPermissionGranted = granted })); return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
   AppServices? services = null;
   try {
@@ -58,7 +58,7 @@ public sealed class AppServices : IDisposable {
  }
  public void UpdateHotkey(MainWindow window) { hotkey?.Dispose(); hotkey = new(new WindowInteropHelper(window).EnsureHandle(),Settings.Value.DictationShortcut); hotkey.Pressed += () => Application.Current.Dispatcher.BeginInvoke(async () => { await Task.Delay(130); await Dictation.Toggle(); }); if (Isolated) File.WriteAllText(Path.Combine(Folder,"hotkey-check.json"),System.Text.Json.JsonSerializer.Serialize(new { preferred = Settings.Value.DictationShortcut,actual = hotkey.Label,registered = hotkey.Registered,error = hotkey.RegistrationError })); window.RefreshStatus(); }
  private static System.Drawing.Icon MakeIcon() => new(Path.Combine(AppContext.BaseDirectory,"Assets","quill.ico"));
- public void ShowMain() { if (MainWindow == null) return; MainWindow.Show(); MainWindow.WindowState = WindowState.Normal; MainWindow.Activate(); }
+ public void ShowMain() { if (MainWindow == null) return; MainWindow.Show(); if (MainWindow.WindowState == WindowState.Minimized) MainWindow.WindowState = WindowState.Normal; MainWindow.Activate(); }
  public void ShowBubble(bool persist = true) { if (persist) { Settings.Value.BubbleActive = true; Settings.Value.BubbleVisible = true; Settings.Save(); } Bubble ??= new(this); Bubble.Show(); Bubble.Refresh(); MainWindow?.RefreshStatus(); }
  public void HideBubble() { autoReturn?.Cancel(); Settings.Value.BubbleVisible = false; Settings.Save(); Bubble?.Hide(); MainWindow?.RefreshStatus(); }
  public async void ScheduleAutoReturn() { autoReturn?.Cancel(); autoReturn?.Dispose(); autoReturn = new(); try { await Task.Delay(TimeSpan.FromMinutes(10),autoReturn.Token); if (Settings.Value.BubbleActive) ShowBubble(); } catch (OperationCanceledException) { } }
