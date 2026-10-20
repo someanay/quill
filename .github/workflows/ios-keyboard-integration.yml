@@ -29,12 +29,17 @@ on:
         type: choice
         options: [all, iPhone, iPad]
         default: all
+      live_provider:
+        description: Explicit provider for a focused live follow-up
+        type: choice
+        options: [auto, gemini, openrouter]
+        default: auto
 
 permissions:
   contents: read
 
 concurrency:
-  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}-${{ inputs.live_runner || 'all' }}-${{ inputs.live_device || 'all' }}
+  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}-${{ inputs.live_runner || 'all' }}-${{ inputs.live_device || 'all' }}-${{ inputs.live_provider || 'auto' }}
   cancel-in-progress: true
 
 jobs:
@@ -45,6 +50,7 @@ jobs:
       platform: ios
       ios_runner: ${{ inputs.live_runner || 'all' }}
       ios_device: ${{ inputs.live_device || 'all' }}
+      ios_provider: ${{ inputs.live_provider || 'auto' }}
     secrets:
       QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
       QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}

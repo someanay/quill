@@ -18,6 +18,9 @@ on:
       ios_device:
         type: string
         default: all
+      ios_provider:
+        type: string
+        default: auto
     secrets:
       QUILL_LIVE_GEMINI_KEY:
         required: true
@@ -35,7 +38,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: live-providers-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.ios_runner || 'all' }}-${{ inputs.ios_device || 'all' }}
+  group: live-providers-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.ios_runner || 'all' }}-${{ inputs.ios_device || 'all' }}-${{ inputs.ios_provider || 'auto' }}
   cancel-in-progress: false
 
 jobs:
@@ -163,6 +166,8 @@ jobs:
         run: |
           brew install xcodegen
           bash tests/live/prepare-apple-audio.sh
+          swiftc tests/live/LoopbackSpeechPlayer.swift -o "$RUNNER_TEMP/quill-speech-player" -framework AVFoundation
+          "$RUNNER_TEMP/quill-speech-player" "$PWD/tests/live/speech.wav" --self-check
       - name: Boot an isolated simulator
         id: destination
         env:
@@ -192,11 +197,17 @@ jobs:
         env:
           UDID: ${{ steps.destination.outputs.udid }}
           DEVICE: ${{ matrix.device }}
+          REQUESTED_PROVIDER: ${{ inputs.ios_provider || 'auto' }}
           QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
           QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
         run: |
           PROVIDER=gemini
           if [ "$DEVICE" = iPad ]; then PROVIDER=openrouter; fi
+          case "$REQUESTED_PROVIDER" in
+            auto) ;;
+            gemini|openrouter) PROVIDER="$REQUESTED_PROVIDER" ;;
+            *) echo 'Unsupported live provider'; exit 1 ;;
+          esac
           python3 tests/live/prepare-ios-live.py "$UDID" ios/LiveDerivedData "$PROVIDER"
       - name: Enable keyboard and complete real recording live providers and insertion
         working-directory: ios
@@ -204,9 +215,14 @@ jobs:
           UDID: ${{ steps.destination.outputs.udid }}
         run: |
           set -o pipefail
-          python3 ../tests/live/speech-server.py ../tests/live/speech.wav > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
+          python3 ../tests/live/speech-server.py ../tests/live/speech.wav "$RUNNER_TEMP/quill-speech-player" > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
           SPEECH_PID=$!
           trap 'kill "$SPEECH_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --noproxy '*' -fsS http://127.0.0.1:8765/health; then break; fi
+            sleep 1
+          done
+          curl --noproxy '*' -fsS http://localhost:8765/health
           TEST_RUN=$(find LiveDerivedData/Build/Products -maxdepth 1 -name '*.xctestrun' -print)
           test -f "$TEST_RUN"
           xcodebuild test-without-building -xctestrun "$TEST_RUN" \
