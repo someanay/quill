@@ -2,13 +2,46 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
+import uuid
 
 assert os.environ.get('GITHUB_ACTIONS') == 'true'
 destination = Path(sys.argv[1])
 destination.mkdir(parents=True, exist_ok=True)
 metadata = json.loads((Path(os.environ['RUNNER_TEMP']) / 'quill-live-session.json').read_text())
-directory = Path(metadata['directory'])
+def current_session_directory(metadata):
+    session = str(uuid.UUID(metadata['session'])).upper()
+    directories = {Path(metadata['directory'])}
+    devices = {metadata['udid']}
+    for manifest in Path('ios/live-keyboard-evidence').rglob('manifest.json'):
+        for test in json.loads(manifest.read_text()):
+            for attachment in test.get('attachments', []):
+                try:
+                    devices.add(str(uuid.UUID(attachment['deviceId'])).upper())
+                except (KeyError, ValueError, TypeError):
+                    pass
+    # Xcode can replace the application's data-container UUID on installation.
+    # Resolve after execution; also handle an actual destination in the manifest.
+    for device in devices:
+        found = subprocess.run(['xcrun','simctl','get_app_container',device,'com.tihor.quill.ios','data'],capture_output=True,text=True)
+        if found.returncode == 0:
+            directories.add(Path(found.stdout.strip()) / 'Library/Application Support/QuillTests/Sessions' / session)
+    audits = []
+    for directory in directories:
+        assert directory.name.upper() == session and directory.parent.name == 'Sessions'
+        bootstrap = directory / 'live-provider-bootstrap.json'
+        if bootstrap.exists():
+            bootstrap.unlink()
+        path = directory / 'live-http-audit.json'
+        if path.is_file():
+            audits.append((directory,json.loads(path.read_text())))
+    assert audits, 'Missing actual provider evidence in the current test container'
+    directory, events = max(audits,key=lambda value:len(value[1]))
+    assert all(events[:len(prior)] == prior for _,prior in audits), 'Conflicting live session evidence'
+    return directory
+
+directory = current_session_directory(metadata)
 bootstrap = directory / 'live-provider-bootstrap.json'
 if bootstrap.exists():
     bootstrap.unlink()  # Never preserve an unconsumed credential file after a failed launch.
@@ -16,6 +49,7 @@ audit = directory / 'live-http-audit.json'
 assert audit.is_file(), 'Missing actual provider HTTP evidence'
 events = json.loads(audit.read_text())
 shutil.copyfile(audit, destination / 'http-audit.json')
+(destination / 'result.json').write_text(json.dumps({'passed':False,'provider':metadata['provider'],'httpAttempts':len(events),'resolvedContainerAfterTest':True},indent=2) + '\n')
 readbacks = []
 for path in Path('ios/live-keyboard-evidence').rglob('*.json'):
     try:

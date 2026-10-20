@@ -207,6 +207,7 @@ jobs:
           TEST_RUN=$(find LiveDerivedData/Build/Products -maxdepth 1 -name '*.xctestrun' -print)
           test -f "$TEST_RUN"
           xcodebuild test-without-building -xctestrun "$TEST_RUN" \
+            -parallel-testing-enabled NO \
             -destination "id=$UDID" \
             -resultBundlePath LiveKeyboardResults.xcresult \
             -test-timeouts-enabled YES -default-test-execution-time-allowance 900 \

@@ -10,7 +10,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.path != '/play':
             self.send_error(404)
             return
-        subprocess.Popen(['/usr/bin/afplay', str(speech)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        completed = subprocess.run(['/usr/bin/afplay', str(speech)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if completed.returncode != 0:
+            self.send_error(500, 'Fixture playback failed')
+            return
         self.send_response(204)
         self.end_headers()
     def log_message(self, *args):

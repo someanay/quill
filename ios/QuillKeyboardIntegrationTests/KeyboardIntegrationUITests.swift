@@ -173,15 +173,16 @@ final class KeyboardIntegrationUITests: XCTestCase {
         URLSession.shared.dataTask(with: url) { _, response, error in
             XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode,204); played.fulfill()
         }.resume()
-        wait(for: [played], timeout: 8)
-        RunLoop.current.run(until: Date().addingTimeInterval(7.5))
+        wait(for: [played], timeout: 30)
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
     }
     private func expectedLiveResult(onboarding: Bool = false) -> String {
         if !isLive { return "This is a simulated provider response." }
         let result = host.staticTexts[onboarding ? "dictation.result" : "transcript.text"]
         XCTAssertTrue(result.waitForExistence(timeout: 120))
         let text = result.label
-        for word in ["project","notes","alex","tomorrow","budget","thank"] { XCTAssertTrue(text.lowercased().contains(word)) }
+        let evidence = XCTAttachment(string: text); evidence.name = "Actual live transcript before insertion"; evidence.lifetime = .keepAlways; add(evidence)
+        for word in ["project","notes","alex","tomorrow","budget","thank"] { XCTAssertTrue(text.lowercased().contains(word), "Live result missing \(word): \(text)") }
         return text
     }
     private func enableKeyboardThroughSettings() throws {
