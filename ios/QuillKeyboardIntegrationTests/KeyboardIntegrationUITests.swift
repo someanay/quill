@@ -33,21 +33,34 @@ final class KeyboardIntegrationUITests: XCTestCase {
         throw XCTSkip(reason)
     }
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
-        XCTAssertTrue(element.waitForExistence(timeout: 10))
+        if !element.exists { XCTAssertTrue(element.waitForExistence(timeout: 10)) }
         for _ in 0..<6 { if element.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(element.isHittable); element.tap()
     }
     private func settingsRow(_ title: String, prefix: Bool = false) -> XCUIElement {
-        let predicate = NSPredicate(format: prefix ? "label BEGINSWITH[c] %@" : "label == %@", title)
+        let predicate = prefix
+            ? NSPredicate(format: "label BEGINSWITH[c] %@", title)
+            : NSPredicate(format: "label == %@ OR label BEGINSWITH[c] %@", title, title + ", ")
         // During Settings navigation, a dismissed table can briefly retain an
         // existing cell whose frame is infinite. Do not ask XCTest to hit-test it.
-        for query in [settings.cells.matching(predicate), settings.buttons.matching(predicate), settings.staticTexts.matching(predicate)] {
+        // Current Settings combines a row's title and value ("Keyboards, 2").
+        // Keep searches inside real cells: the navigation title is also "Keyboards".
+        for query in [settings.cells.matching(predicate), settings.cells.descendants(matching: .button).matching(predicate), settings.cells.descendants(matching: .staticText).matching(predicate)] {
             for row in query.allElementsBoundByIndex where row.exists && usableFrame(row.frame) { return row }
         }
-        return settings.staticTexts.matching(predicate).firstMatch
+        return settings.cells.descendants(matching: .staticText).matching(predicate).firstMatch
     }
     private func usableFrame(_ frame: CGRect) -> Bool {
         frame.origin.x.isFinite && frame.origin.y.isFinite && frame.width > 0 && frame.height > 0
+    }
+    private func setSettingsSwitch(_ row: XCUIElement, on: Bool) {
+        // iOS 26 exposes a labelled wrapper plus a smaller native switch. Its
+        // wrapper centre can be over the label, so operate the actual child switch.
+        let controls = row.descendants(matching: .switch).allElementsBoundByIndex.filter { usableFrame($0.frame) && $0.isHittable }
+        let control = controls.min(by: { $0.frame.width < $1.frame.width }) ?? row
+        if control.value as? String != (on ? "1" : "0") { control.tap() }
+        expectation(for: NSPredicate(format: "value == %@", on ? "1" : "0"), evaluatedWith: control)
+        waitForExpectations(timeout: 8)
     }
     private func openSettingsRow(_ title: String, prefix: Bool = false) throws {
         for _ in 0..<20 {
@@ -129,7 +142,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         if settingsRow("Keyboards").waitForExistence(timeout: 5) {
             try openSettingsRow("Keyboards")
             let enabled = settings.switches.matching(NSPredicate(format: "label == %@", "Quill")).firstMatch
-            if enabled.waitForExistence(timeout: 3), enabled.value as? String != "1" { enabled.tap() }
+            XCTAssertTrue(enabled.waitForExistence(timeout: 5)); setSettingsSwitch(enabled, on: true)
         } else {
             // This is the manual route also documented under “Can’t find Keyboards?”.
             for _ in 0..<6 {
@@ -154,7 +167,8 @@ final class KeyboardIntegrationUITests: XCTestCase {
             try blocked("Quill was listed, but Simulator Settings did not expose its Full Access switch.", app: settings)
         }
         if fullAccess.value as? String != "1" {
-            fullAccess.tap()
+            let controls = fullAccess.descendants(matching: .switch).allElementsBoundByIndex.filter { usableFrame($0.frame) && $0.isHittable }
+            (controls.min(by: { $0.frame.width < $1.frame.width }) ?? fullAccess).tap()
             let alert = settings.alerts.firstMatch
             if alert.waitForExistence(timeout: 3) { tap(alert.buttons["Allow"], in: settings) }
         }
@@ -199,7 +213,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let editor = fixture.textViews["quill.qa.editor"]
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         XCTAssertEqual(editor.value as? String, "Before")
-        tap(editor, in: fixture)
+        if !fixture.buttons["keyboard.insert"].exists { tap(editor, in: fixture) }
         try showQuillKeyboard(in: fixture)
         attach("real-keyboard-before-handoff", app: fixture)
 
@@ -219,7 +233,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         stage = "insert-through-installed-extension"
         fixture.activate()
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
-        tap(editor, in: fixture)
+        if !fixture.buttons["keyboard.insert"].exists { tap(editor, in: fixture) }
         try showQuillKeyboard(in: fixture)
         let insert = fixture.buttons["keyboard.insert"]
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: insert)
