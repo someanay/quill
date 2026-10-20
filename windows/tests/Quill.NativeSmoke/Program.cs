@@ -26,11 +26,14 @@ public static class Program {
   if (args.Length == 2 && args[0] == "--hotkey-check") { _ = new Application(); var window = new Window(); var handle = new WindowInteropHelper(window).EnsureHandle(); using var hotkey = new HotkeyService(handle); var report = JsonSerializer.Serialize(new { registered = hotkey.Registered,actual = hotkey.Label,preferredError = hotkey.RegistrationError },new JsonSerializerOptions { WriteIndented = true }); File.WriteAllText(args[1],report); Console.WriteLine(report); return hotkey.Registered ? 0 : 1; }
   if (args.Length == 1 && args[0] == "--font-check") { _ = new Application(); foreach (var filename in new[] {"ibm_plex_sans.ttf","ibm_plex_serif.ttf"}) { var glyph = new System.Windows.Media.GlyphTypeface(new Uri("pack://application:,,,/Quill;component/Assets/Fonts/" + filename)); Console.WriteLine(filename + " => " + string.Join(",",glyph.FamilyNames.Values)); } foreach (var f in System.Windows.Media.Fonts.GetFontFamilies(new Uri("pack://application:,,,/Quill;component/"),"./Assets/Fonts/")) Console.WriteLine("Enumerated " + f.Source); foreach (var family in new[] {Theme.Sans,Theme.Serif}) { var typeface = new System.Windows.Media.Typeface(family,FontStyles.Normal,FontWeights.Normal,FontStretches.Normal); if (!typeface.TryGetGlyphTypeface(out var glyph)) throw new InvalidOperationException("Font resolution failed: " + family.Source); Console.WriteLine(family.Source + " => " + string.Join(",",glyph.FamilyNames.Values)); } return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; int code = 0;
-  app.Startup += async (_,_) => {
+  // Start after the dispatcher installs its synchronization context. Pipe connections
+  // can complete asynchronously on ARM, so starting directly inside Startup allowed
+  // later window operations to resume on a worker thread.
+  app.Startup += (_,_) => app.Dispatcher.BeginInvoke(new Action(async () => {
    try { if (args.Length == 4 && args[0] == "--activation-launcher") await ActivationLauncher(args[1],args[2],args[3]); else if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
    catch (Exception e) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"),e.ToString()); Console.Error.WriteLine(e); code = 1; }
    finally { app.Shutdown(); }
-  }; app.Run(); return code;
+  })); app.Run(); return code;
  }
  private static async Task ExternalInsert(string path) {
   var job = JsonSerializer.Deserialize<ExternalInsertion>(File.ReadAllText(path))!; if (!job.Expected.StartsWith("Quill ",StringComparison.Ordinal) || !new[] {"Notepad","chrome","brave","msedge"}.Contains(job.App,StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("Only specifically named test fixtures are permitted.");
@@ -179,8 +182,15 @@ public static class Program {
    if (command == "quit") break;
    if (command != "launch") throw new InvalidOperationException("Unexpected launcher command.");
    ActivateFixture(window); var handle = new WindowInteropHelper(window).Handle;
-   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException("The controlled shortcut launcher did not own foreground.");
-   var start = new ProcessStartInfo(executable) { UseShellExecute = false,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Hidden }; start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(folder);
+   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException($"The controlled shortcut launcher did not own foreground. interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}, visible={window.IsVisible}, expected={handle}, actual={Native.GetForegroundWindow()}");
+   // Deliver a harmless key to this fixture before invoking its shortcut. Merely
+   // attaching input queues to show a test window does not model the input that
+   // gives a real Start-menu launcher permission to activate another process.
+   var input = new[] { Key(0x87,false),Key(0x87,true) }; // F24, handled only by this fixture.
+   if (Native.SendInput((uint)input.Length,input,System.Runtime.InteropServices.Marshal.SizeOf<Native.INPUT>()) != input.Length) throw new InvalidOperationException("The controlled launcher did not receive its activation input.");
+   await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException("Foreground changed before the controlled shortcut launch.");
+   var start = new ProcessStartInfo(executable) { UseShellExecute = true,WindowStyle = ProcessWindowStyle.Normal }; start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(folder);
    using var child = Process.Start(start) ?? throw new InvalidOperationException("Shortcut child did not start."); await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
    await writer.WriteLineAsync(JsonSerializer.Serialize(new { foregroundLauncher = true,exitCode = child.ExitCode,launcherHandle = handle.ToInt64() }));
   }

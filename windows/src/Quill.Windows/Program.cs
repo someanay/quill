@@ -11,7 +11,7 @@ public static class Program {
   var folder = dataArg >= 0 && dataArg + 1 < args.Length ? Path.GetFullPath(args[dataArg + 1]) : Environment.GetEnvironmentVariable("QUILL_DATA_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Quill", "NativeV2");
   Directory.CreateDirectory(folder); bool isolated = dataArg >= 0 || Environment.GetEnvironmentVariable("QUILL_DATA_DIR") != null;
   using var instance = new SingleInstanceActivation(folder);
-  if (!instance.IsPrimary) { var granted = instance.RequestActivation(); if (isolated) File.WriteAllText(Path.Combine(folder,"activation-request.json"),System.Text.Json.JsonSerializer.Serialize(new { foregroundPermissionGranted = granted })); return 0; }
+  if (!instance.IsPrimary) { var granted = instance.RequestActivation(); if (isolated) File.WriteAllText(Path.Combine(folder,"activation-request.json"),System.Text.Json.JsonSerializer.Serialize(new { foregroundPermissionGranted = granted,error = instance.ActivationError,foreground = instance.ActivationForeground.ToInt64() })); return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
   AppServices? services = null;
   try {

@@ -11,6 +11,8 @@ public sealed class SingleInstanceActivation : IDisposable {
  private RegisteredWaitHandle? listener;
  private int disposed;
  public bool IsPrimary { get; }
+ internal int ActivationError { get; private set; }
+ internal nint ActivationForeground { get; private set; }
  public SingleInstanceActivation(string folder) {
   using var identity = WindowsIdentity.GetCurrent();
   var scope = (identity.User?.Value ?? identity.Name) + "\n" + Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)).ToUpperInvariant();
@@ -35,7 +37,7 @@ public sealed class SingleInstanceActivation : IDisposable {
     using var shared = MemoryMappedFile.OpenExisting(ownerName,MemoryMappedFileRights.Read);
     using var view = shared.CreateViewAccessor(0,sizeof(int),MemoryMappedFileAccess.Read);
     var processId = view.ReadInt32(0);
-    if (processId > 0) { granted = Native.AllowSetForegroundWindow((uint)processId); break; }
+    if (processId > 0) { ActivationForeground = Native.GetForegroundWindow(); granted = Native.AllowSetForegroundWindow((uint)processId); ActivationError = granted ? 0 : System.Runtime.InteropServices.Marshal.GetLastWin32Error(); break; }
    } catch (FileNotFoundException) { /* The primary can still be claiming its startup resources. */ }
    catch (UnauthorizedAccessException) { break; }
    Thread.Sleep(10);
