@@ -22,7 +22,7 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                let wide = geometry.size.width >= 820 && !typeSize.isAccessibilitySize
+                let wide = UIDevice.current.userInterfaceIdiom == .pad && geometry.size.width >= 820 && !typeSize.isAccessibilitySize
                 HStack(spacing: 0) {
                     // Keep the form in one structural location so rotation and window resizing
                     // retain provider drafts, focus and the practice field.
@@ -33,6 +33,7 @@ struct OnboardingView: View {
                             stageContent
                         }.padding(wide ? 40 : 24).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
                     }.scrollDismissesKeyboard(.interactively)
+                        .safeAreaInset(edge: .bottom, spacing: 0) { if step == 1 { welcomeActions } }
                     if wide { Divider(); companion.frame(width: min(340, geometry.size.width * 0.32)) }
                 }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans())
             }
@@ -101,15 +102,14 @@ struct OnboardingView: View {
             Text(model.c("ios.setup.welcome_title")).font(Q.serif(38)).fontWeight(.semibold).accessibilityAddTraits(.isHeader).accessibilityIdentifier("onboarding.welcome")
             Text(model.c("ios.setup.welcome_body")).font(Q.sans(16)).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true)
             MessengerDemo(shortcut: model.c("demo.keyboard"), touch: true)
-            VStack(alignment: .leading, spacing: 12) {
-                instruction(1, "ios.setup.flow_short_record")
-                instruction(2, "ios.setup.flow_short_send")
-                instruction(3, "ios.setup.flow_short_insert")
-            }
-            QButton(title: model.c("onboarding.welcome.cta")) { warning = true }.accessibilityIdentifier("onboarding.getStarted")
-            Button(model.c("onboarding.welcome.open")) { model.settings.onboardingComplete = true }.frame(minHeight: 44)
-            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted)
         }
+    }
+    private var welcomeActions: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            QButton(title: model.c("onboarding.welcome.cta")) { warning = true }.accessibilityIdentifier("onboarding.getStarted")
+            Button(model.c("onboarding.welcome.open")) { model.settings.onboardingComplete = true }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(maxWidth: .infinity, minHeight: 44)
+            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+        }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity).background(Q.paper)
     }
     private var keyDisclosure: some View {
         NavigationStack {

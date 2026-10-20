@@ -21,6 +21,7 @@ struct MessengerDemo: View {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
         if args.contains("--ui-testing"), let index = args.firstIndex(of: "--ui-demo-time"), args.indices.contains(index + 1) { return Double(args[index + 1]) }
+        if args.contains("--ui-testing") && !args.contains("--ui-animate-demo") { return 0 }
         #endif
         return previewTime
     }
@@ -46,8 +47,10 @@ struct MessengerDemo: View {
                         RoundedRectangle(cornerRadius: 8).stroke(line, lineWidth: 1)
                         (Text(filled ? c("demo.reply") : "") + Text("│").foregroundColor(brand))
                             .font(.custom("IBMPlexSans", fixedSize: 15)).lineSpacing(4).foregroundStyle(ink).padding(12)
-                        DemoPointer().fill(ink).overlay(DemoPointer().stroke(surface, lineWidth: 1.2))
-                            .frame(width: 17, height: 23).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(12)
+                        if !touch {
+                            DemoPointer().fill(ink).overlay(DemoPointer().stroke(surface, lineWidth: 1.2))
+                                .frame(width: 17, height: 23).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing).padding(12)
+                        }
                     }.frame(height: 92).padding(.top, 12)
                     HStack(spacing: 12) {
                         HStack(spacing: 6) {
@@ -59,21 +62,23 @@ struct MessengerDemo: View {
                             .overlay(RoundedRectangle(cornerRadius: 5).stroke(pressed ? brand : line, lineWidth: 1))
                         Spacer(minLength: 0)
                         Text(c(filled ? "demo.inserted" : working ? "demo.transcribing" : listening ? "demo.speak" : touch ? "demo.record" : "demo.shortcut"))
-                            .font(.custom("IBMPlexSans", fixedSize: 12)).foregroundStyle(brand)
-                    }.padding(.top, 4)
+                            .font(.custom("IBMPlexSans", fixedSize: 12)).foregroundStyle(brand).padding(.trailing, touch ? 52 : 0)
+                    }.frame(minHeight: touch ? 44 : 30).padding(.top, 4)
                 }.padding(18)
             }.background(surface, in: RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(line, lineWidth: 1))
                 .overlay(alignment: touch ? .bottomTrailing : .trailing) {
-                    if listening || working {
+                    if listening || working || touch {
                         ZStack {
                             Circle().fill(Color(red: 35 / 255, green: 77 / 255, blue: 206 / 255))
                             Circle().stroke(Color.white, lineWidth: 2).padding(2)
-                            HStack(spacing: working ? 4 : 3) {
-                                ForEach(0..<(working ? 3 : 5), id: \.self) { index in
-                                    Capsule().fill(Color.white).frame(width: working ? 4 : 2.5, height: working ? 4 : 6 + abs(sin(time * 5 + Double(index) * 1.4)) * 18)
+                            if listening || working {
+                                HStack(spacing: working ? 4 : 3) {
+                                    ForEach(0..<(working ? 3 : 5), id: \.self) { index in
+                                        Capsule().fill(Color.white).frame(width: working ? 4 : 2.5, height: working ? 4 : 6 + abs(sin(time * 5 + Double(index) * 1.4)) * 18)
+                                    }
                                 }
-                            }
+                            } else { Image(systemName: "mic.fill").font(.system(size: 20)).foregroundStyle(Color.white) }
                         }.frame(width: 48, height: 48).padding(.trailing, 16).padding(.bottom, touch ? 12 : 0).offset(y: touch ? 0 : -25)
                     }
                 }

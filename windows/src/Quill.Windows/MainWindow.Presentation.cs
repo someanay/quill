@@ -38,13 +38,19 @@ public sealed partial class MainWindow {
   introduction.Children.Add(ShortcutKeys(22));
   var hint = Text(C("desktop.setup.shortcut_caption","Start and stop dictation"),14,true); hint.Margin = new(0,12,0,24); introduction.Children.Add(hint);
   var columns = new DesktopColumns { Gap = 36,MinColumnWidth = 360 }; columns.Children.Add(introduction); columns.Children.Add(DictationExample()); content.Children.Add(columns);
-  var actions = new WrapPanel { Margin = new(0,36,0,28) };
+  var actions = new WrapPanel { Margin = new(0,20,0,20) };
   var start = Action(C("onboarding.welcome.cta","Set up Quill"),() => ShowStep(1),true); start.MinWidth = 156; start.MinHeight = 46; start.Padding = new(24,10,24,10); start.Margin = new(0,0,16,8); actions.Children.Add(start);
-  var open = Action(C("onboarding.welcome.open","Open workspace"),() => { S.OnboardingComplete = true; app.Settings.Save(); Navigate("home"); }); open.MinHeight = 46; open.Background = Brushes.Transparent; open.Margin = new(0,0,0,8); actions.Children.Add(open); content.Children.Add(actions);
-  content.Children.Add(Text(C("desktop.setup.privacy_line","Your provider key. A direct connection. No Quill account."),13,true));
-  SizeChangedEventHandler responsive = (_,_) => { title.FontSize = ActualWidth < 900 ? 34 : 64; title.LineHeight = ActualWidth < 900 ? 44 : 76; host.MinHeight = Math.Max(0,ActualHeight - 130); };
+  var open = Action(C("onboarding.welcome.open","Open workspace"),() => { S.OnboardingComplete = true; app.Settings.Save(); Navigate("home"); }); open.MinHeight = 46; open.Background = Brushes.Transparent; open.Margin = new(0,0,0,8); actions.Children.Add(open); introduction.Children.Add(actions);
+  introduction.Children.Add(Text(C("desktop.setup.privacy_line","Your provider key. A direct connection. No Quill account."),13,true));
+  void ApplyResponsive(double width,double height) {
+   var compact = height < 640;
+   title.FontSize = width < 900 || compact ? 34 : 64; title.LineHeight = width < 900 || compact ? 44 : 76; title.Margin = new(0,0,0,compact ? 24 : 32);
+   body.FontSize = compact ? 16 : 20; body.LineHeight = compact ? 24 : 30; body.Margin = new(0,0,0,compact ? 20 : 28);
+   hint.Margin = new(0,compact ? 8 : 12,0,compact ? 12 : 24); actions.Margin = new(0,compact ? 12 : 20,0,compact ? 12 : 20);
+   host.MinHeight = Math.Max(0,height - 130);
+  }
+  SizeChangedEventHandler responsive = (_,_) => ApplyResponsive(ActualWidth,ActualHeight);
   SizeChanged += responsive; pageLifetimes.Add(new PageLifetime(() => SizeChanged -= responsive));
-  title.FontSize = Width < 900 ? 34 : 64; title.LineHeight = Width < 900 ? 44 : 76;
-  host.MinHeight = Math.Max(0,Height - 130); page.Children.Add(host);
+  ApplyResponsive(Width,Height); page.Children.Add(host);
  }
 }

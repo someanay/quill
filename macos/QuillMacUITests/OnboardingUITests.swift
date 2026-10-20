@@ -11,6 +11,23 @@ final class OnboardingUITests: XCTestCase {
             }
         }
     }
+    func testWelcomeActionRemainsVisibleInShortAndTallWindows() throws {
+        for dark in [false, true] {
+            let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + (dark ? ["--ui-dark"] : []); app.launch()
+            let window = app.windows.firstMatch; XCTAssertTrue(window.waitForExistence(timeout: 10))
+            let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+            for size in [CGSize(width: 660, height: 500), CGSize(width: 1160, height: 740), CGSize(width: 760, height: 1000)] {
+                let target = CGSize(width: min(size.width, screen.width - 40), height: min(size.height, screen.height - 60))
+                let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+                corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+                let start = app.buttons["onboarding.welcome.cta"]
+                XCTAssertTrue(start.waitForExistence(timeout: 5)); XCTAssertTrue(start.isHittable)
+                XCTAssertTrue(window.frame.contains(start.frame), "Setup must be reachable without scrolling past the illustration.")
+                let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-welcome-size-\(Int(target.width))x\(Int(target.height))-\(dark ? "dark" : "light")"; shot.lifetime = .keepAlways; add(shot)
+            }
+            app.terminate()
+        }
+    }
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
         let tracePath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QuillUITests/settings-navigation.txt")

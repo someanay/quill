@@ -6,7 +6,15 @@ final class QuillUITests: XCTestCase {
             for (phase, time) in [("shortcut", "1.3"), ("recording", "3"), ("transcribing", "6.2"), ("inserted", "9")] {
                 let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-demo-time", time] + (dark ? ["--ui-dark"] : []); app.launch()
                 XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "dictation.messenger-demo").firstMatch.waitForExistence(timeout: 10))
-                capture(app, "ios-messenger-\(dark ? "dark" : "light")-" + phase); app.terminate()
+                XCTAssertTrue(app.buttons["onboarding.getStarted"].isHittable, "The welcome action must remain reachable beside the illustration.")
+                capture(app, "ios-messenger-\(dark ? "dark" : "light")-" + phase)
+                if phase == "inserted" {
+                    XCUIDevice.shared.orientation = .landscapeLeft; waitForLandscape(app)
+                    XCTAssertTrue(app.buttons["onboarding.getStarted"].isHittable)
+                    capture(app, "ios-messenger-landscape-\(dark ? "dark" : "light")")
+                    XCUIDevice.shared.orientation = .portrait
+                }
+                app.terminate()
             }
         }
     }

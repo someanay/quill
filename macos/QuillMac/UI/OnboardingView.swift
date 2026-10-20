@@ -24,13 +24,13 @@ struct OnboardingView: View {
             HStack(spacing: 0) {
                 if geometry.size.width >= 900 { ScrollView { progressRail }.frame(width: 200); Divider() }
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: geometry.size.height < 640 ? 16 : 22) {
                         HStack { if geometry.size.width < 900 { Wordmark() }; Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
                         if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
-                        Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
-                        stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : 88))
+                        Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 && geometry.size.height >= 640 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
+                        stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : geometry.size.height < 640 ? 56 : 88), compact: geometry.size.height < 640)
                         if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
-                    }.padding(geometry.size.width < 700 ? 24 : 44).frame(maxWidth: .infinity, alignment: .leading)
+                    }.padding(geometry.size.width < 700 ? 24 : geometry.size.height < 640 ? 28 : 44).frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: step == 0 ? geometry.size.height : 0, alignment: .center)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity).accessibilityIdentifier("onboarding-content")
                 if step > 0 && geometry.size.width >= 1200 {
@@ -67,22 +67,17 @@ struct OnboardingView: View {
             HelpText(key: "desktop.setup.local").padding(.horizontal, 12)
         }.padding(.horizontal, 12).padding(.vertical, 30)
     }
-    @ViewBuilder private func stepContent(contentWidth: CGFloat) -> some View {
+    @ViewBuilder private func stepContent(contentWidth: CGFloat, compact: Bool) -> some View {
         switch step {
         case 0:
             if contentWidth >= 700 {
                 HStack(alignment: .top, spacing: 36) {
-                    welcomeInstructions.frame(width: (contentWidth - 36) / 2, alignment: .leading)
+                    welcomeInstructions(compact: compact).frame(width: (contentWidth - 36) / 2, alignment: .leading)
                     welcomeExample.frame(width: (contentWidth - 36) / 2, alignment: .leading)
                 }
             } else {
-                VStack(alignment: .leading, spacing: 26) { welcomeInstructions; welcomeExample }
+                VStack(alignment: .leading, spacing: 26) { welcomeInstructions(compact: compact); welcomeExample }
             }
-            HStack(spacing: 18) {
-                QuillButton(key: "onboarding.welcome.cta") { step = 1 }.fixedSize(horizontal: true, vertical: false)
-                QuillButton(key: "onboarding.welcome.open", primary: false) { settings.value.onboardingComplete = true }.fixedSize(horizontal: true, vertical: false)
-            }.padding(.top, 18)
-            HelpText(key: "desktop.setup.privacy_line", size: 13).padding(.top, 8)
         case 1:
             BodyCopy(key: "desktop.setup.privacy_body")
             QuillCard { HelpText(key: "onboarding.key.warning.free_tier", size: 14); HelpText(key: "onboarding.key.warning.usage", size: 14); HelpText(key: "compliance.privacy.promise", size: 14) }
@@ -125,11 +120,16 @@ struct OnboardingView: View {
             QuillButton(key: "mac.setup.finish", primary: false) { finish(); NSApp.hide(nil) }
         }
     }
-    private var welcomeInstructions: some View {
-        VStack(alignment: .leading, spacing: 24) {
+    private func welcomeInstructions(compact: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 18 : 24) {
             BodyCopy(key: "desktop.setup.welcome_body")
             ShortcutKeycaps()
             HelpText(key: "desktop.setup.shortcut_caption", size: 14)
+            HStack(spacing: 18) {
+                QuillButton(key: "onboarding.welcome.cta") { step = 1 }.fixedSize(horizontal: true, vertical: false)
+                QuillButton(key: "onboarding.welcome.open", primary: false) { settings.value.onboardingComplete = true }.fixedSize(horizontal: true, vertical: false)
+            }.padding(.top, 8)
+            HelpText(key: "desktop.setup.privacy_line", size: 13)
         }
     }
     private var welcomeExample: some View {

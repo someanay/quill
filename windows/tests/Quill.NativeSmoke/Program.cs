@@ -97,7 +97,13 @@ public static partial class Program {
     if (window.ResizeMode != ResizeMode.CanResize || !double.IsPositiveInfinity(window.MaxWidth)) throw new InvalidOperationException("Setup must remain resizable.");
     if (window.Width != viewport.Width || window.Height != viewport.Height) throw new InvalidOperationException("Setup changed the user's window size.");
     var root = (FrameworkElement)window.Content; root.Measure(viewport); root.Arrange(new Rect(new Point(),viewport)); root.UpdateLayout();
-    VerifyDesktopLayout(window,"setup",viewport); rendered++;
+    VerifyDesktopLayout(window,"setup",viewport);
+    if (step == 0) {
+     var start = Walk(root).OfType<Button>().Single(button => System.Windows.Automation.AutomationProperties.GetName(button) == services.Copy.Get("onboarding.welcome.cta"));
+     var position = start.TransformToAncestor(root).Transform(new Point());
+     if (position.Y < 0 || position.Y + start.ActualHeight > viewport.Height) throw new InvalidOperationException($"Welcome action is below the viewport at {viewport}.");
+    }
+    rendered++;
    }
   }
   // Resizing must retain the same live key form, rather than disposing its validation/draft session.
