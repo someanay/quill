@@ -7,7 +7,7 @@ holder. GitHub's platform rights and third-party licenses are preserved.
 See [the source viewing terms](LICENSE).
 
 Voice dictation with your own API key. Use a keyboard shortcut on Windows and Mac,
-the floating control on Android, or record in Quill and insert with its iOS keyboard.
+the floating control on Android, or dictate from the iOS keyboard during a timed session.
 
 Recordings go directly to your chosen speech provider. Optional cleanup uses your chosen language model. There is no Quill account or server handling your recordings.
 
@@ -16,10 +16,15 @@ Recordings go directly to your chosen speech provider. Optional cleanup uses you
 Windows, macOS, iPhone and iPad now use independent native layouts with Quill's
 shared typography, colours, provider and privacy foundations. Desktop setup
 teaches keyboard shortcuts and native permissions. iOS setup teaches the actual
-host-recording and installed-keyboard handoff, with a required practice insertion.
+timed host microphone session and installed-keyboard controls, with a required practice insertion.
 The approved design pass covers setup, workspace, history and every relevant
 settings page. See [the design review](docs/native-design-review.md) and
 [platform experience](docs/platform-experience.md).
+
+The iOS keyboard-session follow-up removes repeated app switching during an
+explicitly enabled five-minute session. Native iPhone/iPad baseline/current tests,
+installed-keyboard background dictation, both appearances and packages are verified.
+See [the results and remaining device gates](docs/ios-keyboard-session.md).
 
 Windows 2.0.3 is installed normally on this workstation with a Start shortcut and
 Installed apps entry. Native verification runs on Windows x64/ARM, macOS 15/26

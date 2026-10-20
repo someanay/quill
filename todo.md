@@ -9,7 +9,7 @@ session to remove repeated app switching. Scope this pass to that M14 interactio
 truthful permission/privacy copy and iPhone/iPad validation. See
 [the session contract](docs/ios-keyboard-session.md).
 
-- [ ] Prove a real foreground-enabled microphone session supports repeated background keyboard dictation on iPhone/iPad baseline/current CI; review both appearances and inspect final packages.
+- [x] Prove a real foreground-enabled microphone session supports repeated background keyboard dictation on iPhone/iPad baseline/current CI; review both appearances and inspect final packages. Source `0cf6090`: both full native suites and all four installed-keyboard journeys pass; 464 captures reviewed and four inner packages inspected. Exact runs, hashes and physical-device limits are in [the session report](docs/ios-keyboard-session.md).
 
 The owner replaced Android UI parity with independent native experiences sharing
 Quill's DNA. Scope this pass to M14 native presentation, iOS onboarding and validation;

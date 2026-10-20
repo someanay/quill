@@ -1,5 +1,10 @@
 # Apple validation — October 20, 2026
 
+This is the completed native-redesign baseline. The subsequent iOS recording
+interaction and its expanded acceptance are recorded separately in
+[the keyboard-session report](ios-keyboard-session.md); the iOS counts and
+manual-switching assessment below describe the named earlier revisions.
+
 Status: all final jobs, packages and visual-review gates are complete. All four
 Mac configurations, both iPhone/iPad runtime suites, all four installed-keyboard
 journeys and all eight Mac real-editor jobs are green.

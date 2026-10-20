@@ -1,5 +1,9 @@
 # Native experience design review — October 20, 2026
 
+The later [iOS keyboard-session follow-up](ios-keyboard-session.md) records its
+own source revision, Light/Dark session-state review and expanded native gates.
+The completed redesign results below remain tied to their earlier revisions.
+
 Status: the native redesign, available execution matrix, final screenshot review
 and package inspection are complete. Windows and all Apple jobs are green.
 This is not a distribution release sign-off.
@@ -25,8 +29,9 @@ The design references and native render evidence are in the ignored
   credential sheets, legal details, diagnostics and custom-word sheets. Matching
   layouts are not accepted as proof that both appearances are readable.
 - Windows teaches its actually registered shortcut. Mac teaches Option–Command–Space
-  and macOS microphone/Accessibility permissions. iOS teaches host recording,
-  explicit keyboard handoff, Full Access and a real insertion practice.
+  and macOS microphone/Accessibility permissions. iOS teaches an explicit timed
+  host microphone session, keyboard Dictate/Stop, Full Access and a real insertion
+  practice; manual handoff remains available as a fallback.
 
 ## Complete surface inventory
 

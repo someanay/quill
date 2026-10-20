@@ -2,9 +2,10 @@
 
 Native SwiftUI app and UIKit keyboard extension sharing Quill's provider, privacy and brand foundations. iOS 17 or later is required. It uses the shared cobalt palette, IBM Plex Sans and Serif font files, the `quill.` wordmark, recording bubble and ink meter, and Home / History / Settings navigation. iOS copy is bundled locally and can evolve independently while preserving formatting contracts.
 
-Completed Actions execution, screenshot review and exact source results are
-tracked in [Apple validation](../docs/apple-validation.md). The older September
-verification paragraph below is historical evidence.
+The timed keyboard-session follow-up is tracked in
+[its implementation and validation report](../docs/ios-keyboard-session.md).
+[The earlier Apple redesign results](../docs/apple-validation.md) and September
+verification paragraphs remain historical evidence for their named revisions.
 
 ## Build and test
 
@@ -23,15 +24,15 @@ xcodebuild test -project Quill.xcodeproj -scheme Quill \
 
 Use an installed simulator name from `xcrun simctl list devices available`. `Quill` is the shared scheme; it builds the host and embedded `QuillKeyboard`, and runs `QuillTests` and `QuillUITests`. The generated project is reproducible from `project.yml`. The root Apple CI workflow chooses an available simulator automatically and preserves the result bundle, screenshots, logs and simulator app.
 
-After that pass installs the host, grant its microphone permission with `xcrun simctl privacy <simulator-UUID> grant microphone com.tihor.quill.ios`, then run `xcodebuild test-without-building` with the same project/scheme/destination and `-only-testing:QuillTests/RecorderTests`. The five recorder tests use the real native recorder to check finalized 16 kHz mono PCM audio, cancellation deletion, the session cap, interruption-adapter recovery and interruption followed by immediate restart. They never upload audio. The CI workflow performs both passes.
+After that pass installs the host, grant its microphone permission with `xcrun simctl privacy <simulator-UUID> grant microphone com.tihor.quill.ios`, then run `xcodebuild test-without-building` with the same project/scheme/destination and `-only-testing:QuillTests/RecorderTests`. The eight recorder tests check finalized 16 kHz mono PCM audio, cancellation deletion, capture caps, interruption recovery and immediate restart, plus actual idle input without files, repeated takes under the same live session, expiry, session interruption and cancellation of late provider delivery after clearing. They never upload audio. The CI workflow performs both passes.
 
 For a physical iPhone, choose your development team in both targets, register `com.tihor.quill.ios` and `com.tihor.quill.ios.keyboard`, and enable the `group.com.tihor.quill.ios` App Group for both. Keep the Keychain access groups separate; the keyboard has no key-sharing entitlement. Build and run the `Quill` scheme on the phone. A device IPA or App Store release requires Apple's signing credentials and provisioning; a simulator app cannot be installed on an iPhone.
 
 The portable `QuillCore` package also builds and tests with Swift 6.3.3 on Windows. It has no UIKit, AVFoundation, Security or SQLite dependency. Its tests include all 195 actual Android cleanup decisions, Android formatter-signature vectors, endpoint validation, provider request/authentication shapes, error mapping, Gemini response hardening, custom words, contacts filtering, insertion spacing, retention and keyboard handoff lifetime. The source fixture must match `tests/parity/cleanup.json` in the repository root.
 
 Current verification and source boundaries are maintained in
-[Apple validation](../docs/apple-validation.md). The native suite now contains
-51 portable core tests, 47 host/keyboard logic tests, five real simulator recorder
+[the keyboard-session report](../docs/ios-keyboard-session.md). The native suite now contains
+56 portable core tests, 55 host/keyboard logic tests, eight real simulator recorder
 tests and thirteen UI walkthroughs for each phone/tablet destination. The separate
 installed-keyboard matrix runs on iPhone and iPad on both baseline and current
 simulator runtimes; its outcome gate rejects skipped or incomplete walkthroughs.
@@ -41,7 +42,7 @@ Do not infer physical-device or App Store readiness from simulator/ad hoc builds
 
 `QuillUITests` uses a separate local app-data directory and navigates every onboarding step and all settings categories, including dark mode, larger text and landscape. Its complete-setup test uses an explicitly selected synthetic provider transport compiled only in DEBUG and activated only by both `--ui-testing` and `--ui-provider-fixtures`; real request construction, response validation, Keychain writes and native microphone permission still execute. The fixture recognizes only a fixed synthetic Groq key. Release builds omit this transport entirely, and no chargeable provider calls are made by these tests. Screenshots and accessibility hierarchies are attached to every UI test; the keyboard controller also attaches compact-width light/dark renders.
 
-The separate `QuillKeyboardIntegration` scheme exercises the installed keyboard through Simulator Settings and a second native editor app. It enables the keyboard and Full Access through system UI, completes synthetic-key onboarding, records with the real microphone adapter, publishes the actual App Group handoff and checks the separate editor's text after explicit keyboard insertion. A fresh `--ui-session-id` UUID, recognized only in DEBUG alongside `--ui-testing`, gives that run isolated files and Keychain services. It preserves real saved settings and validated keys across an intentional host termination and restart; it does not seed data or skip setup. `QuillKeyboardFieldFixture` contains only a synthetic text field and has no App Group, Quill imports or persistence. Build this scheme for testing, install both app products, grant the host's microphone permission and run the scheme's UI test. The dedicated `ios-keyboard-integration.yml` workflow preserves an explicit passed/blocked/incomplete outcome plus original screenshots and hierarchies; a blocked or skipped test is not accepted as an integration pass. This scheme does not alter the main test suite.
+The separate `QuillKeyboardIntegration` scheme exercises the installed keyboard through Simulator Settings and a second native editor app. It enables the keyboard and Full Access through system UI, completes synthetic-key onboarding, records with the real microphone adapter, and checks the original explicit handoff. It then enables a real timed microphone session and dictates twice from the installed keyboard, requiring exact automatic insertion while the host stays in the background before, during and after both takes. The second take uses Dark appearance. Ending the session must remove capture controls without inserting again. A fresh `--ui-session-id` UUID, recognized only in DEBUG alongside `--ui-testing`, gives that run isolated files and Keychain services. It preserves real saved settings and validated keys across an intentional host termination and restart; it does not seed data or skip setup. `QuillKeyboardFieldFixture` contains only synthetic native fields and a theme control, with no App Group, Quill imports, network or persistence. Build this scheme for testing, install both app products, grant the host's microphone permission and run the scheme's UI test. The dedicated `ios-keyboard-integration.yml` workflow preserves an explicit passed/blocked/incomplete outcome plus original screenshots and hierarchies; a blocked or skipped test is not accepted as an integration pass. This scheme does not alter the main test suite.
 
 Simulator file tests assert the actual atomic and complete-protection options passed to Foundation and execute the full handoff lifecycle. The simulator filesystem does not expose the physical device's protection attribute in the observed run; the additional attribute assertion executes on physical devices. Apple's [file-protection documentation](https://developer.apple.com/documentation/uikit/encrypting-your-app-s-files) describes the hardware/passcode protection boundary. Simulator tests do not establish device-lock encryption, microphone quality, physical keyboard transfer compatibility or App Store readiness.
 
@@ -67,9 +68,26 @@ Contact import stores only filtered candidate names locally and sends no contact
 
 ## Keyboard workflow and platform boundaries
 
-1. Record and transcribe in the Quill app.
-2. Tap **Send to keyboard**. This writes only that transcript to the App Group with a 60-second lifetime.
-3. Return to the target app, switch to Quill using the globe key, and tap **Insert dictation**.
+1. Start a five-minute **keyboard session** in Quill, with the microphone and privacy explanation visible.
+2. Return to the target app and choose Quill using the globe key.
+3. Use **Dictate** and **Stop dictation** on the keyboard. The host records and transcribes in the background; the keyboard inserts automatically into the unchanged original field. Repeat without opening Quill.
+4. Choose **End session** in the keyboard or Quill, or let the timer expire.
+
+The microphone remains active during the explicitly enabled session. An input
+engine discards idle buffers without files, uploads or audio playback. Only
+requested takes enter the existing recorder/provider/recovery pipeline. Expiry,
+interruption, removed input routes, protected-data locking and reset end the
+session. A fresh app process never restores an old microphone lease. A stale
+heartbeat makes the keyboard stop offering capture.
+
+Automatic insertion requires the same document identifier, surrounding text and
+selection; the anchor exists only in keyboard memory. Changed or hidden fields
+require explicit insertion. A result is consumed once, never automatically
+replayed after a keyboard restart. Provider and storage failures retain the
+existing recovery actions.
+
+The manual fallback remains: record in Quill, choose **Send to keyboard**, return
+to your app and choose **Insert dictation** within 60 seconds.
 
 The keyboard consumes and deletes the pending transcript before insertion. Cross-process file coordination prevents a tap from deleting a newer replacement. Full Access is required for this shared-container consume/delete; ordinary typing, space, shift, numbers, delete, Return and the next-keyboard key work without it. The extension makes no network requests and never records. Selected text is replaced on the explicit insertion tap, as with the system keyboard and Android. A separator is added only when appending to existing non-whitespace text; middle insertion adds no extra spaces. The native proxy knows real field content, so iOS preserves content at the very start instead of using Android's accessibility-placeholder workaround. An explicit Copy action remains available in the host; that user-owned clipboard copy does not expire and is not synchronized to other devices.
 
@@ -78,7 +96,7 @@ Some Android capabilities have no equivalent public iOS API:
 | Android behavior | iOS behavior |
 |---|---|
 | Floating bubble above any app | Bubble inside Quill; host-app recording plus keyboard transfer |
-| Microphone started from overlay | User starts microphone in Quill; an active audio session may continue in background |
+| Microphone started from overlay | User enables a timed session in Quill once; keyboard commands control subsequent takes while its audio input remains active |
 | Accessibility insertion into other apps | Native keyboard text proxy or explicit Copy |
 | Automatic destination-app writing styles | User selects the writing style before recording; destination identity is unavailable |
 | System-overlay visibility, drag/snap, shake and OEM battery exceptions | No corresponding cross-app overlay or OEM permission; iOS controls background lifecycle |
@@ -99,6 +117,7 @@ Do not mark the following passed based only on simulator or pure tests:
 
 - Fresh install: complete warning/key verification, microphone grant and microphone test; deny each permission and recover from Settings; set up the keyboard with Full Access off/on.
 - Record short and five-minute speech, silence, long mid-sentence pauses and a noisy room; verify RMS feedback, cap warning, cancel, incoming call, screen lock and app switching.
+- Enable one five-minute keyboard session, leave Quill, and dictate repeatedly into several apps. Check the microphone indicator, idle battery/heat, expiry, End from the keyboard, changed-field manual insertion, Full Access revocation, Bluetooth/input removal and interruption recovery. Restarting Quill must never resume microphone input without another explicit foreground start.
 - Validate every speech provider with its own authorized test key; invalid/revoked keys, offline network, exhausted quota, wrong model, cancellation and provider timeout. Do the same for all independent cleanup combinations.
 - Fail a transcription in private and normal mode; terminate and reopen Quill; verify Retry preserves the captured audio and Cancel deletes it. Successful private dictations must not enter SQLite history.
 - Type into Notes, Messages, Safari textareas and contenteditable, Mail, Gmail and supported third-party apps. Insert at start/middle/end, before punctuation, and next to Unicode. Confirm existing text stays intact.

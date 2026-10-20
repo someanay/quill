@@ -8,6 +8,14 @@ Run native behavior on the actual OS: Windows UI Automation and microphone on th
 
 Required failure cases include delayed or failed insertion acknowledgements, focus/content/selection drift, secure fields, clipboard ownership changes, partial paste dispatch, cancellation/Copy/sleep during insertion confirmation, stale microphone callbacks, provider/key failure, cleanup timeouts, storage failure after a completed transcript, and restart without automatic duplicate delivery. User keys and real provider accuracy remain a separate end-to-end gate; synthetic provider fixtures must never be described as live-provider verification.
 
+The October 20 [iOS keyboard-session follow-up](docs/ios-keyboard-session.md)
+additionally requires actual repeated dictation from the installed keyboard while
+the host remains in the background, on iPhone and iPad baseline/current runtimes.
+Cover idle input without files, expiry/interruption, changed-field refusal,
+consume-once and cancellation of late delivery after clearing. Review Light/Dark
+ready, recording, processing, failure and pending-insertion layouts. Physical
+idle battery, audio routes, calls and locked-device behavior remain device gates.
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.
