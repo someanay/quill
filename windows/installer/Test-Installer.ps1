@@ -74,9 +74,10 @@ $receipt.destination = $runRoot
 $receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath
 Expect-Refusal { & (Join-Path $wrongRoot.destination 'Uninstall-Quill.ps1') } 'Mismatched installation receipt was accepted.'
 $passed++
-$registeredCheck = 'Skipped: an existing Quill registration was preserved.'
+$registeredCheck = 'Skipped: an existing Quill registration or startup entry was preserved.'
 $registration = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Quill.NativeV2'
-if (-not (Test-Path -LiteralPath $registration)) {
+$startupPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+if (-not (Test-Path -LiteralPath $registration) -and $null -eq (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill) {
     $registered = Fixture 'registered'
     & (Join-Path $registered.package 'Install-Quill.ps1') -Destination $registered.destination -NoLaunch -NoShortcut | Out-Null
     $entry = Get-ItemProperty -LiteralPath $registration
@@ -99,5 +100,41 @@ Assert-True (Test-Path -LiteralPath (Join-Path $upgrade.destination 'Assets\new.
 Assert-True (Test-Path -LiteralPath (Join-Path $upgrade.destination 'user-note.txt')) 'Upgrade removed an unrelated file.'
 & (Join-Path $upgrade.destination 'Uninstall-Quill.ps1') | Out-Null
 $passed++
-[IO.File]::WriteAllText((Join-Path $runRoot 'results.json'),(@{ passed = $passed; scope = 'Fresh synthetic files only; no launch or shortcuts; existing registration preserved.'; registration = $registeredCheck } | ConvertTo-Json))
+$startupCheck = 'Skipped: isolated hosted runner required; existing startup entry preserved.'
+if ($env:GITHUB_ACTIONS -eq 'true' -and $env:RUNNER_OS -eq 'Windows' -and -not (Test-Path -LiteralPath $registration) -and $null -eq (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill) {
+    # These checks create only disposable runner entries, never a desktop user's
+    # existing Quill registration or sign-in preference.
+    try {
+        if (-not (Test-Path -LiteralPath $startupPath)) { New-Item -Path $startupPath | Out-Null }
+        $startup = Fixture 'startup-repair'
+        New-ItemProperty -LiteralPath $startupPath -Name Quill -Value ('"' + (Join-Path $runRoot 'old-development\Quill.Windows.exe') + '" --background') -PropertyType String -Force | Out-Null
+        & (Join-Path $startup.package 'Install-Quill.ps1') -Destination $startup.destination -NoLaunch -NoShortcut | Out-Null
+        $expectedStartup = '"' + (Join-Path $startup.destination 'Quill.exe') + '" --background'
+        Assert-True ((Get-ItemProperty -LiteralPath $startupPath -Name Quill).Quill -eq $expectedStartup) 'Upgrade did not repair the stale Quill startup executable.'
+        & (Join-Path $startup.destination 'Uninstall-Quill.ps1') | Out-Null
+        Assert-True ($null -eq (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill) 'Uninstall left its own startup entry behind.'
+        $passed++
+
+        $disabled = Fixture 'startup-disabled'
+        & (Join-Path $disabled.package 'Install-Quill.ps1') -Destination $disabled.destination -NoLaunch -NoShortcut | Out-Null
+        Assert-True ($null -eq (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill) 'Install enabled startup without an existing choice.'
+        & (Join-Path $disabled.destination 'Uninstall-Quill.ps1') | Out-Null
+        $passed++
+
+        $unrelated = Fixture 'startup-unrelated'
+        $unrelatedCommand = '"' + (Join-Path $runRoot 'another-app\Unrelated.exe') + '" --background'
+        New-ItemProperty -LiteralPath $startupPath -Name Quill -Value $unrelatedCommand -PropertyType String -Force | Out-Null
+        & (Join-Path $unrelated.package 'Install-Quill.ps1') -Destination $unrelated.destination -NoLaunch -NoShortcut | Out-Null
+        Assert-True ((Get-ItemProperty -LiteralPath $startupPath -Name Quill).Quill -eq $unrelatedCommand) 'Install changed an unrelated startup command.'
+        & (Join-Path $unrelated.destination 'Uninstall-Quill.ps1') | Out-Null
+        Assert-True ((Get-ItemProperty -LiteralPath $startupPath -Name Quill).Quill -eq $unrelatedCommand) 'Uninstall removed an unrelated startup command.'
+        $passed++
+        $startupCheck = 'Passed: repaired stale Quill startup, preserved disabled/unrelated entries, removed only its own startup command.'
+    } finally {
+        Remove-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue
+        $entry = Get-ItemProperty -LiteralPath $registration -ErrorAction SilentlyContinue
+        if ($entry.InstallLocation -and $entry.InstallLocation.StartsWith($runRoot + [IO.Path]::DirectorySeparatorChar,[StringComparison]::OrdinalIgnoreCase)) { Remove-Item -LiteralPath $registration }
+    }
+}
+[IO.File]::WriteAllText((Join-Path $runRoot 'results.json'),(@{ passed = $passed; scope = 'Fresh synthetic files only; no launch or shortcuts; existing registration preserved.'; registration = $registeredCheck; startup = $startupCheck } | ConvertTo-Json))
 Write-Output "$passed installer integrity and uninstall boundary checks passed. Evidence: $runRoot"

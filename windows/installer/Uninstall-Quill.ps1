@@ -33,6 +33,11 @@ if ($receipt.shortcut) {
 if ($receipt.registration) {
     $registration = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Quill.NativeV2'
     if ((Get-ItemProperty -Path $registration -Name InstallLocation -ErrorAction SilentlyContinue).InstallLocation -eq $installRoot) { Remove-Item -LiteralPath $registration }
+    $startupPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+    $startupCommand = (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill
+    if ([string]::Equals($startupCommand,('"' + $appExecutable + '" --background'),[StringComparison]::OrdinalIgnoreCase)) {
+        Remove-ItemProperty -LiteralPath $startupPath -Name Quill
+    }
 }
 foreach ($target in $targets) { if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target -Force } }
 Remove-Item -LiteralPath $receiptPath -Force

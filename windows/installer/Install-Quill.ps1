@@ -84,6 +84,15 @@ if (-not $NoRegistration) {
     foreach ($name in $values.Keys) { New-ItemProperty -Path $registration -Name $name -Value $values[$name] -PropertyType String -Force | Out-Null }
     New-ItemProperty -Path $registration -Name NoModify -Value 1 -PropertyType DWord -Force | Out-Null
     New-ItemProperty -Path $registration -Name NoRepair -Value 1 -PropertyType DWord -Force | Out-Null
+    # Preserve the existing startup choice while moving a legacy/development
+    # Quill entry to this installed copy. An absent or unrelated entry stays so.
+    $startupPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+    $startupCommand = (Get-ItemProperty -LiteralPath $startupPath -Name Quill -ErrorAction SilentlyContinue).Quill
+    if ($startupCommand -is [string] -and $startupCommand -match '^\s*(?:"(?<exe>[^"]+)"|(?<exe>.+?\.exe))(?:\s+--background)?\s*$') {
+        if ([IO.Path]::GetFileName($Matches.exe) -in @('Quill.exe','Quill.Windows.exe')) {
+            Set-ItemProperty -LiteralPath $startupPath -Name Quill -Value ('"' + $appExecutable + '" --background')
+        }
+    }
 }
 $receipt = @{ schema = 1; destination = $Destination; files = $installedFiles; shortcut = (-not $NoShortcut); registration = (-not $NoRegistration) }
 [IO.File]::WriteAllText((Join-Path $Destination '.quill-install.json'),($receipt | ConvertTo-Json -Depth 4),[Text.UTF8Encoding]::new($false))
