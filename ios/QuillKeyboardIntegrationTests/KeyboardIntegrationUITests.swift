@@ -118,6 +118,13 @@ final class KeyboardIntegrationUITests: XCTestCase {
         stage = "enable-keyboard-in-settings"
         tap(host.buttons["onboarding.keyboard.settings"], in: host)
         XCTAssertTrue(settings.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(settings.navigationBars.firstMatch.waitForExistence(timeout: 20))
+        // The public app-settings URL can finish its Apps/Quill navigation after
+        // Settings is already foreground. Wait before touching a transient root page.
+        if !settings.navigationBars["Quill"].waitForExistence(timeout: 15), settings.navigationBars.firstMatch.identifier == "Apps" {
+            try openSettingsRow("Quill")
+            XCTAssertTrue(settings.navigationBars["Quill"].waitForExistence(timeout: 10))
+        }
         attach("app-specific-keyboard-settings", app: settings)
         if settingsRow("Keyboards").waitForExistence(timeout: 5) {
             try openSettingsRow("Keyboards")

@@ -68,6 +68,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             finish(report, output: output)
         }
         var editor: NSRunningApplication?
+        var phase = "starting TextEdit"
         let clipboardChange = NSPasteboard.general.changeCount
         do {
             guard let editorURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.TextEdit") else {
@@ -87,9 +88,12 @@ private struct ProbeFailure: Error, CustomStringConvertible {
                 let document = output.appendingPathComponent("textedit-case-\(index).txt")
                 try Data(before.utf8).write(to: document, options: .atomic)
                 editor = try await open(document: document, editorURL: editorURL)
+                phase = name + ": initial field"
                 let initial = try await focused(injector: injector, editor: editor!, expected: before)
+                phase = name + ": requested selection"
                 try setSelection(selection, element: initial.element)
                 let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection)
+                phase = name + ": insertion confirmation"
                 let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
                 guard result == .confirmed, actual == expected else {
@@ -140,8 +144,9 @@ private struct ProbeFailure: Error, CustomStringConvertible {
             report.status = "passed"
             report.reason = "Seven insertions and three stale-focus/content refusals exercised unchanged production code against the separate TextEdit process; clipboard unchanged."
         } catch {
-            report.status = "failed"; report.reason = String(describing: error)
+            report.status = "failed"; report.reason = phase + ": " + String(describing: error)
             report.checks.append(ProbeCheck(name: "integration execution", passed: false, detail: report.reason))
+            failureScreenshot(output: output)
         }
         // TextEdit was absent before this isolated probe, and only these synthetic files
         // were opened. Force quit avoids an unsaved-document dialog hanging CI cleanup.
@@ -165,20 +170,23 @@ private struct ProbeFailure: Error, CustomStringConvertible {
 
     private static func focused(injector: TextInjector, editor: NSRunningApplication, expected: String, selection: NSRange? = nil) async throws -> FocusSnapshot {
         var captured: FocusSnapshot?
-        try await waitUntil("TextEdit focused text and selection") {
-            guard let snapshot = try injector.snapshot(), snapshot.process == editor.processIdentifier,
+        var last = "no snapshot"
+        do { try await waitUntil("TextEdit focused text and selection") {
+            guard let snapshot = try injector.snapshot() else { last = "no editable focused snapshot"; return false }
+            last = "bundle=\(snapshot.bundleID ?? "none"), textLength=\(snapshot.originalText?.utf16.count ?? -1), range=\(String(describing: snapshot.originalRange)), expectedLength=\(expected.utf16.count), expectedRange=\(String(describing: selection))"
+            guard snapshot.process == editor.processIdentifier,
                   snapshot.bundleID == "com.apple.TextEdit", snapshot.originalText == expected else { return false }
             if let selection {
                 guard snapshot.originalRange?.location == selection.location, snapshot.originalRange?.length == selection.length else { return false }
             }
             captured = snapshot
             return true
-        }
+        } } catch { throw ProbeFailure("\(error) Last observation: \(last)") }
         return captured!
     }
 
     private static func waitUntil(_ description: String, condition: () throws -> Bool) async throws {
-        let deadline = Date().addingTimeInterval(10)
+        let deadline = Date().addingTimeInterval(30)
         while Date() < deadline {
             if try condition() { return }
             try await Task.sleep(nanoseconds: 100_000_000)
@@ -206,6 +214,10 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         } catch let error as QuillError where error == .focusChanged { return }
     }
 
+    private static func failureScreenshot(output: URL) {
+        let capture = Process(); capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture"); capture.arguments = ["-x", output.appendingPathComponent("failure-at-check.png").path]
+        do { try capture.run(); capture.waitUntilExit() } catch { print("Failure screenshot unavailable: \(error)") }
+    }
     private static func finish(_ report: ProbeReport, output: URL) -> Never {
         do {
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

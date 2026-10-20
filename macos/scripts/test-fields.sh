@@ -20,6 +20,9 @@ safari_status=${PIPESTATUS[0]}
 "$probe" fixture "$PWD/FieldEvidence" "$fixture" 2>&1 | tee FieldEvidence/fixture.log
 fixture_status=${PIPESTATUS[0]}
 set -e
+if [[ "$safari_status" != 0 || "$fixture_status" != 0 ]]; then
+  /usr/sbin/screencapture -x "$PWD/FieldEvidence/failure.png" || true
+fi
 if [[ "$safari_status" == 0 && "$fixture_status" == 0 ]]; then
   exit 0
 fi
