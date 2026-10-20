@@ -165,8 +165,13 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["No dictations yet"].waitForExistence(timeout: 5))
     }
-    func testEverySettingsScreenAcrossSizesAndAppearances() throws {
-        for dark in [false, true] {
+    func testEverySettingsScreenInLightAcrossWindowSizes() throws {
+        try captureEverySettingsScreen(dark: false)
+    }
+    func testEverySettingsScreenInDarkAcrossWindowSizes() throws {
+        try captureEverySettingsScreen(dark: true)
+    }
+    private func captureEverySettingsScreen(dark: Bool) throws {
             let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"] + (dark ? ["--ui-dark"] : []); app.launch()
             XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
             let window = app.windows["QuillSettings"]
@@ -175,6 +180,9 @@ final class OnboardingUITests: XCTestCase {
                 let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
                 corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
                 XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+                let overview = XCTAttachment(screenshot: app.screenshot())
+                overview.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-settings-overview"
+                overview.lifetime = .keepAlways; add(overview)
                 for page in ["speech", "keys", "cleanup", "style", "words", "audio", "bubble", "privacy", "advanced", "about"] {
                     let row = app.buttons["settings." + page]
                     reveal(row, in: app)
@@ -187,7 +195,6 @@ final class OnboardingUITests: XCTestCase {
                 }
             }
             app.terminate()
-        }
     }
     func testCustomWordEditingAndPrivateHistoryGate() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"]; app.launch()

@@ -92,7 +92,7 @@ private struct ProbeFailure: Error, CustomStringConvertible {
                 let initial = try await focused(injector: injector, editor: editor!, expected: before, document: document)
                 phase = name + ": requested selection"
                 try setSelection(selection, element: initial.element)
-                let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection, document: document)
+                let target = try await focused(injector: injector, editor: editor!, expected: before, selection: selection, document: document, prepareSelection: true)
                 phase = name + ": insertion confirmation"
                 let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
@@ -181,9 +181,10 @@ private struct ProbeFailure: Error, CustomStringConvertible {
         }
     }
 
-    private static func focused(injector: TextInjector, editor: NSRunningApplication, expected: String, selection: NSRange? = nil, document: URL? = nil) async throws -> FocusSnapshot {
+    private static func focused(injector: TextInjector, editor: NSRunningApplication, expected: String, selection: NSRange? = nil, document: URL? = nil, prepareSelection: Bool = false) async throws -> FocusSnapshot {
         var captured: FocusSnapshot?
         var last = "no snapshot"
+        var selectionReadySince: Date?
         do { try await waitUntil("TextEdit focused text and selection") {
             guard let snapshot = try injector.snapshot() else {
                 let application = AXUIElementCreateApplication(editor.processIdentifier)
@@ -208,7 +209,19 @@ private struct ProbeFailure: Error, CustomStringConvertible {
                 guard sameFile || title == document.lastPathComponent || title.hasPrefix(document.lastPathComponent + " —") else { return false }
             }
             if let selection {
-                guard snapshot.originalRange?.location == selection.location, snapshot.originalRange?.length == selection.length else { return false }
+                guard snapshot.originalRange?.location == selection.location, snapshot.originalRange?.length == selection.length else {
+                    selectionReadySince = nil
+                    // A newly opened TextEdit document can finish restoring its
+                    // caret after AX first exposes the text. Establish only the
+                    // owned synthetic document's test selection before capture.
+                    // Production insertion and its confirmation are never retried.
+                    if prepareSelection { try setSelection(selection, element: snapshot.element) }
+                    return false
+                }
+                if prepareSelection {
+                    if selectionReadySince == nil { selectionReadySince = Date() }
+                    guard Date().timeIntervalSince(selectionReadySince!) >= 0.2 else { return false }
+                }
             }
             captured = snapshot
             return true

@@ -26,6 +26,24 @@ final class KeyboardIntegrationUITests: XCTestCase {
         screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
         let hierarchy = XCTAttachment(string: app.debugDescription)
         hierarchy.name = name + " hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+        if app === fixture {
+            let editor = fixture.textViews["quill.qa.editor"]
+            if editor.exists {
+                let observed = editor.value
+                let value = observed as? String
+                // This separate fixture contains only fixed synthetic QA text.
+                // Preserve exact scalars, since AX descriptions truncate text values.
+                let readback = XCTAttachment(string: "value=\(String(reflecting: observed))\nscalars=\(value.map { $0.unicodeScalars.map(\.value) } ?? [])\n")
+                readback.name = name + " exact editor readback"; readback.lifetime = .keepAlways; add(readback)
+            }
+        }
+    }
+    private func requireEditorText(_ expected: String) {
+        // Reacquire the actual UIKit editor on each read after extension/app switches.
+        // Do not let a predicate retain an earlier accessibility snapshot.
+        let matches = NSPredicate { [self] _, _ in fixture.textViews["quill.qa.editor"].value as? String == expected }
+        expectation(for: matches, evaluatedWith: fixture); waitForExpectations(timeout: 10)
+        XCTAssertEqual(fixture.textViews["quill.qa.editor"].value as? String, expected)
     }
     private func blocked(_ reason: String, app: XCUIApplication) throws -> Never {
         outcome = "blocked: " + reason
@@ -100,6 +118,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         // Explicit launch restores the same UUID; settings/key persistence is real.
         host.launch()
         XCTAssertTrue(host.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10))
+        stage = "connect-installed-keyboard"
         tap(host.textFields["onboarding.keyboard.test"], in: host)
         try showQuillKeyboard(in: host)
         if host.buttons["Done"].firstMatch.exists { tap(host.buttons["Done"].firstMatch, in: host) }
@@ -203,9 +222,12 @@ final class KeyboardIntegrationUITests: XCTestCase {
             if globe.exists && globe.isHittable { globe.tap(); continue }
             let language = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Switch keyboard' OR label CONTAINS[c] 'Change keyboard'")).firstMatch
             if language.exists && language.isHittable { language.tap(); continue }
-            attach("system-keyboard-state", app: XCUIApplication(bundleIdentifier: "com.apple.springboard"))
-            try blocked("The real field did not expose a system keyboard-switch key; inspect the host and system keyboard evidence.", app: app)
+            // A newly enabled iPad extension can arrive after the field becomes
+            // focused but before any switch key exists. Keep observing the real
+            // keyboard during the bounded loop rather than declaring it absent.
+            RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         }
+        attach("system-keyboard-state", app: XCUIApplication(bundleIdentifier: "com.apple.springboard"))
         try blocked("Cycling the real system keyboard selector did not expose the installed Quill extension.", app: app)
     }
     func testRealRecordingHandoffIntoSeparateAppThroughInstalledKeyboard() throws {
@@ -245,9 +267,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         waitForExpectations(timeout: 10)
         tap(insert, in: fixture)
         let expected = "Before This is a simulated provider response."
-        expectation(for: NSPredicate(format: "value == %@", expected), evaluatedWith: editor)
-        waitForExpectations(timeout: 5)
-        XCTAssertEqual(editor.value as? String, expected)
+        requireEditorText(expected)
         XCTAssertFalse(insert.isEnabled, "A consumed handoff must not be insertable again.")
         attach("real-extension-inserted-and-consumed", app: fixture)
         stage = "protected-fields-with-pending-transcript"
@@ -266,8 +286,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: remaining); waitForExpectations(timeout: 8)
         tap(remaining, in: fixture)
         let repeated = expected + " This is a simulated provider response."
-        expectation(for: NSPredicate(format: "value == %@", repeated), evaluatedWith: editor); waitForExpectations(timeout: 5)
-        XCTAssertEqual(editor.value as? String, repeated, "Protected fields must not consume the pending transcript.")
+        requireEditorText(repeated)
         XCTAssertFalse(remaining.isEnabled)
         attach("pending-handoff-survives-protected-fields", app: fixture)
         outcome = "passed"

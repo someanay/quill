@@ -218,14 +218,16 @@ private struct FieldFailure: Error, CustomStringConvertible {
 
     private static func secureRefused(injector: TextInjector, bundle: String) async throws -> String {
         var detail = ""
-        try await wait("actual secure field refusal") {
+        var last = observation()
+        do { try await wait("actual secure field refusal") {
+            last = observation()
             guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == bundle else { return false }
             do { _ = try injector.snapshot(); return false }
             catch let error as QuillError where error == .sensitiveField {
                 detail = "Production snapshot refused the real secure field before capture. \(observation())"
                 return true
             }
-        }
+        } } catch { throw FieldFailure("\(error) Last focus metadata: \(last)") }
         return detail
     }
 
