@@ -82,6 +82,18 @@ public static partial class Program {
   public Task<AudioTake> Stop() { Recording = false; return Task.FromResult(new AudioTake(wav,(wav.Length - 44) * 1000L / 32000)); }
   public void Dispose() { Recording = false; }
  }
+ private sealed class LiveInsertionAudit : ITextInjector {
+  private readonly TextInjector native = new();
+  public List<object> Attempts { get; } = [];
+  public Task<FocusTarget> Capture() => native.Capture();
+  public Task<bool> CanType() => native.CanType();
+  public async Task<bool> Insert(FocusTarget target,string text) {
+   var current = await native.Capture();
+   var before = new { sensitive=current.Sensitive,editable=current.Editable,sameWindow=current.Window == target.Window,sameElement=current.RuntimeId.SequenceEqual(target.RuntimeId),sameContext=current.Context == target.Context,modifierPressed=Native.ModifierPressed(),application=current.Application,hasTargetContext=target.Context != null };
+   var inserted = await native.Insert(target,text);
+   Attempts.Add(new { inserted,before }); return inserted;
+  }
+ }
  private static async Task LivePipeline(string wavPath,string output) {
   if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") throw new InvalidOperationException("Editor automation is restricted to an isolated CI runner.");
   var pipeName = "Quill.LiveProvider." + Guid.NewGuid().ToString("N"); using var pipe = new NamedPipeServerStream(pipeName,PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous);
@@ -94,7 +106,8 @@ public static partial class Program {
     var folder = Path.Combine(dataRoot,Guid.NewGuid().ToString("N")); Directory.CreateDirectory(folder); var settings = new SettingsStore(folder); var live = LiveSettings(profile.Item1,profile.Item2);
     settings.Value.Provider = live.Provider; settings.Value.SpeechModel = live.SpeechModel; settings.Value.CleanupProvider = live.CleanupProvider; settings.Value.CleanupModel = live.CleanupModel; settings.Value.CleanupAutomatic = false; settings.Value.OnboardingComplete = true; settings.Value.InjectionConsent = true; settings.Value.PrivateMode = true; settings.Value.HistoryEnabled = false;
     var secrets = new SecretStore(folder); foreach (var p in new[] {Provider.Gemini,Provider.OpenRouter}) secrets.Add(p,LiveKey(p),"Temporary live QA");
-    var audit = currentAudit = new LiveAudit(); using var controller = new DictationController(settings,secrets,new HistoryStore(folder),new ProviderClient(audit),new RecordedSpeechInput(wav),new TextInjector(),new ClipboardService(),folder);
+    var insertion = new LiveInsertionAudit();
+    var audit = currentAudit = new LiveAudit(); using var controller = new DictationController(settings,secrets,new HistoryStore(folder),new ProviderClient(audit),new RecordedSpeechInput(wav),insertion,new ClipboardService(),folder);
     try {
      for (var take = 1;take <= 2;take++) {
       const string prefix = "Quill live fixture: "; var prepared = await Send(new(Text:prefix,Start:prefix.Length));
@@ -110,7 +123,7 @@ public static partial class Program {
       results.Add(new { speech = profile.Item1,cleanup = profile.Item2,take,passed = true,raw,clean = controller.LastText,editor = actual,requests });
      }
     } catch (Exception error) {
-     failed = true; results.Add(new { speech=profile.Item1,cleanup=profile.Item2,passed=false,error=error is ProviderException p ? p.Code : error is InvalidOperationException ? error.Message : error.GetType().Name,requests=audit.Requests }); await controller.Cancel();
+     failed = true; var observed = await Send(new(Action:"read")); results.Add(new { speech=profile.Item1,cleanup=profile.Item2,passed=false,state=controller.State.ToString(),editor=observed.Text,insertion=insertion.Attempts,error=error is ProviderException p ? p.Code : error is InvalidOperationException ? error.Message : error.GetType().Name,requests=audit.Requests }); await controller.Cancel();
     } finally { secrets.Clear(); }
    }
    await writer.WriteLineAsync(JsonSerializer.Serialize(new Command(Action:"quit"))); await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5));
