@@ -33,9 +33,10 @@ struct KeyEditor: View {
                 QCard {
                     VStack(alignment: .leading, spacing: 14) {
                         Button { provider = item; secret = ""; label = "" } label: {
-                            HStack { Text(item.title).font(Q.sans(17)).foregroundStyle(Q.ink); Spacer(); Image(systemName: provider == item ? "chevron.up" : "chevron.down").foregroundStyle(Q.muted) }.frame(minHeight: 48)
+                            HStack { Text(item.title).font(Q.sans(17)).foregroundStyle(Q.ink); Spacer(); Image(systemName: provider == item ? "chevron.up" : "chevron.down").foregroundStyle(Q.muted) }.frame(maxWidth: .infinity, minHeight: 48).contentShape(Rectangle())
                         }.buttonStyle(.plain).accessibilityIdentifier("key.provider.\(item.rawValue)")
                             .accessibilityAddTraits(provider == item ? [.isSelected] : [])
+                            .accessibilityValue(model.c(provider == item ? "onboarding.key.expanded" : "onboarding.key.collapsed"))
                         if provider == item {
                             if provider == .custom { QField(title: model.c("settings.speech.custom_url_label"), text: $model.settings.customBaseURL); QField(title: model.c("settings.speech.model_field_label"), text: $model.settings.customModel) }
                             QField(title: model.c("ios.keys.label"), text: $label)
@@ -51,7 +52,7 @@ struct KeyEditor: View {
                                 Task { if await model.verifyAndSaveKey(provider: chosen, secret: candidate, label: label, activateSpeechProvider: activateSpeechProvider) { secret = ""; onSaved() } }
                             }.disabled(secret.isEmpty || model.keyValidationRunning).accessibilityIdentifier("onboarding.key.verify")
                             if provider.consoleURL != nil {
-                                Button(model.c("onboarding.key.where_link")) { showGuide = true }.frame(minHeight: 48)
+                                Button(model.c("onboarding.key.where_link")) { showGuide = true }.frame(minHeight: 48).accessibilityIdentifier("key.guide")
                             }
                         }
                     }
@@ -60,10 +61,10 @@ struct KeyEditor: View {
             QBanner(text: model.c("ios.keys.security"), icon: "lock.shield")
         }.sheet(isPresented: $showGuide) {
             QPage {
-                QHeading(title: model.c("onboarding.key.guide.title", provider.title))
+                QHeading(title: model.c("onboarding.key.guide.title", provider.title)).accessibilityIdentifier("key.guide.title")
                 Text(model.c("onboarding.key.guide.\(provider.rawValue)_steps"))
                 if let url = provider.consoleURL { Link(model.c("onboarding.key.guide.open", provider.title), destination: url).frame(minHeight: 48) }
-                QButton(title: model.c("status.done")) { showGuide = false }
+                QButton(title: model.c("status.done")) { showGuide = false }.accessibilityIdentifier("key.guide.done")
             }.presentationDetents([.large])
         }.onDisappear { secret = "" }
     }

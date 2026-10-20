@@ -225,11 +225,22 @@ final class QuillUITests: XCTestCase {
         for provider in ["openai", "custom"] {
             let row = app.buttons["key.provider." + provider]
             revealFormControl(row, in: app); if !row.isSelected { row.tap() }
-            XCTAssertTrue(row.isSelected)
+            let expanded = expectation(for: NSPredicate(format: "selected == true"), evaluatedWith: row)
+            wait(for: [expanded], timeout: 5)
             capture(app, "ios-key-form-\(dark ? "dark" : "light")-" + provider)
             let save = try XCTUnwrap(app.buttons.matching(identifier: "onboarding.key.verify").allElementsBoundByIndex.last)
             revealFormControl(save, in: app); XCTAssertFalse(save.isEnabled)
             capture(app, "ios-key-form-footer-\(dark ? "dark" : "light")-" + provider)
+            if provider == "openai" {
+                let guide = app.buttons["key.guide"]
+                revealFormControl(guide, in: app); guide.tap()
+                let title = app.staticTexts["key.guide.title"]
+                XCTAssertTrue(title.waitForExistence(timeout: 5))
+                capture(app, "ios-provider-guide-\(dark ? "dark" : "light")")
+                tap(app.buttons["key.guide.done"], in: app)
+                let dismissed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: title)
+                wait(for: [dismissed], timeout: 5)
+            }
         }
     }
     func testSecondaryScreensAndSheetsInLight() throws { try captureSecondaryScreens(dark: false) }
