@@ -4,6 +4,7 @@ import QuillCore
 struct OnboardingView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var warning = false
     @State private var otherProviders = false
     @State private var keyboardText = ""
@@ -56,7 +57,7 @@ struct OnboardingView: View {
                     HStack(spacing: 12) {
                         Text(model.c("onboarding.key.settings_heading")).font(Q.sans(15)).fontWeight(.medium)
                         Spacer(minLength: 8)
-                        Button(model.c("onboarding.key.resume_setup")) { otherProviders = false; move(to: 3) }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(minHeight: 44).accessibilityIdentifier("onboarding.resume")
+                        QTextButton(title: model.c("onboarding.key.resume_setup")) { otherProviders = false; move(to: 3) }.accessibilityIdentifier("onboarding.resume")
                     }.padding(.horizontal, 20).padding(.top, 12).foregroundStyle(Q.ink)
                     Divider()
                     NavigationStack { SettingsView(openAPIKeys: true) }
@@ -107,8 +108,8 @@ struct OnboardingView: View {
     private var welcomeActions: some View {
         VStack(alignment: .leading, spacing: 8) {
             QButton(title: model.c("onboarding.welcome.cta")) { warning = true }.accessibilityIdentifier("onboarding.getStarted")
-            Button(model.c("onboarding.welcome.open")) { model.settings.onboardingComplete = true }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(maxWidth: .infinity, minHeight: 44)
-            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted).multilineTextAlignment(.center).frame(maxWidth: .infinity)
+            QTextButton(title: model.c("onboarding.welcome.open"), fillWidth: true) { model.settings.onboardingComplete = true }.accessibilityIdentifier("onboarding.openWorkspace")
+            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted).multilineTextAlignment(.center).frame(maxWidth: sizeClass == .regular ? 320 : .infinity)
         }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity).background(Q.paper)
     }
     private var keyDisclosure: some View {
@@ -131,7 +132,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 22) {
             heading("ios.setup.provider_title", body: "ios.setup.provider_body", id: "onboarding.provider")
             GuidedKeySetup(activateSpeechProvider: true, onboarding: true, onSaved: { move(to: 3) })
-            Button(model.c("onboarding.key.other_providers")) { otherProviders = true }.frame(minHeight: 48).accessibilityIdentifier("onboarding.other-providers")
+            QTextButton(title: model.c("onboarding.key.other_providers")) { otherProviders = true }.accessibilityIdentifier("onboarding.other-providers")
             if model.hasActiveKey { QButton(title: model.c("action.continue")) { move(to: 3) } }
         }
     }
@@ -154,7 +155,7 @@ struct OnboardingView: View {
             Label(model.c(connected ? "ios.setup.keyboard_connected" : "ios.setup.keyboard_waiting"), systemImage: connected ? "checkmark.circle.fill" : "keyboard")
                 .font(Q.sans(14)).foregroundStyle(connected ? Q.success : Q.muted).accessibilityIdentifier("onboarding.keyboard.status")
             QButton(title: model.c("action.continue")) { move(to: 4) }.disabled(!connected).accessibilityIdentifier("onboarding.keyboard.next")
-            Button(model.c("ios.setup.keyboard_later")) { move(to: 4) }.frame(minHeight: 44).accessibilityIdentifier("onboarding.keyboard.later")
+            QTextButton(title: model.c("ios.setup.keyboard_later")) { move(to: 4) }.accessibilityIdentifier("onboarding.keyboard.later")
         }
     }
     private var microphone: some View {
@@ -166,7 +167,7 @@ struct OnboardingView: View {
                 QBanner(text: model.c("ios.mic.test_private"), icon: "lock")
             } else {
                 QButton(title: model.c("onboarding.mic.cta"), icon: "mic") { Task { await model.startMicTest() } }.accessibilityIdentifier("onboarding.permission")
-                Button(model.c("onboarding.mic.open_settings")) { openSettings() }.frame(minHeight: 44)
+                QTextButton(title: model.c("onboarding.mic.open_settings")) { openSettings() }
             }
             QButton(title: model.c("ios.setup.mic_next")) { move(to: 5) }.disabled(!model.microphoneGranted).accessibilityIdentifier("onboarding.microphone.next")
         }
@@ -191,7 +192,7 @@ struct OnboardingView: View {
                 Label(model.c("ios.setup.practice_success"), systemImage: "checkmark.circle.fill").foregroundStyle(Q.success).accessibilityIdentifier("onboarding.practice.success")
             }
             QButton(title: model.c("action.continue")) { move(to: 6) }.disabled(!practiced).accessibilityIdentifier("onboarding.practice.next")
-            Button(model.c("ios.setup.practice_later")) { move(to: 6) }.frame(minHeight: 44).accessibilityIdentifier("onboarding.practice.later")
+            QTextButton(title: model.c("ios.setup.practice_later")) { move(to: 6) }.accessibilityIdentifier("onboarding.practice.later")
         }
     }
     private var ready: some View {
@@ -200,7 +201,7 @@ struct OnboardingView: View {
             heading("ios.setup.ready_title", body: model.settings.keyboardSetupAcknowledged ? "ios.setup.ready_body" : "ios.setup.ready_pending", id: "onboarding.ready")
             workflow
             if !model.settings.keyboardSetupAcknowledged {
-                Button(model.c("ios.setup.return_practice")) { move(to: 3) }.frame(minHeight: 44)
+                QTextButton(title: model.c("ios.setup.return_practice")) { move(to: 3) }
             }
             QButton(title: model.c("onboarding.allset.cta")) { model.settings.onboardingComplete = true; model.tab = 0 }.accessibilityIdentifier("onboarding.finish")
         }

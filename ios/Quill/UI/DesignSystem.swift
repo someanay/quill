@@ -58,6 +58,22 @@ struct QButton: View {
         }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
+struct QTextButton: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    let title: String
+    var fillWidth = false
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Text(title).font(Q.sans(15)).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 8)
+                .frame(minWidth: 44, maxWidth: fillWidth ? (sizeClass == .regular ? 320 : .infinity) : nil, minHeight: 44)
+                .contentShape(Rectangle())
+        }.buttonStyle(.plain).foregroundStyle(Q.brandInk)
+            .frame(maxWidth: fillWidth ? .infinity : nil, alignment: .leading)
+    }
+}
 struct QBanner: View {
     var title: String? = nil
     let text: String

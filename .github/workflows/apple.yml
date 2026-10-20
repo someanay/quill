@@ -40,7 +40,7 @@ jobs:
     needs: matrix
     name: ${{ matrix.platform }} native build and tests (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.platform == 'ios' && 90 || 60 }}
     strategy:
       fail-fast: false
       matrix:

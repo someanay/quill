@@ -7,10 +7,12 @@ final class QuillUITests: XCTestCase {
                 let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-demo-time", time] + (dark ? ["--ui-dark"] : []); app.launch()
                 XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "dictation.messenger-demo").firstMatch.waitForExistence(timeout: 10))
                 XCTAssertTrue(app.buttons["onboarding.getStarted"].isHittable, "The welcome action must remain reachable beside the illustration.")
+                XCTAssertGreaterThanOrEqual(app.buttons["onboarding.openWorkspace"].frame.height, 44, "The secondary welcome action needs a real 44-point touch target.")
                 capture(app, "ios-messenger-\(dark ? "dark" : "light")-" + phase)
                 if phase == "inserted" {
                     XCUIDevice.shared.orientation = .landscapeLeft; waitForLandscape(app)
                     XCTAssertTrue(app.buttons["onboarding.getStarted"].isHittable)
+                    XCTAssertGreaterThanOrEqual(app.buttons["onboarding.openWorkspace"].frame.height, 44)
                     capture(app, "ios-messenger-landscape-\(dark ? "dark" : "light")")
                     restorePortrait(app)
                 }
@@ -97,7 +99,10 @@ final class QuillUITests: XCTestCase {
     }
     private func openHome(arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
-        tap(app.buttons["Open workspace"], in: app)
+        let open = app.buttons["onboarding.openWorkspace"]
+        XCTAssertTrue(open.waitForExistence(timeout: 10))
+        XCTAssertGreaterThanOrEqual(open.frame.height, 44)
+        tap(open, in: app)
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
         if !settingsTab(app).exists, app.buttons["ToggleSidebar"].exists {
             tap(app.buttons["ToggleSidebar"], in: app)
