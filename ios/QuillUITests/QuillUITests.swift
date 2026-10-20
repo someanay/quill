@@ -186,6 +186,19 @@ final class QuillUITests: XCTestCase {
         for dark in [false, true] {
             let app = openHome(arguments: ["--ui-history-fixtures"] + (dark ? ["--ui-dark"] : []))
             capture(app, "ios-workspace-\(dark ? "dark" : "light")")
+            XCUIDevice.shared.orientation = .landscapeLeft
+            waitForLandscape(app)
+            let record = app.buttons["dictation.record"]
+            XCTAssertTrue(record.waitForExistence(timeout: 5))
+            if app.buttons["nav.home"].exists && app.windows.firstMatch.frame.width >= 1100 {
+                let today = app.staticTexts["home.today"]
+                XCTAssertTrue(today.exists)
+                XCTAssertLessThanOrEqual(record.frame.maxX, today.frame.minX, "Wide iPad Home must give the recorder and supporting context separate panes.")
+            }
+            capture(app, "ios-workspace-landscape-\(dark ? "dark" : "light")")
+            XCUIDevice.shared.orientation = .portrait
+            expectation(for: NSPredicate { _, _ in app.windows.firstMatch.frame.width < app.windows.firstMatch.frame.height }, evaluatedWith: app)
+            waitForExpectations(timeout: 5)
             let history = app.tabBars.buttons["History"].exists ? app.tabBars.buttons["History"] : app.buttons["nav.history"]
             tap(history, in: app)
             let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "history.entry.")).firstMatch
