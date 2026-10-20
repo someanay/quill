@@ -15,10 +15,10 @@ Verification at this presentation revision:
 - **300 native renders passed**: 13 destinations, seven setup stages and five
   provider forms, in Light/Dark at 640×600, 1000×500, 1200×800, 1600×900,
   900×1200 and 1920×650. Original images and bounds results are in
-  `dist/native-redesign/windows-final-typeface/`.
+  `dist/native-redesign/windows-final-row-typeface/`.
 - **42 setup checks passed**, including preserved window size, live key form,
   practice editor text/selection and keycaps refreshing with the actual shortcut.
-  Evidence: `dist/native-redesign/windows-final-setup/result.json`.
+  Evidence: `dist/native-redesign/windows-final-row-setup/result.json`.
 - All 14 controlled native insertion/clipboard checks passed locally and on both
   CI architectures. The physical
   microphone capture and lifecycle probes passed without upload or retained audio.
@@ -31,11 +31,23 @@ Verification at this presentation revision:
   from portable test processes. Package hashes are recorded with installation evidence.
 - Native Windows x64 and ARM64 both passed **362 tests, zero skipped**, all 300
   renders, 42 setup checks, 14 editor/clipboard checks and 11 installer checks in
-  [run 39390731081](https://github.com/someanay/quill/actions/runs/39390731081)
-  at `2153459`. Both package architectures built on both runners. The ARM runner's
+  [run 39392919260](https://github.com/someanay/quill/actions/runs/39392919260)
+  at `ae500b2`, repeating the preceding green `2153459` matrix after normalizing
+  settings-row metadata weight. Both package architectures built on both runners. The ARM runner's
   pre-opened system menus are dismissed in its disposable desktop setup; production
   activation assertions and permission checks remain unchanged. Original evidence:
-  `dist/native-redesign/windows-ci-final/`.
+  `dist/native-redesign/windows-ci-row-final/`.
+
+The installed final executable SHA-256 is
+`9aeb0b888f3dd07c63e1d216526ef2208aec5bc9105b76e764bf35b1ec2e204d`.
+The x64 package SHA-256 is
+`a8b93d75a42ede0b2852791f89b0211bcbb5ff9f2262dd928c0c5f849fd3069d`;
+ARM64 is `ed8c4b8f17e799ef6521702dee1f5a4bddea68024b4499c1d125e6d7788ad171`.
+Local app-data hashes are unchanged across the update. The actual Start shortcut
+restores PID 48804 / HWND 5901480 after Close hides it; the short-lived secondary
+launcher exits, leaving one process. Evidence:
+`dist/native-redesign/windows-installation-row-final.json` and
+`dist/native-redesign/windows-row-start-reopen.json`.
 - Catalog/default/placeholder/font checks pass. Physical ARM hardware, multiple
   monitor/DPI transitions, wider third-party editor coverage and live provider
   requests remain release acceptance work.
