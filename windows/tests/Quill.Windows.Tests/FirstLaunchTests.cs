@@ -24,12 +24,16 @@ public sealed class FirstLaunchTests(Xunit.Abstractions.ITestOutputHelper output
    await WaitUntil(() => File.Exists(Path.Combine(folder.Path,"actual-window.png")) || first.HasExited,"Primary launch did not render."); Assert.False(first.HasExited);
    first.Refresh(); var firstHandle = first.MainWindowHandle; Assert.NotEqual(IntPtr.Zero,firstHandle); if (maximized) { ShowWindow(firstHandle,3); await WaitUntil(() => IsZoomed(firstHandle),"The test window did not maximize."); } Assert.True(first.CloseMainWindow());
    await WaitUntil(() => { first.Refresh(); return first.MainWindowHandle == IntPtr.Zero; },"Close should hide the tray instance.");
-   var launch = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory,"Quill.NativeSmoke.exe")) { UseShellExecute = false,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Normal };
+   var launch = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory,"Quill.NativeSmoke.exe")) { UseShellExecute = false,CreateNoWindow = true,WindowStyle = ProcessWindowStyle.Normal,RedirectStandardError = true,RedirectStandardOutput = true };
    foreach (var argument in new[] {"--activation-launcher",pipeName,Path.Combine(AppContext.BaseDirectory,"Quill.exe"),folder.Path}) launch.ArgumentList.Add(argument);
    launcher = Process.Start(launch) ?? throw new InvalidOperationException("Launcher fixture did not start.");
    await pipe.WaitForConnectionAsync().WaitAsync(TimeSpan.FromSeconds(15)); using var reader = new StreamReader(pipe,leaveOpen: true); using var writer = new StreamWriter(pipe,leaveOpen: true) { AutoFlush = true };
    await writer.WriteLineAsync("launch"); var reply = await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(20));
-   if (reply == null) { var diagnostic = Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"); if (File.Exists(diagnostic)) output.WriteLine(File.ReadAllText(diagnostic)); }
+   if (reply == null) {
+    await launcher.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(10));
+    output.WriteLine($"Launcher exited {launcher.ExitCode}; stderr: {await launcher.StandardError.ReadToEndAsync()}; stdout: {await launcher.StandardOutput.ReadToEndAsync()}");
+    var diagnostic = Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"); if (File.Exists(diagnostic)) output.WriteLine(File.ReadAllText(diagnostic));
+   }
    Assert.NotNull(reply); using var launched = JsonDocument.Parse(reply);
    Assert.True(launched.RootElement.GetProperty("foregroundLauncher").GetBoolean()); Assert.Equal(0,launched.RootElement.GetProperty("exitCode").GetInt32());
    var requestText = File.ReadAllText(Path.Combine(folder.Path,"activation-request.json")); output.WriteLine("Activation: " + requestText + "; launcher: " + reply);
