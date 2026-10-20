@@ -49,7 +49,10 @@ final class OnboardingUITests: XCTestCase {
         reveal(field, in: app); field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-groq")
         let other = app.buttons["onboarding.other-providers"]; reveal(other, in: app); other.click()
         XCTAssertTrue(app.staticTexts["settings.page.keys"].waitForExistence(timeout: 10))
-        let speech = app.buttons["settings.speech"]; XCTAssertTrue(speech.exists)
+        if !app.buttons["settings.speech"].exists {
+            let back = app.buttons["settings-back"]; XCTAssertTrue(back.exists); back.click()
+        }
+        XCTAssertTrue(app.buttons["settings.speech"].exists, "All provider settings remain reachable at compact sheet widths.")
         let resume = app.buttons["onboarding.key.resume_setup"]; XCTAssertTrue(resume.exists); resume.click()
         XCTAssertTrue(field.waitForExistence(timeout: 5)); reveal(field, in: app); app.buttons["key-reveal"].click()
         XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-groq")
@@ -289,7 +292,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(heard.waitForExistence(timeout: 5)); heard.click(); heard.typeText("tihor")
         replacement.click(); replacement.typeText("Quill")
         app.buttons["settings.words.save"].click()
-        XCTAssertTrue(app.staticTexts["tihor"].waitForExistence(timeout: 5)); XCTAssertTrue(app.staticTexts["â†’ Quill"].exists)
+        XCTAssertTrue(app.staticTexts["tihor"].waitForExistence(timeout: 5)); XCTAssertTrue(app.staticTexts["→ Quill"].exists)
         app.buttons["word-delete"].firstMatch.click(); XCTAssertFalse(app.staticTexts["tihor"].exists)
         app.buttons["settings-back"].click()
         let privacy = app.buttons["settings.privacy"]
