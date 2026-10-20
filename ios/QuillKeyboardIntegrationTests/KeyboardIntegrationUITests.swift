@@ -94,7 +94,12 @@ final class KeyboardIntegrationUITests: XCTestCase {
         XCTAssertTrue(host.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10))
         XCTAssertFalse(host.buttons["onboarding.keyboard.next"].isEnabled)
         try enableKeyboardThroughSettings()
-        host.activate()
+        // Enabling a keyboard can terminate the suspended host on current iOS.
+        // Activate may then cold-launch without this XCTest instance's arguments,
+        // opening ordinary storage instead of the isolated persistent QA session.
+        // Explicit launch restores the same UUID; settings/key persistence is real.
+        host.launch()
+        XCTAssertTrue(host.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 10))
         tap(host.textFields["onboarding.keyboard.test"], in: host)
         try showQuillKeyboard(in: host)
         if host.buttons["Done"].firstMatch.exists { tap(host.buttons["Done"].firstMatch, in: host) }
@@ -218,7 +223,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         attach("real-keyboard-before-handoff", app: fixture)
 
         stage = "record-and-publish"
-        host.activate()
+        host.launch()
         attach("host-restored-validated-session", app: host)
         let record = host.buttons["dictation.record"]
         tap(record, in: host)
