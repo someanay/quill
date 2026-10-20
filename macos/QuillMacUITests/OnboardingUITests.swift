@@ -258,7 +258,8 @@ final class OnboardingUITests: XCTestCase {
         let gemini = app.sheets.firstMatch.buttons["key-provider-gemini"]
         reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
         let cancel = app.sheets.firstMatch.buttons["Cancel"]; reveal(cancel, in: app); cancel.click()
-        XCTAssertFalse(app.sheets.firstMatch.exists)
+        let dismissed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.sheets.firstMatch)
+        wait(for: [dismissed], timeout: 5)
     }
     func testCustomWordEditingAndPrivateHistoryGate() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"]; app.launch()

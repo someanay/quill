@@ -2,10 +2,16 @@ name: Apple build and test
 
 on:
   push:
-    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", "scripts/verify-native-contrast.py", ".github/workflows/apple.yml"]
+    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", "scripts/verify-native-contrast.py", "scripts/apple-test-matrix.py", ".github/workflows/apple.yml"]
   pull_request:
-    paths: ["macos/**", "ios/**", ".github/workflows/apple.yml"]
+    paths: ["macos/**", "ios/**", "scripts/apple-test-matrix.py", ".github/workflows/apple.yml"]
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Native platform to validate
+        type: choice
+        options: [all, macos, ios]
+        default: all
 
 permissions:
   contents: read
@@ -15,29 +21,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      include: ${{ steps.matrix.outputs.include }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: matrix
+        env:
+          PLATFORM: ${{ inputs.platform || 'all' }}
+        run: echo "include=$(python3 scripts/apple-test-matrix.py --platform "$PLATFORM")" >> "$GITHUB_OUTPUT"
   apple:
+    needs: matrix
     name: ${{ matrix.platform }} native build and tests (${{ matrix.runner }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: macos
-            project: QuillMac
-            scheme: QuillMac
-            runner: macos-15
-            artifactSuffix: ""
-          - platform: macos
-            project: QuillMac
-            scheme: QuillMac
-            runner: macos-15-intel
-            artifactSuffix: "-intel"
-          - platform: ios
-            project: Quill
-            scheme: Quill
-            runner: macos-15
-            artifactSuffix: ""
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
     steps:
       - uses: actions/checkout@v4
       - name: Record Apple toolchain
