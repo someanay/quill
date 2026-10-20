@@ -1,24 +1,41 @@
 # Quill for Windows
 
-Fresh native Windows implementation of the current Android app. Requires Windows 10 or 11 on an x64 PC, a microphone, and the user's provider key. No Quill account or server.
+Native Windows dictation with Quill's shared visual identity and provider pipeline. Requires Windows 10 or 11 on an x64 or ARM64 PC, a microphone, and the user's provider key. No Quill account or server.
 
 ## Install
 
-Extract `Quill-Windows-2.0.0-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. Alternatively, run `app/Quill.exe` directly. The self-contained package includes .NET; no runtime download is required.
+Extract `Quill-Windows-2.0.3-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. After installation, open **Quill** from the Start menu; installation is a one-time step. A portable launch from `app/Quill.exe` is also available. The self-contained package includes .NET; no runtime download is required.
 
-The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. The separately compiled `win-arm64` download targets ARM Windows PCs; it has not been executed on ARM hardware.
+The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. Both x64 and ARM64 builds pass native Windows CI execution; physical ARM microphone/editor and wider device acceptance remain separate checks. See [verification](VERIFICATION.md).
 
 This build is unsigned. Windows may show its normal unknown-publisher prompt. The source and SHA-256 checksum are provided for review; no signing identity is fabricated.
 
+## Desktop layout
+
+Version 2.0.3 uses the approved October 20 design in a resizable
+1120 × 760 window, with a 640 × 440 minimum. Home and History are the main
+destinations; Settings contains configuration categories. Compact windows use top
+navigation and stack content; wider windows use a sidebar and parallel panes.
+History keeps a selectable list and a scrollable full transcript reader.
+
+Setup is resizable too. It has a progress rail, a focused task and, in wide windows,
+a contextual explanation/demo pane. It preserves the chosen window size when
+opening Home. The practice editor keeps its text and selection while recording
+status changes. The installed workstation app has been updated to 2.0.3.
+
 ## Use
 
-Complete the same onboarding sequence as Android: 1.2-second splash, welcome, key-required notice (3-second reading gate), provider/key validation, setup checklist, microphone test, floating bubble, affirmative text-insertion disclosure, and all set. Windows desktop microphone settings replace Android's permission dialogs. The desktop overlay needs no separate permission grant.
+Complete desktop setup: welcome, own-key privacy/cost notice, provider connection,
+microphone test, Windows insertion consent, shortcut/practice introduction and
+ready. The floating control is optional. Windows desktop microphone settings
+replace Android permission dialogs; no overlay permission or Accessibility service
+is required. Setup does not copy Android's checklist or bubble-permission screens.
 
-Click a supported field, tap the bubble, speak, and tap again. A long press starts clipboard dictation. The shortcut shown in the header also starts/stops. Quill prefers **Ctrl + Win + Space**, falling back to **Ctrl + Alt + Space** or **Ctrl + Shift + Space** when Windows or another app reserves it. Choose a preference in Advanced. Drag the bubble to an edge; drag it to the bottom to hide for ten minutes. The Home switch hides it until explicitly shown again. Right-click supports clipboard dictation and discard. Tray actions restore the app or bubble. Closing the window keeps Quill in the tray; opening its shortcut again brings the existing window forward without creating another recorder.
+Click a supported text field, press the displayed shortcut, speak, then press it again to insert your words. The optional floating control also starts and stops recording; hold it to start clipboard dictation. Quill prefers **Ctrl + Win + Space**, falling back to **Ctrl + Alt + Space** or **Ctrl + Shift + Space** when Windows or another app reserves it. Choose a preference in Advanced. Drag the bubble to an edge; drag it to the bottom to hide for ten minutes. The Home switch hides it until explicitly shown again. Right-click supports clipboard dictation and discard. Tray actions restore the app or bubble. Closing the window keeps Quill in the tray; opening its shortcut again brings the existing window forward without creating another recorder.
 
-The guided key form starts with Gemini, followed by Groq and OpenRouter, with the same numbered instructions as Android. OpenAI/custom providers are in a separate disclosure. Drafts are encrypted; validation starts automatically after typing pauses, and Save requires a verified key. Opening a row does not change the active speech provider. Speech setup activates the saved provider; adding a key under API keys preserves speech and cleanup choices.
+The guided key form starts with Gemini, followed by Groq and OpenRouter, with concise instructions linking directly to each provider's key page. OpenAI/custom providers are in a separate disclosure. Drafts are encrypted; validation starts automatically after typing pauses, and Save requires a verified key. Opening a row does not change the active speech provider. Speech setup activates the saved provider; adding a key under API keys preserves speech and cleanup choices.
 
-Provider/model/language and saved free-model filters, independently configurable cleanup with model memory per provider, active multi-key storage, writing styles, custom words with 8-second voice capture, local contact-name import, microphone selection/test, 60–300-second session cap, private mode, history retention, bubble size, theme, startup and scrubbed local diagnostics are under Settings.
+Provider/model/language and saved free-model filters, independently configurable cleanup with model memory per provider, active multi-key storage, writing styles, custom words with 8-second voice capture, microphone selection/test, 60–300-second session cap, private mode, history retention, bubble size, theme, startup and scrubbed local diagnostics are under Settings.
 
 ## Privacy and safety
 

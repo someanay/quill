@@ -14,6 +14,21 @@ public static class Program {
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetForegroundWindow(nint hwnd);
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool AttachThreadInput(uint from,uint to,bool attach);
  [System.Runtime.InteropServices.DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint WindowFromPoint(NativePoint point);
+ [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)] private struct NativePoint { public int X; public int Y; }
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint GetThreadDesktop(uint thread);
+ [System.Runtime.InteropServices.DllImport("user32.dll",SetLastError=true)] private static extern nint OpenInputDesktop(uint flags,bool inherit,uint access);
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool CloseDesktop(nint desktop);
+ [System.Runtime.InteropServices.DllImport("user32.dll",CharSet = System.Runtime.InteropServices.CharSet.Unicode)] private static extern bool GetUserObjectInformation(nint handle,int index,System.Text.StringBuilder value,int bytes,out int needed);
+ private static string RunnerDesktopState(nint atPoint) {
+  if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return "local controlled fixture";
+  string Name(nint desktop) { var value = new System.Text.StringBuilder(256); return desktop != 0 && GetUserObjectInformation(desktop,2,value,512,out _) ? value.ToString() : "unavailable"; }
+  string Window(nint handle) { Native.GetWindowThreadProcessId(handle,out var id); var type = new System.Text.StringBuilder(256); Native.GetClassName(handle,type,type.Capacity); string process; try { using var p = Process.GetProcessById((int)id); process = p.ProcessName; } catch { process = "unavailable"; } return $"{handle}/{type}/{process}"; }
+  var input = OpenInputDesktop(0,false,1); var error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+  try { return $"threadDesktop={Name(GetThreadDesktop(GetCurrentThreadId()))}, inputDesktop={Name(input)}, inputError={error}, foreground={Window(Native.GetForegroundWindow())}, atPoint={Window(atPoint)}, interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}"; }
+  finally { if (input != 0) CloseDesktop(input); }
+ }
  private static void ActivateFixture(Window window) {
   var own = GetCurrentThreadId(); var other = Native.GetWindowThreadProcessId(Native.GetForegroundWindow(),out _); var attached = own != other && AttachThreadInput(own,other,true);
   try { SetForegroundWindow(new WindowInteropHelper(window).Handle); window.Activate(); } finally { if (attached) AttachThreadInput(own,other,false); }
@@ -22,14 +37,18 @@ public static class Program {
   if (args.Length == 3 && args[0] == "--generate-icon") { GenerateIcon(args[1],args[2]); return 0; }
   if (args.Length == 2 && args[0] == "--render-ui") { RenderUi(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--render-all-ui") { RenderAllUi(args[1]); return 0; }
+  if (args.Length == 2 && args[0] == "--verify-setup-window") { VerifySetupWindow(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--hotkey-check") { _ = new Application(); var window = new Window(); var handle = new WindowInteropHelper(window).EnsureHandle(); using var hotkey = new HotkeyService(handle); var report = JsonSerializer.Serialize(new { registered = hotkey.Registered,actual = hotkey.Label,preferredError = hotkey.RegistrationError },new JsonSerializerOptions { WriteIndented = true }); File.WriteAllText(args[1],report); Console.WriteLine(report); return hotkey.Registered ? 0 : 1; }
   if (args.Length == 1 && args[0] == "--font-check") { _ = new Application(); foreach (var filename in new[] {"ibm_plex_sans.ttf","ibm_plex_serif.ttf"}) { var glyph = new System.Windows.Media.GlyphTypeface(new Uri("pack://application:,,,/Quill;component/Assets/Fonts/" + filename)); Console.WriteLine(filename + " => " + string.Join(",",glyph.FamilyNames.Values)); } foreach (var f in System.Windows.Media.Fonts.GetFontFamilies(new Uri("pack://application:,,,/Quill;component/"),"./Assets/Fonts/")) Console.WriteLine("Enumerated " + f.Source); foreach (var family in new[] {Theme.Sans,Theme.Serif}) { var typeface = new System.Windows.Media.Typeface(family,FontStyles.Normal,FontWeights.Normal,FontStretches.Normal); if (!typeface.TryGetGlyphTypeface(out var glyph)) throw new InvalidOperationException("Font resolution failed: " + family.Source); Console.WriteLine(family.Source + " => " + string.Join(",",glyph.FamilyNames.Values)); } return 0; }
   var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; int code = 0;
-  app.Startup += async (_,_) => {
-   try { if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
+  // Start after the dispatcher installs its synchronization context. Pipe connections
+  // can complete asynchronously on ARM, so starting directly inside Startup allowed
+  // later window operations to resume on a worker thread.
+  app.Startup += (_,_) => app.Dispatcher.BeginInvoke(new Action(async () => {
+   try { if (args.Length == 4 && args[0] == "--activation-launcher") await ActivationLauncher(args[1],args[2],args[3]); else if (args.Length > 1 && args[0] == "--editor") await Editor(args[1]); else if (args.Length > 1 && args[0] == "--audio-check") await AudioCheck(args[1]); else if (args.Length > 1 && args[0] == "--audio-lifecycle-check") await AudioLifecycleCheck(args[1]); else if (args.Length > 1 && args[0] == "--external-insert") await ExternalInsert(args[1]); else await Run(args.Length > 0 ? args[0] : Path.Combine(AppContext.BaseDirectory,"native-smoke.json")); }
    catch (Exception e) { File.WriteAllText(Path.Combine(AppContext.BaseDirectory,"native-smoke-error.txt"),e.ToString()); Console.Error.WriteLine(e); code = 1; }
    finally { app.Shutdown(); }
-  }; app.Run(); return code;
+  })); app.Run(); return code;
  }
  private static async Task ExternalInsert(string path) {
   var job = JsonSerializer.Deserialize<ExternalInsertion>(File.ReadAllText(path))!; if (!job.Expected.StartsWith("Quill ",StringComparison.Ordinal) || !new[] {"Notepad","chrome","brave","msedge"}.Contains(job.App,StringComparer.OrdinalIgnoreCase)) throw new InvalidOperationException("Only specifically named test fixtures are permitted.");
@@ -54,20 +73,97 @@ public static class Program {
   var clipboardBefore = Clipboard.ContainsText() ? Clipboard.GetText() : null; var accepted = await injector.Insert(target,job.Insert); var after = await injector.Capture(); var clipboardPreserved = clipboardBefore == (Clipboard.ContainsText() ? Clipboard.GetText() : null); var report = new { app = job.App,accepted,clipboardPreserved,before = target.Context.Text,selection = new[] {target.Context.Start,target.Context.End},after = after.Window == target.Window ? after.Context?.Text : null }; File.WriteAllText(job.Output,JsonSerializer.Serialize(report,new JsonSerializerOptions { WriteIndented = true })); Console.WriteLine(JsonSerializer.Serialize(report));
  }
  private static Native.INPUT Key(ushort key,bool up) => new() { type = 1,union = new() { keyboard = new() { virtualKey = key,flags = up ? 2u : 0u } } };
+ private static void VerifySetupWindow(string folder) {
+  Directory.CreateDirectory(folder); var application = new Application();
+  using var services = new AppServices(Path.Combine(folder,"data-" + Guid.NewGuid().ToString("N")),true);
+  Theme.Apply("Dark"); var window = new MainWindow(services);
+  var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+  typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[0]);
+  services.Settings.Value.DictationShortcut = "Ctrl + Alt + Space"; window.RefreshStatus();
+  var welcome = (FrameworkElement)window.Content; welcome.Measure(new Size(1200,800)); welcome.Arrange(new Rect(0,0,1200,800)); welcome.UpdateLayout();
+  IEnumerable<DependencyObject> Walk(DependencyObject node) { yield return node; for (var i = 0;i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(node);i++) foreach (var child in Walk(System.Windows.Media.VisualTreeHelper.GetChild(node,i))) yield return child; }
+  var keycaps = Walk(welcome).OfType<WrapPanel>().Single(panel => System.Windows.Automation.AutomationProperties.GetAutomationId(panel) == "quill-shortcut-keys");
+  var displayedShortcut = string.Join(" + ",Walk(keycaps).OfType<TextBlock>().Select(block => block.Text).Where(text => text != "+"));
+  if (displayedShortcut != services.HotkeyLabel) throw new InvalidOperationException("Welcome keycaps did not follow the active shortcut.");
+  services.Settings.Value.DictationShortcut = "Ctrl + Win + Space"; window.RefreshStatus();
+  int rendered = 0;
+  foreach (var viewport in new[] {new Size(640,600),new Size(1000,500),new Size(1200,800),new Size(1600,900),new Size(900,1200),new Size(1920,650)}) {
+   window.Width = viewport.Width; window.Height = viewport.Height;
+   for (int step = 0; step < 7; step++) {
+    typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[step]);
+    if (window.ResizeMode != ResizeMode.CanResize || !double.IsPositiveInfinity(window.MaxWidth)) throw new InvalidOperationException("Setup must remain resizable.");
+    if (window.Width != viewport.Width || window.Height != viewport.Height) throw new InvalidOperationException("Setup changed the user's window size.");
+    var root = (FrameworkElement)window.Content; root.Measure(viewport); root.Arrange(new Rect(new Point(),viewport)); root.UpdateLayout();
+    VerifyDesktopLayout(window,"setup",viewport); rendered++;
+   }
+  }
+  // Resizing must retain the same live key form, rather than disposing its validation/draft session.
+  typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[2]);
+  var page = (StackPanel)typeof(MainWindow).GetField("page",flags)!.GetValue(window)!;
+  var form = page.Children.Cast<UIElement>().ToArray();
+  var content = (FrameworkElement)window.Content; content.Measure(new Size(1600,900)); content.Arrange(new Rect(0,0,1600,900)); content.UpdateLayout();
+  content.Measure(new Size(640,600)); content.Arrange(new Rect(0,0,640,600)); content.UpdateLayout();
+  if (!form.SequenceEqual(page.Children.Cast<UIElement>())) throw new InvalidOperationException("Resize replaced the key form.");
+  services.Settings.Value.OnboardingComplete = true; typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,["home"]);
+  if (window.ResizeMode != ResizeMode.CanResize || window.Width != 1920 || window.Height != 650) throw new InvalidOperationException("Home must retain window size and resizing.");
+  var editorField = typeof(MainWindow).GetField("practiceEditor",flags)!;
+  var editor = (TextBox)editorField.GetValue(window)!; editor.Text = "An existing thought"; editor.Select(3,5);
+  var stateProperty = typeof(DictationController).GetProperty("State")!;
+  foreach (var state in new[] {DictationState.Recording,DictationState.Transcribing,DictationState.Idle}) {
+   stateProperty.SetValue(services.Dictation,state); window.RefreshStatus();
+   if (!ReferenceEquals(editor,editorField.GetValue(window)) || editor.Text != "An existing thought" || editor.SelectionStart != 3 || editor.SelectionLength != 5) throw new InvalidOperationException("Dictation status replaced the practice field or its selection.");
+  }
+  File.WriteAllText(Path.Combine(folder,"result.json"),JsonSerializer.Serialize(new { passed = true,rendered,steps = 7,viewports = 6,keyFormRetained = true,practiceEditorRetained = true,shortcutKeycapsRefresh = true }));
+  Console.WriteLine($"PASS {rendered} setup layouts, resizable window, retained key form/practice editor, and Home size preservation."); application.Shutdown(); application.Dispatcher.InvokeShutdown();
+ }
  private static void RenderUi(string folder) {
-  Directory.CreateDirectory(folder); var app = new Application(); using var services = new AppServices(folder,true); services.Settings.Value.OnboardingComplete = true; services.Settings.Value.BubbleActive = false; Theme.Apply("Light"); var window = new MainWindow(services); var root = (FrameworkElement)window.Content; root.Measure(new Size(700,860)); root.Arrange(new Rect(0,0,700,860)); root.UpdateLayout(); var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(700,860,96,96,System.Windows.Media.PixelFormats.Pbgra32); bmp.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp)); using (var f = File.Create(Path.Combine(folder,"home.png"))) png.Save(f);
+  Directory.CreateDirectory(folder); var app = new Application(); using var services = new AppServices(folder,true); services.Settings.Value.OnboardingComplete = true; services.Settings.Value.BubbleActive = false; Theme.Apply("Light"); var window = new MainWindow(services); var root = (FrameworkElement)window.Content; root.Measure(new Size(1060,700)); root.Arrange(new Rect(0,0,1060,700)); root.UpdateLayout(); var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(1060,700,96,96,System.Windows.Media.PixelFormats.Pbgra32); bmp.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp)); using (var f = File.Create(Path.Combine(folder,"home.png"))) png.Save(f);
   var details = new List<object>(); void Visit(System.Windows.DependencyObject node) { if (node is TextBlock block) { var face = new System.Windows.Media.Typeface(block.FontFamily,block.FontStyle,block.FontWeight,block.FontStretch); face.TryGetGlyphTypeface(out var glyph); details.Add(new { text = block.Text,font = block.FontFamily.Source,weight = block.FontWeight.ToString(),resolved = glyph == null ? "none" : string.Join(",",glyph.FamilyNames.Values),actual = GlyphNames(System.Windows.Media.VisualTreeHelper.GetDrawing(block)) }); } for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(node); i++) Visit(System.Windows.Media.VisualTreeHelper.GetChild(node,i)); } Visit(root); File.WriteAllText(Path.Combine(folder,"font-tree.json"),JsonSerializer.Serialize(details,new JsonSerializerOptions { WriteIndented = true })); Console.WriteLine(File.ReadAllText(Path.Combine(folder,"font-tree.json"))); app.Shutdown();
  }
  private static void RenderAllUi(string folder) {
-  Directory.CreateDirectory(folder); var app = new Application(); using var services = new AppServices(folder,true); services.Settings.Value.OnboardingComplete = true; Theme.Apply("Light"); var window = new MainWindow(services); var results = new List<object>(); var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+  Directory.CreateDirectory(folder); var app = new Application(); using var services = new AppServices(Path.Combine(folder,"sessions",Guid.NewGuid().ToString("N")),true); services.Settings.Value.OnboardingComplete = true; Theme.Apply("Light"); var window = new MainWindow(services); services.History.Add("Please send the revised proposal by Thursday. I will review it before our meeting.","notepad",12000,"inserted","Groq",services.Settings.Value); services.History.Add(string.Join("\n\n",Enumerable.Repeat("A long transcript remains readable while the list of dictations stays in view. This fixture checks selection, wrapping and scrolling in the desktop history browser.",12)),"word",48000,"inserted","Groq",services.Settings.Value); var results = new List<object>(); var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+  foreach (var viewport in new[] { new Size(640,600), new Size(1000,500),new Size(1200,800), new Size(1600,900), new Size(900,1200), new Size(1920,650) })
   foreach (var theme in new[] { "Light","Dark" }) {
-   services.Settings.Value.Theme = theme; Theme.Apply(theme);
-   foreach (var route in new[] { "home","history","settings","speech","keys","cleanup","style","words","contacts","audio","privacy","bubble","advanced","about" }) { typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,[route]); var root = (FrameworkElement)window.Content; root.Measure(new Size(700,860)); root.Arrange(new Rect(0,0,700,860)); root.UpdateLayout(); var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(700,860,96,96,System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using var file = File.Create(Path.Combine(folder,theme + "-" + route + ".png")); png.Save(file); results.Add(new { theme,route,passed = true }); }
-   void SaveScreen(string name) { var root = (System.Windows.Controls.Panel)window.Content; root.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty,"Paper"); root.Measure(new Size(700,860)); root.Arrange(new Rect(0,0,700,860)); root.UpdateLayout(); var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(700,860,96,96,System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using var file = File.Create(Path.Combine(folder,theme + "-" + name + ".png")); png.Save(file); }
-   for (var step = 0;step < 8;step++) { typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[step]); SaveScreen("onboarding-" + step); results.Add(new { theme,step,passed = true }); }
-   foreach (var provider in Enum.GetValues<Provider>()) { new KeySetupDraftStore(folder).Expand(provider.ToString()); typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[2]); SaveScreen("guided-" + provider); results.Add(new { theme,provider,passed = true }); }
+   window.Width = viewport.Width; window.Height = viewport.Height; services.Settings.Value.Theme = theme; Theme.Apply(theme);
+   typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,["home"]);
+   foreach (var route in new[] { "home","history","settings","speech","keys","cleanup","style","words","audio","privacy","bubble","advanced","about" }) { var navigation = (StackPanel)typeof(MainWindow).GetField("nav",flags)!.GetValue(window)!; var destination = navigation.Children.OfType<Button>().Single(button => Equals(button.Tag,route)); destination.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); if (!Equals(typeof(MainWindow).GetField("route",flags)!.GetValue(window),route)) throw new InvalidOperationException("Navigation failed: " + route); var root = (FrameworkElement)window.Content; root.Measure(viewport); root.Arrange(new Rect(new Point(),viewport)); root.UpdateLayout(); VerifyDesktopLayout(window,route,viewport); var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)viewport.Width,(int)viewport.Height,96,96,System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using var file = File.Create(Path.Combine(folder,viewport.Width + "x" + viewport.Height + "-" + theme + "-" + route + ".png")); png.Save(file); results.Add(new { viewport,theme,route,passed = true }); }
+   void SaveScreen(string name) { var root = (System.Windows.Controls.Panel)window.Content; root.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty,"Paper"); root.Measure(viewport); root.Arrange(new Rect(new Point(),viewport)); root.UpdateLayout(); var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)viewport.Width,(int)viewport.Height,96,96,System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(root); var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap)); using var file = File.Create(Path.Combine(folder,viewport.Width + "x" + viewport.Height + "-" + theme + "-" + name + ".png")); png.Save(file); }
+   for (var step = 0;step < 7;step++) { typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[step]); SaveScreen("onboarding-" + step); VerifyDesktopLayout(window,"setup",viewport); results.Add(new { viewport,theme,step,passed = true }); }
+   foreach (var provider in Enum.GetValues<Provider>()) { new KeySetupDraftStore(services.Folder).Expand(provider.ToString()); typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[2]); SaveScreen("guided-" + provider); VerifyDesktopLayout(window,"setup",viewport); results.Add(new { viewport,theme,provider,passed = true }); }
   }
-  File.WriteAllText(Path.Combine(folder,"render-results.json"),JsonSerializer.Serialize(results,new JsonSerializerOptions { WriteIndented = true })); Console.WriteLine("PASS " + results.Count + " complete native WPF screen renders"); app.Shutdown();
+  File.WriteAllText(Path.Combine(folder,"render-results.json"),JsonSerializer.Serialize(results,new JsonSerializerOptions { WriteIndented = true })); Console.WriteLine("PASS " + results.Count + " complete native WPF screen renders"); app.Shutdown(); app.Dispatcher.InvokeShutdown();
+ }
+ private static void VerifyDesktopLayout(MainWindow window,string route,Size viewport) {
+  IEnumerable<DependencyObject> Descendants(DependencyObject parent) {
+   for (int i = 0;i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);i++) {
+    var child = System.Windows.Media.VisualTreeHelper.GetChild(parent,i); yield return child;
+    foreach (var descendant in Descendants(child)) yield return descendant;
+   }
+  }
+  var root = (FrameworkElement)window.Content;
+  var controls = Descendants(root).ToArray();
+  if (route == "history") {
+   var list = controls.OfType<ListBox>().Single();
+   if (list.Items.Cast<ListBoxItem>().Any(item => item.ActualHeight > 100)) throw new InvalidOperationException("A multiline transcript expanded the history list row.");
+   foreach (ListBoxItem item in list.Items) {
+    list.SelectedItem = item; root.UpdateLayout();
+    var transcript = Descendants(root).OfType<TextBox>().Single(box => box.IsReadOnly);
+    if (transcript.Text != ((HistoryEntry)item.Tag).Text) throw new InvalidOperationException("History selection did not show the complete selected transcript.");
+    var position = transcript.TranslatePoint(new Point(),root);
+    if (position.X + transcript.ActualWidth > viewport.Width + 1 || position.Y + transcript.ActualHeight > viewport.Height + 1) throw new InvalidOperationException("History reader extends outside the window.");
+   }
+   list.SelectedIndex = 0; root.UpdateLayout();
+  }
+  bool Rendered(FrameworkElement control) {
+   if (control.ActualWidth <= 0 || control.ActualHeight <= 0) return false;
+   for (DependencyObject? node = control; node != null; node = System.Windows.Media.VisualTreeHelper.GetParent(node))
+    if (node is UIElement element && element.Visibility != Visibility.Visible) return false;
+   return true;
+  }
+  foreach (var button in controls.OfType<Control>().Where(Rendered)) {
+   var point = button.TranslatePoint(new Point(),root);
+   if (point.X < -1 || point.X + button.ActualWidth > viewport.Width + 1) throw new InvalidOperationException("A button extends horizontally outside " + route);
+  }
  }
  private static string GlyphNames(System.Windows.Media.Drawing? drawing) => drawing switch { System.Windows.Media.GlyphRunDrawing glyph => string.Join(",",glyph.GlyphRun.GlyphTypeface.FamilyNames.Values), System.Windows.Media.DrawingGroup group => string.Join(";",group.Children.Select(GlyphNames)), _ => "" };
  private static async Task AudioCheck(string output) {
@@ -92,6 +188,39 @@ public static class Program {
   var drawing = new System.Windows.Media.DrawingVisual(); using (var dc = drawing.RenderOpen()) { dc.DrawRoundedRectangle(Theme.Hex("#F5F7F5"),null,new Rect(0,0,256,256),50,50); dc.PushTransform(new System.Windows.Media.ScaleTransform(256.0/108,256.0/108)); foreach (var path in xml.Root!.Elements("path")) dc.DrawGeometry(Theme.Hex(path.Attribute(android+"fillColor")!.Value),new System.Windows.Media.Pen(Theme.Hex(path.Attribute(android+"strokeColor")!.Value),.42),System.Windows.Media.Geometry.Parse(path.Attribute(android+"pathData")!.Value)); dc.Pop(); }
   var image = new System.Windows.Media.Imaging.RenderTargetBitmap(256,256,96,96,System.Windows.Media.PixelFormats.Pbgra32); image.Render(drawing); var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image)); using var png = new MemoryStream(); encoder.Save(png); var bytes = png.ToArray(); Directory.CreateDirectory(output); File.WriteAllBytes(Path.Combine(output,"quill.png"),bytes);
   using var file = File.Create(Path.Combine(output,"quill.ico")); using var writer = new BinaryWriter(file); writer.Write((short)0); writer.Write((short)1); writer.Write((short)1); writer.Write((byte)0); writer.Write((byte)0); writer.Write((byte)0); writer.Write((byte)0); writer.Write((short)1); writer.Write((short)32); writer.Write(bytes.Length); writer.Write(22); writer.Write(bytes);
+ }
+ private static async Task ActivationLauncher(string pipeName,string executable,string folder) {
+  if (!string.Equals(Path.GetFullPath(executable),Path.Combine(AppContext.BaseDirectory,"Quill.exe"),StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("The launcher fixture can only open its adjacent Quill test build.");
+  var window = new Window { Title = "Quill shortcut launcher fixture",Width = 400,Height = 180,WindowStartupLocation = WindowStartupLocation.CenterScreen,Topmost = true,Content = new TextBlock { Text = "Controlled foreground shortcut launcher",Margin = new(24) } }; window.Show();
+  using var pipe = new NamedPipeClientStream(".",pipeName,PipeDirection.InOut,PipeOptions.Asynchronous); await pipe.ConnectAsync(10_000); using var reader = new StreamReader(pipe); using var writer = new StreamWriter(pipe) { AutoFlush = true };
+  while (await reader.ReadLineAsync() is string command) {
+   if (command == "quit") break;
+   if (command != "launch") throw new InvalidOperationException("Unexpected launcher command.");
+   ActivateFixture(window); var handle = new WindowInteropHelper(window).Handle;
+   await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
+   // A native click on the owned fixture models selecting a shortcut even on
+   // runners that do not initially give programmatically shown windows focus.
+   var point = window.PointToScreen(new Point(100,80));
+   var atPoint = WindowFromPoint(new NativePoint { X = (int)point.X,Y = (int)point.Y });
+   Native.GetWindowThreadProcessId(atPoint,out var atPointProcess);
+   if (atPointProcess != Environment.ProcessId) throw new InvalidOperationException("The controlled launcher is occluded; no input was sent. " + RunnerDesktopState(atPoint));
+   if (!SetCursorPos((int)point.X,(int)point.Y)) throw new InvalidOperationException("Could not position the controlled fixture click.");
+   var click = new[] { new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0002 } } },new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0004 } } } };
+   if (Native.SendInput((uint)click.Length,click,System.Runtime.InteropServices.Marshal.SizeOf<Native.INPUT>()) != click.Length) throw new InvalidOperationException("The controlled fixture click was not delivered.");
+   for (var attempt = 0; Native.GetForegroundWindow() != handle && attempt < 30; attempt++) await Task.Delay(100);
+   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException($"The controlled shortcut launcher did not own foreground. interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}, visible={window.IsVisible}, expected={handle}, actual={Native.GetForegroundWindow()}");
+   // Deliver a harmless key to this fixture before invoking its shortcut. Merely
+   // attaching input queues to show a test window does not model the input that
+   // gives a real Start-menu launcher permission to activate another process.
+   var input = new[] { Key(0x87,false),Key(0x87,true) }; // F24, handled only by this fixture.
+   if (Native.SendInput((uint)input.Length,input,System.Runtime.InteropServices.Marshal.SizeOf<Native.INPUT>()) != input.Length) throw new InvalidOperationException("The controlled launcher did not receive its activation input.");
+   await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Background);
+   if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException("Foreground changed before the controlled shortcut launch.");
+   var start = new ProcessStartInfo(executable) { UseShellExecute = true,WindowStyle = ProcessWindowStyle.Normal }; start.ArgumentList.Add("--data-dir"); start.ArgumentList.Add(folder);
+   using var child = Process.Start(start) ?? throw new InvalidOperationException("Shortcut child did not start."); await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
+   await writer.WriteLineAsync(JsonSerializer.Serialize(new { foregroundLauncher = true,exitCode = child.ExitCode,launcherHandle = handle.ToInt64() }));
+  }
+  window.Close();
  }
  private static async Task Editor(string pipeName) {
   var normal = new TextBox { MinHeight = 60, Margin = new(12), AcceptsReturn = true }; var alternate = new TextBox { MinHeight = 60,Margin = new(12) }; var sensitive = new PasswordBox { MinHeight = 50,Margin = new(12),Password = "fixture-secret" };

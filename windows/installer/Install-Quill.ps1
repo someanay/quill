@@ -77,7 +77,7 @@ $registration = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Quill
 if (-not $NoRegistration) {
     New-Item -Path $registration -Force | Out-Null
     $values = @{
-        DisplayName = 'Quill'; DisplayVersion = '2.0.0'; InstallLocation = $Destination
+        DisplayName = 'Quill'; DisplayVersion = '2.0.3'; InstallLocation = $Destination
         DisplayIcon = $appExecutable
         UninstallString = 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $Destination 'Uninstall-Quill.ps1') + '"'
     }

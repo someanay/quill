@@ -1,5 +1,5 @@
 {
-  "revision": 14,
+  "revision": 21,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -74,7 +74,7 @@
       "optionalBlank": false
     },
     "bubble.dismiss.toast": {
-      "default": "Bubble hidden - shake your phone or tap the notification to bring it back.",
+      "default": "Bubble hidden - shake your phone or click the notification to bring it back.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -86,7 +86,7 @@
       "optionalBlank": false
     },
     "bubble.recording": {
-      "default": "Listening. Tap to stop",
+      "default": "Listening. Press your shortcut to finish.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -376,7 +376,7 @@
       "optionalBlank": false
     },
     "home.banner.a11y_off_text": {
-      "default": "Accessibility is off - tap to switch it back on.",
+      "default": "Accessibility is off - click to switch it back on.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -424,7 +424,7 @@
       "optionalBlank": false
     },
     "home.show_bubble": {
-      "default": "Show bubble",
+      "default": "Show floating control",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -460,7 +460,7 @@
       "optionalBlank": false
     },
     "home.today.last_used_sub": {
-      "default": "Not yet - tap the bubble to dictate in any app.",
+      "default": "Not yet - click the bubble to dictate in any app.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -532,7 +532,7 @@
       "optionalBlank": false
     },
     "models.custom_refresh": {
-      "default": "Tap Refresh to check this endpoint’s model list.",
+      "default": "Click Refresh to check this endpoint’s model list.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -652,19 +652,19 @@
       "optionalBlank": false
     },
     "notification.text.active": {
-      "default": "Tap the bubble to dictate.",
+      "default": "Click the bubble to dictate.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "notification.text.hidden": {
-      "default": "Bubble hidden - tap Show Quill to bring it back.",
+      "default": "Bubble hidden - click Show Quill to bring it back.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "notification.text.recording": {
-      "default": "Recording… tap the bubble to stop.",
+      "default": "Recording… click the bubble to stop.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -819,7 +819,7 @@
       "optionalBlank": false
     },
     "onboarding.howitworks.step1": {
-      "default": "The bubble starts listening - tap again to send.",
+      "default": "The bubble starts listening - click again to send.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -837,7 +837,7 @@
       "optionalBlank": false
     },
     "onboarding.howitworks.t1": {
-      "default": "Tap & speak",
+      "default": "Click & speak",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -873,7 +873,7 @@
       "optionalBlank": false
     },
     "onboarding.key.choose": {
-      "default": "Choose any 1 of the following",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -903,7 +903,7 @@
       "optionalBlank": false
     },
     "onboarding.key.easy": {
-      "default": "Google Gemini (Big Free Usage, Easy Process)",
+      "default": "Google Gemini",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -929,25 +929,25 @@
       "optionalBlank": false
     },
     "onboarding.key.free_note": {
-      "default": "Free-tier limits apply. Paid accounts may be billed under their plan. Quill checks your key without sending audio; successful dictation also depends on your model access and available quota.",
+      "default": "Provider usage limits and charges apply. Checking your key sends no audio.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.free_options": {
-      "default": "OpenRouter (Free options, Longer Process)",
+      "default": "OpenRouter",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.gemini_steps": {
-      "default": "Click https://aistudio.google.com/api-keys to open browser\n[For New Users] Accept Agreement & Click Continue\nClick the Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://aistudio.google.com/api-keys\nSign in to Google AI Studio and accept its terms if asked.\nCopy an existing Gemini key, or choose Create API key and select a project.\nReturn to Quill and paste the key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "Click https://console.groq.com/home to open browser\nCreate a Groq account\nClick on API Keys near the top right\nClick on \"Create API Key\"\nChoose any name you like. For example \"Quill\".\nKeep No Expiration.\nClick the Copy button\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://console.groq.com/keys\nSign in, then choose Create API Key.\nGive the key a name, such as Quill, and create it.\nCopy the key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -961,13 +961,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openai_steps": {
-      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away - it's shown only once - then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
+      "default": "Open https://platform.openai.com/api-keys\nSign in and choose Create new secret key.\nCopy the new key before closing the dialog.\nReturn to Quill and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "Click https://openrouter.ai/sign-up to open browser\nSign up for OpenRouter.\nChoose Individual.\nClick Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://openrouter.ai/settings/keys\nSign in, then create a new API key.\nName the key Quill and review its spending limit.\nCopy the new key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -981,7 +981,7 @@
       "optionalBlank": false
     },
     "onboarding.key.more_steps": {
-      "default": "Groq (Big Free Usage, Longer Process)",
+      "default": "Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1005,13 +1005,13 @@
       "optionalBlank": false
     },
     "onboarding.key.router_note": {
-      "default": "Free cleanup models are available. Speech transcription may require credits. Quill prefers a free compatible speech model when the live catalog offers one. Checking your key does not spend model credits.",
+      "default": "OpenRouter may charge for transcription. Checking your key sends no audio; your model access and quota determine whether dictation is available.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.save_provider": {
-      "default": "Save %1$s API Key Securely",
+      "default": "Save %1$s key",
       "placeholders": [
         "%1$s"
       ],
@@ -1067,7 +1067,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Help me get & add a key",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1109,7 +1109,7 @@
       "optionalBlank": false
     },
     "onboarding.mic.denied": {
-      "default": "Microphone access is needed to record your voice. Tap Allow microphone to try again.",
+      "default": "Microphone access is needed to record your voice. Click Allow microphone to try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1175,19 +1175,19 @@
       "optionalBlank": false
     },
     "onboarding.welcome.body": {
-      "default": "A small bubble floats over the screen. Tap it & speak. Your words appear where your cursor is.",
+      "default": "A small bubble floats over the screen. Click it & speak. Your words appear where your cursor is.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.welcome.cta": {
-      "default": "Get started",
+      "default": "Set up Quill",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.welcome.open": {
-      "default": "Open Quill",
+      "default": "Open workspace",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1211,7 +1211,7 @@
       "optionalBlank": false
     },
     "reliability.boot.title": {
-      "default": "Tap to re-activate Quill",
+      "default": "Click to re-activate Quill",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1460,7 +1460,7 @@
       "optionalBlank": false
     },
     "settings.audio.trigger_value": {
-      "default": "Tap to toggle",
+      "default": "Press shortcut to start and stop",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1496,7 +1496,7 @@
       "optionalBlank": false
     },
     "settings.bubble.title": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1568,7 +1568,7 @@
       "optionalBlank": false
     },
     "settings.cleanup.title": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1580,7 +1580,7 @@
       "optionalBlank": false
     },
     "settings.group.capture": {
-      "default": "Capture & bubble",
+      "default": "Recording & controls",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1846,19 +1846,19 @@
       "optionalBlank": false
     },
     "settings.row.audio": {
-      "default": "Audio & recording",
+      "default": "Audio & shortcut",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.row.bubble": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.row.cleanup": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1876,7 +1876,7 @@
       "optionalBlank": false
     },
     "settings.row.privacy": {
-      "default": "Privacy and History",
+      "default": "Privacy & history",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2088,7 +2088,7 @@
       "optionalBlank": false
     },
     "settings.speech.provider": {
-      "default": "Provider",
+      "default": "Speech provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2214,7 +2214,7 @@
       "optionalBlank": false
     },
     "settings.style.words_promise": {
-      "default": "Style only changes punctuation, capitalization and contractions. It never changes your words.",
+      "default": "Styles adjust punctuation, capitalization and contractions during cleanup.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2394,7 +2394,7 @@
       "optionalBlank": false
     },
     "settings.words.empty_sub": {
-      "default": "Tap + to add a name or term",
+      "default": "Add a name, term or phrase to get started.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2442,7 +2442,7 @@
       "optionalBlank": false
     },
     "settings.words.listening": {
-      "default": "Listening… tap to stop",
+      "default": "Listening. Click Record again to finish.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2774,7 +2774,7 @@
       "optionalBlank": false
     },
     "windows.bubble.contrast": {
-      "default": "The white contrast ring and soft shadow keep the bubble visible over light and dark apps. A live meter and halo indicate recording. Windows reduced-motion settings control animation.",
+      "default": "The white ring keeps the optional floating control visible over other windows. Windows Reduce Motion controls its animation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2786,31 +2786,31 @@
       "optionalBlank": false
     },
     "windows.bubble.pin": {
-      "default": "Keep bubble fully visible outside text fields",
+      "default": "Keep the floating control visible outside text fields",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "windows.bubble.reset_position": {
-      "default": "Reset bubble position",
+      "default": "Reset floating control position",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "windows.bubble.retry": {
-      "default": "Tap to retry",
+      "default": "Click to retry",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "windows.bubble.size": {
-      "default": "Bubble size",
+      "default": "Floating control size",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "windows.bubble.tap_paste": {
-      "default": "Tap to paste",
+      "default": "Click to paste",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2926,7 +2926,7 @@
       "optionalBlank": false
     },
     "windows.history.empty_help": {
-      "default": "Your saved words appear here. Try a dictation to get started.",
+      "default": "Dictations saved on this PC appear here. Start with a short practice in your workspace.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2944,7 +2944,7 @@
       "optionalBlank": false
     },
     "windows.home.body": {
-      "default": "Tap the bubble or press Ctrl + Win + Space. Speak, then stop to put your words at the cursor.",
+      "default": "Click the bubble or press Ctrl + Win + Space. Speak, then stop to put your words at the cursor.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2962,7 +2962,7 @@
       "optionalBlank": false
     },
     "windows.home.hotkey_conflict": {
-      "default": "The keyboard shortcut is already in use by another app. The bubble and tray controls are available.",
+      "default": "Your shortcut is in use by another app. Choose a different shortcut in Audio & shortcut, or use the floating control.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3004,7 +3004,7 @@
       "optionalBlank": false
     },
     "windows.home.tip_shortcut": {
-      "default": "Right-click for clipboard dictation. Press %1$s to start or stop.",
+      "default": "Press %1$s to start and stop dictation. The optional floating control also supports clipboard dictation.",
       "placeholders": [
         "%1$s"
       ],
@@ -3030,7 +3030,7 @@
       "optionalBlank": false
     },
     "windows.home.try_help": {
-      "default": "Click this field, then tap the bubble. Your words will appear here.",
+      "default": "Click this field, then click the bubble. Your words will appear here.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3216,7 +3216,7 @@
       "optionalBlank": false
     },
     "windows.onboarding.ready_help": {
-      "default": "Click a text field in any supported app, tap the bubble, and speak. Tap again to send.",
+      "default": "Click a text field in any supported app, click the bubble, and speak. Click again to send.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3306,13 +3306,13 @@
       "optionalBlank": false
     },
     "windows.settings.audio": {
-      "default": "Audio & recording",
+      "default": "Audio & shortcut",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "windows.settings.bubble": {
-      "default": "Bubble appearance",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3450,7 +3450,7 @@
       "optionalBlank": false
     },
     "windows.tray.hide": {
-      "default": "Hide bubble",
+      "default": "Hide floating control",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3492,7 +3492,7 @@
       "optionalBlank": false
     },
     "windows.words.listening": {
-      "default": "Listening. Tap the same button again to stop.",
+      "default": "Listening. Click Record again to finish.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3505,6 +3505,369 @@
     },
     "windows.words.speak": {
       "default": "Speak a word to capture its transcription",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.progress": {
+      "default": "Step %1$d of %2$d",
+      "placeholders": [
+        "%1$d",
+        "%2$d"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.local": {
+      "default": "Your key. Your provider. Your words.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.welcome_title": {
+      "default": "Your voice, wherever you write.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.welcome_body": {
+      "default": "Click a text field. Press your shortcut. Speak, then press again to insert your words.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.privacy_body": {
+      "default": "Quill connects directly to your speech provider. Choose who processes your recordings before you start.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.provider_title": {
+      "default": "Connect your speech provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.provider_body": {
+      "default": "Choose a speech provider, then connect and verify your own API key. You can change the provider or model later.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.audio_title": {
+      "default": "Check your microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.access_title": {
+      "default": "Let your words reach your apps",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.access_body": {
+      "default": "Quill can insert your finished dictation into the text field you selected. Review and allow text insertion below.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.shortcut_title": {
+      "default": "One shortcut, wherever you write",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.shortcut_body": {
+      "default": "Focus a text field. Press your shortcut to start, speak, then press it again to finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.controls": {
+      "default": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.bubble_choice": {
+      "default": "Show the optional floating control",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.ready_title": {
+      "default": "Make room for your next thought.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.ready_body": {
+      "default": "Your workspace has a practice field. Try a short dictation there, then use the same shortcut in your everyday apps.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.practice": {
+      "default": "Open the practice workspace",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.finish": {
+      "default": "Go to Home",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.demo.label": {
+      "default": "Example dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.demo.spoken": {
+      "default": "Let's move our meeting to Thursday. I'll send the notes before then.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.practice.title": {
+      "default": "Practice here",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.practice.body": {
+      "default": "Click the field, then press your shortcut to dictate.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.title": {
+      "default": "Your workspace",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.setup_needed": {
+      "default": "Connect your provider and allow text insertion before dictating.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.configuration": {
+      "default": "Your setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.workspace.recent": {
+      "default": "Recent dictations",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.welcome": {
+      "default": "Welcome",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.welcome": {
+      "default": "From a thought to a finished sentence.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.welcome": {
+      "default": "A shortcut keeps your attention on what you are writing. Quill puts your words in the field you already have open.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.privacy": {
+      "default": "Your data",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.privacy": {
+      "default": "Choose where your voice goes.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.privacy": {
+      "default": "Your provider processes the recording with your own key. Quill does not route it through a Quill server. Check your provider's pricing and privacy terms.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.provider": {
+      "default": "Your provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.provider": {
+      "default": "Bring the provider you trust.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.provider": {
+      "default": "Keys are encrypted on this device. Verifying a key checks authentication; it does not record speech or prove that model credits are available.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.audio": {
+      "default": "Microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.audio": {
+      "default": "A quick sound check.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.audio": {
+      "default": "Test your usual microphone before dictating. This test stays on your device and is discarded; nothing is uploaded.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.access": {
+      "default": "Text insertion",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.access": {
+      "default": "Your cursor is the destination.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.access": {
+      "default": "Quill checks the focused field before inserting. Password fields are excluded. If an app cannot accept insertion, your transcript remains available to copy.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.shortcut": {
+      "default": "Shortcut & practice",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.shortcut": {
+      "default": "Stay in the app you are using.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.shortcut": {
+      "default": "Start and finish with your keyboard shortcut. The floating control is optional. You can always reopen Quill from its desktop menu.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.stage.ready": {
+      "default": "Ready",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion.ready": {
+      "default": "Try it where you already write.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.companion_body.ready": {
+      "default": "A short sentence is enough for your first try. Change providers, cleanup, writing style and history retention whenever you need to.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.dictation.stop": {
+      "default": "Stop dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.choose": {
+      "default": "Choose a provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.gemini": {
+      "default": "Google Gemini",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.groq": {
+      "default": "Groq",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.provider.openrouter": {
+      "default": "OpenRouter",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.shortcut_caption": {
+      "default": "Start and stop dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.setup.privacy_line": {
+      "default": "Your provider key. A direct connection. No Quill account.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.audio.trigger_help": {
+      "default": "Click a text field, then press your shortcut to begin. Press the same shortcut again to stop and insert the transcript.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.speech.body": {
+      "default": "Choose how your recordings become text.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.speech.key_needed": {
+      "default": "Connect an API key for this provider before dictating.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "desktop.speech.manage_key": {
+      "default": "Manage provider key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.keys.empty_title": {
+      "default": "Connect your first provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.keys.empty_body": {
+      "default": "Add a key from your speech provider to start dictating. Saved keys stay protected on this PC, and you can switch or remove them here.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

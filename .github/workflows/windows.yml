@@ -16,7 +16,11 @@ concurrency:
 
 jobs:
   windows:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -24,19 +28,65 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Verify bundled copy and fonts
-        run: python scripts/verify-platform-parity.py --platform windows
+        run: python scripts/verify-platform-parity.py --platform windows --independent-copy
+      - name: Prepare the isolated ARM runner desktop
+        if: matrix.runner == 'windows-11-arm'
+        run: |
+          if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows') { throw 'Hosted-runner setup only.' }
+          # The ARM image starts a fullscreen WWAHost window above ordinary apps.
+          # Close that disposable runner window; do not alter foreground policy,
+          # permissions, lock-screen settings or Quill's activation assertions.
+          foreach ($setupHost in @(Get-Process WWAHost -ErrorAction SilentlyContinue)) {
+            Write-Output "Closing hosted desktop window: $($setupHost.MainWindowTitle)"
+            [void]$setupHost.CloseMainWindow()
+            if (-not $setupHost.WaitForExit(3000)) { Stop-Process -Id $setupHost.Id }
+          }
+          Add-Type @'
+          using System;
+          using System.Runtime.InteropServices;
+          public static class QuillRunnerDesktop {
+            [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+            [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
+            [DllImport("user32.dll")] public static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra);
+          }
+          '@
+          for ($attempt = 0; $attempt -lt 6; $attempt++) {
+            [uint32]$shellProcessId = 0
+            [void][QuillRunnerDesktop]::GetWindowThreadProcessId([QuillRunnerDesktop]::GetForegroundWindow(),[ref]$shellProcessId)
+            $shellProcess = Get-Process -Id $shellProcessId -ErrorAction SilentlyContinue
+            if ($shellProcess.ProcessName -notin @('SearchHost','StartMenuExperienceHost')) { break }
+            Write-Output "Dismissing hosted shell menu: $($shellProcess.ProcessName)"
+            [QuillRunnerDesktop]::keybd_event(0x1b,0,0,[UIntPtr]::Zero)
+            [QuillRunnerDesktop]::keybd_event(0x1b,0,2,[UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 300
+          }
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
+      - name: Verify every native screen and retained setup state
+        if: always() && !cancelled()
+        run: |
+          dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-all-ui dist/verification/windows-ui
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-setup-window dist/verification/windows-setup
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe dist/verification/windows-native.json
+          exit $LASTEXITCODE
       - name: Verify installer integrity and safe uninstall
+        if: always() && !cancelled()
         run: ./windows/installer/Test-Installer.ps1
       - name: Package self-contained x64 application and installer
+        if: always() && !cancelled()
         run: ./windows/installer/Publish-Quill.ps1 -Runtime win-x64 -SkipTests
       - name: Cross-compile and package ARM64 application
+        if: always() && !cancelled()
         run: ./windows/installer/Publish-Quill.ps1 -Runtime win-arm64 -SkipTests
       - name: Upload Windows packages
+        if: always() && !cancelled()
         uses: actions/upload-artifact@v4
         with:
-          name: Quill-Windows-packages
+          name: Quill-Windows-packages-${{ matrix.runner }}
           path: |
             dist/windows/*.zip
             dist/windows/*.zip.sha256
@@ -45,8 +95,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-verification
+          name: windows-verification-${{ matrix.runner }}
           path: |
             dist/verification/windows-tests
+            dist/verification/windows-ui
+            dist/verification/windows-setup
+            dist/verification/windows-native.json
             dist/verification/installer-tests/**/results.json
           retention-days: 14
