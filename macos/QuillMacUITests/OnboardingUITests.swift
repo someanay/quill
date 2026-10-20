@@ -147,7 +147,10 @@ final class OnboardingUITests: XCTestCase {
             let app = XCUIApplication()
             app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-history-fixtures"] + (dark ? ["--ui-dark"] : [])
             app.launch()
-            XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 10))
+            // macOS may restore the previous test's narrow window before the
+            // explicit resize matrix begins; its compact toolbar is valid.
+            let initialHome = app.buttons.matching(NSPredicate(format: "identifier == %@ OR identifier == %@", "nav.home", "compact.home")).firstMatch
+            XCTAssertTrue(initialHome.waitForExistence(timeout: 10))
             let window = app.windows.firstMatch
             let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
             if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" { XCTAssertGreaterThanOrEqual(screen.width, 1440, "Expanded desktop coverage requires a larger CI display") }
