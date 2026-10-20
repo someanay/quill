@@ -16,9 +16,9 @@ struct DictationControls: View {
                         .accessibilityLabel(model.c(model.phase == .recording ? "ios.recording.stop" : "ios.recording.start"))
                         .accessibilityIdentifier("dictation.record")
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(model.c("ios.phase.\(model.phase.rawValue)")).font(Q.serif(24)).accessibilityAddTraits(.updatesFrequently)
-                        Text(model.c("ios.home.subtitle")).font(Q.sans(12)).foregroundStyle(Q.muted)
-                    }.frame(maxWidth: .infinity, alignment: .leading)
+                        Text(model.c("ios.phase.\(model.phase.rawValue)")).font(Q.serif(24)).fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.updatesFrequently)
+                        Text(model.c("ios.home.subtitle")).font(Q.sans(12)).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true)
+                    }.multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if model.phase == .recording {
                     InkMeter(amplitude: recorder.amplitude)

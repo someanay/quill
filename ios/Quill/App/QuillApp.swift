@@ -68,10 +68,11 @@ struct RootView: View {
 struct MainTabs: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     var body: some View {
         GeometryReader { geometry in
-            if UIDevice.current.userInterfaceIdiom == .pad && sizeClass == .regular && geometry.size.width >= 760 {
+            if UIDevice.current.userInterfaceIdiom == .pad && sizeClass == .regular && geometry.size.width >= 760 && !typeSize.isAccessibilitySize {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     List {
                         Section {
