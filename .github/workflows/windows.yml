@@ -41,6 +41,25 @@ jobs:
             [void]$setupHost.CloseMainWindow()
             if (-not $setupHost.WaitForExit(3000)) { Stop-Process -Id $setupHost.Id }
           }
+          Add-Type @'
+          using System;
+          using System.Runtime.InteropServices;
+          public static class QuillRunnerDesktop {
+            [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+            [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hwnd,out uint process);
+            [DllImport("user32.dll")] public static extern void keybd_event(byte key,byte scan,uint flags,UIntPtr extra);
+          }
+          '@
+          for ($attempt = 0; $attempt -lt 6; $attempt++) {
+            [uint32]$shellProcessId = 0
+            [void][QuillRunnerDesktop]::GetWindowThreadProcessId([QuillRunnerDesktop]::GetForegroundWindow(),[ref]$shellProcessId)
+            $shellProcess = Get-Process -Id $shellProcessId -ErrorAction SilentlyContinue
+            if ($shellProcess.ProcessName -notin @('SearchHost','StartMenuExperienceHost')) { break }
+            Write-Output "Dismissing hosted shell menu: $($shellProcess.ProcessName)"
+            [QuillRunnerDesktop]::keybd_event(0x1b,0,0,[UIntPtr]::Zero)
+            [QuillRunnerDesktop]::keybd_event(0x1b,0,2,[UIntPtr]::Zero)
+            Start-Sleep -Milliseconds 300
+          }
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
       - name: Verify every native screen and retained setup state
