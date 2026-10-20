@@ -61,8 +61,8 @@ public sealed class BubbleWindow : Window {
   glyph.Children.Clear();
   if (s is DictationState.Paste or DictationState.Error or DictationState.Transcribing) glyph.Children.Add(new TextBlock { Text = s == DictationState.Paste ? "▣" : s == DictationState.Error ? "!" : "⋯", Foreground = Brushes.White, FontSize = 26, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
   else { glyph.Children.Add(new Rectangle { Width = 10, Height = 17, RadiusX = 5, RadiusY = 5, Fill = Brushes.White, VerticalAlignment = VerticalAlignment.Top, Margin = new(0,1,0,0) }); glyph.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M5,13 C5,27 23,27 23,13 M14,24 L14,29 M8,29 L20,29"), Stroke = Brushes.White, StrokeThickness = 2.4 }); }
-  status.Text = recording ? TimeSpan.FromMilliseconds(services.Dictation.ElapsedMs).ToString(@"m\:ss") : s == DictationState.Transcribing ? services.C("bubble.transcribing", "Transcribing…") : s == DictationState.Paste ? services.C("windows.bubble.tap_paste", "Tap to paste") : services.C("windows.bubble.retry", "Tap to retry");
+  status.Text = recording ? TimeSpan.FromMilliseconds(services.Dictation.ElapsedMs).ToString(@"m\:ss") : s == DictationState.Transcribing ? services.C("bubble.transcribing", "Transcribing…") : s == DictationState.Paste ? services.C("windows.bubble.tap_paste", "Click to paste") : services.C("windows.bubble.retry", "Click to retry");
   pill.Visibility = s == DictationState.Idle ? Visibility.Collapsed : Visibility.Visible; meter.Visibility = recording ? Visibility.Visible : Visibility.Collapsed; cancel.Visibility = s == DictationState.Idle ? Visibility.Collapsed : Visibility.Visible; meter.Update(services.Dictation.Rms, recording);
-  System.Windows.Automation.AutomationProperties.SetName(circle, recording ? services.C("bubble.recording", "Listening. Tap to stop") : status.Text);
+  System.Windows.Automation.AutomationProperties.SetName(circle, recording ? services.C("bubble.recording", "Listening. Click to finish") : status.Text);
  }
 }

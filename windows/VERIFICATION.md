@@ -31,23 +31,23 @@ Verification at this presentation revision:
   from portable test processes. Package hashes are recorded with installation evidence.
 - Native Windows x64 and ARM64 both passed **362 tests, zero skipped**, all 300
   renders, 42 setup checks, 14 editor/clipboard checks and 11 installer checks in
-  [run 39392919260](https://github.com/someanay/quill/actions/runs/39392919260)
-  at `ae500b2`, repeating the preceding green `2153459` matrix after normalizing
-  settings-row metadata weight. Both package architectures built on both runners. The ARM runner's
+  [run 39399932697](https://github.com/someanay/quill/actions/runs/39399932697)
+  at `6967604`, including the final desktop recovery instructions and 640-string
+  revision 22 catalog. This repeats the green `ae500b2` and `2153459` matrices.
+  Both package architectures built on both runners. The ARM runner's
   pre-opened system menus are dismissed in its disposable desktop setup; production
   activation assertions and permission checks remain unchanged. Original evidence:
-  `dist/native-redesign/windows-ci-row-final/`.
+  `dist/native-redesign/windows-ci-copy-final/`.
 
 The installed final executable SHA-256 is
-`9aeb0b888f3dd07c63e1d216526ef2208aec5bc9105b76e764bf35b1ec2e204d`.
-The x64 package SHA-256 is
-`a8b93d75a42ede0b2852791f89b0211bcbb5ff9f2262dd928c0c5f849fd3069d`;
-ARM64 is `ed8c4b8f17e799ef6521702dee1f5a4bddea68024b4499c1d125e6d7788ad171`.
-Local app-data hashes are unchanged across the update. The actual Start shortcut
-restores PID 48804 / HWND 5901480 after Close hides it; the short-lived secondary
-launcher exits, leaving one process. Evidence:
-`dist/native-redesign/windows-installation-row-final.json` and
-`dist/native-redesign/windows-row-start-reopen.json`.
+`abae3122e978ef293958b38bcab931e3018c2d70a2fb85a30f755b5295aaaa7d`.
+Archive hashes are recorded beside each ZIP and app-file checksums inside each
+package. Local app-data hashes are unchanged across the final copy update, and
+the updated installed window was reviewed live after launching from Start.
+Evidence: `dist/native-redesign/windows-installation-copy-final.json`.
+Actual Close-to-tray and Start same-process/window reopening were verified on
+the preceding presentation build in `windows-row-start-reopen.json`; activation
+code is unchanged, and the complete activation suite passes again at `6967604`.
 - Catalog/default/placeholder/font checks pass. Physical ARM hardware, multiple
   monitor/DPI transitions, wider third-party editor coverage and live provider
   requests remain release acceptance work.

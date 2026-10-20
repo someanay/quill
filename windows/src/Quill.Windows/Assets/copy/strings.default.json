@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 21,
+  "revision": 22,
   "locale": "en",
   "updatedAt": "2026-10-20T00:00:00Z",
   "strings": {
@@ -147,7 +147,7 @@
     "onboarding.howitworks.t3": "It writes where you are",
     "onboarding.howitworks.title": "From voice to text, on your terms",
     "onboarding.key.body": "A key is a long private code from an AI service. It lets Quill send your voice to the AI & get text back over an encrypted connection. Never share your key with anyone.",
-    "onboarding.key.browser_error": "The browser could not open. Try again after choosing a default browser in Android settings.",
+    "onboarding.key.browser_error": "The browser could not open. Choose a default browser in Windows Settings, then try again.",
     "onboarding.key.choose": "Choose a provider",
     "onboarding.key.collapsed": "Collapsed",
     "onboarding.key.console_body": "Any of these works - pick one for quick steps to get its key. Your key stays on this device.",
@@ -642,6 +642,7 @@
     "desktop.speech.key_needed": "Connect an API key for this provider before dictating.",
     "desktop.speech.manage_key": "Manage provider key",
     "windows.keys.empty_title": "Connect your first provider",
-    "windows.keys.empty_body": "Add a key from your speech provider to start dictating. Saved keys stay protected on this PC, and you can switch or remove them here."
+    "windows.keys.empty_body": "Add a key from your speech provider to start dictating. Saved keys stay protected on this PC, and you can switch or remove them here.",
+    "windows.error.focus_to_paste": "Click an editable text field, then click the floating control to insert your dictation."
   }
 }
