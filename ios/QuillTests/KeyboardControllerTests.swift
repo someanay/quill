@@ -40,6 +40,60 @@ import QuillCore
 }
 
 @MainActor final class KeyboardControllerTests: XCTestCase {
+    func testLiveSessionStartsStopsAndAutomaticallyInsertsOnce() throws {
+        let proxy = TextProxyFixture(); proxy.content = "Hello"; proxy.selection.location = 5
+        let handoff = HandoffFixture(); handoff.item = nil
+        var session = KeyboardRecordingSession()
+        var commands: [KeyboardSessionCommand] = []
+        let keyboard = KeyboardViewController()
+        keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { true }, peek: { handoff.item }, consume: handoff.consume, prune: {}, session: { session }, command: { command in
+            XCTAssertTrue(command.isValid(for: session)); commands.append(command)
+            session.acknowledgedCommandID = command.id
+            if command.kind == .start { session.captureID = command.id; session.phase = .recording }
+            if command.kind == .stop { session.phase = .processing }
+        })
+        keyboard.loadViewIfNeeded()
+        let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+        XCTAssertTrue(record.isEnabled); record.sendActions(for: .touchUpInside)
+        XCTAssertEqual(commands.map(\.kind), [.start]); XCTAssertEqual(record.currentTitle, "Stop dictation")
+        record.sendActions(for: .touchUpInside)
+        XCTAssertEqual(commands.map(\.kind), [.start, .stop]); XCTAssertFalse(record.isEnabled)
+        let item = KeyboardHandoff(text: "world"); handoff.item = item
+        session.phase = .ready; session.transferID = item.id
+        keyboard.textDidChange(nil)
+        XCTAssertEqual(proxy.content, "Hello world"); XCTAssertEqual(handoff.consumed, 1)
+        keyboard.textDidChange(nil); XCTAssertEqual(handoff.consumed, 1)
+    }
+    func testLiveResultDoesNotAutomaticallyFollowAnEditedField() throws {
+        let proxy = TextProxyFixture(); let handoff = HandoffFixture(); handoff.item = nil
+        var session = KeyboardRecordingSession()
+        let keyboard = KeyboardViewController()
+        keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { true }, peek: { handoff.item }, consume: handoff.consume, prune: {}, session: { session }, command: { command in
+            session.acknowledgedCommandID = command.id; session.captureID = command.id; session.phase = .recording
+        })
+        keyboard.loadViewIfNeeded()
+        let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+        record.sendActions(for: .touchUpInside)
+        proxy.content = "Changed"; proxy.selection.location = 7
+        let item = KeyboardHandoff(text: "world"); handoff.item = item; session.phase = .ready; session.transferID = item.id
+        keyboard.textDidChange(nil)
+        XCTAssertEqual(proxy.content, "Changed"); XCTAssertEqual(handoff.consumed, 0)
+        try insert(keyboard).sendActions(for: .touchUpInside)
+        XCTAssertEqual(proxy.content, "Changed world"); XCTAssertEqual(handoff.consumed, 1)
+    }
+    func testLiveSessionRefusesCommandsWithoutFullAccessOrInProtectedFields() throws {
+        for secured in [false, true] {
+            let proxy = TextProxyFixture(); proxy.isSecureTextEntry = secured
+            let handoff = HandoffFixture(); handoff.item = nil; handoff.fullAccess = secured
+            var commands = 0
+            let keyboard = KeyboardViewController()
+            keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { handoff.fullAccess }, peek: { nil }, consume: handoff.consume, prune: {}, session: { KeyboardRecordingSession() }, command: { _ in commands += 1 })
+            keyboard.loadViewIfNeeded()
+            let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+            record.sendActions(for: .touchUpInside)
+            XCTAssertEqual(commands, 0); XCTAssertEqual(proxy.content, "")
+        }
+    }
     private func harness(_ proxy: TextProxyFixture, _ store: HandoffFixture) -> KeyboardViewController {
         let keyboard = KeyboardViewController()
         keyboard.environment = KeyboardEnvironment(proxy: { store.fieldAvailable ? proxy : nil }, fullAccess: { store.fullAccess }, peek: { store.item }, consume: store.consume, prune: {})

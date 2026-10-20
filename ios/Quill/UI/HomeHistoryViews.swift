@@ -47,6 +47,7 @@ struct KeyboardHelpView: View {
             QHeading(title: model.c("ios.keyboard.setup_title")).accessibilityIdentifier("screen.keyboard")
             Text(model.c("ios.keyboard.setup_steps"))
             QBanner(title: model.c("ios.keyboard.full_access_title"), text: model.c("ios.keyboard.full_access_body"), icon: "lock.shield")
+            KeyboardSessionPanel(session: model.keyboardSession)
             QButton(title: model.c("ios.settings.open")) { openSettings() }
             QField(title: model.c("ios.keyboard.test_field"), text: $testText)
             QSection(title: model.c("ios.keyboard.how_title"))

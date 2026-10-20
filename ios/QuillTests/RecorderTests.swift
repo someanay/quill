@@ -72,4 +72,25 @@ import AVFoundation
         XCTAssertEqual(recorder.fileURL, newFile)
         XCTAssertEqual(interruptedFiles.count, 1)
     }
+    func testLiveInputSessionDiscardsIdleAudioAndSupportsTwoRealTakes() async throws {
+        try AppFiles.prepare()
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: AppFiles.audio.path))
+        let session = KeyboardMicrophoneSession()
+        try session.start()
+        let recorder = AudioRecorder(); recorder.keepsAudioSessionActive = true
+        defer { recorder.cancel(); session.stop() }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertTrue(session.isRunning); XCTAssertTrue(session.hasReceivedInput)
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: AppFiles.audio.path)), before, "Idle input must never create an audio file.")
+        for _ in 0..<2 {
+            try recorder.start(capSeconds: 30, microphoneTest: true)
+            try await Task.sleep(nanoseconds: 400_000_000)
+            let file = try XCTUnwrap(recorder.stop())
+            let audio = try AVAudioFile(forReading: file)
+            XCTAssertGreaterThan(audio.length, 0); XCTAssertEqual(audio.fileFormat.sampleRate, 16_000)
+            try FileManager.default.removeItem(at: file)
+            XCTAssertTrue(session.healthy, "Finishing one take must preserve the live input session.")
+        }
+        session.stop(); XCTAssertFalse(session.isRunning)
+    }
 }

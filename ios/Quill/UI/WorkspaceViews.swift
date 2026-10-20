@@ -19,6 +19,7 @@ struct HomeView: View {
                                 QButton(title: model.c("onboarding.mic.cta")) { Task { await model.requestMicrophone() } }
                             }
                             if !model.hasActiveKey { NavigationLink { APIKeysView() } label: { QCard { QRow(title: model.c("settings.keys.add"), icon: "key") } }.buttonStyle(.plain) }
+                            KeyboardSessionPanel(session: model.keyboardSession)
                             DictationControls(recorder: model.recorder)
                             if !model.result.isEmpty { TranscriptResult(text: model.result) }
                             else {

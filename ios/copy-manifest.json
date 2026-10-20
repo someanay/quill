@@ -1,5 +1,5 @@
 {
-  "revision": 21,
+  "revision": 22,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -2622,19 +2622,19 @@
       "optionalBlank": false
     },
     "ios.workflow.step1": {
-      "default": "1. Open Quill. Tap the microphone, speak, then tap to stop.",
+      "default": "1. Start a keyboard session in Quill. The microphone stays active for up to five minutes, with an End action in Quill and the keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.workflow.step2": {
-      "default": "2. Tap Send to keyboard when the transcript is ready.",
+      "default": "2. Return to your app, choose Quill with the globe key, then tap Dictate and speak.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.workflow.step3": {
-      "default": "3. Return to your app, switch to the Quill keyboard, and tap Insert dictation within 60 seconds.",
+      "default": "3. Tap Stop dictation. Your words appear automatically if the field is unchanged; otherwise use Insert dictation. Manual Send to keyboard is still available.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2670,7 +2670,7 @@
       "optionalBlank": false
     },
     "ios.keyboard.full_access_body": {
-      "default": "Full Access lets the keyboard receive transcripts from Quill. It uses nearby text only to place a dictation, without saving or sending that text. Keys and microphone access stay in Quill.",
+      "default": "Full Access lets this keyboard control a session you started in Quill and receive its transcripts. Nearby text is used only to place your words; it is not saved or sent. Provider keys and microphone capture stay in Quill.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2760,7 +2760,7 @@
       "optionalBlank": false
     },
     "ios.keyboard.record_help": {
-      "default": "Record in the Quill app, tap Send to keyboard, return here and tap Insert dictation.",
+      "default": "Open Quill once and start a keyboard session to dictate here. You can also record in Quill, send a transcript and insert it here.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2778,7 +2778,7 @@
       "optionalBlank": false
     },
     "ios.mic.rationale": {
-      "default": "Quill uses the microphone only when you start a recording or microphone test. Dictation audio goes directly to your selected provider using your own key.",
+      "default": "Quill uses the microphone for dictation, local tests and keyboard sessions you explicitly start. A keyboard session keeps it active for up to five minutes; idle audio is discarded. Dictation audio goes directly to your chosen provider using your own key.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2890,13 +2890,13 @@
       "optionalBlank": false
     },
     "ios.home.tip_title": {
-      "default": "From your voice to another app",
+      "default": "Stay in the app you are using",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.home.tip_body": {
-      "default": "Record in Quill → Send to keyboard → return to your app and tap Insert dictation. The handoff is single use and expires after 60 seconds.",
+      "default": "Start a keyboard session in Quill once. Return to your app, select the Quill keyboard and use Dictate. Stop to insert your words without another app switch.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3088,7 +3088,7 @@
       "optionalBlank": false
     },
     "ios.audio.trigger_help": {
-      "default": "Use the microphone button in Quill to start a recording. Tap it again to stop and transcribe.",
+      "default": "During a keyboard session, use Dictate and Stop dictation in the Quill keyboard. You can also record directly in Quill with the microphone button.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3222,7 +3222,7 @@
       "optionalBlank": false
     },
     "ios.advanced.background": {
-      "default": "A recording started visibly in Quill can continue in the background. iOS controls background execution and may interrupt processing; return to Quill to Retry. There is no always-on microphone, background restart or floating overlay permission.",
+      "default": "A keyboard session explicitly keeps the microphone active for up to five minutes. End it in Quill or the keyboard. Calls, audio-route changes, device locking and system termination can end the session; open Quill to restart it.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3395,7 +3395,7 @@
       "optionalBlank": false
     },
     "ios.setup.welcome_body": {
-      "default": "Record in Quill, then bring your words into other apps with the Quill keyboard.",
+      "default": "Speak in the apps you already use. Start a timed microphone session once, then dictate with the Quill keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3479,7 +3479,7 @@
       "optionalBlank": false
     },
     "ios.setup.practice_body": {
-      "default": "Record a short phrase, stop, then send the transcript to your keyboard. This practice uses your chosen provider and may use its quota.",
+      "default": "Start a keyboard session below, select Quill in the practice field, then use Dictate and Stop dictation. Your words appear automatically. You can also record here and send manually. This uses your provider account.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3515,13 +3515,13 @@
       "optionalBlank": false
     },
     "ios.setup.ready_body": {
-      "default": "Your keyboard and first insertion are ready. Use the same three steps in another app.",
+      "default": "Your keyboard and first insertion are ready. Start a session in Quill once, then dictate without leaving your other apps.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.ready_pending": {
-      "default": "You can record in Quill now. Finish the keyboard practice before using dictation in other apps.",
+      "default": "You can record in Quill now. Finish keyboard setup and practice to dictate inside your other apps.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3533,19 +3533,19 @@
       "optionalBlank": false
     },
     "ios.setup.flow_record": {
-      "default": "Open Quill and record your thought. Tap again to finish.",
+      "default": "Start a five-minute keyboard session in Quill.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.flow_send": {
-      "default": "Review the transcript, then tap Send to keyboard.",
+      "default": "Return to your app and choose the Quill keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.flow_insert": {
-      "default": "Return to your app, choose the Quill keyboard, and tap Insert dictation within 60 seconds.",
+      "default": "Tap Dictate, speak, then Stop dictation. Your words appear in the same field.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3557,7 +3557,7 @@
       "optionalBlank": false
     },
     "ios.setup.companion_body": {
-      "default": "The microphone lives in Quill. The keyboard brings your finished transcript to the cursor. You stay in control of both.",
+      "default": "The microphone stays in Quill. A timed session lets the keyboard control dictation while you stay in your app.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3575,7 +3575,7 @@
       "optionalBlank": false
     },
     "ios.workspace.body": {
-      "default": "Tap the microphone and speak. Your transcript appears here, ready to copy or send to the Quill keyboard.",
+      "default": "Start a keyboard session above to dictate in other apps. Or use the microphone here and review, copy or send the transcript yourself.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3623,19 +3623,19 @@
       "optionalBlank": false
     },
     "ios.setup.flow_short_record": {
-      "default": "Record in Quill",
+      "default": "Start a keyboard session once",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.flow_short_send": {
-      "default": "Send to keyboard",
+      "default": "Return to your app",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.setup.flow_short_insert": {
-      "default": "Return to your app and insert",
+      "default": "Dictate and insert from the keyboard",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3663,6 +3663,110 @@
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
+    },
+    "ios.session.title": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Dictate from your keyboard",
+      "placeholders": []
+    },
+    "ios.session.body": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Start a five-minute session, then return to your app. The microphone stays active, including between dictations; idle audio is discarded. Only a take you start with Dictate is saved and sent to your provider. You can end the session at any time.",
+      "placeholders": []
+    },
+    "ios.session.start": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Start keyboard session",
+      "placeholders": []
+    },
+    "ios.session.active_title": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Your keyboard is ready",
+      "placeholders": []
+    },
+    "ios.session.active_body": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Return to your app and choose Quill. Tap Dictate, speak, then Stop dictation. Your words appear in the same field. The microphone remains active until you end this session or its timer expires.",
+      "placeholders": []
+    },
+    "ios.session.remaining": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Ends in about %1$s min",
+      "placeholders": [
+        "%1$s"
+      ]
+    },
+    "ios.session.end": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "End keyboard session",
+      "placeholders": []
+    },
+    "ios.session.end_short": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "End session",
+      "placeholders": []
+    },
+    "ios.session.dictate": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Dictate",
+      "placeholders": []
+    },
+    "ios.session.stop_dictation": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Stop dictation",
+      "placeholders": []
+    },
+    "ios.session.processing": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Transcribing…",
+      "placeholders": []
+    },
+    "ios.session.processing_body": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Your words will appear here. If you move or edit the field, choose Insert dictation when ready.",
+      "placeholders": []
+    },
+    "ios.session.retry": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Retry dictation",
+      "placeholders": []
+    },
+    "ios.session.failed": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "The take could not finish. Retry here, or open Quill to fix the key, connection or saved recording.",
+      "placeholders": []
+    },
+    "ios.session.listening": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Listening. Tap Stop dictation when you finish.",
+      "placeholders": []
+    },
+    "ios.session.keyboard_ready": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "Tap Dictate to speak here. The timed microphone session is active in Quill.",
+      "placeholders": []
+    },
+    "ios.session.unavailable": {
+      "overridable": true,
+      "optionalBlank": false,
+      "default": "The session is unavailable. Open Quill to start a new keyboard session.",
+      "placeholders": []
     }
   },
   "placeholderTestVectors": [

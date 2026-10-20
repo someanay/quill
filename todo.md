@@ -4,6 +4,13 @@
 
 ### Platform experience revision — October 19, 2026
 
+October 20 follow-up: the owner explicitly requests a timed iOS keyboard recording
+session to remove repeated app switching. Scope this pass to that M14 interaction,
+truthful permission/privacy copy and iPhone/iPad validation. See
+[the session contract](docs/ios-keyboard-session.md).
+
+- [ ] Prove a real foreground-enabled microphone session supports repeated background keyboard dictation on iPhone/iPad baseline/current CI; review both appearances and inspect final packages.
+
 The owner replaced Android UI parity with independent native experiences sharing
 Quill's DNA. Scope this pass to M14 native presentation, iOS onboarding and validation;
 [the current contract](docs/platform-experience.md) supersedes the old screen order.

@@ -204,7 +204,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     private func showQuillKeyboard(in app: XCUIApplication) throws {
         for _ in 0..<8 {
-            if app.buttons["keyboard.insert"].waitForExistence(timeout: 2) { return }
+            if app.buttons["keyboard.insert"].waitForExistence(timeout: 2) || app.buttons["keyboard.record"].exists { return }
             var dismissedIntroduction = false
             for surface in [app, XCUIApplication(bundleIdentifier: "com.apple.springboard")] {
                 if surface.staticTexts["Quickly Change Keyboards"].exists {
@@ -292,6 +292,38 @@ final class KeyboardIntegrationUITests: XCTestCase {
         requireEditorText(repeated)
         XCTAssertFalse(remaining.isEnabled)
         attach("pending-handoff-survives-protected-fields", app: fixture)
+        stage = "enable-one-live-keyboard-session"
+        host.activate()
+        tap(host.buttons["session.start"], in: host)
+        XCTAssertTrue(host.staticTexts["session.active"].waitForExistence(timeout: 10))
+        attach("host-explicit-live-session", app: host)
+        fixture.activate(); tap(fixture.buttons["quill.qa.caret-end"], in: fixture)
+        try showQuillKeyboard(in: fixture)
+        var seamlessExpected = repeated
+        for take in 1...2 {
+            stage = "background-keyboard-dictation-\(take)"
+            let dictate = fixture.buttons["keyboard.record"]
+            expectation(for: NSPredicate(format: "enabled == true AND label == %@", "Dictate"), evaluatedWith: dictate)
+            waitForExpectations(timeout: 12)
+            XCTAssertEqual(host.state, .runningBackground, "The host must stay in the background for keyboard dictation.")
+            tap(dictate, in: fixture)
+            expectation(for: NSPredicate(format: "label == %@ AND enabled == true", "Stop dictation"), evaluatedWith: dictate)
+            waitForExpectations(timeout: 10)
+            XCTAssertEqual(host.state, .runningBackground)
+            RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+            tap(dictate, in: fixture)
+            seamlessExpected += " This is a simulated provider response."
+            requireEditorText(seamlessExpected)
+            XCTAssertEqual(host.state, .runningBackground, "No app switch or manual Send/Insert is permitted in the new path.")
+            attach("keyboard-auto-inserted-background-\(take)", app: fixture)
+        }
+        stage = "end-session-from-keyboard"
+        tap(fixture.buttons["keyboard.session.end"], in: fixture)
+        expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: fixture.buttons["keyboard.record"])
+        waitForExpectations(timeout: 10)
+        XCTAssertEqual(host.state, .runningBackground)
+        requireEditorText(seamlessExpected)
+        attach("keyboard-session-ended-no-duplicate", app: fixture)
         outcome = "passed"
     }
 }

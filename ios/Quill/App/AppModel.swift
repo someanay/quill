@@ -22,6 +22,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     @Published var microphoneGranted = AudioRecorder.permission == .granted
     @Published private(set) var cleanupRequired = false
     let recorder = AudioRecorder()
+    let keyboardSession = KeyboardSessionController()
     let vault = KeyVault()
     let diagnosticsCollector = DiagnosticsCollector()
     let copy: CopyCatalog
@@ -90,6 +91,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         recorder.onInterruption = { [weak self] in self?.interrupted() }
         pruneTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in self?.prune() } }
         refreshHistory()
+        keyboardSession.attach(self)
         #if DEBUG
         if AppFiles.isUITesting {
             let args = ProcessInfo.processInfo.arguments
@@ -199,7 +201,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         catch { testingMicrophone = false; report(error) }
     }
     func stopMicTest() { guard testingMicrophone else { return }; recorder.cancel(); testingMicrophone = false }
-    func start(voiceSample: Bool = false) async {
+    func start(voiceSample: Bool = false, capSeconds: Int? = nil) async {
         guard !busy, !canRetry, !cleanupRequired else { return }
         stopMicTest()
         if !microphoneGranted { await requestMicrophone() }
@@ -210,7 +212,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
             result = ""; errorKey = nil; notice = nil
             snapshot = settings; snapshotWords = words; generation = UUID()
             voiceSampleMode = voiceSample
-            try recorder.start(capSeconds: voiceSample ? 8 : settings.sessionCapSeconds)
+            try recorder.start(capSeconds: voiceSample ? 8 : min(settings.sessionCapSeconds, capSeconds ?? settings.sessionCapSeconds))
             retainedAudio = recorder.fileURL
             try persistPendingRecording()
             phase = .recording
@@ -283,6 +285,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         do { try persistPendingRecording() } catch { report(error) }
         phase = .failed; errorKey = QuillError.interrupted.copyKey
     }
+    func interruptKeyboardRecording() { interrupted() }
     private func processingExpired(generation expected: UUID) {
         guard generation == expected, [.transcribing, .cleaning].contains(phase) else { return }
         operation?.cancel(); generation = UUID(); phase = .failed; errorKey = QuillError.interrupted.copyKey
@@ -370,6 +373,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     func setPrivateMode(_ value: Bool) {
         settings.privateMode = value
         if value {
+            keyboardSession.end(cancelCapture: true)
             try? KeyboardTransfer.clear()
         }
     }
@@ -401,6 +405,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         KeyboardTransfer.prune(); refreshHistory()
     }
     func reset() {
+        keyboardSession.end(cancelCapture: true)
         cancel()
         guard !cleanupRequired else { return }
         do {

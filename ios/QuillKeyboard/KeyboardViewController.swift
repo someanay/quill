@@ -12,6 +12,8 @@ struct KeyboardEnvironment {
     let prune: () -> Void
     var didConnect: () -> Void = {}
     var didInsert: (UUID) -> Void = { _ in }
+    var session: () -> KeyboardRecordingSession? = { nil }
+    var command: (KeyboardSessionCommand) throws -> Void = { _ in }
 }
 
 final class KeyboardViewController: UIInputViewController {
@@ -36,9 +38,17 @@ final class KeyboardViewController: UIInputViewController {
     private let stack = UIStackView()
     private let status = UILabel()
     private let insertButton = UIButton(type: .system)
+    private let recordButton = UIButton(type: .system)
+    private let endButton = UIButton(type: .system)
     private let letters = UIStackView()
     private var timer: Timer?
     private var current: KeyboardHandoff?
+    private var session: KeyboardRecordingSession?
+    private var pendingCommand: KeyboardSessionCommand?
+    private var requestedCapture: UUID?
+    private var anchor: KeyboardInsertionAnchor?
+    private var insertedSessionTransfers: Set<UUID> = []
+    private var inserting = false
     private var uppercase = true
     private var numbers = false
     private var connected = false
@@ -67,6 +77,11 @@ final class KeyboardViewController: UIInputViewController {
         let wordmark = NSMutableAttributedString(string: "quill.", attributes: [.foregroundColor: ink, .kern: -1.2])
         wordmark.addAttribute(.foregroundColor, value: Self.adaptive(0x234DCE, 0xB6C9FF), range: NSRange(location: 5, length: 1))
         title.attributedText = wordmark; title.accessibilityLabel = "Quill"; toolbar.addArrangedSubview(title)
+        endButton.setTitle(c("ios.session.end_short"), for: .normal); endButton.setTitleColor(ink, for: .normal)
+        endButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 13) ?? .systemFont(ofSize: 13)
+        endButton.addTarget(self, action: #selector(endSession), for: .touchUpInside)
+        endButton.accessibilityIdentifier = "keyboard.session.end"; endButton.isHidden = true
+        toolbar.addArrangedSubview(endButton)
         let globe = key("🌐", action: #selector(nextKeyboard)); self.globe = globe; globe.accessibilityLabel = c("ios.keyboard.next")
         globe.setTitle(nil, for: .normal); globe.setImage(UIImage(systemName: "globe"), for: .normal)
         globeHeight = globe.constraints.first { $0.firstAttribute == .height }
@@ -77,6 +92,12 @@ final class KeyboardViewController: UIInputViewController {
         status.font = UIFont(name: "IBMPlexSans", size: 13) ?? .systemFont(ofSize: 13)
         status.numberOfLines = 3; status.textColor = muted; status.setContentCompressionResistancePriority(.required, for: .vertical)
         status.accessibilityIdentifier = "keyboard.status"; stack.addArrangedSubview(status)
+        recordButton.backgroundColor = brand; recordButton.tintColor = .white; recordButton.setTitleColor(.white, for: .normal)
+        recordButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 15) ?? .systemFont(ofSize: 15)
+        recordButton.layer.cornerRadius = 6; recordButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+        recordButton.addTarget(self, action: #selector(recordDictation), for: .touchUpInside)
+        recordButton.accessibilityIdentifier = "keyboard.record"; recordButton.isHidden = true
+        stack.addArrangedSubview(recordButton)
         insertButton.setTitle(c("ios.keyboard.insert"), for: .normal); insertButton.backgroundColor = brand; insertButton.tintColor = .white
         insertButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 15) ?? .systemFont(ofSize: 15, weight: .medium)
         insertButton.layer.cornerRadius = 6; let insertHeight = insertButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48); insertHeight.isActive = true; self.insertHeight = insertHeight
@@ -90,7 +111,12 @@ final class KeyboardViewController: UIInputViewController {
         globe?.isHidden = !needsInputModeSwitchKey
         timer?.invalidate(); timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.refresh() }
     }
-    override func viewDidDisappear(_ animated: Bool) { super.viewDidDisappear(animated); timer?.invalidate(); timer = nil; current = nil }
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // A vanished keyboard cannot silently continue a take or later insert into another field.
+        if let session, session.phase == .recording, session.captureID == requestedCapture { try? send(.stop, session: session) }
+        timer?.invalidate(); timer = nil; current = nil; anchor = nil; requestedCapture = nil; pendingCommand = nil
+    }
     override func viewWillLayoutSubviews() { super.viewWillLayoutSubviews(); updateKeyLayout() }
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) { super.traitCollectionDidChange(previousTraitCollection); updateKeyLayout() }
     private func updateKeyLayout() {
@@ -106,6 +132,7 @@ final class KeyboardViewController: UIInputViewController {
     }
     override func textDidChange(_ textInput: UITextInput?) { super.textDidChange(textInput); refresh() }
     private func refresh() {
+        guard !inserting else { return }
         if fullAccess && !connected {
             if let environment { environment.didConnect() } else { KeyboardTransfer.markConnected() }
             connected = true
@@ -114,22 +141,85 @@ final class KeyboardViewController: UIInputViewController {
         current = fullAccess ? (environment != nil ? environment?.peek() : KeyboardTransfer.peek()) : nil
         if current?.isValid() != true { current = nil }
         if fullAccess { if let environment { environment.prune() } else { KeyboardTransfer.prune() } }
+        session = fullAccess ? (environment != nil ? environment?.session() : KeyboardSessionBridge.state()) : nil
+        if session?.isLive() != true { session = nil }
+        if let pendingCommand, session?.acknowledgedCommandID == pendingCommand.id || Date().timeIntervalSince(pendingCommand.createdAt) > 4 { self.pendingCommand = nil }
+        endButton.isHidden = session == nil
+        recordButton.isHidden = session == nil
+        insertButton.isHidden = session != nil && current == nil
+        if let session {
+            let title: String
+            switch session.phase {
+            case .recording: title = "ios.session.stop_dictation"
+            case .processing: title = "ios.session.processing"
+            case .failed: title = "ios.session.retry"
+            default: title = "ios.session.dictate"
+            }
+            recordButton.setTitle(c(title), for: .normal)
+            recordButton.isEnabled = fullAccess && fieldAllowed && pendingCommand == nil && session.phase != .processing && current == nil && session.transferID == nil
+            recordButton.alpha = recordButton.isEnabled ? 1 : 0.45
+            endButton.isEnabled = pendingCommand == nil
+            if session.phase == .ready, let transfer = session.transferID, transfer == current?.id,
+               session.captureID == requestedCapture, !insertedSessionTransfers.contains(transfer), fieldAllowed,
+               let proxy = activeProxy, anchor?.matches(documentID: proxy.documentIdentifier,
+                   before: proxy.documentContextBeforeInput, after: proxy.documentContextAfterInput, selection: proxy.selectedText) == true {
+                insertedSessionTransfers.insert(transfer)
+                insertDictation(); return
+            }
+        }
         insertButton.isEnabled = current != nil && fieldAllowed
         insertButton.alpha = insertButton.isEnabled ? 1 : 0.45
         if !fieldAllowed { status.text = c("ios.keyboard.field_unavailable") }
         else if !fullAccess { status.text = c("ios.keyboard.full_access_needed") }
         else if let current { status.text = String(current.text.prefix(140)) }
-        else { status.text = c("ios.keyboard.record_help") }
+        else if let session {
+            switch session.phase {
+            case .recording: status.text = c("ios.session.listening")
+            case .processing: status.text = c("ios.session.processing_body")
+            case .failed: status.text = c("ios.session.failed")
+            default: status.text = c("ios.session.keyboard_ready")
+            }
+        } else { status.text = c("ios.keyboard.record_help") }
     }
     @objc private func insertDictation() {
         guard fullAccess, fieldAllowed, let proxy = activeProxy, let current else { return }
+        insertedSessionTransfers.insert(current.id)
+        inserting = true
+        defer { inserting = false; refresh() }
         do {
             let text = try environment?.consume(current.id) ?? KeyboardTransfer.consume(current.id)
             let insertion = InsertionComposer.compose(text, before: proxy.documentContextBeforeInput, after: proxy.documentContextAfterInput, replacingSelection: !(proxy.selectedText ?? "").isEmpty)
             proxy.insertText(insertion)
             if let environment { environment.didInsert(current.id) } else { KeyboardTransfer.markInserted(current.id) }
-            self.current = nil; refresh()
-        } catch { refresh(); status.text = c("ios.keyboard.transfer_error") }
+            self.current = nil; anchor = nil; requestedCapture = nil
+        } catch { status.text = c("ios.keyboard.transfer_error") }
+    }
+    @discardableResult private func send(_ kind: KeyboardSessionCommand.Kind, session: KeyboardRecordingSession) throws -> KeyboardSessionCommand {
+        let command = KeyboardSessionCommand(sessionID: session.id, kind: kind, captureID: kind == .start ? nil : session.captureID)
+        if let environment { try environment.command(command) } else { try KeyboardSessionBridge.send(command) }
+        pendingCommand = command; return command
+    }
+    @objc private func recordDictation() {
+        guard fullAccess, fieldAllowed, let proxy = activeProxy, let session, session.isLive(), pendingCommand == nil else { return }
+        do {
+            switch session.phase {
+            case .ready:
+                guard current == nil else { return }
+                let command = try send(.start, session: session)
+                requestedCapture = command.id
+                anchor = KeyboardInsertionAnchor(documentID: proxy.documentIdentifier, before: proxy.documentContextBeforeInput,
+                    after: proxy.documentContextAfterInput, selection: proxy.selectedText)
+            case .recording: try send(.stop, session: session)
+            case .failed: try send(.retry, session: session)
+            default: return
+            }
+            refresh()
+        } catch { pendingCommand = nil; status.text = c("ios.session.unavailable") }
+    }
+    @objc private func endSession() {
+        guard fullAccess, let session, session.isLive(), pendingCommand == nil else { return }
+        do { try send(.end, session: session); anchor = nil; requestedCapture = nil; refresh() }
+        catch { status.text = c("ios.session.unavailable") }
     }
     private func key(_ title: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)

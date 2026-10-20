@@ -9,6 +9,7 @@ import QuillCore
     @Published private(set) var warning = false
     var onAutomaticStop: (() -> Void)?
     var onInterruption: (() -> Void)?
+    var keepsAudioSessionActive = false
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
     private var detector = SilenceDetector()
@@ -48,7 +49,7 @@ import QuillCore
         let path = AppFiles.audio.appendingPathComponent(UUID().uuidString + ".wav")
         var attemptedRecorder: AVAudioRecorder?
         do {
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: keepsAudioSessionActive ? [.defaultToSpeaker, .mixWithOthers] : [.defaultToSpeaker])
             try session.setPreferredSampleRate(16_000)
             try session.setActive(true)
             // Match Android handset-microphone capture; the hardware input can run at another rate,
@@ -65,7 +66,7 @@ import QuillCore
             timer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in Task { @MainActor in self?.tick(capture: expectedCapture) } }
         } catch {
             attemptedRecorder?.stop()
-            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            if !keepsAudioSessionActive { try? session.setActive(false, options: .notifyOthersOnDeactivation) }
             try? FileManager.default.removeItem(at: path)
             throw QuillError.audio
         }
@@ -86,7 +87,7 @@ import QuillCore
         let url = recorder?.url
         captureID = UUID(); timer?.invalidate(); timer = nil; recorder?.stop(); recorder = nil
         isRecording = false; amplitude = 0; warning = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if !keepsAudioSessionActive { try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation) }
         return url
     }
     func cancel() { if let url = stop() { try? FileManager.default.removeItem(at: url) } }

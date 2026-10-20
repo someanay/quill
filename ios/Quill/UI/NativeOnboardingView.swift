@@ -54,6 +54,9 @@ struct OnboardingView: View {
         .task {
             while !Task.isCancelled {
                 receipt = KeyboardTransfer.setupReceipt()
+                if let transfer = model.keyboardSession.lastTransferID {
+                    practiceTransfer = transfer; practiceTranscript = model.result
+                }
                 if practiced && !model.settings.keyboardSetupAcknowledged { model.settings.keyboardSetupAcknowledged = true }
                 try? await Task.sleep(for: .milliseconds(400))
             }
@@ -158,6 +161,7 @@ struct OnboardingView: View {
     private var practice: some View {
         VStack(alignment: .leading, spacing: 22) {
             heading("ios.setup.practice_title", body: "ios.setup.practice_body", id: "onboarding.practice")
+            KeyboardSessionPanel(session: model.keyboardSession)
             DictationControls(recorder: model.recorder)
             if !model.result.isEmpty {
                 QCard { Text(model.result).textSelection(.enabled).privacySensitive() }

@@ -6,6 +6,7 @@ struct AudioSettingsView: View {
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.audio.title")).accessibilityIdentifier("screen.audio")
+            KeyboardSessionPanel(session: model.keyboardSession)
             QSection(title: model.c("settings.audio.start_stop"))
             QCard { VStack(alignment: .leading, spacing: 12) { Text(model.c("settings.audio.trigger_value")); Text(model.c("ios.audio.trigger_help")).font(Q.sans(13)).foregroundStyle(Q.muted) } }
             QSection(title: model.c("settings.audio.max_length"))
