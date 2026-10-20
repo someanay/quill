@@ -56,6 +56,17 @@ private final class OversizedStreamProtocol: URLProtocol, @unchecked Sendable {
 }
 
 final class ProviderClientTests: XCTestCase {
+    func testGeminiOverloadRetriesIdenticalAudioAndCredential() async throws {
+        var bodies: [Data?] = []
+        let client = client { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "x-goog-api-key"), "gemini-fixture")
+            bodies.append(request.httpBody)
+            if bodies.count == 1 { return (503,Data("{}".utf8)) }
+            return (200,Data(#"{"candidates":[{"finishReason":"STOP","content":{"parts":[{"text":"same recorded words"}]}}]}"#.utf8))
+        }
+        let result = try await client.transcribe(audio: WAV.encode(pcm: Data(repeating: 12,count: 3200)), options: SpeechRequest(provider: .gemini,model: "gemini-3.1-flash-lite"), key: "gemini-fixture")
+        XCTAssertEqual(result,"same recorded words"); XCTAssertEqual(bodies.count,2); XCTAssertEqual(bodies.first!,bodies.last!)
+    }
     private func client(_ responder: @escaping (URLRequest) throws -> (Int, Data)) -> ProviderClient {
         StubProtocol.lock.lock(); StubProtocol.responder = responder; StubProtocol.lock.unlock()
         let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [StubProtocol.self]
@@ -106,17 +117,17 @@ final class ProviderClientTests: XCTestCase {
         let invalid = try await client.clean("type my email", provider: .custom, model: "cleanup-model", baseURL: "http://example.com", key: "test", style: .neutral)
         XCTAssertEqual(invalid, "type my email")
     }
-    func testDripFedCleanupHasFourSecondTotalDeadline() async throws {
+    func testDripFedCleanupHasBoundedTotalDeadline() async throws {
         let config = URLSessionConfiguration.ephemeral; config.protocolClasses = [DripProtocol.self]
         let client = ProviderClient(session: URLSession(configuration: config)), started = Date()
         let result = try await client.clean("Keep these words", provider: .groq, model: "model", baseURL: "", key: "test", style: .neutral)
         XCTAssertEqual(result, "Keep these words")
-        XCTAssertGreaterThan(Date().timeIntervalSince(started), 3.5); XCTAssertLessThan(Date().timeIntervalSince(started), 8)
+        XCTAssertGreaterThan(Date().timeIntervalSince(started), 24); XCTAssertLessThan(Date().timeIntervalSince(started), 32)
     }
     func testCleanupResponseGuardAndFinishReason() async throws {
         for (text, finish, expected) in [("Type my email.", "stop", "Type my email."), ("I am ready to type your email.", "stop", "type my email"), ("Type my email.", "length", "type my email")] {
             let client = client { request in
-                XCTAssertEqual(request.timeoutInterval, 4)
+                XCTAssertEqual(request.timeoutInterval, 25)
                 let body = try JSONSerialization.data(withJSONObject: ["choices":[["finish_reason":finish,"message":["content":text]]]])
                 return (200, body)
             }

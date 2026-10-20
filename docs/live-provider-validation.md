@@ -31,8 +31,17 @@ requests now ask for documented minimal reasoning to avoid unnecessary latency;
 the wall-clock deadline and safe fallback remain in place. Actual cleanup on the
 existing Gemini account took 13.266 seconds in a separate latency diagnostic,
 so the original four-second budget prevented completion even for a valid reply.
-The three apps now allow a bounded 15 seconds for optional cleanup. Cancellation
+The three apps now allow a bounded 25 seconds for optional cleanup. A subsequent
+native-endpoint diagnostic took 18.237 seconds, and a real Mac compatibility call
+also exceeded 15 seconds. These are provider latency observations, not claims of
+instant dictation. Cancellation
 still stops immediately; a timeout or rejected response retains the raw words.
+
+Explicit Gemini 503 overload responses receive at most two retries of the exact
+same request, under the original shared deadline with one-/two-second backoff.
+No provider/model is silently changed, and no authentication/quota failure is
+retried. Cancellation during backoff prevents another send. The live matrix
+serializes cases within each platform to avoid bursting the owner's accounts.
 
 The free router is replaced as the automatic OpenRouter cleanup default by
 `liquid/lfm-2.5-2.6b:free`, a general text model in the actual current free catalog.
@@ -53,3 +62,10 @@ is mocked. Virtual audio input is distinct from physical microphone fidelity.
 
 Final producing revisions, jobs, results, fixes and remaining device/provider
 limitations will be recorded here after the live runs finish.
+
+The final local client gate passes 313 targeted Windows storage/domain/provider/
+pipeline checks, all 59 iOS portable core tests and all 35 Mac portable core
+tests. The new transport tests verify exact-body overload retry, cancellation
+during backoff and a shared resource deadline. Earlier local failures from
+outdated four-second assertions were corrected to test the measured new budget.
+No full native or live-provider pass is inferred from these portable tests.

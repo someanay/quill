@@ -14,6 +14,7 @@ private struct LiveFailure: Error { let message: String; init(_ message: String)
         try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         LiveHTTPAudit.outputURL = output.appendingPathComponent("http-audit.json")
         var results: [[String: Any]] = [], editor: NSRunningApplication?
+        var failed = false
         let dataRoot = FileManager.default.temporaryDirectory.appendingPathComponent("QuillLive-" + UUID().uuidString)
         do {
             guard AXIsProcessTrusted() else { throw LiveFailure("Actual Accessibility trust unavailable.") }
@@ -43,6 +44,8 @@ private struct LiveFailure: Error { let message: String; init(_ message: String)
                 let dictation = Dictation(settings: settings, keys: keys, history: HistoryStore(directory: directory), client: ProviderClient(session: session), pendingStore: PendingAudioStore(directory: directory, namespace: "com.tihor.quill.live.pending." + UUID().uuidString))
                 defer { _ = dictation.cancel(); session.invalidateAndCancel() }
                 for take in 1...2 {
+                    let takeBegin = LiveHTTPAudit.snapshot().count
+                    do {
                     let document = directory.appendingPathComponent("synthetic-\(take).txt"), prefix = "Quill live fixture: "
                     try prefix.write(to: document, atomically: true, encoding: .utf8)
                     _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSRunningApplication, Error>) in NSWorkspace.shared.open([document], withApplicationAt: editorURL, configuration: launch) { app, error in
@@ -67,18 +70,24 @@ private struct LiveFailure: Error { let message: String; init(_ message: String)
                     dictation.stop()
                     for _ in 0..<1200 { if dictation.state != .transcribing { break }; try await Task.sleep(nanoseconds: 100_000_000) }
                     let events = Array(LiveHTTPAudit.snapshot().dropFirst(before))
-                    guard dictation.state == .idle, events.count == 2, events.allSatisfy({ $0["status"] as? Int == 200 }),
-                          let raw = events.first?["output"] as? String, let clean = events.last?["output"] as? String, events.last?["finish"] as? String == "stop",
+                    let successful = events.filter { $0["status"] as? Int == 200 }
+                    guard dictation.state == .idle, successful.count == 2, events.allSatisfy({ [200,503].contains($0["status"] as? Int ?? 0) }),
+                          let raw = successful.first?["output"] as? String, let clean = successful.last?["output"] as? String, successful.last?["finish"] as? String == "stop",
                           CleanupGuard.preservesMeaning(raw: raw, cleaned: clean) else { throw LiveFailure("Real transcription/cleanup or confirmed insertion failed: " + dictation.message) }
                     var readback: CFTypeRef?
                     guard AXUIElementCopyAttributeValue(target.element, kAXValueAttribute as CFString, &readback) == .success, let actual = readback as? String,
                           actual.trimmingCharacters(in: .newlines) == prefix + clean.trimmingCharacters(in: .whitespacesAndNewlines) else { throw LiveFailure("Actual TextEdit readback differs from the live cleaned result.") }
                     for anchor in ["project","notes","tomorrow","budget"] { guard raw.lowercased().contains(anchor) else { throw LiveFailure("Captured speech lost a required anchor.") } }
                     results.append(["speech":speechProvider.rawValue,"cleanup":cleanupProvider.rawValue,"take":take,"passed":true,"input":"actual AudioCapture via BlackHole 2ch synthetic speech","peak":peak,"raw":raw,"clean":clean,"editor":actual,"requests":events])
+                    } catch {
+                        failed = true
+                        results.append(["speech":speechProvider.rawValue,"cleanup":cleanupProvider.rawValue,"take":take,"passed":false,"reason":(error as? LiveFailure)?.message ?? (error as? QuillError)?.copyKey ?? String(describing:type(of:error)),"requests":Array(LiveHTTPAudit.snapshot().dropFirst(takeBegin))])
+                        _ = dictation.cancel()
+                    }
                 }
             }
-            write(["passed":true,"accessibilityTrusted":true,"realRecorder":true,"results":results], to: output)
-            _ = editor?.forceTerminate(); try? FileManager.default.removeItem(at: dataRoot); exit(0)
+            write(["passed":!failed,"accessibilityTrusted":true,"realRecorder":true,"results":results], to: output)
+            _ = editor?.forceTerminate(); try? FileManager.default.removeItem(at: dataRoot); exit(failed ? 1 : 0)
         } catch {
             write(["passed":false,"reason":(error as? LiveFailure)?.message ?? String(describing:type(of:error)),"results":results,"requests":LiveHTTPAudit.snapshot()], to: output)
             _ = editor?.forceTerminate(); try? FileManager.default.removeItem(at: dataRoot); exit(1)

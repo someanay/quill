@@ -82,7 +82,7 @@ def inspect(path):
         if mac or device:
             flag = b"--ui-onboarding-stage" if mac else b"--ui-provider-fixtures"
             assert flag not in binary, "Debug presentation/provider fixture in Release executable"
-            for debug_flag in [b"--ui-history-fixtures", b"--ui-onboarding-stage", b"--ui-dark"]:
+            for debug_flag in [b"--ui-history-fixtures", b"--ui-onboarding-stage", b"--ui-dark", b"--ui-live-providers", b"live-provider-bootstrap.json"]:
                 assert debug_flag not in binary, "Debug presentation fixture in Release executable"
             result["releaseDebugFixturesAbsent"] = True
         if not mac:

@@ -30,6 +30,7 @@ jobs:
   windows:
     if: inputs.platform == 'all' || inputs.platform == 'windows'
     strategy:
+      max-parallel: 1
       fail-fast: false
       matrix:
         runner: [windows-latest, windows-11-arm]
@@ -88,6 +89,7 @@ jobs:
   macos:
     if: inputs.platform == 'all' || inputs.platform == 'macos'
     strategy:
+      max-parallel: 1
       fail-fast: false
       matrix:
         runner: [macos-15, macos-15-intel, macos-26, macos-26-intel]
@@ -99,6 +101,9 @@ jobs:
         run: brew install xcodegen
       - name: Prepare real virtual audio input
         run: bash tests/live/prepare-apple-audio.sh
+      - name: Recover known current Intel image icon-service fault
+        if: matrix.runner == 'macos-26-intel'
+        run: bash macos/QA/prepare-ci-icon-services.sh
       - name: Build production native recorder and pipeline probe
         working-directory: macos
         run: |
@@ -121,6 +126,7 @@ jobs:
           name: live-macos-${{ matrix.runner }}
           path: |
             dist/live/macos/*.json
+            dist/live/macos/*.png
             ${{ runner.temp }}/quill-live-audio-devices.json
             ${{ runner.temp }}/quill-live-mac-build.log
           retention-days: 7
@@ -128,6 +134,7 @@ jobs:
   ios:
     if: inputs.platform == 'all' || inputs.platform == 'ios'
     strategy:
+      max-parallel: 1
       fail-fast: false
       matrix:
         device: [iPhone, iPad]

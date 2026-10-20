@@ -85,7 +85,7 @@ public static partial class Program {
   if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") throw new InvalidOperationException("Editor automation is restricted to an isolated CI runner.");
   var pipeName = "Quill.LiveProvider." + Guid.NewGuid().ToString("N"); using var pipe = new NamedPipeServerStream(pipeName,PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous);
   using var child = Process.Start(new ProcessStartInfo(Environment.ProcessPath!,"--editor " + pipeName) { UseShellExecute = false,CreateNoWindow = true }) ?? throw new InvalidOperationException("Fixture launch failed.");
-  var results = new List<object>(); LiveAudit? currentAudit = null; var wav = File.ReadAllBytes(wavPath); var dataRoot = Path.Combine(Path.GetTempPath(),"Quill.LiveProvider",Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dataRoot);
+  var results = new List<object>(); var failed = false; LiveAudit? currentAudit = null; var wav = File.ReadAllBytes(wavPath); var dataRoot = Path.Combine(Path.GetTempPath(),"Quill.LiveProvider",Guid.NewGuid().ToString("N")); Directory.CreateDirectory(dataRoot);
   try {
    await pipe.WaitForConnectionAsync().WaitAsync(TimeSpan.FromSeconds(15)); using var reader = new StreamReader(pipe); using var writer = new StreamWriter(pipe) { AutoFlush = true };
    async Task<Reply> Send(Command command) { await writer.WriteLineAsync(JsonSerializer.Serialize(command)); return JsonSerializer.Deserialize<Reply>((await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10)))!)!; }
@@ -101,16 +101,20 @@ public static partial class Program {
       if (Native.GetForegroundWindow() != (nint)prepared.Handle) throw new InvalidOperationException("Disposable editor does not own focus.");
       var before = audit.Requests.Count; await controller.Toggle(); if (controller.State != DictationState.Recording) throw new InvalidOperationException("Recording phase did not start: " + controller.Error);
       await controller.StopRecording(); var requests = audit.Requests.Skip(before).ToArray(); var actual = (await Send(new(Action:"read"))).Text;
+      var successful = requests.Where(x => x.Status == 200).ToArray();
+      if (controller.State != DictationState.Idle || successful.Length != 2 || requests.Any(x => x.Status is not (200 or 503))) throw new InvalidOperationException("Production pipeline did not finish both live requests and insertion: " + controller.Error);
       RequireSpeech(controller.LastText);
-      if (controller.State != DictationState.Idle || requests.Length != 2 || requests[0].Status != 200) throw new InvalidOperationException("Production pipeline did not finish both live requests and insertion: " + controller.Error);
-      var raw = requests[0].Output ?? throw new InvalidOperationException("Missing live transcription response."); RequireCleanup(audit,raw,controller.LastText);
+      var raw = successful[0].Output ?? throw new InvalidOperationException("Missing live transcription response."); RequireCleanup(audit,raw,controller.LastText);
       if (actual != prefix + controller.LastText || File.Exists(Path.Combine(folder,"pending-audio.dpapi"))) throw new InvalidOperationException("Exact editor readback or audio retirement failed.");
       results.Add(new { speech = profile.Item1,cleanup = profile.Item2,take,passed = true,raw,clean = controller.LastText,editor = actual,requests });
      }
+    } catch (Exception error) {
+     failed = true; results.Add(new { speech=profile.Item1,cleanup=profile.Item2,passed=false,error=error is ProviderException p ? p.Code : error is InvalidOperationException ? error.Message : error.GetType().Name,requests=audit.Requests }); await controller.Cancel();
     } finally { secrets.Clear(); }
    }
    await writer.WriteLineAsync(JsonSerializer.Serialize(new Command(Action:"quit"))); await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5));
-   File.WriteAllText(output,JsonSerializer.Serialize(new { passed = true,audioSource = "Prerecorded synthetic speech at the IAudioRecorder boundary; no mocked HTTP or insertion",audioSHA256 = Convert.ToHexString(SHA256.HashData(wav)),results },JsonFiles.Options));
+   File.WriteAllText(output,JsonSerializer.Serialize(new { passed = !failed,audioSource = "Prerecorded synthetic speech at the IAudioRecorder boundary; no mocked HTTP or insertion",audioSHA256 = Convert.ToHexString(SHA256.HashData(wav)),results },JsonFiles.Options));
+   if (failed) throw new InvalidOperationException("One or more live profiles failed; all available profiles were attempted.");
   } catch (Exception error) {
    File.WriteAllText(output,JsonSerializer.Serialize(new { passed = false,error = error is ProviderException p ? p.Code : error is InvalidOperationException ? error.Message : error.GetType().Name,results,requests = currentAudit?.Requests },JsonFiles.Options)); throw;
   } finally { if (!child.HasExited) child.Kill(); Directory.Delete(dataRoot,true); }

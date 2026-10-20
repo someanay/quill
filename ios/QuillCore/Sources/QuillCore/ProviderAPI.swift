@@ -70,7 +70,7 @@ public enum ProviderRequests {
         return req
     }
     public static func cleanup(_ config: ProviderConfiguration, key: String, raw: String, style: WritingStyle) throws -> URLRequest {
-        var req = try request(config, key: key, path: config.provider == .gemini ? "/v1beta/openai/chat/completions" : "/chat/completions", timeout: 15)
+        var req = try request(config, key: key, path: config.provider == .gemini ? "/v1beta/openai/chat/completions" : "/chat/completions", timeout: 25)
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: Any] = ["model": config.model, "temperature": 0,
@@ -107,10 +107,11 @@ public protocol HTTPTransport: Sendable { func send(_ request: URLRequest) async
 /// Ephemeral sessions hold no cookies, credentials, response cache, or disk cache. Redirects are
 /// always refused so a provider can never forward an API key or recording to another origin.
 public final class DirectTransport: NSObject, HTTPTransport, URLSessionTaskDelegate, @unchecked Sendable {
-    public override init() { super.init() }
+    private let configuration: URLSessionConfiguration
+    public init(configuration: URLSessionConfiguration = .ephemeral) { self.configuration = configuration; super.init() }
     public func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
     public func send(_ request: URLRequest) async throws -> HTTPResult {
-        let config = URLSessionConfiguration.ephemeral
+        let config = configuration.copy() as! URLSessionConfiguration
         config.httpCookieStorage = nil; config.urlCredentialStorage = nil; config.urlCache = nil
         config.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         config.timeoutIntervalForRequest = request.timeoutInterval
@@ -118,10 +119,25 @@ public final class DirectTransport: NSObject, HTTPTransport, URLSessionTaskDeleg
         let session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
         defer { session.invalidateAndCancel() }
         do {
-            let (data, response) = try await session.data(for: request)
-            try Task.checkCancellation()
-            guard let http = response as? HTTPURLResponse, data.count <= 8_000_000 else { throw QuillError.malformedResponse }
-            return HTTPResult(data: data, status: http.statusCode)
+            return try await withThrowingTaskGroup(of: HTTPResult.self) { group in
+                group.addTask {
+                    for attempt in 0...2 {
+                        let (data, response) = try await session.data(for: request)
+                        try Task.checkCancellation()
+                        guard let http = response as? HTTPURLResponse, data.count <= 8_000_000 else { throw QuillError.malformedResponse }
+                        if request.url?.host == "generativelanguage.googleapis.com", http.statusCode == 503, attempt < 2 {
+                            try await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
+                            continue
+                        }
+                        return HTTPResult(data: data, status: http.statusCode)
+                    }
+                    throw QuillError.provider(503)
+                }
+                group.addTask { try await Task.sleep(nanoseconds: UInt64(max(0.001,request.timeoutInterval) * 1_000_000_000)); throw QuillError.network }
+                defer { group.cancelAll() }
+                guard let result = try await group.next() else { throw CancellationError() }
+                return result
+            }
         } catch is CancellationError { throw CancellationError() }
         catch let e as URLError where e.code == .cancelled { throw CancellationError() }
         catch let e as QuillError { throw e }

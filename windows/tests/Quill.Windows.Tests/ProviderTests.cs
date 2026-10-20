@@ -8,6 +8,16 @@ public sealed class MockHttp(Func<HttpRequestMessage,CancellationToken,Task<Http
  public static HttpResponseMessage Json(string json,int status = 200) => new((HttpStatusCode)status) { Content = new StringContent(json,System.Text.Encoding.UTF8,"application/json") };
 }
 public sealed class ProviderTests {
+ [Fact] public async Task GeminiOverloadRetriesTheIdenticalTakeWithinOneDeadline() {
+  var bodies = new List<string>();
+  using var client = new ProviderClient(new MockHttp(async (request,_) => { Assert.Equal("gemini-key",request.Headers.GetValues("x-goog-api-key").Single()); bodies.Add(await request.Content!.ReadAsStringAsync()); return bodies.Count == 1 ? MockHttp.Json("{}",503) : MockHttp.Json("{\"candidates\":[{\"finishReason\":\"STOP\",\"content\":{\"parts\":[{\"text\":\"same recorded words\"}]}}]}"); }));
+  Assert.Equal("same recorded words",await client.Transcribe(AudioRecorder.Wav(new byte[3200]),new() {Provider=Provider.Gemini,SpeechModel="gemini-3.1-flash-lite"},"gemini-key",CancellationToken.None)); Assert.Equal(2,bodies.Count); Assert.Equal(bodies[0],bodies[1]);
+ }
+ [Fact] public async Task GeminiOverloadBackoffHonorsCancellationAndNeverResendsAfterCancel() {
+  var calls = 0; using var cancel = new CancellationTokenSource();
+  using var client = new ProviderClient(new MockHttp((_,_) => { calls++; cancel.Cancel(); return Task.FromResult(MockHttp.Json("{}",503)); }));
+  await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.Transcribe(AudioRecorder.Wav(new byte[3200]),new() {Provider=Provider.Gemini,SpeechModel="gemini-3.1-flash-lite"},"gemini-key",cancel.Token)); Assert.Equal(1,calls);
+ }
  private sealed class StalledStream : MemoryStream { public override async ValueTask<int> ReadAsync(Memory<byte> buffer,CancellationToken cancellationToken = default) { await Task.Delay(Timeout.Infinite,cancellationToken); return 0; } }
  private sealed class FailedStream : MemoryStream { public override ValueTask<int> ReadAsync(Memory<byte> buffer,CancellationToken cancellationToken = default) => throw new IOException("Untrusted transport details"); }
  [Fact] public async Task BodyTransportFailureMapsToNetworkWithoutLeakingDetails() { using var client = new ProviderClient(new MockHttp((_,_) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new FailedStream()) }))); var error = await Assert.ThrowsAsync<ProviderException>(() => client.Transcribe(Audio,new(),"test-key",CancellationToken.None)); Assert.Equal("network",error.Code); Assert.DoesNotContain("Untrusted",error.Message); }
@@ -18,7 +28,7 @@ public sealed class ProviderTests {
  [Fact] public async Task CallerCancellationDuringStalledBodyRemainsCancellation() { using var cancel = new CancellationTokenSource(100); using var client = new ProviderClient(new MockHttp((_,_) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(new StalledStream()) }))); await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.Transcribe(Audio,new(),"test-key",cancel.Token)); }
  [Theory][InlineData("{\"choices\":[]}")][InlineData("{\"choices\":[{}]}")][InlineData("{\"choices\":null}")][InlineData("{\"choices\":[{\"message\":{\"content\":42}}]}")]
  public async Task MalformedCleanupAlwaysPreservesRaw(string response) { using var client = new ProviderClient(new MockHttp((_,_) => Task.FromResult(MockHttp.Json(response)))); Assert.Equal("raw transcript",await client.Cleanup("raw transcript",new(),"test-key","unknown",CancellationToken.None)); }
- [Fact] public async Task CleanupDeadlineIsFourSecondsAndFallsBack() { var elapsed = System.Diagnostics.Stopwatch.StartNew(); using var client = new ProviderClient(new MockHttp(async (_,token) => { await Task.Delay(Timeout.Infinite,token); return MockHttp.Json("{}"); })); Assert.Equal("raw transcript",await client.Cleanup("raw transcript",new(),"test-key","unknown",CancellationToken.None)); Assert.InRange(elapsed.ElapsedMilliseconds,3500,6500); }
+ [Fact] public async Task CleanupDeadlineIsBoundedAndFallsBack() { var elapsed = System.Diagnostics.Stopwatch.StartNew(); using var client = new ProviderClient(new MockHttp(async (_,token) => { await Task.Delay(Timeout.Infinite,token); return MockHttp.Json("{}"); })); Assert.Equal("raw transcript",await client.Cleanup("raw transcript",new(),"test-key","unknown",CancellationToken.None)); Assert.InRange(elapsed.ElapsedMilliseconds,24000,30000); }
  private static byte[] Audio => AudioRecorder.Wav(new byte[32000]);
  [Theory][InlineData(Provider.Groq,"api.groq.com","/openai/v1/audio/transcriptions")][InlineData(Provider.OpenAI,"api.openai.com","/v1/audio/transcriptions")][InlineData(Provider.Custom,"speech.example.test","/proxy/v1/audio/transcriptions")]
  public async Task MultipartTranscriptionContractAndKeyIsolation(Provider provider,string host,string path) {

@@ -20,7 +20,19 @@ public sealed class ProviderClient : IDisposable {
  }
  private async Task<JsonDocument> Send(HttpRequestMessage request, Provider provider, CancellationToken cancellation) {
   using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(operationTimeout);
-  try { return await SendCore(request,provider,deadline.Token); } catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new ProviderException("timeout"); } catch (Exception e) when (e is HttpRequestException or IOException) { throw new ProviderException("network"); }
+  using (request) {
+   try {
+    if (provider != Provider.Gemini) return await SendCore(request,provider,deadline.Token);
+    var body = request.Content == null ? null : await request.Content.ReadAsByteArrayAsync(deadline.Token);
+    for (var attempt = 0;;attempt++) {
+     var copy = new HttpRequestMessage(request.Method,request.RequestUri) { Version = request.Version,VersionPolicy = request.VersionPolicy };
+     foreach (var header in request.Headers) copy.Headers.TryAddWithoutValidation(header.Key,header.Value);
+     if (body != null) { copy.Content = new ByteArrayContent(body); foreach (var header in request.Content!.Headers.Where(h => !h.Key.Equals("Content-Length",StringComparison.OrdinalIgnoreCase))) copy.Content.Headers.TryAddWithoutValidation(header.Key,header.Value); }
+     try { return await SendCore(copy,provider,deadline.Token); }
+     catch (ProviderException error) when (error.Status == 503 && attempt < 2) { await Task.Delay(TimeSpan.FromSeconds(attempt + 1),deadline.Token); }
+    }
+   } catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new ProviderException("timeout"); } catch (Exception e) when (e is HttpRequestException or IOException) { throw new ProviderException("network"); }
+  }
  }
  private async Task<JsonDocument> SendCore(HttpRequestMessage request, Provider provider, CancellationToken cancellation) {
   using (request) {
@@ -113,7 +125,7 @@ public sealed class ProviderClient : IDisposable {
   if (p == Provider.Gemini && model.StartsWith("gemini-3",StringComparison.Ordinal) && model.Contains("flash",StringComparison.Ordinal)) payload["reasoning_effort"] = "minimal";
   if (p == Provider.OpenRouter) payload["provider"] = new { sort = "latency" };
   request.Content = JsonContent.Create(payload);
-  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(15));
+  using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(25));
   try { using var json = await Send(request, p, deadline.Token); var choice = json.RootElement.GetProperty("choices")[0]; if (choice.TryGetProperty("finish_reason",out var finish) && finish.GetString() is string reason && reason != "stop") return raw; var text = choice.GetProperty("message").GetProperty("content").GetString()?.Trim() ?? ""; return CleanupGuard.PreservesMeaning(raw,text) ? text : raw; }
   catch (Exception e) when (e is ProviderException or JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException or OperationCanceledException && !cancellation.IsCancellationRequested) { return raw; }
  }

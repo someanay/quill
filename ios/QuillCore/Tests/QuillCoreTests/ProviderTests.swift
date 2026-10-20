@@ -50,7 +50,7 @@ final class ProviderTests: XCTestCase {
         let r = try ProviderRequests.cleanup(c, key: "geminikey", raw: "send my email", style: .formal)
         XCTAssertTrue(r.url!.absoluteString.hasSuffix("/v1beta/openai/chat/completions"))
         XCTAssertEqual(r.value(forHTTPHeaderField: "Authorization"), "Bearer geminikey")
-        XCTAssertEqual(r.timeoutInterval, 4)
+        XCTAssertEqual(r.timeoutInterval, 25)
         XCTAssertTrue(String(data: r.httpBody!, encoding: .utf8)!.contains("DICTATED TEXT"))
     }
     func testKeyValidationUsesCurrentAndroidOpenRouterEndpoint() throws {

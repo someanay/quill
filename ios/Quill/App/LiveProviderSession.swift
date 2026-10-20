@@ -9,7 +9,7 @@ import QuillCore
     static func apiIfRequested() -> ProviderAPI? {
         guard requested else { return nil }
         LiveHTTPAudit.outputURL = AppFiles.root.appendingPathComponent("live-http-audit.json")
-        return ProviderAPI(transport: LiveDirectTransport())
+        return ProviderAPI(transport: DirectTransport(configuration: LiveHTTPAudit.configuration()))
     }
     static func configure(_ model: AppModel) throws {
         guard requested else { return }
@@ -28,23 +28,9 @@ import QuillCore
         model.settings.provider = speech; model.settings.model = speech.defaultModel
         model.settings.cleanupProvider = cleanup; model.settings.cleanupModel = cleanup.defaultCleanupModel
         model.settings.cleanupAutomatic = false; model.settings.cleanupEnabled = true
-        model.settings.privateMode = true; model.settings.historyEnabled = false
+        model.settings.privateMode = false; model.settings.historyEnabled = false
         model.settings.onboardingStep = 3; model.settings.onboardingComplete = false
     }
 }
 
-private struct LiveDirectTransport: HTTPTransport {
-    let actual = DirectTransport()
-    func send(_ request: URLRequest) async throws -> HTTPResult {
-        let start = Date()
-        do {
-            let result = try await actual.send(request)
-            LiveHTTPAudit.record(request: request, data: result.data, status: result.status, started: start)
-            return result
-        } catch {
-            LiveHTTPAudit.record(request: request, data: nil, status: 0, started: start, error: error is CancellationError ? "cancelled" : "network-or-timeout")
-            throw error
-        }
-    }
-}
 #endif
