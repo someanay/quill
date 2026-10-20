@@ -357,6 +357,12 @@ final class QuillUITests: XCTestCase {
     }
     func testLargerTextDarkSettingsAndLandscapeLayout() throws {
         let app = openHome(arguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let session = app.buttons["session.start"]
+        XCTAssertTrue(session.waitForExistence(timeout: 5))
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            XCTAssertGreaterThan(session.frame.width, app.windows.firstMatch.frame.width * 0.5,
+                                 "Accessibility-size actions should use the available iPad width instead of a narrow desktop-style cap.")
+        }
         for _ in 0..<5 { if app.buttons["dictation.record"].isHittable { break }; app.swipeUp() }
         XCTAssertTrue(app.buttons["dictation.record"].isHittable)
         capture(app, "ios-large-text-home")

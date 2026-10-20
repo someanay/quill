@@ -44,6 +44,7 @@ struct QCard<Content: View>: View {
 }
 struct QButton: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
     let title: String
     var icon: String? = nil
     var secondary = false
@@ -52,7 +53,7 @@ struct QButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
-                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular ? 320 : .infinity, minHeight: 50)
+                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular && !typeSize.isAccessibilitySize ? 320 : .infinity, minHeight: 50)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
                 .background(secondary ? Q.brandSoft : (destructive ? Q.dangerFill : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
         }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
@@ -60,6 +61,7 @@ struct QButton: View {
 }
 struct QTextButton: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.dynamicTypeSize) private var typeSize
     let title: String
     var fillWidth = false
     let action: () -> Void
@@ -68,7 +70,7 @@ struct QTextButton: View {
             Text(title).font(Q.sans(15)).multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 8)
-                .frame(minWidth: 44, maxWidth: fillWidth ? (sizeClass == .regular ? 320 : .infinity) : nil, minHeight: 44)
+                .frame(minWidth: 44, maxWidth: fillWidth ? (sizeClass == .regular && !typeSize.isAccessibilitySize ? 320 : .infinity) : nil, minHeight: 44)
                 .contentShape(Rectangle())
         }.buttonStyle(.plain).foregroundStyle(Q.brandInk)
             .frame(maxWidth: fillWidth ? .infinity : nil, alignment: .leading)

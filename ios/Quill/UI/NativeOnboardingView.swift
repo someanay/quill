@@ -109,7 +109,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 8) {
             QButton(title: model.c("onboarding.welcome.cta")) { warning = true }.accessibilityIdentifier("onboarding.getStarted")
             QTextButton(title: model.c("onboarding.welcome.open"), fillWidth: true) { model.settings.onboardingComplete = true }.accessibilityIdentifier("onboarding.openWorkspace")
-            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted).multilineTextAlignment(.center).frame(maxWidth: sizeClass == .regular ? 320 : .infinity)
+            Text(model.c("ios.setup.no_account")).font(Q.sans(12)).foregroundStyle(Q.muted).multilineTextAlignment(.center).frame(maxWidth: sizeClass == .regular && !typeSize.isAccessibilitySize ? 320 : .infinity)
         }.padding(.horizontal, 24).padding(.top, 12).padding(.bottom, 12).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity).background(Q.paper)
     }
     private var keyDisclosure: some View {
