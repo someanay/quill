@@ -60,6 +60,9 @@ jobs:
       - name: Prepare desktop for compact and expanded UI tests
         if: matrix.platform == 'macos'
         run: swift macos/QA/configure-ci-display.swift
+      - name: Recover the Intel macOS 26 icon-service crash loop
+        if: matrix.platform == 'macos' && matrix.runner == 'macos-26-intel'
+        run: bash macos/QA/prepare-ci-icon-services.sh
       - name: Pick native test destination
         id: destination
         env:
@@ -189,6 +192,7 @@ jobs:
             ${{ matrix.platform }}/ipad-screenshots
             ${{ matrix.platform }}/simulator.png
             ${{ matrix.platform }}/screenshots
+            ${{ matrix.platform }}/IconServicesEvidence
       - name: Upload screenshots for visual review
         if: always()
         uses: actions/upload-artifact@v4

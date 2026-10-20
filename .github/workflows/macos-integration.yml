@@ -39,6 +39,9 @@ jobs:
           xcodebuild -version
       - name: Install project generator
         run: brew install xcodegen
+      - name: Recover the Intel macOS 26 icon-service crash loop
+        if: matrix.runner == 'macos-26-intel'
+        run: bash macos/QA/prepare-ci-icon-services.sh
       - name: Exercise production insertion against real TextEdit
         run: bash macos/scripts/test-textedit.sh
       - name: Preserve actual permission and insertion evidence
@@ -46,7 +49,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-textedit-verification-${{ matrix.runner }}
-          path: macos/TextEditEvidence
+          path: |
+            macos/TextEditEvidence
+            macos/IconServicesEvidence
           if-no-files-found: warn
           retention-days: 14
   browser-and-secure-fields:
@@ -65,6 +70,9 @@ jobs:
           xcodebuild -version
       - name: Install project generator
         run: brew install xcodegen
+      - name: Recover the Intel macOS 26 icon-service crash loop
+        if: matrix.runner == 'macos-26-intel'
+        run: bash macos/QA/prepare-ci-icon-services.sh
       - name: Exercise production insertion against Safari and native secure fields
         run: bash macos/scripts/test-fields.sh
       - name: Preserve browser and secure-field evidence
@@ -72,6 +80,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macos-fields-verification-${{ matrix.runner }}
-          path: macos/FieldEvidence
+          path: |
+            macos/FieldEvidence
+            macos/IconServicesEvidence
           if-no-files-found: warn
           retention-days: 14
