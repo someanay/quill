@@ -45,8 +45,8 @@ public sealed class AppServices : IDisposable {
   History = new(folder);
   Dictation = new(Settings, Secrets, History, Provider, Recorder, Injector, Clipboard, folder);
   Recorder.AutoStop += () => Application.Current.Dispatcher.BeginInvoke(async () => await Dictation.StopRecording());
-  Dictation.Changed += () => Application.Current.Dispatcher.BeginInvoke(() => { MainWindow?.RefreshStatus(); Bubble?.Refresh(); });
-  Settings.Changed += () => { Theme.Apply(Settings.Value.Theme); Bubble?.Refresh(); History.Prune(Settings.Value); };
+  Dictation.Changed += () => Application.Current.Dispatcher.BeginInvoke(() => { MainWindow?.RefreshStatus(); RefreshSessionIndicator(); });
+  Settings.Changed += () => { Theme.Apply(Settings.Value.Theme); RefreshSessionIndicator(); History.Prune(Settings.Value); };
   prune = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) }; prune.Tick += (_, _) => { try { History.Prune(Settings.Value); } catch (IOException) { } }; prune.Start();
  }
  public string C(string key, string fallback, params object[] args) => Copy.All.ContainsKey(key) ? Copy.Get(key, args) : fallback;
@@ -61,12 +61,18 @@ public sealed class AppServices : IDisposable {
   menu.Items.Add(C("windows.tray.hide", "Hide bubble"), null, (_, _) => HideBubble());
   menu.Items.Add(C("windows.tray.quit", "Quit Quill"), null, async (_, _) => { await Dictation.Cancel(); Application.Current.Shutdown(); });
   tray.ContextMenuStrip = menu; tray.DoubleClick += (_, _) => ShowMain();
+  RefreshSessionIndicator();
  }
  public void UpdateHotkey(MainWindow window) { hotkey?.Dispose(); hotkey = new(new WindowInteropHelper(window).EnsureHandle(),Settings.Value.DictationShortcut); hotkey.Pressed += () => Application.Current.Dispatcher.BeginInvoke(async () => { await Task.Delay(130); await Dictation.Toggle(); }); if (Isolated) File.WriteAllText(Path.Combine(Folder,"hotkey-check.json"),System.Text.Json.JsonSerializer.Serialize(new { preferred = Settings.Value.DictationShortcut,actual = hotkey.Label,registered = hotkey.Registered,error = hotkey.RegistrationError })); window.RefreshStatus(); }
  private static System.Drawing.Icon MakeIcon() => new(Path.Combine(AppContext.BaseDirectory,"Assets","quill.ico"));
  public void ShowMain() { if (MainWindow == null) return; MainWindow.Show(); if (MainWindow.WindowState == WindowState.Minimized) MainWindow.WindowState = WindowState.Normal; MainWindow.Activate(); }
  public void ShowBubble(bool persist = true) { if (persist) { Settings.Value.BubbleActive = true; Settings.Value.BubbleVisible = true; Settings.Save(); } Bubble ??= new(this); Bubble.Show(); Bubble.Refresh(); MainWindow?.RefreshStatus(); }
- public void HideBubble() { autoReturn?.Cancel(); Settings.Value.BubbleVisible = false; Settings.Save(); Bubble?.Hide(); MainWindow?.RefreshStatus(); }
+ public void HideBubble() { autoReturn?.Cancel(); Settings.Value.BubbleVisible = false; Settings.Save(); RefreshSessionIndicator(); MainWindow?.RefreshStatus(); }
+ private void RefreshSessionIndicator() {
+  if (Isolated) return;
+  if (SessionPresentation.ShowFloatingControl(Settings.Value.BubbleActive,Settings.Value.BubbleVisible,Dictation.State)) { Bubble ??= new(this); if (!Bubble.IsVisible) Bubble.Show(); Bubble.Refresh(); }
+  else Bubble?.Hide();
+ }
  public async void ScheduleAutoReturn() { autoReturn?.Cancel(); autoReturn?.Dispose(); autoReturn = new(); try { await Task.Delay(TimeSpan.FromMinutes(10),autoReturn.Token); if (Settings.Value.BubbleActive) ShowBubble(); } catch (OperationCanceledException) { } }
  public void ResetBubblePosition() { Bubble?.Close(); Bubble = null; if (Settings.Value.BubbleVisible && Settings.Value.BubbleActive) ShowBubble(); }
  public void Notice(string code) { MainWindow?.SetNotice(ErrorText(code)); }

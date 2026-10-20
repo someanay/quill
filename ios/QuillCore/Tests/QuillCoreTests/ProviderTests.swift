@@ -10,6 +10,11 @@ private struct StubTransport: HTTPTransport {
 }
 
 final class ProviderTests: XCTestCase {
+    func testProviderBusyCopyDistinguishesOverloadFromCredentialsAndQuota() {
+        XCTAssertEqual(QuillError.provider(503).copyKey, "ios.error.provider_busy")
+        XCTAssertEqual(QuillError.invalidKey.copyKey, "key.error.invalid")
+        XCTAssertEqual(QuillError.quota.copyKey, "stt.quota.toast")
+    }
     private let wav = Data("RIFF".utf8) + Data(repeating: 0, count: 100)
     func testAllProviderRequestShapes() throws {
         for provider in Provider.allCases {

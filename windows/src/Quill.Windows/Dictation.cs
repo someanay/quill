@@ -81,6 +81,6 @@ public sealed class DictationController : IDisposable {
  }
  private void SavePending() { if (pending == null) return; privateRecording |= sessionSettings?.PrivateMode == true || settings.Value.PrivateMode; try { var encrypted = ProtectedData.Protect(JsonSerializer.SerializeToUtf8Bytes(new SavedRecording(pending.Wav,pending.DurationMs,privateRecording)), null, DataProtectionScope.CurrentUser); File.WriteAllBytes(pendingPath, encrypted); } catch (Exception e) when (e is IOException or UnauthorizedAccessException) { /* Retain the take in memory if storage is unavailable. */ } }
  private void ClearPending() { pending = null; if (File.Exists(pendingPath)) File.Delete(pendingPath); }
- public static string Code(Exception e) => e is ProviderException p ? p.Code : e is CryptographicException ? "key_unavailable" : e is IOException ? "storage_error" : e is ArgumentException ? "invalid_configuration" : "unexpected_error";
+ public static string Code(Exception e) => e is ProviderException p ? p.Status == 503 ? "provider_busy" : p.Code : e is CryptographicException ? "key_unavailable" : e is IOException ? "storage_error" : e is ArgumentException ? "invalid_configuration" : "unexpected_error";
  public void Dispose() { cancellation?.Cancel(); cancellation?.Dispose(); recorder.Dispose(); provider.Dispose(); gate.Dispose(); }
 }

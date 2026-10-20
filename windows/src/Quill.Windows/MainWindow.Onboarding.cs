@@ -102,11 +102,7 @@ public sealed partial class MainWindow {
   var content = new StackPanel { Margin = new(30),VerticalAlignment = VerticalAlignment.Center };
   var label = Text(C("desktop.setup.companion." + SetupLabels[step],"Your voice, in your workspace."),27); label.FontFamily = Theme.Serif; content.Children.Add(label);
   content.Children.Add(Text(C("desktop.setup.companion_body." + SetupLabels[step],"Use the shortcut in the field you already have open."),15,true));
-  var demo = new Border { Padding = new(22),CornerRadius = new(8),Margin = new(0,28,0,20),BorderThickness = new(1) };
-  demo.SetResourceReference(Border.BackgroundProperty,"Surface"); demo.SetResourceReference(Border.BorderBrushProperty,"Line");
-  var lines = new StackPanel(); lines.Children.Add(Text(C("desktop.demo.label","Example dictation"),12,true));
-  lines.Children.Add(Text(C("desktop.demo.spoken","Let's move our meeting to Thursday. I'll send the notes before then."),20));
-  var keys = Text(app.HotkeyLabel,14); keys.Margin = new(0,24,0,0); lines.Children.Add(keys); demo.Child = lines; content.Children.Add(demo);
+  content.Children.Add(DictationExample());
   setupCompanion.Child = new ScrollViewer { Content = content,VerticalScrollBarVisibility = ScrollBarVisibility.Auto,HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
  }
 }

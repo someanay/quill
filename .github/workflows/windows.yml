@@ -91,6 +91,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-all-ui dist/verification/windows-ui
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-demo dist/verification/windows-demo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-setup-window dist/verification/windows-setup
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe dist/verification/windows-native.json

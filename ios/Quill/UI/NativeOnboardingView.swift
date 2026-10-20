@@ -51,12 +51,15 @@ struct OnboardingView: View {
             }
             .sheet(isPresented: $warning) { keyDisclosure }
             .sheet(isPresented: $otherProviders) {
-                NavigationStack {
-                    SettingsView(openAPIKeys: true)
-                        .toolbar { ToolbarItem(placement: .confirmationAction) {
-                            Button(model.c("onboarding.key.resume_setup")) { otherProviders = false }.accessibilityIdentifier("onboarding.resume")
-                        } }
-                }.presentationDetents([.large]).presentationDragIndicator(.visible)
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        Text(model.c("onboarding.key.settings_heading")).font(Q.sans(15)).fontWeight(.medium)
+                        Spacer(minLength: 8)
+                        Button(model.c("onboarding.key.resume_setup")) { otherProviders = false }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(minHeight: 44).accessibilityIdentifier("onboarding.resume")
+                    }.padding(.horizontal, 20).padding(.top, 12).foregroundStyle(Q.ink)
+                    Divider()
+                    NavigationStack { SettingsView(openAPIKeys: true) }
+                }.background(Q.paper).presentationDetents([.large]).presentationDragIndicator(.visible)
             }
         }
         .onDisappear { if model.busy || model.canRetry { model.cancel() } else { model.stopMicTest() } }
@@ -97,7 +100,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text(model.c("ios.setup.welcome_title")).font(Q.serif(38)).fontWeight(.semibold).accessibilityAddTraits(.isHeader).accessibilityIdentifier("onboarding.welcome")
             Text(model.c("ios.setup.welcome_body")).font(Q.sans(16)).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true)
-            QCard { Text(model.c("ios.setup.example")).font(Q.sans(18)).frame(minHeight: 100, alignment: .topLeading).padding(4) }
+            MessengerDemo(shortcut: model.c("demo.keyboard"), touch: true)
             VStack(alignment: .leading, spacing: 12) {
                 instruction(1, "ios.setup.flow_short_record")
                 instruction(2, "ios.setup.flow_short_send")

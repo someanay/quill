@@ -28,7 +28,7 @@ private struct KeySetupContent: View {
     private let clipboardTimer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
     init(settings: SettingsStore, keys: KeychainStore, client: ProviderClient, activateSpeech: Bool, prefill: Bool, onboarding: Bool, saved: (() -> Void)?) {
         self.settings = settings; self.saved = saved; self.onboarding = onboarding
-        _model = StateObject(wrappedValue: KeySetupController(settings: settings, keys: keys, client: client, activateSpeech: activateSpeech, prefill: prefill, initialProvider: onboarding ? .groq : .gemini, fixedProvider: onboarding ? .groq : nil))
+        _model = StateObject(wrappedValue: KeySetupController(settings: settings, keys: keys, client: client, activateSpeech: activateSpeech, prefill: prefill, initialProvider: onboarding ? .groq : settings.value.provider, fixedProvider: onboarding ? .groq : nil))
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

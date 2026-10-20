@@ -26,9 +26,7 @@ public sealed partial class MainWindow {
  private FrameworkElement DictationExample() {
   var panel = new StackPanel { Margin = new(0,10,0,0) };
   var label = Text(C("desktop.demo.label","Example dictation"),13,true); label.Margin = new(0,0,0,12); panel.Children.Add(label);
-  var words = Text(C("desktop.demo.spoken","Let’s move our meeting to Thursday. I’ll send the notes before then."),21); words.Margin = new(0); words.LineHeight = 32;
-  var surface = new Border { Child = words,Padding = new(24),CornerRadius = new(7),BorderThickness = new(1),MinHeight = 180 };
-  surface.SetResourceReference(Border.BackgroundProperty,"Surface"); surface.SetResourceReference(Border.BorderBrushProperty,"Line"); panel.Children.Add(surface);
+  panel.Children.Add(new MessengerDemo(key => C(key,key),() => app.HotkeyLabel));
   return panel;
  }
  private void BuildWelcomePresentation() {

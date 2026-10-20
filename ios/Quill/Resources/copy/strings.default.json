@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 24,
+  "revision": 26,
   "locale": "en",
   "updatedAt": "2026-10-21T00:00:00Z",
   "strings": {
@@ -626,6 +626,19 @@
     "ios.session.unavailable": "The session is unavailable. Open Quill to start a new keyboard session.",
     "onboarding.key.other_providers": "Add other providers later in Settings",
     "onboarding.key.resume_setup": "Continue setup",
-    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready."
+    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+    "demo.accessibility": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
+    "demo.conversation": "Example conversation",
+    "demo.hello": "hello",
+    "demo.question": "when will i get my delivery?",
+    "demo.reply": "You will get it by tomorrow at 12 noon latest. Thanks for your patience.",
+    "demo.inserted": "Your text, in place",
+    "demo.transcribing": "Transcribing…",
+    "demo.speak": "Speak naturally",
+    "demo.shortcut": "Press your shortcut",
+    "demo.record": "Tap to record",
+    "demo.keyboard": "Quill keyboard",
+    "ios.error.provider_busy": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
+    "onboarding.key.settings_heading": "Provider settings"
   }
 }

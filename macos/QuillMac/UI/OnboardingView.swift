@@ -42,7 +42,7 @@ struct OnboardingView: View {
         }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
         .sheet(isPresented: $otherProviders) {
             VStack(spacing: 0) {
-                HStack { HelpText(key: "onboarding.key.settings_help"); Spacer(); QuillButton(key: "onboarding.key.resume_setup", primary: false) { otherProviders = false } }.padding(20)
+                HStack { HelpText(key: "onboarding.key.settings_help"); Spacer(); QuillButton(key: "onboarding.key.resume_setup", primary: false) { otherProviders = false }.fixedSize(horizontal: true, vertical: false) }.padding(20)
                 Divider()
                 SettingsView(initialPage: .keys)
             }.frame(minWidth: 640, idealWidth: 960, minHeight: 500, idealHeight: 740)
@@ -135,7 +135,7 @@ struct OnboardingView: View {
     private var welcomeExample: some View {
         VStack(alignment: .leading, spacing: 12) {
             HelpText(key: "desktop.demo.label", size: 13)
-            QuillCard { CopyText("desktop.demo.spoken").font(QuillTheme.sans(20)).lineSpacing(6).frame(minHeight: 130, alignment: .topLeading) }
+            MessengerDemo(shortcut: Copy.text("mac.hotkey.keys"))
         }
     }
     private func finish() { settings.value.onboardingComplete = true; settings.value.bubbleVisible = settings.value.bubbleActive; dictation.configureLogin() }
@@ -148,7 +148,7 @@ struct DesktopExample: View {
         ScrollView { VStack(alignment: .leading, spacing: 22) {
             CopyText(title).font(QuillTheme.serif(30)).fixedSize(horizontal: false, vertical: true)
             BodyCopy(key: bodyKey)
-            QuillCard { HelpText(key: "desktop.demo.label"); CopyText("desktop.demo.spoken").font(QuillTheme.serif(23)); Divider(); Label(Copy.text("mac.hotkey.label"), systemImage: "keyboard") }
+            MessengerDemo(shortcut: Copy.text("mac.hotkey.keys"))
         }.padding(32).frame(maxWidth: .infinity, alignment: .leading) }
     }
 }

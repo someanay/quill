@@ -62,6 +62,7 @@ final class BubblePanel: NSPanel {
 }
 
 @MainActor final class BubbleController {
+    static func shouldShow(state: DictationState, enabled: Bool, visible: Bool) -> Bool { enabled && visible || state != .idle }
     private let settings: SettingsStore
     private let dictation: Dictation
     private var panel: BubblePanel?
@@ -81,7 +82,7 @@ final class BubblePanel: NSPanel {
     func refresh() {
         guard !AppPaths.testMode else { return }
         if settings.value.bubbleVisible { hiddenByDrag = false; returnTask?.cancel() }
-        guard settings.value.bubbleActive && settings.value.bubbleVisible else { panel?.orderOut(nil); companion?.orderOut(nil); bin?.orderOut(nil); return }
+        guard Self.shouldShow(state: dictation.state, enabled: settings.value.bubbleActive, visible: settings.value.bubbleVisible) else { panel?.orderOut(nil); companion?.orderOut(nil); bin?.orderOut(nil); return }
         if panel == nil { makePanel() }
         let dark = settings.value.appTheme == "Dark" || (settings.value.appTheme == "Match system" && NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua)
         view?.rootView = BubbleFace(state: dictation.state, diameter: settings.value.bubbleDiameter, amplitude: dictation.level, dark: dark)

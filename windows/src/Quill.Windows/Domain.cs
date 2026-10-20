@@ -69,6 +69,9 @@ public sealed class QuillSettings {
   if (string.IsNullOrWhiteSpace(SpeechModel) && Provider != Provider.Custom) SpeechModel = Providers.Get(Provider).SpeechModel;
   CustomWords ??= []; ContactNames ??= []; AppStyles ??= new(); FreeTierProviders ??= []; CleanupModels ??= []; }
 }
+public static class SessionPresentation {
+ public static bool ShowFloatingControl(bool enabled,bool visible,DictationState state) => enabled && visible || state != DictationState.Idle;
+}
 public record CustomWord(string Heard, string Replacement);
 public record HistoryEntry(long Id, DateTimeOffset Created, string Text, string Destination, long DurationMs, string Status, string Provider);
 public static class Words {

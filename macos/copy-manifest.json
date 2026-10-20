@@ -1,5 +1,5 @@
 {
-  "revision": 24,
+  "revision": 26,
   "placeholderTestVectors": [
     {
       "input": "",
@@ -2032,7 +2032,7 @@
       "optionalBlank": false
     },
     "settings.bubble.help": {
-      "default": "The light ring keeps the optional floating control visible over other windows.",
+      "default": "The light ring keeps the floating control visible over other windows. A recording indicator appears during dictation even when the idle control is hidden.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3233,13 +3233,13 @@
       "optionalBlank": false
     },
     "desktop.setup.controls": {
-      "default": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
+      "default": "A recording indicator appears while you dictate. Keep the floating control visible between dictations if you prefer.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "desktop.setup.bubble_choice": {
-      "default": "Show the optional floating control",
+      "default": "Keep the floating control visible when idle",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3455,7 +3455,7 @@
       "optionalBlank": false
     },
     "mac.setup.controls": {
-      "default": "Use Command–Option–Space to start and finish. The optional floating control and menu bar are available too. Closing the window keeps Quill in the menu bar.",
+      "default": "Use Command–Option–Space to start and finish. A recording indicator appears automatically. Closing the window keeps Quill in the menu bar.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3546,6 +3546,84 @@
     },
     "onboarding.key.settings_help": {
       "default": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.accessibility": {
+      "default": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.conversation": {
+      "default": "Example conversation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.hello": {
+      "default": "hello",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.question": {
+      "default": "when will i get my delivery?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.reply": {
+      "default": "You will get it by tomorrow at 12 noon latest. Thanks for your patience.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.inserted": {
+      "default": "Your text, in place",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.transcribing": {
+      "default": "Transcribing…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.speak": {
+      "default": "Speak naturally",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.shortcut": {
+      "default": "Press your shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.record": {
+      "default": "Tap to record",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.keyboard": {
+      "default": "Quill keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.error.provider_busy": {
+      "default": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "mac.hotkey.keys": {
+      "default": "⌘ Option Space",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

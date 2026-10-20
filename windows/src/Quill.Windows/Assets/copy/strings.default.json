@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 24,
+  "revision": 26,
   "locale": "en",
   "updatedAt": "2026-10-21T00:00:00Z",
   "strings": {
@@ -499,7 +499,7 @@
     "windows.home.manage_keys": "Manage API keys",
     "windows.home.private_help": "Private mode prevents new dictations from being saved in local history. Provider requests still go directly to the providers you choose.",
     "windows.home.show": "Show Quill bubble",
-    "windows.home.tip_shortcut": "Press %1$s to start and stop dictation. The optional floating control also supports clipboard dictation.",
+    "windows.home.tip_shortcut": "Press %1$s to start and stop. A recording indicator appears automatically. Use the floating control for clipboard dictation.",
     "windows.home.tip_text": "Right-click for clipboard dictation. Press Ctrl + Win + Space to start or stop.",
     "windows.home.title": "Your voice, wherever you write.",
     "windows.home.try_field": "Practice text field",
@@ -573,7 +573,7 @@
     "windows.style.help": "Style applies through AI cleanup. Email, document, Slack and Teams apps default to Formal. WhatsApp, Telegram and Signal use Neutral; Discord uses Casual. Your choices below take priority.",
     "windows.style.remove": "Use automatic style",
     "windows.tray.dictate": "Start / stop dictation",
-    "windows.tray.hide": "Hide floating control",
+    "windows.tray.hide": "Hide idle floating control",
     "windows.tray.open": "Open Quill",
     "windows.tray.quit": "Quit Quill",
     "windows.words.add": "Add custom word",
@@ -595,8 +595,8 @@
     "desktop.setup.access_body": "Quill can insert your finished dictation into the text field you selected. Review and allow text insertion below.",
     "desktop.setup.shortcut_title": "One shortcut, wherever you write",
     "desktop.setup.shortcut_body": "Focus a text field. Press your shortcut to start, speak, then press it again to finish.",
-    "desktop.setup.controls": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
-    "desktop.setup.bubble_choice": "Show the optional floating control",
+    "desktop.setup.controls": "A recording indicator appears while you dictate. Keep the floating control visible between dictations if you prefer.",
+    "desktop.setup.bubble_choice": "Keep the floating control visible when idle",
     "desktop.setup.ready_title": "Make room for your next thought.",
     "desktop.setup.ready_body": "Your workspace has a practice field. Try a short dictation there, then use the same shortcut in your everyday apps.",
     "desktop.setup.practice": "Open the practice workspace",
@@ -647,6 +647,18 @@
     "onboarding.key.other_providers": "Add other providers later in Settings",
     "onboarding.key.resume_setup": "Continue setup",
     "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
-    "windows.advanced.shortcut_fallback": "%1$s is unavailable. Quill is using %2$s."
+    "windows.advanced.shortcut_fallback": "%1$s is unavailable. Quill is using %2$s.",
+    "demo.accessibility": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
+    "demo.conversation": "Example conversation",
+    "demo.hello": "hello",
+    "demo.question": "when will i get my delivery?",
+    "demo.reply": "You will get it by tomorrow at 12 noon latest. Thanks for your patience.",
+    "demo.inserted": "Your text, in place",
+    "demo.transcribing": "Transcribing…",
+    "demo.speak": "Speak naturally",
+    "demo.shortcut": "Press your shortcut",
+    "demo.record": "Tap to record",
+    "demo.keyboard": "Quill keyboard",
+    "windows.error.provider_busy": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model."
   }
 }

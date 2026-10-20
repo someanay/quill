@@ -56,6 +56,11 @@ private final class OversizedStreamProtocol: URLProtocol, @unchecked Sendable {
 }
 
 final class ProviderClientTests: XCTestCase {
+    func testProviderBusyCopyDistinguishesOverloadFromCredentialsAndQuota() {
+        XCTAssertEqual(QuillError.provider(503).copyKey, "mac.error.provider_busy")
+        XCTAssertEqual(QuillError.badKey.copyKey, "mac.error.bad_key")
+        XCTAssertEqual(QuillError.quota.copyKey, "mac.error.quota")
+    }
     func testGeminiOverloadRetriesIdenticalAudioAndCredential() async throws {
         var bodies: [Data?] = []
         let client = client { request in

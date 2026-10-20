@@ -5,7 +5,7 @@ using Clipboard = System.Windows.Clipboard;
 namespace Quill.Windows;
 public sealed partial class MainWindow {
  private void GuidedKeys(StackPanel destination,bool activateSpeech,bool prefill,Action saved,bool onboarding = false) {
-  var drafts = new KeySetupDraftStore(app.Folder); var initial = onboarding ? Provider.Groq : activateSpeech && prefill ? S.Provider : Provider.Gemini;
+  var drafts = new KeySetupDraftStore(app.Folder); var initial = onboarding ? Provider.Groq : S.Provider;
   if (!onboarding) destination.Children.Add(Text(C("desktop.provider.choose","Choose a provider"),17));
   var host = new StackPanel(); var border = new Border { Child = host,CornerRadius = new(8),BorderThickness = new(1),Margin = new(0,8,0,8) }; border.SetResourceReference(Border.BorderBrushProperty,"Line"); border.SetResourceReference(Border.BackgroundProperty,"Surface"); destination.Children.Add(border);
   var sessions = new List<KeySetupSession>(); var timers = new List<PageLifetime>();
@@ -27,11 +27,12 @@ public sealed partial class MainWindow {
     string endpoint = S.CustomBaseUrl; TextBox? endpointBox = null; TextBox? customModel = null;
     if (provider == Provider.Custom) { endpointBox = Field(body,C("windows.speech.url","HTTPS base URL"),endpoint); customModel = Field(body,C("windows.speech.custom_model","Speech model ID"),S.CustomModel); }
     var session = new KeySetupSession(provider,drafts,app.Provider.ValidateSetupKey); sessions.Add(session); pageLifetimes.Add(session);
+    body.Children.Add(Text(C("onboarding.key.field_label","API key"),13));
     var inputGrid = new Grid(); inputGrid.ColumnDefinitions.Add(new() { Width = new GridLength(1,GridUnitType.Star) }); inputGrid.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); inputGrid.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
     var secret = new PasswordBox { MaxLength = 4096 }; var revealed = new TextBox { MaxLength = 4096,Visibility = Visibility.Collapsed }; System.Windows.Automation.AutomationProperties.SetName(secret,C("onboarding.key.field_label","API key")); System.Windows.Automation.AutomationProperties.SetName(revealed,C("onboarding.key.field_label","API key")); System.Windows.Automation.AutomationProperties.SetAutomationId(revealed,"quill-password-key"); inputGrid.Children.Add(secret); inputGrid.Children.Add(revealed);
     var paste = Action(C("onboarding.key.paste","Paste"),() => { try { if (Clipboard.ContainsText()) { var text = Clipboard.GetText(); if (text.Length <= 4096) secret.Password = text; } } catch (Exception error) when (error is System.Runtime.InteropServices.COMException or UnauthorizedAccessException) { SetNotice(C("onboarding.key.unverified","Clipboard is busy. Try again.")); } }); Grid.SetColumn(paste,1); inputGrid.Children.Add(paste);
     bool reveal = false; Button? show = null; show = Action(C("a11y.show_key","Show key"),() => { reveal = !reveal; revealed.Text = secret.Password; revealed.Visibility = reveal ? Visibility.Visible : Visibility.Collapsed; secret.Visibility = reveal ? Visibility.Collapsed : Visibility.Visible; var label = C(reveal ? "a11y.hide_key" : "a11y.show_key",reveal ? "Hide key" : "Show key"); show!.Content = new TextBlock { Text = label,FontFamily = Theme.Sans,FontSize = 15,FontWeight = FontWeights.Medium }; System.Windows.Automation.AutomationProperties.SetName(show,label); }); Grid.SetColumn(show,2); inputGrid.Children.Add(show); body.Children.Add(inputGrid);
-    var label = Field(body,C("windows.keys.label","Key label (optional)")); var state = Text("",13,true); body.Children.Add(state);
+    var label = onboarding ? new TextBox() : Field(body,C("windows.keys.label","Key label (optional)")); var state = Text("",13,true); body.Children.Add(state);
     var retry = Action(C("onboarding.key.retry","Check again"),() => _ = session.Update(secret.Password,endpoint)); body.Children.Add(retry);
     Button? save = null; save = Action(C("onboarding.key.save_provider","Save %1$s API Key Securely",title.Split(" (")[0]),async () => {
      var successful = await session.Save((candidate,token) => KeySetupSaving.Save(provider,candidate,endpoint,customModel?.Text ?? S.CustomModel,label.Text,activateSpeech,app.Secrets,app.Settings,t => app.Provider.Models(provider,candidate,endpoint,true,t),token)); if (successful) saved();

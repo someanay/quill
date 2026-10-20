@@ -2,6 +2,8 @@
 
 ## M14 — Native platform rebuild (authorized September 8, 2026)
 
+- [ ] Owner follow-up: Groq-only native onboarding with direct provider Settings and resumable setup; preserve legacy Windows preferences during the 2.0.4 update; verify installed microphone-to-insertion; animate the Android delivery conversation with OS-specific controls in both appearances; audit UI/state consistency. Current evidence and remaining gates: [native Groq refresh](docs/native-groq-refresh.md).
+
 ### Platform experience revision — October 19, 2026
 
 October 20 follow-up: the owner explicitly requests a timed iOS keyboard recording

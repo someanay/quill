@@ -174,6 +174,7 @@ public enum QuillError: Error, Equatable, LocalizedError, Sendable {
         case .network: return "key.error.network"
         case .quota: return "stt.quota.toast"
         case .rateLimit: return "ios.error.rate_limit"
+        case .provider(503): return "ios.error.provider_busy"
         case .provider: return "ios.error.provider"
         case .malformedResponse: return "ios.error.response"
         case .audio: return "ios.error.audio"

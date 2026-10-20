@@ -159,6 +159,7 @@ public enum QuillError: Error, Equatable, Sendable {
         case .badKey: return "mac.error.bad_key"
         case .quota: return "mac.error.quota"
         case .rateLimit: return "mac.error.rate_limit"
+        case .provider(503): return "mac.error.provider_busy"
         case .network: return "mac.error.network"
         case .timeout: return "mac.error.timeout"
         case .invalidEndpoint: return "mac.error.endpoint"

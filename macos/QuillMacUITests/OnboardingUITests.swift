@@ -2,6 +2,15 @@ import XCTest
 import AppKit
 
 final class OnboardingUITests: XCTestCase {
+    func testMessengerDemoPhasesInBothAppearances() throws {
+        for dark in [false, true] {
+            for (phase, time) in [("shortcut", "1.3"), ("recording", "3"), ("transcribing", "6.2"), ("inserted", "9")] {
+                let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-demo-time", time] + (dark ? ["--ui-dark"] : []); app.launch()
+                XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
+                let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-messenger-\(dark ? "dark" : "light")-" + phase; shot.lifetime = .keepAlways; add(shot); app.terminate()
+            }
+        }
+    }
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
         let tracePath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QuillUITests/settings-navigation.txt")

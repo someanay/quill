@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 24,
+  "revision": 26,
   "locale": "en",
   "updatedAt": "2026-10-21T00:00:00Z",
   "strings": {
@@ -288,7 +288,7 @@
     "settings.privacy.mic": "Microphone",
     "settings.privacy.accessibility": "Accessibility",
     "settings.bubble.title": "Appearance",
-    "settings.bubble.help": "The light ring keeps the optional floating control visible over other windows.",
+    "settings.bubble.help": "The light ring keeps the floating control visible over other windows. A recording indicator appears during dictation even when the idle control is hidden.",
     "settings.bubble.preview_light": "Light app",
     "settings.bubble.preview_dark": "Dark app",
     "settings.bubble.size": "Size",
@@ -522,8 +522,8 @@
     "desktop.setup.access_title": "Let your words reach your apps",
     "desktop.setup.shortcut_title": "One shortcut, wherever you write",
     "desktop.setup.shortcut_body": "Focus a text field. Press your shortcut to start, speak, then press it again to finish.",
-    "desktop.setup.controls": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
-    "desktop.setup.bubble_choice": "Show the optional floating control",
+    "desktop.setup.controls": "A recording indicator appears while you dictate. Keep the floating control visible between dictations if you prefer.",
+    "desktop.setup.bubble_choice": "Keep the floating control visible when idle",
     "desktop.setup.ready_title": "Make room for your next thought.",
     "desktop.setup.ready_body": "Your workspace has a practice field. Try a short dictation there, then use the same shortcut in your everyday apps.",
     "desktop.setup.practice": "Open the practice workspace",
@@ -559,7 +559,7 @@
     "desktop.setup.companion_body.ready": "A short sentence is enough for your first try. Change providers, cleanup, writing style and history retention whenever you need to.",
     "mac.setup.audio_body": "Allow microphone access, then start a local sound check. This test is discarded and never sent to a provider. If access was denied, enable Quill in System Settings and return.",
     "mac.setup.access_body": "Enable Quill in System Settings → Privacy & Security → Accessibility. This lets Quill insert text into the field you choose. Return here after enabling it.",
-    "mac.setup.controls": "Use Command–Option–Space to start and finish. The optional floating control and menu bar are available too. Closing the window keeps Quill in the menu bar.",
+    "mac.setup.controls": "Use Command–Option–Space to start and finish. A recording indicator appears automatically. Closing the window keeps Quill in the menu bar.",
     "mac.setup.finish": "Keep Quill in the menu bar",
     "desktop.dictation.stop": "Stop dictation",
     "desktop.provider.choose": "Choose a provider",
@@ -574,6 +574,19 @@
     "desktop.models.manual": "Enter a model ID",
     "onboarding.key.other_providers": "Add other providers later in Settings",
     "onboarding.key.resume_setup": "Continue setup",
-    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready."
+    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+    "demo.accessibility": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
+    "demo.conversation": "Example conversation",
+    "demo.hello": "hello",
+    "demo.question": "when will i get my delivery?",
+    "demo.reply": "You will get it by tomorrow at 12 noon latest. Thanks for your patience.",
+    "demo.inserted": "Your text, in place",
+    "demo.transcribing": "Transcribing…",
+    "demo.speak": "Speak naturally",
+    "demo.shortcut": "Press your shortcut",
+    "demo.record": "Tap to record",
+    "demo.keyboard": "Quill keyboard",
+    "mac.error.provider_busy": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
+    "mac.hotkey.keys": "⌘ Option Space"
   }
 }

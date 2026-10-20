@@ -1,5 +1,5 @@
 {
-  "revision": 24,
+  "revision": 26,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -3004,7 +3004,7 @@
       "optionalBlank": false
     },
     "windows.home.tip_shortcut": {
-      "default": "Press %1$s to start and stop dictation. The optional floating control also supports clipboard dictation.",
+      "default": "Press %1$s to start and stop. A recording indicator appears automatically. Use the floating control for clipboard dictation.",
       "placeholders": [
         "%1$s"
       ],
@@ -3450,7 +3450,7 @@
       "optionalBlank": false
     },
     "windows.tray.hide": {
-      "default": "Hide floating control",
+      "default": "Hide idle floating control",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3585,13 +3585,13 @@
       "optionalBlank": false
     },
     "desktop.setup.controls": {
-      "default": "The floating control and tray menu are available too. Closing this window keeps Quill in the tray.",
+      "default": "A recording indicator appears while you dictate. Keep the floating control visible between dictations if you prefer.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "desktop.setup.bubble_choice": {
-      "default": "Show the optional floating control",
+      "default": "Keep the floating control visible when idle",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3902,6 +3902,78 @@
         "%1$s",
         "%2$s"
       ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.accessibility": {
+      "default": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.conversation": {
+      "default": "Example conversation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.hello": {
+      "default": "hello",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.question": {
+      "default": "when will i get my delivery?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.reply": {
+      "default": "You will get it by tomorrow at 12 noon latest. Thanks for your patience.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.inserted": {
+      "default": "Your text, in place",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.transcribing": {
+      "default": "Transcribing…",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.speak": {
+      "default": "Speak naturally",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.shortcut": {
+      "default": "Press your shortcut",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.record": {
+      "default": "Tap to record",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "demo.keyboard": {
+      "default": "Quill keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.error.provider_busy": {
+      "default": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
+      "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     }

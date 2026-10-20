@@ -1,6 +1,15 @@
 import XCTest
 
 final class QuillUITests: XCTestCase {
+    func testMessengerDemoPhasesInBothAppearances() throws {
+        for dark in [false, true] {
+            for (phase, time) in [("shortcut", "1.3"), ("recording", "3"), ("transcribing", "6.2"), ("inserted", "9")] {
+                let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-demo-time", time] + (dark ? ["--ui-dark"] : []); app.launch()
+                XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "dictation.messenger-demo").firstMatch.waitForExistence(timeout: 10))
+                capture(app, "ios-messenger-\(dark ? "dark" : "light")-" + phase); app.terminate()
+            }
+        }
+    }
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
         let app = XCUIApplication()
@@ -120,7 +129,8 @@ final class QuillUITests: XCTestCase {
             XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
             capture(app, "ios-setup-provider-settings-\(dark ? "dark" : "light")")
             tap(app.buttons["onboarding.resume"], in: app)
-            XCTAssertTrue(key.waitForExistence(timeout: 5)); XCTAssertEqual(key.value as? String, "••••••••••", "The Groq draft remains in the secure form.")
+            XCTAssertTrue(key.waitForExistence(timeout: 5)); tap(app.buttons["Show key"], in: app)
+            XCTAssertEqual(app.textFields["key.candidate"].value as? String, "draft-groq")
             XCTAssertFalse(app.buttons["key.provider.gemini"].exists); app.terminate()
         }
     }

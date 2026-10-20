@@ -3,6 +3,9 @@ using Quill.Windows;
 using Xunit;
 namespace Quill.Windows.Tests;
 public sealed class DomainTests {
+ [Theory][InlineData(DictationState.Idle,false,false,false)][InlineData(DictationState.Idle,true,true,true)][InlineData(DictationState.Idle,true,false,false)][InlineData(DictationState.Recording,false,false,true)][InlineData(DictationState.Transcribing,false,false,true)][InlineData(DictationState.Paste,false,false,true)][InlineData(DictationState.Error,false,false,true)]
+ public void ActiveDictationAlwaysHasAVisibleControlWithoutChangingIdlePreference(DictationState state,bool enabled,bool visible,bool expected) => Assert.Equal(expected,SessionPresentation.ShowFloatingControl(enabled,visible,state));
+ [Fact] public void ProviderOverloadHasUsefulCopyAndDoesNotMasqueradeAsQuotaOrBadKey() { Assert.Equal("provider_busy",DictationController.Code(new ProviderException("provider_error",503))); Assert.Equal("quota",DictationController.Code(new ProviderException("quota",429))); Assert.Equal("bad_key",DictationController.Code(new ProviderException("bad_key",401))); }
  [Fact] public void ReaddingCustomWordReplacesExistingMappingIgnoringCase() { var words = new List<CustomWord> {new("quell","Old"),new("other","Other"),new("QUELL","Second")}; Words.Upsert(words,"  Quell "," Quill "); Assert.Equal(new[] {new CustomWord("other","Other"),new CustomWord("Quell","Quill")},words); Assert.Equal("Quill",Words.Apply("quell",words)); }
  [Fact] public void BlankCustomWordUpsertLeavesVocabularyUnchanged() { var words = new List<CustomWord> {new("word","Word")}; Words.Upsert(words," ","value"); Words.Upsert(words,"word"," "); Assert.Equal(new[] {new CustomWord("word","Word")},words); }
  [Fact] public void GlobalShortcutMatchesDocumentedControlWindowsSpace() { Assert.True((HotkeyService.Modifiers & 0x0008) != 0); Assert.True((HotkeyService.Modifiers & 0x0002) != 0); Assert.Equal(0u,HotkeyService.Modifiers & 0x0004); }

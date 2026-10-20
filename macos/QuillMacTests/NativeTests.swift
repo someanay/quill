@@ -4,6 +4,12 @@ import QuillCore
 @testable import QuillMac
 
 final class NativeTests: XCTestCase {
+    @MainActor func testSessionIndicatorRemainsVisibleWhenIdleBubbleIsDisabled() {
+        XCTAssertFalse(BubbleController.shouldShow(state: .idle, enabled: false, visible: false))
+        XCTAssertFalse(BubbleController.shouldShow(state: .idle, enabled: true, visible: false))
+        XCTAssertTrue(BubbleController.shouldShow(state: .idle, enabled: true, visible: true))
+        for state in [DictationState.recording, .transcribing, .paste, .error] { XCTAssertTrue(BubbleController.shouldShow(state: state, enabled: false, visible: false)) }
+    }
     private func isolatedDirectory() throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("QuillNativeTests-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
