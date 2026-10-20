@@ -23,6 +23,17 @@ installation metadata and inspected release packages. It links the unchanged
 iPhone/iPad sources to their completed session gates and retains the remaining
 physical-device/provider/distribution acceptance separately.
 
+For [live-provider acceptance](docs/live-provider-validation.md), use the opt-in
+workflow with temporary owner-authorized secrets. Require successful real HTTPS
+transcription and cleanup, preserved words and exact independent-editor readback;
+a timeout, rejected rewrite or raw fallback is a failed cleanup. iOS must run the
+explicit edited `.xctestrun`, produce its live audit and prove two background
+keyboard takes with the host remaining backgrounded. Never export credentials,
+simulator containers or live test bundles; remove temporary secrets at completion.
+Prepare the actual Mac audio output engine before capture and verify its playback
+duration. Respect real automatic stops; a delayed unconditional Stop tap can
+start an unintended empty take. Keep the app's silence detection enabled.
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.
