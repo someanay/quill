@@ -65,6 +65,6 @@ dotnet test windows/Quill.Windows.slnx -c Release
 
 `Publish-Quill.ps1 -RunNativeSmoke` additionally tests actual UI Automation and SendInput against a separate controlled editor process. It needs an unlocked interactive desktop and temporarily focuses only that fixture. Tests refuse to type if another app owns focus. The harness restores clipboard data afterward. It is a separate test executable; production builds contain no authentication bypass or fake provider mode.
 
-The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`. The 640-string revision 22 catalog retains formatting contracts and uses Windows-specific instructions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
+The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`. The 640-string revision 23 catalog retains formatting contracts and uses Windows-specific instructions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
 
 See `VERIFICATION.md` for actual test evidence and remaining external verification requirements.

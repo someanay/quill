@@ -2,7 +2,7 @@ name: Windows build and test
 
 on:
   push:
-    paths: ["windows/**", "tests/parity/**", "scripts/verify-platform-parity.py", "scripts/check-copy-usage.py", ".github/workflows/windows.yml"]
+    paths: ["windows/**", "tests/parity/**", "scripts/verify-platform-parity.py", "scripts/verify-native-contrast.py", "scripts/check-copy-usage.py", ".github/workflows/windows.yml"]
   pull_request:
     paths: ["windows/**", "tests/parity/**", ".github/workflows/windows.yml"]
   workflow_dispatch:
@@ -29,6 +29,8 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Verify bundled copy and fonts
         run: python scripts/verify-platform-parity.py --platform windows --independent-copy
+      - name: Verify light and dark text contrast
+        run: python scripts/verify-native-contrast.py --platform windows --output dist/windows/verification/contrast.json
       - name: Prepare the isolated ARM runner desktop
         if: matrix.runner == 'windows-11-arm'
         run: |

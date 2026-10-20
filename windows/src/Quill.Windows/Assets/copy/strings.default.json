@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 22,
+  "revision": 23,
   "locale": "en",
   "updatedAt": "2026-10-20T00:00:00Z",
   "strings": {
@@ -284,7 +284,7 @@
     "settings.permissions.notifications": "Notifications",
     "settings.privacy.accessibility": "Accessibility",
     "settings.privacy.banner_text": "Audio goes only to your provider; everything else stays on this phone.",
-    "settings.privacy.banner_title": "Nothing is collected by Quill.",
+    "settings.privacy.banner_title": "No Quill account or data server.",
     "settings.privacy.crash": "Share crash reports",
     "settings.privacy.crash_sub": "Only if a crash happens - you review first",
     "settings.privacy.diag_help": "Reports include the error, app version and device - never your audio, text, clipboard, or key.",
@@ -539,7 +539,7 @@
     "windows.onboarding.test_mic": "Start microphone test",
     "windows.privacy.crash": "Save scrubbed local crash reports",
     "windows.privacy.crash_help": "Reports contain app method names and error types, never recordings, transcripts or keys. Nothing is uploaded. You review and explicitly export a report if you choose.",
-    "windows.privacy.help": "History stays in a local SQLite database on this PC, capped at 1,000 entries. Private mode prevents new history entries. Failed recordings can remain encrypted on this PC until you retry or discard them. No Quill server receives your audio or text.",
+    "windows.privacy.help": "History is saved on this PC with up to 1,000 entries. Private mode prevents new history entries. Failed recordings can remain encrypted on this PC until you retry or discard them. No Quill server receives your audio or text.",
     "windows.privacy.history": "Save dictation history",
     "windows.privacy.retention": "Keep history for",
     "windows.retention.day": "1 day",

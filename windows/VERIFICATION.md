@@ -8,7 +8,7 @@ sections, with framing reserved for editors and separate credentials.
 
 Verification at this presentation revision:
 
-- Full .NET suite: **362 passed, zero skipped**. A separate native foreground
+- Full .NET suite on both final CI architectures: **362 passed, zero skipped**. A separate native foreground
   launcher exercises the Windows activation-permission handoff to the existing
   process. Normal and maximized reopening require the same process, window,
   foreground handle and preserved maximized state. No foreground assertion is skipped.
@@ -31,23 +31,32 @@ Verification at this presentation revision:
   from portable test processes. Package hashes are recorded with installation evidence.
 - Native Windows x64 and ARM64 both passed **362 tests, zero skipped**, all 300
   renders, 42 setup checks, 14 editor/clipboard checks and 11 installer checks in
-  [run 39399932697](https://github.com/someanay/quill/actions/runs/39399932697)
-  at `6967604`, including the final desktop recovery instructions and 640-string
-  revision 22 catalog. This repeats the green `ae500b2` and `2153459` matrices.
+  [run 39405184046](https://github.com/someanay/quill/actions/runs/39405184046)
+  at `7f22dff`, including the final desktop recovery/privacy instructions, Light
+  error contrast and 640-string revision 23 catalog. This repeats the green
+  `6967604`, `ae500b2` and `2153459` matrices.
   Both package architectures built on both runners. The ARM runner's
   pre-opened system menus are dismissed in its disposable desktop setup; production
   activation assertions and permission checks remain unchanged. Original evidence:
-  `dist/native-redesign/windows-ci-copy-final/`.
+  `dist/native-redesign/windows-ci-final/`. All fifty 1200×800 page/setup/provider
+  captures were reviewed again in both appearances; all 300 bounds checks pass.
 
 The installed final executable SHA-256 is
-`abae3122e978ef293958b38bcab931e3018c2d70a2fb85a30f755b5295aaaa7d`.
+`4a98a41a25ea552127d60ed2e32d05eb701dd211a5198ef33143fba955795f16`.
 Archive hashes are recorded beside each ZIP and app-file checksums inside each
-package. Local app-data hashes are unchanged across the final copy update, and
-the updated installed window was reviewed live after launching from Start.
-Evidence: `dist/native-redesign/windows-installation-copy-final.json`.
+package. After the owner closed Quill and authorized the update, all ten
+installed app files were compared with the final package, including the external
+revision 23 catalog. Local history hashes are unchanged. Start and Installed apps
+are verified, and the application was left closed as requested.
+Evidence: `dist/native-redesign/windows-installation-theme-final.json`.
 Actual Close-to-tray and Start same-process/window reopening were verified on
 the preceding presentation build in `windows-row-start-reopen.json`; activation
-code is unchanged, and the complete activation suite passes again at `6967604`.
+code is unchanged, and the complete activation suite passes again at `7f22dff`.
+- The latest local run passed 361 tests but the maximized-reopen launcher received
+  an active-desktop foreground-permission refusal (Windows error 5). This is
+  recorded in `dist/native-redesign/windows-final-theme-publish.log`; it is not
+  described as an all-green local run. Both isolated final CI suites pass all
+  362 without skipping or weakening the activation assertion.
 - Catalog/default/placeholder/font checks pass. Physical ARM hardware, multiple
   monitor/DPI transitions, wider third-party editor coverage and live provider
   requests remain release acceptance work.
