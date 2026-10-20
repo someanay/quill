@@ -4,6 +4,14 @@ import QuillCore
 @testable import QuillMac
 
 final class NativeTests: XCTestCase {
+    @MainActor func testApplicationRegistersItsAdvertisedShortcutOnHostedMac() throws {
+        guard ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" else {
+            throw XCTSkip("The real global-shortcut check runs on the isolated hosted Mac.")
+        }
+        // Read the actual production startup attempt; do not register a second
+        // shortcut that would conflict with the running application itself.
+        XCTAssertEqual(GlobalHotkey.startupRegistrationSucceeded, true, "Command–Option–Space must register with macOS before the app advertises it as available.")
+    }
     @MainActor func testSessionIndicatorRemainsVisibleWhenIdleBubbleIsDisabled() {
         XCTAssertFalse(BubbleController.shouldShow(state: .idle, enabled: false, visible: false))
         XCTAssertFalse(BubbleController.shouldShow(state: .idle, enabled: true, visible: false))

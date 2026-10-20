@@ -112,6 +112,9 @@ import QuillCore
 }
 
 @MainActor final class GlobalHotkey {
+    #if DEBUG
+    private(set) static var startupRegistrationSucceeded: Bool?
+    #endif
     private var reference: EventHotKeyRef?
     private var handler: EventHandlerRef?
     private let action: () -> Void
@@ -127,6 +130,9 @@ import QuillCore
         }, 1, &type, Unmanaged.passUnretained(self).toOpaque(), &handler)
         let id = EventHotKeyID(signature: OSType(0x514C4C31), id: 1)
         registered = RegisterEventHotKey(UInt32(kVK_Space), UInt32(cmdKey | optionKey), id, GetApplicationEventTarget(), 0, &reference) == noErr
+        #if DEBUG
+        Self.startupRegistrationSucceeded = registered
+        #endif
     }
     deinit { if let reference { UnregisterEventHotKey(reference) }; if let handler { RemoveEventHandler(handler) } }
 }
