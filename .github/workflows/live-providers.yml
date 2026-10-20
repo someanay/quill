@@ -232,5 +232,6 @@ jobs:
             ios/live-keyboard-evidence/*.json
             ${{ runner.temp }}/quill-live-ios-build.log
             ${{ runner.temp }}/quill-live-ios-test.log
+            ${{ runner.temp }}/quill-speech-server.log
             ${{ runner.temp }}/quill-live-audio-devices.json
           retention-days: 7

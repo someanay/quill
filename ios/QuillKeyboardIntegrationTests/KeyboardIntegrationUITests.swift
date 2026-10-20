@@ -148,7 +148,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         tap(record, in: host)
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))
         captureSpeech()
-        tap(record, in: host)
+        stopLiveCapture(record, in: host, label: "Stop and transcribe")
         let practiceExpected = expectedLiveResult(onboarding: true)
         tap(host.buttons["onboarding.practice.send"], in: host)
         try showQuillKeyboard(in: host)
@@ -175,6 +175,13 @@ final class KeyboardIntegrationUITests: XCTestCase {
         }.resume()
         wait(for: [played], timeout: 30)
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))
+    }
+    private func stopLiveCapture(_ button: XCUIElement, in app: XCUIApplication, label: String) {
+        // On a slower runner, accessibility traversal after playback can exceed
+        // the real silence timeout. Tapping a now-ready Dictate button would
+        // start a second, empty take. Keep the automatic stop and require its
+        // real transcript, cleanup and exact delivery below.
+        if !isLive || button.label == label { tap(button, in: app) }
     }
     private func expectedLiveResult(onboarding: Bool = false) -> String {
         if !isLive { return "This is a simulated provider response." }
@@ -288,7 +295,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         tap(record, in: host)
         XCTAssertTrue(host.buttons["Stop and transcribe"].waitForExistence(timeout: 5))
         captureSpeech()
-        tap(record, in: host)
+        stopLiveCapture(record, in: host, label: "Stop and transcribe")
         let liveResult = expectedLiveResult()
         let send = host.buttons["Send to keyboard"]
         XCTAssertTrue(send.waitForExistence(timeout: 15))
@@ -353,7 +360,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
             waitForExpectations(timeout: 10)
             XCTAssertEqual(host.state, .runningBackground)
             captureSpeech(defaultDelay: 1.2)
-            tap(dictate, in: fixture)
+            stopLiveCapture(dictate, in: fixture, label: "Stop dictation")
             if isLive {
                 let original = seamlessExpected
                 let delivered = NSPredicate { [self] _, _ in
