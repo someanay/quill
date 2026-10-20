@@ -24,7 +24,7 @@ def configure(node):
     global count
     if isinstance(node, dict):
         if node.get('IsUITestBundle') or 'TestBundlePath' in node:
-            variables = {'QUILL_LIVE_SESSION_ID':session,'QUILL_LIVE_AUDIO_URL':'http://127.0.0.1:8765/play','QUILL_REQUIRE_LIVE_PROVIDERS':'true'}
+            variables = {'QUILL_LIVE_SESSION_ID':session,'QUILL_REQUIRE_LIVE_PROVIDERS':'true'}
             node.setdefault('EnvironmentVariables', {}).update(variables)
             node.setdefault('TestingEnvironmentVariables', {}).update(variables)
             count += 1

@@ -166,7 +166,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
     }
     private func captureSpeech(defaultDelay: Double = 1.5) {
         if !isLive { RunLoop.current.run(until: Date().addingTimeInterval(defaultDelay)); return }
-        guard let address = ProcessInfo.processInfo.environment["QUILL_LIVE_AUDIO_URL"], let url = URL(string: address), url.host == "127.0.0.1", url.path == "/play" else { XCTFail("Missing isolated loopback playback server."); return }
+        // This CI fixture always uses its own Mac's loopback server. Do not rely
+        // on Xcode preserving URL-valued environment entries in the runner.
+        let url = URL(string: "http://127.0.0.1:8765/play")!
         let played = expectation(description: "Start actual synthetic speech playback on the Mac runner")
         URLSession.shared.dataTask(with: url) { _, response, error in
             XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode,204); played.fulfill()
