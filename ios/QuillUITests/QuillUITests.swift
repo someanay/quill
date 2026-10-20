@@ -189,6 +189,68 @@ final class QuillUITests: XCTestCase {
             }
         }
     }
+    func testAllProviderFormsInLight() throws { try captureAllProviderForms(dark: false) }
+    func testAllProviderFormsInDark() throws { try captureAllProviderForms(dark: true) }
+    private func revealFormControl(_ element: XCUIElement, in app: XCUIApplication) {
+        let scroll = app.scrollViews.firstMatch
+        for _ in 0..<16 {
+            if element.exists && element.isHittable && scroll.frame.insetBy(dx: 0, dy: 8).contains(element.frame) { return }
+            if element.exists && element.frame.maxY < scroll.frame.minY + 12 { scroll.swipeDown() }
+            else { scroll.swipeUp() }
+        }
+        XCTAssertTrue(element.exists); XCTAssertTrue(element.isHittable)
+    }
+    private func captureAllProviderForms(dark: Bool) throws {
+        XCUIDevice.shared.orientation = .portrait
+        let app = openHome(arguments: dark ? ["--ui-dark"] : [])
+        tap(settingsTab(app), in: app); tap(app.buttons["settings.keys"], in: app); tap(app.buttons["keys.add"], in: app)
+        for provider in ["gemini", "groq", "openrouter"] {
+            let row = app.buttons["key.provider." + provider]
+            revealFormControl(row, in: app); if !row.isSelected { row.tap() }
+            XCTAssertTrue(row.isSelected)
+            XCTAssertTrue(app.secureTextFields["key.candidate"].waitForExistence(timeout: 5))
+            capture(app, "ios-key-form-\(dark ? "dark" : "light")-" + provider)
+            let save = app.buttons["onboarding.key.verify"]
+            revealFormControl(save, in: app); XCTAssertFalse(save.isEnabled)
+            capture(app, "ios-key-form-footer-\(dark ? "dark" : "light")-" + provider)
+        }
+        let other = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "OpenAI or a custom provider")).firstMatch
+        revealFormControl(other, in: app); other.tap()
+        for provider in ["openai", "custom"] {
+            let row = app.buttons["key.provider." + provider]
+            revealFormControl(row, in: app); if !row.isSelected { row.tap() }
+            XCTAssertTrue(row.isSelected)
+            capture(app, "ios-key-form-\(dark ? "dark" : "light")-" + provider)
+            let save = try XCTUnwrap(app.buttons.matching(identifier: "onboarding.key.verify").allElementsBoundByIndex.last)
+            revealFormControl(save, in: app); XCTAssertFalse(save.isEnabled)
+            capture(app, "ios-key-form-footer-\(dark ? "dark" : "light")-" + provider)
+        }
+    }
+    func testSecondaryScreensAndSheetsInLight() throws { try captureSecondaryScreens(dark: false) }
+    func testSecondaryScreensAndSheetsInDark() throws { try captureSecondaryScreens(dark: true) }
+    private func captureSecondaryScreens(dark: Bool) throws {
+        XCUIDevice.shared.orientation = .portrait
+        let arguments = dark ? ["--ui-dark"] : []
+        let welcome = XCUIApplication(); welcome.launchArguments = ["--ui-testing"] + arguments; welcome.launch()
+        tap(welcome.buttons["onboarding.getStarted"], in: welcome)
+        XCTAssertTrue(welcome.buttons["Choose a provider"].waitForExistence(timeout: 5))
+        capture(welcome, "ios-key-disclosure-\(dark ? "dark" : "light")"); welcome.terminate()
+        let words = openHome(arguments: arguments); tap(settingsTab(words), in: words); tap(words.buttons["settings.words"], in: words)
+        tap(words.buttons["Add a word"], in: words)
+        XCTAssertTrue(words.staticTexts["Add a custom word"].waitForExistence(timeout: 5))
+        capture(words, "ios-word-sheet-\(dark ? "dark" : "light")"); words.terminate()
+        for title in ["Privacy details", "Font licenses"] {
+            let app = openHome(arguments: arguments); tap(settingsTab(app), in: app); tap(app.buttons["settings.about"], in: app)
+            tap(app.buttons[title], in: app)
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 5))
+            if title == "Font licenses" { XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "SIL OPEN FONT LICENSE")).firstMatch.exists) }
+            capture(app, "ios-legal-\(dark ? "dark" : "light")-" + title); app.terminate()
+        }
+        let diagnostics = openHome(arguments: arguments); tap(settingsTab(diagnostics), in: diagnostics); tap(diagnostics.buttons["settings.privacy"], in: diagnostics)
+        tap(diagnostics.buttons["Review diagnostic report"], in: diagnostics)
+        XCTAssertTrue(diagnostics.staticTexts["Review diagnostic report"].waitForExistence(timeout: 5))
+        capture(diagnostics, "ios-diagnostics-\(dark ? "dark" : "light")")
+    }
     func testPopulatedHistoryInBothOrientationsAndThemes() throws {
         for dark in [false, true] {
             let app = openHome(arguments: ["--ui-history-fixtures"] + (dark ? ["--ui-dark"] : []))
