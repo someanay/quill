@@ -73,8 +73,8 @@ private struct KeySetupContent: View {
                 VStack(alignment: .leading, spacing: 8) {
                     instructions(provider)
                     if provider == .custom {
-                        TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder).disabled(model.saving)
-                        TextField(Copy.text("settings.speech.model_field_label"), text: $settings.value.customModel).textFieldStyle(.roundedBorder).disabled(model.saving)
+                        QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL).disabled(model.saving)
+                        QuillTextField(key: "settings.speech.model_field_label", text: $settings.value.customModel).disabled(model.saving)
                         HelpText(key: "mac.custom.key_scope")
                     }
                     HStack(spacing: 7) {

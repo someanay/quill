@@ -51,7 +51,7 @@ struct WordsSettings: View {
         VStack(alignment: .leading, spacing: 16) {
             HelpText(key: "settings.words.body")
             QuillFormSection {
-                TextField(Copy.text("settings.words.heard_label"), text: $heard).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-heard")
+                QuillTextField(key: "settings.words.heard_label", text: $heard, identifier: "word-heard")
                 HStack {
                     Button(Copy.text(capturing && dictation.state == .recording ? "mac.dictation.stop" : "settings.words.record")) {
                         if capturing && dictation.state == .recording { dictation.stop() }
@@ -59,7 +59,7 @@ struct WordsSettings: View {
                     }.disabled(dictation.state == .transcribing)
                     if capturing { InkMeter(amplitude: dictation.level, bars: 6).frame(height: 34) }
                 }
-                TextField(Copy.text("settings.words.replacement_label"), text: $replacement).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-replacement")
+                QuillTextField(key: "settings.words.replacement_label", text: $replacement, identifier: "word-replacement")
                 QuillButton(key: "settings.words.save") {
                     let word = CustomWord(id: editing ?? UUID(), heard: heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement: replacement.trimmingCharacters(in: .whitespacesAndNewlines))
                     settings.value.words = WordSubstitutions.upsert(settings.value.words, word: word)

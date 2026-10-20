@@ -135,7 +135,7 @@ struct ModelPicker: View {
                 ForEach(choices) { model in Text(model.id + (model.isFree ? " · " + Copy.text("onboarding.key.console_free") : model.isPaid ? " · " + Copy.text("models.paid") : "")).tag(model.id) }
             }
             if provider != .custom { Button(Copy.text("desktop.models.manual")) { manual.toggle() }.accessibilityIdentifier("model-manual") }
-            if provider == .custom || manual { TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder).accessibilityIdentifier("model-id") }
+            if provider == .custom || manual { QuillTextField(key: "settings.speech.model_field_label", text: $selection, identifier: "model-id") }
             HStack { Button(Copy.text("mac.models.refresh")) { Task { await refresh() } }.disabled(loading); if loading { ProgressView().controlSize(.small) }; if failed { HelpText(key: "mac.models.offline") } }
         }.task(id: provider.rawValue + use.rawValue + (provider == .custom ? settings.value.customBaseURL : "")) {
             models = cached()
@@ -172,7 +172,7 @@ struct SpeechSettings: View {
             Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.provider }, set: { settings.value.selectProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
             Button(Copy.text("desktop.speech.manage_key")) { connecting = true }
             if settings.value.provider == .custom {
-                TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder)
+                QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL)
                 HelpText(key: "mac.custom.key_scope")
             }
             ModelPicker(provider: settings.value.provider, use: .dictation, selection: $settings.value.speechModel)
@@ -257,7 +257,7 @@ struct CleanupSettings: View {
             } else {
                 Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.cleanupProvider }, set: { settings.value.selectCleanupProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
                 ModelPicker(provider: settings.value.cleanupProvider, use: .cleanup, selection: $settings.value.cleanupModel)
-                if settings.value.cleanupProvider == .custom { TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder); HelpText(key: "settings.cleanup.custom_endpoint") }
+                if settings.value.cleanupProvider == .custom { QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL); HelpText(key: "settings.cleanup.custom_endpoint") }
             }
             if keys.active(settings.value.effectiveCleanupProvider, settings: settings.value) == nil { Text(Copy.text("settings.speech.key_required", settings.value.effectiveCleanupProvider.name)).foregroundStyle(QuillTheme.error) }
             HelpText(key: "settings.cleanup.provider_help")

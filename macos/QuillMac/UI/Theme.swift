@@ -77,6 +77,19 @@ struct QuillFormSection<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View { VStack(alignment: .leading, spacing: 20) { content }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading) }
 }
+struct QuillTextField: View {
+    @Environment(\.colorScheme) private var scheme
+    let key: String
+    @Binding var text: String
+    var identifier = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            CopyText(key).font(QuillTheme.sans(12)).foregroundStyle(QuillTheme.muted(scheme == .dark))
+            TextField(Copy.text(key), text: $text).textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier(identifier.isEmpty ? key : identifier)
+        }
+    }
+}
 struct QuillDisclosureStyle: DisclosureGroupStyle {
     func makeBody(configuration: Configuration) -> some View {
         VStack(alignment: .leading, spacing: 10) {
