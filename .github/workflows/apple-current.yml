@@ -12,6 +12,10 @@ on:
         type: choice
         options: [all, macos, ios]
         default: all
+      mac_native_only:
+        description: Focus a Mac regression rerun on native unit tests; default retains full UI coverage
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -95,6 +99,9 @@ jobs:
           set -o pipefail
           SIGNING=(CODE_SIGNING_ALLOWED=NO)
           TEST_FILTER=()
+          if [ "$PLATFORM" = macos ] && [ '${{ inputs.mac_native_only }}' = true ]; then
+            TEST_FILTER=(-only-testing:QuillMacTests)
+          fi
           if [ "$PLATFORM" = ios ]; then
             SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
             TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)

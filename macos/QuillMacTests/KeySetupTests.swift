@@ -115,7 +115,12 @@ final class KeySetupTests: XCTestCase {
         let model = fixture.controller(); defer { model.disappear() }
         for (status, expected) in [(401, KeyCheckState.rejected), (400, .rejected), (503, .unverified)] {
             KeySetupProtocol.configure(status: status); model.update(.gemini, value: candidate)
-            try await Task.sleep(nanoseconds: 850_000_000)
+            // Metadata overloads now retry under the original resource deadline.
+            // Observe the terminal result instead of assuming the first reply ends validation.
+            for _ in 0..<100 {
+                if model.checks[.gemini] == expected { break }
+                try await Task.sleep(nanoseconds: 50_000_000)
+            }
             XCTAssertEqual(model.checks[.gemini], expected)
             model.save(.gemini) { XCTFail("Only verified keys can save") }; XCTAssertTrue(fixture.keys.slots.isEmpty)
         }
