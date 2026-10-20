@@ -32,6 +32,7 @@ jobs:
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
       - name: Verify every native screen and retained setup state
+        if: always() && !cancelled()
         run: |
           dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -40,12 +41,16 @@ jobs:
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-setup-window dist/verification/windows-setup
           exit $LASTEXITCODE
       - name: Verify installer integrity and safe uninstall
+        if: always() && !cancelled()
         run: ./windows/installer/Test-Installer.ps1
       - name: Package self-contained x64 application and installer
+        if: always() && !cancelled()
         run: ./windows/installer/Publish-Quill.ps1 -Runtime win-x64 -SkipTests
       - name: Cross-compile and package ARM64 application
+        if: always() && !cancelled()
         run: ./windows/installer/Publish-Quill.ps1 -Runtime win-arm64 -SkipTests
       - name: Upload Windows packages
+        if: always() && !cancelled()
         uses: actions/upload-artifact@v4
         with:
           name: Quill-Windows-packages-${{ matrix.runner }}

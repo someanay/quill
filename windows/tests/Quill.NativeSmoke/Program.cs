@@ -182,6 +182,7 @@ public static class Program {
    if (command == "quit") break;
    if (command != "launch") throw new InvalidOperationException("Unexpected launcher command.");
    ActivateFixture(window); var handle = new WindowInteropHelper(window).Handle;
+   for (var attempt = 0; Native.GetForegroundWindow() != handle && attempt < 30; attempt++) await Task.Delay(100);
    if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException($"The controlled shortcut launcher did not own foreground. interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}, visible={window.IsVisible}, expected={handle}, actual={Native.GetForegroundWindow()}");
    // Deliver a harmless key to this fixture before invoking its shortcut. Merely
    // attaching input queues to show a test window does not model the input that
