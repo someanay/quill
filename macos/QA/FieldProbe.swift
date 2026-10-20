@@ -147,7 +147,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
         var application: NSRunningApplication?
         defer { if let application, !application.isTerminated { _ = application.forceTerminate() } }
         let injector = TextInjector()
-        application = try await open(application: url)
+        application = try await launchFixture(url: url)
         let before = "Quill QA normal"
         let initial = try await focused(injector: injector, bundle: bundle, text: before)
         let selection = NSRange(location: before.utf16.count, length: 0)
@@ -162,7 +162,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
             guard old.forceTerminate() else { throw FieldFailure("Could not terminate normal QA fixture before secure-field test.") }
             try await wait("normal fixture exit") { old.isTerminated }
         }
-        application = try await open(application: url, arguments: ["--secure"])
+        application = try await launchFixture(url: url, arguments: ["--secure"])
         let detail = try await secureRefused(injector: injector, bundle: bundle)
         report.checks.append(FieldCheck(name: "native NSSecureTextField refusal", passed: true, detail: detail))
     }
@@ -189,6 +189,9 @@ private struct FieldFailure: Error, CustomStringConvertible {
     private static func open(document: URL? = nil, application: URL, arguments: [String] = []) async throws -> NSRunningApplication {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true; configuration.addsToRecentItems = false
+        // A terminated fixture may remain registered briefly in Launch Services.
+        // Never reuse that stale process for the next, differently focused case.
+        configuration.createsNewApplicationInstance = document == nil
         configuration.arguments = arguments + ["-ApplePersistenceIgnoreState", "YES"]
         return try await withCheckedThrowingContinuation { continuation in
             let complete: (NSRunningApplication?, Error?) -> Void = { app, error in
@@ -199,6 +202,23 @@ private struct FieldFailure: Error, CustomStringConvertible {
             if let document { NSWorkspace.shared.open([document], withApplicationAt: application, configuration: configuration, completionHandler: complete) }
             else { NSWorkspace.shared.openApplication(at: application, configuration: configuration, completionHandler: complete) }
         }
+    }
+
+    private static func launchFixture(url: URL, arguments: [String] = []) async throws -> NSRunningApplication {
+        let application = try await open(application: url, arguments: arguments)
+        do {
+            try await wait("owned fixture process foreground") {
+                guard !application.isTerminated else { throw FieldFailure("New QA fixture terminated before becoming active. PID=\(application.processIdentifier)") }
+                guard application.isFinishedLaunching else { return false }
+                if NSWorkspace.shared.frontmostApplication?.processIdentifier == application.processIdentifier { return true }
+                _ = application.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+                return false
+            }
+        } catch {
+            if !application.isTerminated { _ = application.forceTerminate() }
+            throw FieldFailure("\(error) Expected owned fixture PID=\(application.processIdentifier); \(observation())")
+        }
+        return application
     }
 
     private static func focused(injector: TextInjector, bundle: String, text: String, selection: NSRange? = nil) async throws -> FocusSnapshot {
