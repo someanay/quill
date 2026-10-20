@@ -101,6 +101,22 @@ import QuillCore
         XCTAssertEqual(proxy.content, ""); XCTAssertNotNil(store.item)
         XCTAssertEqual(store.consumed, 0)
     }
+    func testSetupReceiptsRequireAccessAndASuccessfulInsertion() throws {
+        let proxy = TextProxyFixture(), store = HandoffFixture()
+        store.fullAccess = false
+        var connections = 0, inserted: [UUID] = []
+        let keyboard = KeyboardViewController()
+        keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { store.fullAccess }, peek: { store.item }, consume: store.consume, prune: {}, didConnect: { connections += 1 }, didInsert: { inserted.append($0) })
+        keyboard.loadViewIfNeeded(); XCTAssertEqual(connections, 0)
+        store.fullAccess = true; keyboard.textDidChange(nil); keyboard.textDidChange(nil)
+        XCTAssertEqual(connections, 1)
+        store.failConsume = true; try insert(keyboard).sendActions(for: .touchUpInside)
+        XCTAssertTrue(inserted.isEmpty)
+        store.failConsume = false
+        let id = try XCTUnwrap(store.item?.id)
+        try insert(keyboard).sendActions(for: .touchUpInside)
+        XCTAssertEqual(inserted, [id]); XCTAssertEqual(proxy.content, "world")
+    }
     func testKeyboardCompactWidthInLightAndDark() throws {
         for style in [UIUserInterfaceStyle.light, .dark] {
             let keyboard = harness(TextProxyFixture(), HandoffFixture())
@@ -123,6 +139,27 @@ import QuillCore
             let attachment = XCTAttachment(image: screenshot)
             attachment.name = "Keyboard compact width " + (style == .dark ? "dark" : "light")
             attachment.lifetime = .keepAlways; add(attachment)
+        }
+    }
+    func testLandscapeKeyboardKeepsInsertionAndKeysInsideItsShortViewport() throws {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let keyboard = harness(TextProxyFixture(), HandoffFixture())
+            let container = UIViewController()
+            container.addChild(keyboard); container.view.addSubview(keyboard.view); keyboard.didMove(toParent: container)
+            container.setOverrideTraitCollection(UITraitCollection(verticalSizeClass: .compact), forChild: keyboard)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 760, height: 300))
+            window.overrideUserInterfaceStyle = style; keyboard.overrideUserInterfaceStyle = style
+            window.rootViewController = container; window.isHidden = false
+            defer { window.isHidden = true; window.rootViewController = nil }
+            keyboard.viewWillLayoutSubviews()
+            let size = keyboard.view.systemLayoutSizeFitting(CGSize(width: 760, height: 0), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+            XCTAssertLessThanOrEqual(size.height, 300)
+            keyboard.view.frame = CGRect(origin: .zero, size: size); keyboard.view.layoutIfNeeded()
+            let button = try insert(keyboard)
+            XCTAssertTrue(keyboard.view.bounds.contains(button.convert(button.bounds, to: keyboard.view)))
+            XCTAssertTrue(button.isEnabled); button.sendActions(for: .touchUpInside)
+            let image = UIGraphicsImageRenderer(size: size).image { context in keyboard.view.layer.render(in: context.cgContext) }
+            let attachment = XCTAttachment(image: image); attachment.name = "Keyboard landscape compact height " + (style == .dark ? "dark" : "light"); attachment.lifetime = .keepAlways; add(attachment)
         }
     }
 }

@@ -1,5 +1,5 @@
 {
-  "revision": 14,
+  "revision": 21,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -74,7 +74,7 @@
       "optionalBlank": false
     },
     "bubble.dismiss.toast": {
-      "default": "Bubble hidden - shake your phone or tap the notification to bring it back.",
+      "default": "Dictation control hidden. Open Quill to record a dictation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -280,7 +280,7 @@
       "optionalBlank": false
     },
     "history.empty.off_body": {
-      "default": "Turn on Save dictation history in Settings to keep transcripts on this phone.",
+      "default": "Turn on Save dictation history in Settings to keep transcripts on this device.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -298,7 +298,7 @@
       "optionalBlank": false
     },
     "history.empty.on_body": {
-      "default": "Your dictation transcripts show up here. Saved on this phone only.",
+      "default": "Your dictation transcripts show up here. Saved on this device only.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -837,13 +837,13 @@
       "optionalBlank": false
     },
     "onboarding.key.browser_error": {
-      "default": "The browser could not open. Try again after choosing a default browser in Android settings.",
+      "default": "The browser could not open. Choose a default browser in iOS Settings, then try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.choose": {
-      "default": "Choose any 1 of the following",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -873,7 +873,7 @@
       "optionalBlank": false
     },
     "onboarding.key.easy": {
-      "default": "Google Gemini (Big Free Usage, Easy Process)",
+      "default": "Google Gemini",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -899,25 +899,25 @@
       "optionalBlank": false
     },
     "onboarding.key.free_note": {
-      "default": "Free-tier limits apply. Paid accounts may be billed under their plan. Quill checks your key without sending audio; successful dictation also depends on your model access and available quota.",
+      "default": "Provider usage limits and charges apply. Checking your key sends no audio.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.free_options": {
-      "default": "OpenRouter (Free options, Longer Process)",
+      "default": "OpenRouter",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.gemini_steps": {
-      "default": "Click https://aistudio.google.com/api-keys to open browser\n[For New Users] Accept Agreement & Click Continue\nClick the Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://aistudio.google.com/api-keys\nSign in to Google AI Studio and accept its terms if asked.\nCopy an existing Gemini key, or choose Create API key and select a project.\nReturn to Quill and paste the key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "Click https://console.groq.com/home to open browser\nCreate a Groq account\nClick on API Keys near the top right\nClick on \"Create API Key\"\nChoose any name you like. For example \"Quill\".\nKeep No Expiration.\nClick the Copy button\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://console.groq.com/keys\nSign in, then choose Create API Key.\nGive the key a name, such as Quill, and create it.\nCopy the key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -931,13 +931,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openai_steps": {
-      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away - it's shown only once - then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
+      "default": "Open https://platform.openai.com/api-keys\nSign in and choose Create new secret key.\nCopy the new key before closing the dialog.\nReturn to Quill and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "Click https://openrouter.ai/sign-up to open browser\nSign up for OpenRouter.\nChoose Individual.\nClick Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://openrouter.ai/settings/keys\nSign in, then create a new API key.\nName the key Quill and review its spending limit.\nCopy the new key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -951,7 +951,7 @@
       "optionalBlank": false
     },
     "onboarding.key.more_steps": {
-      "default": "Groq (Big Free Usage, Longer Process)",
+      "default": "Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -975,13 +975,13 @@
       "optionalBlank": false
     },
     "onboarding.key.router_note": {
-      "default": "Free cleanup models are available. Speech transcription may require credits. Quill prefers a free compatible speech model when the live catalog offers one. Checking your key does not spend model credits.",
+      "default": "OpenRouter may charge for transcription. Checking your key sends no audio; your model access and quota determine whether dictation is available.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.save_provider": {
-      "default": "Save %1$s API Key Securely",
+      "default": "Save %1$s key",
       "placeholders": [
         "%1$s"
       ],
@@ -1037,7 +1037,7 @@
       "optionalBlank": false
     },
     "onboarding.key.warning.accept": {
-      "default": "Help me get & add a key",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1151,13 +1151,13 @@
       "optionalBlank": false
     },
     "onboarding.welcome.cta": {
-      "default": "Get started",
+      "default": "Set up Quill",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.welcome.open": {
-      "default": "Open Quill",
+      "default": "Open workspace",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1175,7 +1175,7 @@
       "optionalBlank": false
     },
     "reliability.boot.text": {
-      "default": "Your phone restarted. Open Quill to bring the bubble back.",
+      "default": "Your device restarted. Open Quill to record a dictation.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1466,7 +1466,7 @@
       "optionalBlank": false
     },
     "settings.bubble.title": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1538,7 +1538,7 @@
       "optionalBlank": false
     },
     "settings.cleanup.title": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1550,7 +1550,7 @@
       "optionalBlank": false
     },
     "settings.group.capture": {
-      "default": "Capture & bubble",
+      "default": "Recording & appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1586,13 +1586,13 @@
       "optionalBlank": false
     },
     "settings.keys.empty_body": {
-      "default": "Quill needs a speech-to-text key to transcribe. Add one to start dictating again.",
+      "default": "Connect a speech provider with your own API key. You can add, switch or remove provider keys here.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.keys.empty_title": {
-      "default": "No keys yet",
+      "default": "Connect your first provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1666,13 +1666,13 @@
       "optionalBlank": false
     },
     "settings.privacy.banner_text": {
-      "default": "Audio goes only to your provider; everything else stays on this phone.",
+      "default": "Audio goes directly to your speech provider. Optional cleanup sends transcripts to your cleanup provider. Keys and history stay on this device. See Privacy details for transfer and recovery.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.privacy.banner_title": {
-      "default": "Nothing is collected by Quill.",
+      "default": "No Quill account or data server.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1756,7 +1756,7 @@
       "optionalBlank": false
     },
     "settings.privacy.history_sub": {
-      "default": "Kept on this phone, then auto-deleted",
+      "default": "Kept on this device, then auto-deleted",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1816,13 +1816,13 @@
       "optionalBlank": false
     },
     "settings.row.bubble": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.row.cleanup": {
-      "default": "Clean up with AI",
+      "default": "Cleanup",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1840,7 +1840,7 @@
       "optionalBlank": false
     },
     "settings.row.privacy": {
-      "default": "Privacy and History",
+      "default": "Privacy & history",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2052,7 +2052,7 @@
       "optionalBlank": false
     },
     "settings.speech.provider": {
-      "default": "Provider",
+      "default": "Speech provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2178,7 +2178,7 @@
       "optionalBlank": false
     },
     "settings.style.words_promise": {
-      "default": "Style only changes punctuation, capitalization and contractions. It never changes your words.",
+      "default": "Styles adjust punctuation, capitalization and contractions during cleanup.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2496,7 +2496,7 @@
       "optionalBlank": false
     },
     "system.recovery.banner_text": {
-      "default": "Your phone switched off Accessibility access - Quill can't insert text until it's back on.",
+      "default": "Return to Quill to finish setup or review keyboard access in Settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2670,7 +2670,7 @@
       "optionalBlank": false
     },
     "ios.keyboard.full_access_body": {
-      "default": "Full Access lets the keyboard read and remove the transcript you explicitly send from Quill. The keyboard does not record audio, make network requests, read your API keys, or save what you type. Keys, audio and history stay in the Quill app.",
+      "default": "Full Access lets the keyboard receive transcripts from Quill. It uses nearby text only to place a dictation, without saving or sending that text. Keys and microphone access stay in Quill.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2790,7 +2790,7 @@
       "optionalBlank": false
     },
     "ios.mic.test_private": {
-      "default": "This microphone test stays on your iPhone. It is deleted when the test stops and is never uploaded.",
+      "default": "This microphone test stays on your device. It is deleted when the test stops and is never uploaded.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2808,7 +2808,7 @@
       "optionalBlank": false
     },
     "ios.keys.security": {
-      "default": "Keys are stored in this iPhone's Keychain and excluded from backups and iCloud sync. A key is sent only to its selected provider over HTTPS. Keys never appear in logs or reach the keyboard.",
+      "default": "Keys are stored in this device's Keychain and excluded from backups and iCloud sync. A key is sent only to its selected provider over HTTPS. Keys never appear in logs or reach the keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2850,7 +2850,7 @@
       "optionalBlank": false
     },
     "ios.home.subtitle": {
-      "default": "Tap, speak, and let your words flow.",
+      "default": "Record here. Insert with your keyboard.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2884,19 +2884,19 @@
       "optionalBlank": false
     },
     "ios.home.no_last_used": {
-      "default": "No saved dictations yet. Tap the microphone to begin.",
+      "default": "No saved dictations yet.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.home.tip_title": {
-      "default": "Bring your words into another app.",
+      "default": "From your voice to another app",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "ios.home.tip_body": {
-      "default": "Send your transcript to the Quill keyboard, then return to your app and tap Insert dictation. Tap here for setup help.",
+      "default": "Record in Quill → Send to keyboard → return to your app and tap Insert dictation. The handoff is single use and expires after 60 seconds.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2986,7 +2986,7 @@
       "optionalBlank": false
     },
     "ios.recording.retry_retention": {
-      "default": "Your recording stays on this iPhone until Retry succeeds or you tap Cancel, including in private mode.",
+      "default": "Your recording stays on this device until Retry succeeds or you tap Cancel, including in private mode.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3088,7 +3088,7 @@
       "optionalBlank": false
     },
     "ios.audio.trigger_help": {
-      "default": "Tap the recording bubble in Quill to start. Tap it again to stop and transcribe.",
+      "default": "Use the microphone button in Quill to start a recording. Tap it again to stop and transcribe.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3114,7 +3114,7 @@
       "optionalBlank": false
     },
     "ios.audio.route": {
-      "default": "Quill uses the iPhone's built-in microphone. Calls, unplugging an input, or permission changes interrupt recording and show a recovery action.",
+      "default": "Quill prefers this device's built-in microphone. Calls, audio input changes or permission changes can interrupt recording and show a recovery action.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3156,7 +3156,7 @@
       "optionalBlank": false
     },
     "ios.visual.help": {
-      "default": "Size changes the recording bubble inside Quill. Theme follows this preference; larger text and Reduce Motion follow your iPhone's accessibility settings.",
+      "default": "Control size applies to the microphone button inside Quill. Text size and Reduce Motion follow system accessibility settings.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3308,7 +3308,7 @@
       "optionalBlank": false
     },
     "ios.error.storage": {
-      "default": "Couldn't save data on this iPhone. Check available storage and try again.",
+      "default": "Couldn't save data on this device. Check available storage and try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3339,6 +3339,327 @@
     },
     "ios.recording.cleanup_retry": {
       "default": "Retry recording cleanup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.welcome": {
+      "default": "Welcome",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.provider": {
+      "default": "Connect a provider",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard": {
+      "default": "Add your keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.microphone": {
+      "default": "Check your microphone",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice": {
+      "default": "Try a dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.ready": {
+      "default": "Ready to write",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.progress": {
+      "default": "Step %1$s of %2$s",
+      "placeholders": [
+        "%1$s",
+        "%2$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.welcome_title": {
+      "default": "Your voice. Your words.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.welcome_body": {
+      "default": "Record in Quill, then bring your words into other apps with the Quill keyboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.provider_title": {
+      "default": "Choose who transcribes your voice",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.provider_body": {
+      "default": "Choose a speech provider, then add your API key. Quill saves it in your device's Keychain and sends recordings directly to that provider.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_body": {
+      "default": "Add Quill once in iOS Settings. Then switch to it using the globe whenever you want to insert a dictation.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_add": {
+      "default": "Open Settings below. Tap Keyboards, then turn on Quill.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_access": {
+      "default": "Turn on Allow Full Access and confirm Allow.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_return": {
+      "default": "Return here, tap the field below, and hold the globe to choose Quill.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_switch": {
+      "default": "Tap this field and choose Quill from the globe menu. Setup checks the running keyboard; typing alone does not confirm it.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_connected": {
+      "default": "Quill keyboard connected with Full Access",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_waiting": {
+      "default": "Waiting for the Quill keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_later": {
+      "default": "Set up the keyboard later",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.mic_title": {
+      "default": "Let Quill hear you",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.mic_next": {
+      "default": "Try your first dictation",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_title": {
+      "default": "See your words appear",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_body": {
+      "default": "Record a short phrase, stop, then send the transcript to your keyboard. This practice uses your chosen provider and may use its quota.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_switch": {
+      "default": "Tap the field below. Choose Quill using the globe, then tap Insert dictation within 60 seconds. If it expires, send the transcript again.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_field": {
+      "default": "Your dictation will appear here",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_success": {
+      "default": "Inserted with the Quill keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.practice_later": {
+      "default": "Try this later",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.ready_title": {
+      "default": "Make room for your words",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.ready_body": {
+      "default": "Your keyboard and first insertion are ready. Use the same three steps in another app.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.ready_pending": {
+      "default": "You can record in Quill now. Finish the keyboard practice before using dictation in other apps.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.return_practice": {
+      "default": "Finish keyboard setup and practice",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_record": {
+      "default": "Open Quill and record your thought. Tap again to finish.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_send": {
+      "default": "Review the transcript, then tap Send to keyboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_insert": {
+      "default": "Return to your app, choose the Quill keyboard, and tap Insert dictation within 60 seconds.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.companion_title": {
+      "default": "Your setup",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.companion_body": {
+      "default": "The microphone lives in Quill. The keyboard brings your finished transcript to the cursor. You stay in control of both.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.no_account": {
+      "default": "Your provider. No Quill account.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.workspace.title": {
+      "default": "Start with a thought",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.workspace.body": {
+      "default": "Tap the microphone and speak. Your transcript appears here, ready to copy or send to the Quill keyboard.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.workspace.provider": {
+      "default": "Transcription by %1$s",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.workspace.keyboard": {
+      "default": "Write in another app",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.home.dictation_count_one": {
+      "default": "%1$s dictation",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.home.word_count_one": {
+      "default": "%1$s word",
+      "placeholders": [
+        "%1$s"
+      ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.settings.appearance": {
+      "default": "Appearance",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.example": {
+      "default": "Let’s move our meeting to Thursday.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_record": {
+      "default": "Record in Quill",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_send": {
+      "default": "Send to keyboard",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.flow_short_insert": {
+      "default": "Return to your app and insert",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.setup.keyboard_missing": {
+      "default": "Can’t find Keyboards?",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.speech.body": {
+      "default": "Choose how your recordings become text.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.speech.manage_key": {
+      "default": "Manage provider key",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "ios.models.manual": {
+      "default": "Enter a model ID",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

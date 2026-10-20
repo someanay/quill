@@ -5,51 +5,38 @@ import QuillCore
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     var body: some View {
-        QPage {
-            QHeading(title: model.c("nav.settings"))
-            QSection(title: model.c("settings.group.dictation"))
-            QCard {
-                VStack {
-                    NavigationLink { SpeechSettingsView() } label: { QRow(title: model.c("settings.row.speech_model"), icon: "waveform", value: model.settings.provider.title) }.accessibilityIdentifier("settings.speech"); Divider()
-                    NavigationLink { APIKeysView() } label: { QRow(title: model.c("settings.row.api_keys"), icon: "key", value: String(model.keys.count)) }.accessibilityIdentifier("settings.keys"); Divider()
-                    NavigationLink { CleanupSettingsView() } label: { QRow(title: model.c("settings.row.cleanup"), icon: "sparkles") }.accessibilityIdentifier("settings.cleanup"); Divider()
-                    NavigationLink { WritingStyleView() } label: { QRow(title: model.c("settings.row.writing_style"), icon: "textformat", value: model.c("settings.style.\(model.settings.writingStyle.rawValue)")) }.accessibilityIdentifier("settings.style"); Divider()
-                    NavigationLink { CustomWordsView() } label: { QRow(title: model.c("settings.row.custom_words"), icon: "text.book.closed", value: String(model.words.count)) }.accessibilityIdentifier("settings.words"); Divider()
-                    NavigationLink { ContactsView() } label: { QRow(title: model.c("settings.row.contacts_vocab"), icon: "person.crop.rectangle", value: String(model.contactNames.count)) }.accessibilityIdentifier("settings.contacts")
-                }
+        Form {
+            Section(model.c("settings.group.dictation")) {
+                NavigationLink { SpeechSettingsView() } label: { Label(model.c("settings.row.speech_model"), systemImage: "waveform") }.accessibilityIdentifier("settings.speech")
+                NavigationLink { APIKeysView() } label: { Label(model.c("settings.row.api_keys"), systemImage: "key") }.accessibilityIdentifier("settings.keys")
+                NavigationLink { CleanupSettingsView() } label: { Label(model.c("settings.row.cleanup"), systemImage: "sparkles") }.accessibilityIdentifier("settings.cleanup")
+                NavigationLink { WritingStyleView() } label: { Label(model.c("settings.row.writing_style"), systemImage: "textformat") }.accessibilityIdentifier("settings.style")
+                NavigationLink { CustomWordsView() } label: { Label(model.c("settings.row.custom_words"), systemImage: "text.book.closed") }.accessibilityIdentifier("settings.words")
             }
-            QSection(title: model.c("settings.group.capture"))
-            QCard {
-                VStack {
-                    NavigationLink { AudioSettingsView() } label: { QRow(title: model.c("settings.row.audio"), icon: "mic") }.accessibilityIdentifier("settings.audio"); Divider()
-                    NavigationLink { VisualSettingsView() } label: { QRow(title: model.c("settings.row.bubble"), icon: "paintpalette") }.accessibilityIdentifier("settings.visual"); Divider()
-                    NavigationLink { KeyboardHelpView() } label: { QRow(title: model.c("ios.keyboard.title"), icon: "keyboard") }.accessibilityIdentifier("settings.keyboard")
-                }
+            Section(model.c("settings.group.capture")) {
+                NavigationLink { AudioSettingsView() } label: { Label(model.c("settings.row.audio"), systemImage: "mic") }.accessibilityIdentifier("settings.audio")
+                NavigationLink { VisualSettingsView() } label: { Label(model.c("ios.settings.appearance"), systemImage: "paintpalette") }.accessibilityIdentifier("settings.visual")
+                NavigationLink { KeyboardHelpView() } label: { Label(model.c("ios.keyboard.title"), systemImage: "keyboard") }.accessibilityIdentifier("settings.keyboard")
             }
-            QSection(title: model.c("settings.group.privacy"))
-            QCard {
-                VStack {
-                    NavigationLink { PrivacySettingsView() } label: { QRow(title: model.c("settings.row.privacy"), icon: "lock.shield") }.accessibilityIdentifier("settings.privacy"); Divider()
-                    NavigationLink { AdvancedSettingsView() } label: { QRow(title: model.c("settings.row.advanced"), icon: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced"); Divider()
-                    NavigationLink { AboutView() } label: { QRow(title: model.c("settings.row.about"), icon: "info.circle") }.accessibilityIdentifier("settings.about")
-                }
+            Section(model.c("settings.group.privacy")) {
+                NavigationLink { PrivacySettingsView() } label: { Label(model.c("settings.row.privacy"), systemImage: "lock.shield") }.accessibilityIdentifier("settings.privacy")
+                NavigationLink { AdvancedSettingsView() } label: { Label(model.c("settings.row.advanced"), systemImage: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced")
+                NavigationLink { AboutView() } label: { Label(model.c("settings.row.about"), systemImage: "info.circle") }.accessibilityIdentifier("settings.about")
             }
-        }.toolbar(.hidden, for: .navigationBar)
+        }.navigationTitle(model.c("nav.settings")).navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden).background(Q.paper)
     }
 }
 
 struct SpeechSettingsView: View {
     @EnvironmentObject private var model: AppModel
+    @State private var connecting = false
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.speech.title")).accessibilityIdentifier("screen.speech")
-            GuidedKeySetup(activateSpeechProvider: true, prefillSavedKey: true)
-            DisclosureGroup(model.c("ios.keys.other_providers")) {
-                QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.provider }, set: model.selectProvider)) {
-                    if KeySetupPolicy.guidedProviders.contains(model.settings.provider) { Text(model.settings.provider.title).tag(model.settings.provider) }
-                    Text(Provider.openai.title).tag(Provider.openai); Text(Provider.custom.title).tag(Provider.custom)
-                }.pickerStyle(.menu) }
-            }
+            Text(model.c("ios.speech.body")).font(Q.sans(16)).foregroundStyle(Q.muted)
+            QCard { Picker(model.c("settings.speech.provider"), selection: Binding(get: { model.settings.provider }, set: model.selectProvider)) { ForEach(Provider.allCases) { Text($0.title).tag($0) } }.pickerStyle(.menu) }
+            Button(model.c("ios.speech.manage_key")) { connecting = true }.frame(minHeight: 44)
             if model.settings.provider == .custom {
                 QField(title: model.c("settings.speech.custom_url_label"), text: $model.settings.customBaseURL)
                 QBanner(text: model.c("ios.keys.endpoint_binding"))
@@ -69,12 +56,22 @@ struct SpeechSettingsView: View {
             if model.settings.provider == .gemini { QBanner(text: model.c("settings.speech.gemini_caveat")) }
             if !model.hasActiveKey { NavigationLink(model.c("settings.speech.key_required_cta")) { APIKeysView() }.frame(minHeight: 48) }
         }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+            .sheet(isPresented: $connecting) {
+                NavigationStack {
+                    QPage {
+                        QHeading(title: model.c("ios.setup.provider_title"))
+                        GuidedKeySetup(activateSpeechProvider: true, prefillSavedKey: true, initialProvider: KeySetupPolicy.guidedProviders.contains(model.settings.provider) ? model.settings.provider : .gemini, onSaved: { connecting = false })
+                        DisclosureGroup(model.c("ios.keys.other_providers")) { KeyEditor(activateSpeechProvider: true, onSaved: { connecting = false }) }
+                    }.toolbar { ToolbarItem(placement: .cancellationAction) { Button(model.c("action.cancel")) { connecting = false } } }
+                }.presentationDetents([.large])
+            }
     }
 }
 
 struct ModelPickerView: View {
     @EnvironmentObject private var model: AppModel
     let cleanup: Bool
+    @State private var manual = false
     private var provider: Provider { cleanup ? model.settings.effectiveCleanupProvider : model.settings.provider }
     private var selection: Binding<String> {
         Binding(get: { cleanup ? model.settings.effectiveCleanupModel : model.settings.model }, set: { value in
@@ -94,7 +91,8 @@ struct ModelPickerView: View {
             QCard {
                 Picker(model.c("settings.speech.model"), selection: selection) { ForEach(choices) { option in Text(option.name + (option.isFree ? " · " + model.c("onboarding.key.console_free") : "")).tag(option.id) } }.pickerStyle(.menu)
             }
-            QField(title: model.c("settings.speech.model_field_label"), text: selection)
+            if provider != .custom { Button(model.c("ios.models.manual")) { manual.toggle() }.frame(minHeight: 44) }
+            if provider == .custom || manual { QField(title: model.c("settings.speech.model_field_label"), text: selection) }
             QButton(title: model.loadingModels ? model.c("ios.models.loading") : model.c("ios.models.refresh"), icon: "arrow.clockwise", secondary: true) { Task { await model.refreshModels(cleanup: cleanup) } }.disabled(model.loadingModels)
         }.onDisappear { model.invalidateModelChoices() }
     }
@@ -123,7 +121,9 @@ struct APIKeysView: View {
                     QCard {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack { Text(key.provider.title).fontWeight(.medium); Spacer(); if model.activeKey(key.provider) == key.id { Text(model.c("settings.keys.active")).font(Q.sans(12)).foregroundStyle(Q.success) } }
-                            Text(key.label).foregroundStyle(Q.muted)
+                            if !key.label.isEmpty && key.label.caseInsensitiveCompare(key.provider.title) != .orderedSame {
+                                Text(key.label).foregroundStyle(Q.muted)
+                            }
                             Text("••••••••" + key.suffix).font(.system(.body, design: .monospaced))
                             if key.provider == .custom { Text(key.endpoint).font(Q.sans(12)).foregroundStyle(Q.muted) }
                             HStack {

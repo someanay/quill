@@ -100,7 +100,7 @@ struct AdvancedSettingsView: View {
             QBanner(text: model.c("ios.advanced.background"))
             QSection(title: model.c("settings.advanced.reset"))
             QButton(title: model.c("settings.advanced.reset_settings"), secondary: true) { reset = true }
-            QButton(title: model.c("settings.advanced.clear"), icon: "trash", destructive: true) { clear = true }
+            QButton(title: model.c("settings.advanced.clear"), icon: "trash", destructive: true) { clear = true }.accessibilityIdentifier("settings.clear-data")
         }.navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
             .confirmationDialog(model.c("settings.advanced.reset_confirm_title"), isPresented: $reset, titleVisibility: .visible) {
                 Button(model.c("settings.advanced.reset_settings"), role: .destructive) { model.cancel(); var defaults = QuillSettings(); defaults.onboardingComplete = true; model.settings = defaults }

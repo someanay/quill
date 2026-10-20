@@ -90,6 +90,22 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         recorder.onInterruption = { [weak self] in self?.interrupted() }
         pruneTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in Task { @MainActor in self?.prune() } }
         refreshHistory()
+        #if DEBUG
+        if AppFiles.isUITesting {
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("--ui-dark") { settings.theme = "Dark" }
+            if let index = args.firstIndex(of: "--ui-onboarding-stage"), args.indices.contains(index + 1), let stage = Int(args[index + 1]), (1...6).contains(stage) {
+                settings.onboardingStep = stage
+            }
+            if args.contains("--ui-history-fixtures") {
+                try? self.historyStore?.clear()
+                for text in ["A short thought, captured before it disappears.", "A longer note for the reading layout.\n\nKeep the first idea. Give the next one its own paragraph. A transcript should remain comfortable to read when the window changes shape.\n\nEvery word belongs to you. 👋🏽"] {
+                    try? self.historyStore?.save(HistoryEntry(text: text, provider: .groq))
+                }
+                refreshHistory()
+            }
+        }
+        #endif
     }
     deinit { pruneTimer?.invalidate(); operation?.cancel() }
     func c(_ key: String, _ args: String...) -> String { copy.format(key, args: args) }
@@ -182,7 +198,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         do { testingMicrophone = true; try recorder.start(capSeconds: 30, microphoneTest: true) }
         catch { testingMicrophone = false; report(error) }
     }
-    func stopMicTest() { recorder.cancel(); testingMicrophone = false }
+    func stopMicTest() { guard testingMicrophone else { return }; recorder.cancel(); testingMicrophone = false }
     func start(voiceSample: Bool = false) async {
         guard !busy, !canRetry, !cleanupRequired else { return }
         stopMicTest()
@@ -343,9 +359,9 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
         notice = c("ios.result.copied")
     }
-    func sendToKeyboard(_ text: String) {
-        do { try KeyboardTransfer.publish(text); notice = c("ios.result.sent") }
-        catch { report(error) }
+    @discardableResult func sendToKeyboard(_ text: String) -> UUID? {
+        do { let id = try KeyboardTransfer.publish(text); notice = c("ios.result.sent"); return id }
+        catch { report(error); return nil }
     }
     func clearTransfer() { do { try KeyboardTransfer.clear(); notice = c("ios.transfer.cleared") } catch { report(error) } }
     func refreshHistory() { do { history = try historyStore?.entries(retentionMinutes: settings.retentionMinutes) ?? [] } catch { report(error) } }

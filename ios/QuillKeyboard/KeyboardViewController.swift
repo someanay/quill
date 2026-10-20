@@ -10,6 +10,8 @@ struct KeyboardEnvironment {
     let peek: () -> KeyboardHandoff?
     let consume: (UUID) throws -> String
     let prune: () -> Void
+    var didConnect: () -> Void = {}
+    var didInsert: (UUID) -> Void = { _ in }
 }
 
 final class KeyboardViewController: UIInputViewController {
@@ -20,7 +22,7 @@ final class KeyboardViewController: UIInputViewController {
         guard let proxy = activeProxy else { return false }
         return proxy.isSecureTextEntry != true && proxy.keyboardType != .phonePad && proxy.keyboardType != .namePhonePad
     }
-    private let brand = UIColor(red: 35/255, green: 77/255, blue: 206/255, alpha: 1)
+    private let brand = KeyboardViewController.adaptive(0x234DCE, 0x234DCE)
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> UIColor {
         UIColor { trait in
             let value = trait.userInterfaceStyle == .dark ? dark : light
@@ -30,6 +32,7 @@ final class KeyboardViewController: UIInputViewController {
     private let ink = KeyboardViewController.adaptive(0x202522, 0xE0E7F6)
     private let paper = KeyboardViewController.adaptive(0xF5F7F5, 0x11141A)
     private let surface = KeyboardViewController.adaptive(0xFFFFFF, 0x171B23)
+    private let muted = KeyboardViewController.adaptive(0x5C665F, 0xB2B9C6)
     private let stack = UIStackView()
     private let status = UILabel()
     private let insertButton = UIButton(type: .system)
@@ -38,6 +41,12 @@ final class KeyboardViewController: UIInputViewController {
     private var current: KeyboardHandoff?
     private var uppercase = true
     private var numbers = false
+    private var connected = false
+    private var globe: UIButton?
+    private var minimumHeight: NSLayoutConstraint?
+    private var globeHeight: NSLayoutConstraint?
+    private var insertHeight: NSLayoutConstraint?
+    private var compactKeys = false
     private var copy = CopyCatalog(strings: [:])
     private func c(_ key: String) -> String { copy.text(key) }
 
@@ -52,35 +61,56 @@ final class KeyboardViewController: UIInputViewController {
         stack.axis = .vertical; stack.spacing = 6; stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
         NSLayoutConstraint.activate([stack.topAnchor.constraint(equalTo: view.topAnchor, constant: 8), stack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -5), stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 5), stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -5)])
-        let height = view.heightAnchor.constraint(greaterThanOrEqualToConstant: 350); height.priority = .defaultHigh; height.isActive = true
+        let height = view.heightAnchor.constraint(greaterThanOrEqualToConstant: 350); height.priority = .defaultHigh; height.isActive = true; minimumHeight = height
         let toolbar = UIStackView(); toolbar.axis = .horizontal; toolbar.spacing = 8
         let title = UILabel(); title.font = UIFont(name: "IBMPlexSans", size: 21) ?? .systemFont(ofSize: 21, weight: .semibold)
         let wordmark = NSMutableAttributedString(string: "quill.", attributes: [.foregroundColor: ink, .kern: -1.2])
         wordmark.addAttribute(.foregroundColor, value: Self.adaptive(0x234DCE, 0xB6C9FF), range: NSRange(location: 5, length: 1))
         title.attributedText = wordmark; title.accessibilityLabel = "Quill"; toolbar.addArrangedSubview(title)
-        let globe = key("🌐", action: #selector(nextKeyboard)); globe.accessibilityLabel = c("ios.keyboard.next")
+        let globe = key("🌐", action: #selector(nextKeyboard)); self.globe = globe; globe.accessibilityLabel = c("ios.keyboard.next")
+        globe.setTitle(nil, for: .normal); globe.setImage(UIImage(systemName: "globe"), for: .normal)
+        globeHeight = globe.constraints.first { $0.firstAttribute == .height }
         globe.removeTarget(self, action: #selector(nextKeyboard), for: .touchUpInside)
         globe.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
         globe.widthAnchor.constraint(equalToConstant: 48).isActive = true; toolbar.addArrangedSubview(globe)
         stack.addArrangedSubview(toolbar)
         status.font = UIFont(name: "IBMPlexSans", size: 13) ?? .systemFont(ofSize: 13)
-        status.numberOfLines = 3; status.textColor = .secondaryLabel; status.setContentCompressionResistancePriority(.required, for: .vertical)
+        status.numberOfLines = 3; status.textColor = muted; status.setContentCompressionResistancePriority(.required, for: .vertical)
         status.accessibilityIdentifier = "keyboard.status"; stack.addArrangedSubview(status)
         insertButton.setTitle(c("ios.keyboard.insert"), for: .normal); insertButton.backgroundColor = brand; insertButton.tintColor = .white
         insertButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 15) ?? .systemFont(ofSize: 15, weight: .medium)
-        insertButton.layer.cornerRadius = 4; insertButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
+        insertButton.layer.cornerRadius = 6; let insertHeight = insertButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 48); insertHeight.isActive = true; self.insertHeight = insertHeight
         insertButton.addTarget(self, action: #selector(insertDictation), for: .touchUpInside)
         insertButton.accessibilityIdentifier = "keyboard.insert"; stack.addArrangedSubview(insertButton)
         letters.axis = .vertical; letters.spacing = 5; stack.addArrangedSubview(letters)
         renderKeys(); refresh()
     }
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated); refresh()
+        super.viewWillAppear(animated); connected = false; refresh()
+        globe?.isHidden = !needsInputModeSwitchKey
         timer?.invalidate(); timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in self?.refresh() }
     }
     override func viewDidDisappear(_ animated: Bool) { super.viewDidDisappear(animated); timer?.invalidate(); timer = nil; current = nil }
+    override func viewWillLayoutSubviews() { super.viewWillLayoutSubviews(); updateKeyLayout() }
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) { super.traitCollectionDidChange(previousTraitCollection); updateKeyLayout() }
+    private func updateKeyLayout() {
+        guard isViewLoaded else { return }
+        let compact = traitCollection.verticalSizeClass == .compact
+        guard compact != compactKeys else { return }
+        compactKeys = compact
+        minimumHeight?.constant = compact ? 260 : 350
+        globeHeight?.constant = compact ? 32 : 48
+        insertHeight?.constant = compact ? 44 : 48
+        status.numberOfLines = compact ? 1 : 3
+        renderKeys()
+    }
     override func textDidChange(_ textInput: UITextInput?) { super.textDidChange(textInput); refresh() }
     private func refresh() {
+        if fullAccess && !connected {
+            if let environment { environment.didConnect() } else { KeyboardTransfer.markConnected() }
+            connected = true
+        }
+        if !fullAccess { connected = false }
         current = fullAccess ? (environment != nil ? environment?.peek() : KeyboardTransfer.peek()) : nil
         if current?.isValid() != true { current = nil }
         if fullAccess { if let environment { environment.prune() } else { KeyboardTransfer.prune() } }
@@ -97,6 +127,7 @@ final class KeyboardViewController: UIInputViewController {
             let text = try environment?.consume(current.id) ?? KeyboardTransfer.consume(current.id)
             let insertion = InsertionComposer.compose(text, before: proxy.documentContextBeforeInput, after: proxy.documentContextAfterInput, replacingSelection: !(proxy.selectedText ?? "").isEmpty)
             proxy.insertText(insertion)
+            if let environment { environment.didInsert(current.id) } else { KeyboardTransfer.markInserted(current.id) }
             self.current = nil; refresh()
         } catch { refresh(); status.text = c("ios.keyboard.transfer_error") }
     }
@@ -104,7 +135,7 @@ final class KeyboardViewController: UIInputViewController {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal); button.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 19) ?? .systemFont(ofSize: 19)
         button.tintColor = ink; button.backgroundColor = surface; button.layer.cornerRadius = 4
-        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 48).isActive = true
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: compactKeys ? 32 : 48).isActive = true
         button.addTarget(self, action: action, for: .touchUpInside)
         return button
     }

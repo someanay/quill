@@ -18,11 +18,12 @@ enum Q {
     static let ink = adaptive(0x202522, 0xE0E7F6)
     static let muted = adaptive(0x5C665F, 0xB2B9C6)
     static let line = adaptive(0xD9DED9, 0x353C48)
-    static let danger = adaptive(0xD6453D, 0xE8635B)
-    static let success = adaptive(0x2E9E6B, 0x43B585)
+    static let danger = adaptive(0xB93631, 0xE8635B)
+    static let dangerFill = adaptive(0xB93631, 0xB93631)
+    static let success = adaptive(0x23744F, 0x43B585)
     static let fieldRadius: CGFloat = 6
     static let cardRadius: CGFloat = 8
-    static let controlRadius: CGFloat = 4
+    static let controlRadius: CGFloat = 6
     static let largeRadius: CGFloat = 12
     static let dialogRadius: CGFloat = 16
     static func sans(_ size: CGFloat = 16, relativeTo style: Font.TextStyle = .body) -> Font { .custom("IBMPlexSans", size: size, relativeTo: style) }
@@ -39,9 +40,10 @@ struct Wordmark: View {
 struct QCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
-    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
+    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
 }
 struct QButton: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let title: String
     var icon: String? = nil
     var secondary = false
@@ -49,11 +51,11 @@ struct QButton: View {
     let action: () -> Void
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center) }
-                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 18).padding(.vertical, 14).frame(maxWidth: .infinity, minHeight: 48)
+            HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
+                .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular ? 320 : .infinity, minHeight: 50)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
-                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
-        }.buttonStyle(.plain)
+                .background(secondary ? Q.brandSoft : (destructive ? Q.dangerFill : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
+        }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 struct QBanner: View {
@@ -63,24 +65,23 @@ struct QBanner: View {
     var error = false
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon).frame(width: 20).accessibilityHidden(true)
+            Image(systemName: icon).font(.system(size: 16)).frame(width: 20).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 5) {
-                if let title { Text(title).fontWeight(.medium) }
+                if let title { Text(title).fontWeight(.medium).fixedSize(horizontal: false, vertical: true) }
                 Text(text).fixedSize(horizontal: false, vertical: true)
             }
-        }.font(Q.sans(13)).foregroundStyle(error ? Q.danger : Q.brandInk)
-            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-            // Android's Banner explicitly overrides its theme's small shape with 12 dp.
+        }.font(Q.sans(13)).multilineTextAlignment(.leading).foregroundStyle(error ? Q.danger : Q.brandInk)
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             .background(error ? Q.danger.opacity(0.09) : Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.largeRadius))
     }
 }
 struct QHeading: View {
     let title: String
-    var body: some View { Text(title).font(Q.serif()).foregroundStyle(Q.ink).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10).accessibilityAddTraits(.isHeader) }
+    var body: some View { Text(title).font(Q.serif()).foregroundStyle(Q.ink).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 10).accessibilityAddTraits(.isHeader) }
 }
 struct QSection: View {
     let title: String
-    var body: some View { Text(title.uppercased()).font(Q.sans(12)).fontWeight(.medium).tracking(0.8).foregroundStyle(Q.muted).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 14).accessibilityAddTraits(.isHeader) }
+    var body: some View { Text(title).font(Q.sans(14)).fontWeight(.medium).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading).padding(.top, 18).accessibilityAddTraits(.isHeader) }
 }
 struct QRow: View {
     let title: String
@@ -89,16 +90,15 @@ struct QRow: View {
     var value: String? = nil
     var chevron = true
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon).font(.system(size: 19)).foregroundStyle(Q.brandInk).frame(width: 40, height: 40).background(Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.cardRadius)).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Q.sans(16)).foregroundStyle(Q.ink)
-                if let subtitle { Text(subtitle).font(Q.sans(13)).foregroundStyle(Q.muted) }
-            }
-            Spacer(minLength: 6)
+                Text(title).font(Q.sans(16)).foregroundStyle(Q.ink).fixedSize(horizontal: false, vertical: true)
+                if let subtitle { Text(subtitle).font(Q.sans(13)).foregroundStyle(Q.muted).fixedSize(horizontal: false, vertical: true) }
+            }.multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
             if let value { Text(value).font(Q.sans(13)).foregroundStyle(Q.muted) }
             if chevron { Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Q.muted).accessibilityHidden(true) }
-        }.padding(.vertical, 5).frame(minHeight: 48)
+        }.padding(.vertical, 5).frame(minHeight: 48).fixedSize(horizontal: false, vertical: true)
     }
 }
 struct QField: View {
@@ -107,10 +107,17 @@ struct QField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).font(Q.sans(12)).foregroundStyle(Q.muted)
-            TextField(title, text: $text, axis: .vertical).font(Q.sans()).textInputAutocapitalization(.never).autocorrectionDisabled()
-                .padding(14).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.fieldRadius)).overlay(RoundedRectangle(cornerRadius: Q.fieldRadius).stroke(Q.line, lineWidth: 1.5))
+            TextField(title, text: $text, axis: .vertical).textInputAutocapitalization(.never).autocorrectionDisabled()
+                .modifier(QInputSurface())
                 .accessibilityLabel(title)
         }
+    }
+}
+struct QInputSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content.textFieldStyle(.plain).font(Q.sans()).padding(14).frame(minHeight: 52)
+            .background(Q.surface, in: RoundedRectangle(cornerRadius: Q.fieldRadius))
+            .overlay(RoundedRectangle(cornerRadius: Q.fieldRadius).stroke(Q.line, lineWidth: 1.5))
     }
 }
 struct PermissionIllustration: View {
@@ -143,7 +150,7 @@ struct RecordingBubble: View {
     var body: some View {
         ZStack {
             if phase == .recording { Circle().fill(Q.brand.opacity(pulse ? 0.10 : 0.22)).frame(width: size + (pulse ? 26 : 14), height: size + (pulse ? 26 : 14)) }
-            Circle().fill(phase == .failed ? Q.danger : Q.brand).frame(width: size, height: size)
+            Circle().fill(phase == .failed ? Q.dangerFill : Q.brand).frame(width: size, height: size)
                 .overlay(Circle().stroke(.white.opacity(0.92), lineWidth: 2.5)).shadow(color: .black.opacity(0.24), radius: 12, y: 6)
             if [.transcribing, .cleaning].contains(phase) {
                 if reducedMotion { Image(systemName: "ellipsis").foregroundStyle(.white) } else { ProgressView().tint(.white) }
@@ -152,8 +159,25 @@ struct RecordingBubble: View {
             .onAppear { if !reducedMotion { withAnimation(.easeInOut(duration: 1.8).repeatForever(autoreverses: true)) { pulse = true } } }
     }
 }
+struct QScrollClearance: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    func body(content: Content) -> some View { content.padding(.bottom, clearance) }
+    private var clearance: CGFloat {
+        if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .phone || sizeClass == .compact { return 80 }
+        return 0
+    }
+}
 struct QPage<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
-    var body: some View { ScrollView { VStack(alignment: .leading, spacing: 14) { content }.padding(16).frame(maxWidth: 680).frame(maxWidth: .infinity) }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans()) }
+    var body: some View {
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) { content }
+                    .padding(geometry.size.width >= 700 ? 28 : 20)
+                    .modifier(QScrollClearance())
+                    .frame(maxWidth: 980).frame(maxWidth: .infinity)
+            }.scrollDismissesKeyboard(.interactively)
+        }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans())
+    }
 }
