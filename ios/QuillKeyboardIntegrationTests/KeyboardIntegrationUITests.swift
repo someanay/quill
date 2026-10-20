@@ -154,7 +154,10 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private func enableKeyboardThroughSettings() throws {
         stage = "enable-keyboard-in-settings"
         tap(host.buttons["onboarding.keyboard.settings"], in: host)
-        XCTAssertTrue(settings.wait(for: .runningForeground, timeout: 10))
+        // A cold baseline simulator can spend more than ten seconds launching
+        // Preferences. Failure evidence showed its real Apps screen arriving
+        // during teardown; retain the actual foreground gate with a bounded wait.
+        XCTAssertTrue(settings.wait(for: .runningForeground, timeout: 30))
         XCTAssertTrue(settings.navigationBars.firstMatch.waitForExistence(timeout: 20))
         // The public app-settings URL can finish its Apps/Quill navigation after
         // Settings is already foreground. Wait before touching a transient root page.

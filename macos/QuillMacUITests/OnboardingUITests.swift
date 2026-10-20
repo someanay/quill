@@ -78,7 +78,9 @@ final class OnboardingUITests: XCTestCase {
     }
     private func setDisclosure(_ disclosure: XCUIElement, expanded: Bool, in app: XCUIApplication) {
         reveal(disclosure, in: app)
-        let expected = expanded ? "Expanded" : "Collapsed"
+        // SwiftUI preserves native disclosure semantics even with our full-row
+        // button style: AX exposes DisclosureTriangle with a numeric value.
+        let expected = expanded ? "1" : "0"
         if String(describing: disclosure.value ?? "") != expected {
             disclosure.click()
         }
@@ -206,7 +208,7 @@ final class OnboardingUITests: XCTestCase {
                     let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-" + page; shot.lifetime = .keepAlways; add(shot)
                     if target.width > 1000 && page == "about" {
                         for title in ["Privacy Policy", "Terms of Service", "Open-source licenses"] {
-                            let disclosure = app.buttons[title]
+                            let disclosure = app.disclosureTriangles[title]
                             setDisclosure(disclosure, expanded: true, in: app)
                             let detail = XCTAttachment(screenshot: app.screenshot()); detail.name = "macOS-legal-\(dark ? "dark" : "light")-" + title; detail.lifetime = .keepAlways; add(detail)
                             setDisclosure(disclosure, expanded: false, in: app)
@@ -238,7 +240,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 5))
         for provider in ["gemini", "groq", "openrouter", "openai", "custom"] {
             if provider == "openai" {
-                let other = app.sheets.firstMatch.buttons["OpenAI or a custom provider"]
+                let other = app.sheets.firstMatch.disclosureTriangles["OpenAI or a custom provider"]
                 setDisclosure(other, expanded: true, in: app)
                 XCTAssertTrue(app.sheets.firstMatch.buttons["key-provider-openai"].waitForExistence(timeout: 5))
             }
