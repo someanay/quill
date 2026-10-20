@@ -36,8 +36,18 @@ import UIKit
         let protected = UITextField(); protected.isSecureTextEntry = true; protected.placeholder = "Protected field"; protected.borderStyle = .roundedRect; protected.accessibilityIdentifier = "quill.qa.secure"
         let phone = UITextField(); phone.keyboardType = .phonePad; phone.placeholder = "Phone number"; phone.borderStyle = .roundedRect; phone.accessibilityIdentifier = "quill.qa.phone"
         let fields = UIStackView(arrangedSubviews: [protected, phone]); fields.axis = .horizontal; fields.spacing = 12; fields.distribution = .fillEqually; fields.translatesAutoresizingMaskIntoConstraints = false
+        let end = UIButton(type: .system)
+        end.setTitle("Place caret at end", for: .normal)
+        end.accessibilityIdentifier = "quill.qa.caret-end"
+        end.translatesAutoresizingMaskIntoConstraints = false
+        end.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            self.editor.becomeFirstResponder()
+            self.editor.selectedRange = NSRange(location: self.editor.text.utf16.count, length: 0)
+        }, for: .touchUpInside)
         view.addSubview(title)
         view.addSubview(fields)
+        view.addSubview(end)
         view.addSubview(editor)
         NSLayoutConstraint.activate([
             title.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
@@ -47,7 +57,10 @@ import UIKit
             fields.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             fields.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             fields.heightAnchor.constraint(equalToConstant: 44),
-            editor.topAnchor.constraint(equalTo: fields.bottomAnchor, constant: 16),
+            end.topAnchor.constraint(equalTo: fields.bottomAnchor, constant: 8),
+            end.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            end.heightAnchor.constraint(equalToConstant: 44),
+            editor.topAnchor.constraint(equalTo: end.bottomAnchor, constant: 12),
             editor.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             editor.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             editor.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor, constant: -16)

@@ -68,10 +68,11 @@ struct RootView: View {
 struct MainTabs: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var columnVisibility = NavigationSplitViewVisibility.all
     var body: some View {
         GeometryReader { geometry in
             if sizeClass == .regular && geometry.size.width >= 760 {
-                NavigationSplitView {
+                NavigationSplitView(columnVisibility: $columnVisibility) {
                     List {
                         Section {
                             sidebarItem(0, title: "nav.home", icon: "waveform", identifier: "nav.home")

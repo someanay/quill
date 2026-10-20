@@ -27,7 +27,7 @@ struct OnboardingView: View {
                         HStack { if geometry.size.width < 900 { Wordmark() }; Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
                         if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
                         Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
-                        stepContent
+                        stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : 88))
                         if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
                     }.padding(geometry.size.width < 700 ? 24 : 44).frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: step == 0 ? geometry.size.height : 0, alignment: .center)
@@ -59,11 +59,15 @@ struct OnboardingView: View {
             HelpText(key: "desktop.setup.local").padding(.horizontal, 12)
         }.padding(.horizontal, 12).padding(.vertical, 30)
     }
-    @ViewBuilder private var stepContent: some View {
+    @ViewBuilder private func stepContent(contentWidth: CGFloat) -> some View {
         switch step {
         case 0:
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 36) { welcomeInstructions.frame(minWidth: 310); welcomeExample.frame(minWidth: 290) }
+            if contentWidth >= 700 {
+                HStack(alignment: .top, spacing: 36) {
+                    welcomeInstructions.frame(width: (contentWidth - 36) / 2, alignment: .leading)
+                    welcomeExample.frame(width: (contentWidth - 36) / 2, alignment: .leading)
+                }
+            } else {
                 VStack(alignment: .leading, spacing: 26) { welcomeInstructions; welcomeExample }
             }
             HStack(spacing: 18) {

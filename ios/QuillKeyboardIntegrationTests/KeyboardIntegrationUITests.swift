@@ -53,10 +53,10 @@ final class KeyboardIntegrationUITests: XCTestCase {
         for _ in 0..<20 {
             let row = settingsRow(title, prefix: prefix)
             if row.exists && usableFrame(row.frame) {
-                if row.isHittable { row.tap(); return }
+                if row.isHittable { row.tap(); RunLoop.current.run(until: Date().addingTimeInterval(0.5)); return }
                 settings.swipeUp()
             } else {
-                RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+                settings.swipeUp()
             }
         }
         try blocked("Simulator Settings did not expose a reachable \(title) row.", app: settings)
@@ -126,9 +126,11 @@ final class KeyboardIntegrationUITests: XCTestCase {
         } else {
             // This is the manual route also documented under “Can’t find Keyboards?”.
             for _ in 0..<6 {
-                if settingsRow("General").exists { break }
-                let back = settings.navigationBars.buttons.element(boundBy: 0)
+                let navigation = settings.navigationBars.firstMatch
+                if navigation.identifier == "Settings" { break }
+                let back = navigation.buttons.firstMatch
                 guard back.exists else { break }; back.tap()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.5))
             }
             try openSettingsRow("General")
             try openSettingsRow("Keyboard")
@@ -233,7 +235,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         if phoneInsert.waitForExistence(timeout: 2) { XCTAssertFalse(phoneInsert.isEnabled) }
         XCTAssertEqual(editor.value as? String, expected)
         attach("phone-field-does-not-insert", app: fixture)
-        tap(editor, in: fixture); try showQuillKeyboard(in: fixture)
+        tap(fixture.buttons["quill.qa.caret-end"], in: fixture); try showQuillKeyboard(in: fixture)
         let remaining = fixture.buttons["keyboard.insert"]
         expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: remaining); waitForExpectations(timeout: 8)
         tap(remaining, in: fixture)

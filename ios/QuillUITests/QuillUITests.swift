@@ -60,6 +60,9 @@ final class QuillUITests: XCTestCase {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"] + arguments; app.launch()
         tap(app.buttons["Open workspace"], in: app)
         XCTAssertTrue(app.buttons["dictation.record"].waitForExistence(timeout: 10))
+        if !settingsTab(app).exists, app.buttons["ToggleSidebar"].exists {
+            tap(app.buttons["ToggleSidebar"], in: app)
+        }
         XCTAssertTrue(settingsTab(app).waitForExistence(timeout: 10))
         return app
     }

@@ -1,5 +1,5 @@
 {
-  "revision": 16,
+  "revision": 17,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -911,13 +911,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.gemini_steps": {
-      "default": "Click https://aistudio.google.com/api-keys to open browser\n[For New Users] Accept Agreement & Click Continue\nClick the Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://aistudio.google.com/api-keys\nSign in to Google AI Studio and accept its terms if asked.\nCopy an existing Gemini key, or choose Create API key and select a project.\nReturn to Quill and paste the key below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.groq_steps": {
-      "default": "Click https://console.groq.com/home to open browser\nCreate a Groq account\nClick on API Keys near the top right\nClick on \"Create API Key\"\nChoose any name you like. For example \"Quill\".\nKeep No Expiration.\nClick the Copy button\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://console.groq.com/keys\nSign in, then choose Create API Key.\nGive the key a name, such as Quill, and create it.\nCopy the key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -931,13 +931,13 @@
       "optionalBlank": false
     },
     "onboarding.key.guide.openai_steps": {
-      "default": "1. Sign in at platform.openai.com.\n2. Open API keys and tap Create new secret key.\n3. Copy the key right away - it's shown only once - then paste it into Quill.\n4. New accounts usually need a small billing credit before the key will transcribe.",
+      "default": "Open https://platform.openai.com/api-keys\nSign in and choose Create new secret key.\nCopy the new key before closing the dialog.\nReturn to Quill and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.guide.openrouter_steps": {
-      "default": "Click https://openrouter.ai/sign-up to open browser\nSign up for OpenRouter.\nChoose Individual.\nClick Copy button (two overlapping sheets)\nCome back to Quill. Paste the copied key below.",
+      "default": "Open https://openrouter.ai/settings/keys\nSign in, then create a new API key.\nName the key Quill and review its spending limit.\nCopy the new key, return to Quill, and paste it below.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1586,13 +1586,13 @@
       "optionalBlank": false
     },
     "settings.keys.empty_body": {
-      "default": "Quill needs a speech-to-text key to transcribe. Add one to start dictating again.",
+      "default": "Connect a speech provider with your own API key. You can add, switch or remove provider keys here.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "settings.keys.empty_title": {
-      "default": "No keys yet",
+      "default": "Connect your first provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
