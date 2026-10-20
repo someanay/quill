@@ -89,7 +89,7 @@ struct VocabularySettings: View {
             if failed { HelpText(key: "mac.error.contacts").foregroundStyle(QuillTheme.error) }
             Button(Copy.text("settings.vocab.open_settings")) { SystemLinks.open("Privacy_Contacts") }
             if !settings.value.contactNames.isEmpty {
-                DisclosureGroup(Copy.text("settings.vocab.title")) { Text(settings.value.contactNames.joined(separator: ", ")).font(QuillTheme.sans(13)).textSelection(.enabled) }
+                DisclosureGroup(Copy.text("settings.vocab.title")) { Text(settings.value.contactNames.joined(separator: ", ")).font(QuillTheme.sans(13)).textSelection(.enabled) }.disclosureGroupStyle(QuillDisclosureStyle())
                 Button(Copy.text("settings.vocab.clear"), role: .destructive) { clear = true }
             }
         }.onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized }
@@ -197,9 +197,9 @@ struct AboutSettings: View {
         QuillFormSection {
             Wordmark()
             Text(Copy.text("settings.about.version", Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0", Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"))
-            DisclosureGroup(Copy.text("settings.about.privacy_policy")) { HelpText(key: "mac.legal.privacy") }
-            DisclosureGroup(Copy.text("settings.about.terms")) { HelpText(key: "mac.legal.terms") }
-            DisclosureGroup(Copy.text("settings.about.licenses"), isExpanded: $licenses) { Text(licenseText).font(QuillTheme.sans(12)).textSelection(.enabled) }
+            DisclosureGroup(Copy.text("settings.about.privacy_policy")) { HelpText(key: "mac.legal.privacy") }.disclosureGroupStyle(QuillDisclosureStyle())
+            DisclosureGroup(Copy.text("settings.about.terms")) { HelpText(key: "mac.legal.terms") }.disclosureGroupStyle(QuillDisclosureStyle())
+            DisclosureGroup(Copy.text("settings.about.licenses"), isExpanded: $licenses) { Text(licenseText).font(QuillTheme.sans(12)).textSelection(.enabled) }.disclosureGroupStyle(QuillDisclosureStyle())
             HelpText(key: "settings.about.footer")
             HelpText(key: "mac.about.copy")
         }

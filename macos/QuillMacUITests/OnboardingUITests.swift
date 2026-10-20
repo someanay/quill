@@ -48,7 +48,11 @@ final class OnboardingUITests: XCTestCase {
                 XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
                 if index == 0 { XCTAssertTrue(app.buttons["onboarding.welcome.cta"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
 
-                if index == 2 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
+                if index == 2 {
+                    let gemini = app.buttons["key-provider-gemini"]
+                    reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
+                    XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
+                }
                 if index == 3 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
                 if index == 4 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
                 let shot = XCTAttachment(screenshot: app.screenshot())
@@ -74,11 +78,9 @@ final class OnboardingUITests: XCTestCase {
     }
     private func setDisclosure(_ disclosure: XCUIElement, expanded: Bool, in app: XCUIApplication) {
         reveal(disclosure, in: app)
-        let expected = expanded ? "1" : "0"
+        let expected = expanded ? "Expanded" : "Collapsed"
         if String(describing: disclosure.value ?? "") != expected {
-            // Native macOS disclosure labels are not their chevron's hit target.
-            // Use the observed control's leading glyph, then prove the state.
-            disclosure.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 7, dy: 0)).click()
+            disclosure.click()
         }
         expectation(for: NSPredicate { _, _ in String(describing: disclosure.value ?? "") == expected }, evaluatedWith: app)
         waitForExpectations(timeout: 5)
@@ -147,6 +149,8 @@ final class OnboardingUITests: XCTestCase {
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: accept)
         wait(for: [enabled], timeout: 6); accept.click()
         XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 6))
+        let gemini = app.buttons["key-provider-gemini"]
+        reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
         XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
         let key = XCTAttachment(screenshot: app.screenshot()); key.name = "macOS-key-setup"; key.lifetime = .keepAlways; add(key)
         app.secureTextFields["key-input"].click()
@@ -202,7 +206,7 @@ final class OnboardingUITests: XCTestCase {
                     let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-" + page; shot.lifetime = .keepAlways; add(shot)
                     if target.width > 1000 && page == "about" {
                         for title in ["Privacy Policy", "Terms of Service", "Open-source licenses"] {
-                            let disclosure = app.disclosureTriangles[title]
+                            let disclosure = app.buttons[title]
                             setDisclosure(disclosure, expanded: true, in: app)
                             let detail = XCTAttachment(screenshot: app.screenshot()); detail.name = "macOS-legal-\(dark ? "dark" : "light")-" + title; detail.lifetime = .keepAlways; add(detail)
                             setDisclosure(disclosure, expanded: false, in: app)
@@ -214,7 +218,8 @@ final class OnboardingUITests: XCTestCase {
                         XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 5))
                         let report = XCTAttachment(screenshot: app.screenshot()); report.name = "macOS-diagnostics-\(dark ? "dark" : "light")"; report.lifetime = .keepAlways; add(report)
                         app.sheets.firstMatch.buttons["Close"].click()
-                        XCTAssertFalse(app.sheets.firstMatch.exists)
+                        let dismissed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.sheets.firstMatch)
+                        wait(for: [dismissed], timeout: 5)
                     }
                     reveal(app.buttons["settings-back"], in: app)
                     app.buttons["settings-back"].click()
@@ -233,7 +238,7 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 5))
         for provider in ["gemini", "groq", "openrouter", "openai", "custom"] {
             if provider == "openai" {
-                let other = app.sheets.firstMatch.disclosureTriangles["OpenAI or a custom provider"]
+                let other = app.sheets.firstMatch.buttons["OpenAI or a custom provider"]
                 setDisclosure(other, expanded: true, in: app)
                 XCTAssertTrue(app.sheets.firstMatch.buttons["key-provider-openai"].waitForExistence(timeout: 5))
             }

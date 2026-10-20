@@ -41,7 +41,7 @@ private struct KeySetupContent: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
             DisclosureGroup(Copy.text("mac.key.other_providers"), isExpanded: $advanced) {
                 VStack(spacing: 0) { ForEach([Provider.openai, .custom]) { provider in providerRow(provider) } }.padding(.top, 8)
-            }.font(QuillTheme.sans(12))
+            }.disclosureGroupStyle(QuillDisclosureStyle()).font(QuillTheme.sans(12))
             if model.storageError { HelpText(key: "onboarding.key.storage_error", bad: true) }
             if browserError { HelpText(key: "onboarding.key.browser_error", bad: true) }
         }.onAppear { refreshClipboardMetadata(); advanced = ["openai", "custom"].contains(model.expanded); model.appear() }

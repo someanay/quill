@@ -77,6 +77,22 @@ struct QuillFormSection<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View { VStack(alignment: .leading, spacing: 20) { content }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading) }
 }
+struct QuillDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button { configuration.isExpanded.toggle() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: configuration.isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold)).frame(width: 12)
+                    configuration.label
+                    Spacer(minLength: 0)
+                }.frame(maxWidth: .infinity, minHeight: 28, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+                .accessibilityValue(Copy.text(configuration.isExpanded ? "onboarding.key.expanded" : "onboarding.key.collapsed"))
+            if configuration.isExpanded { configuration.content.padding(.leading, 20) }
+        }
+    }
+}
 struct ShortcutKeycaps: View {
     @Environment(\.colorScheme) private var scheme
     var body: some View {
