@@ -128,7 +128,14 @@ public static partial class Program {
    stateProperty.SetValue(services.Dictation,state); window.RefreshStatus();
    if (!ReferenceEquals(editor,editorField.GetValue(window)) || editor.Text != "An existing thought" || editor.SelectionStart != 3 || editor.SelectionLength != 5) throw new InvalidOperationException("Dictation status replaced the practice field or its selection.");
   }
-  File.WriteAllText(Path.Combine(folder,"result.json"),JsonSerializer.Serialize(new { passed = true,rendered,steps = 7,viewports = 6,keyFormRetained = true,practiceEditorRetained = true,shortcutKeycapsRefresh = true }));
+  var errorProperty = typeof(DictationController).GetProperty("Error")!; var notice = (TextBlock)typeof(MainWindow).GetField("notice",flags)!.GetValue(window)!;
+  errorProperty.SetValue(services.Dictation,"provider_busy"); stateProperty.SetValue(services.Dictation,DictationState.Error); window.RefreshStatus();
+  if (notice.Visibility != Visibility.Visible || notice.Text != services.Copy.Get("windows.error.provider_busy")) throw new InvalidOperationException("Provider error was not presented.");
+  errorProperty.SetValue(services.Dictation,""); stateProperty.SetValue(services.Dictation,DictationState.Idle); window.RefreshStatus();
+  if (notice.Visibility != Visibility.Collapsed) throw new InvalidOperationException("A completed or cancelled dictation left a stale error banner.");
+  errorProperty.SetValue(services.Dictation,"provider_busy"); window.RefreshStatus(); window.SetNotice("Unrelated setup hint"); errorProperty.SetValue(services.Dictation,""); window.RefreshStatus();
+  if (notice.Text != "Unrelated setup hint") throw new InvalidOperationException("Clearing a dictation error removed an unrelated notice.");
+  File.WriteAllText(Path.Combine(folder,"result.json"),JsonSerializer.Serialize(new { passed = true,rendered,steps = 7,viewports = 6,keyFormRetained = true,practiceEditorRetained = true,shortcutKeycapsRefresh = true,dictationNoticesReset = true }));
   Console.WriteLine($"PASS {rendered} setup layouts, resizable window, retained key form/practice editor, and Home size preservation."); application.Shutdown(); application.Dispatcher.InvokeShutdown();
  }
  private static void RenderDemo(string folder) {

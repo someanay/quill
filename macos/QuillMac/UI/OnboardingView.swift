@@ -29,7 +29,7 @@ struct OnboardingView: View {
                         if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
                         Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 && geometry.size.height >= 640 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
                         stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : geometry.size.height < 640 ? 56 : 88), compact: geometry.size.height < 640)
-                        if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(QuillTheme.error).fixedSize(horizontal: false, vertical: true) }
+                        if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(dictation.state == .error ? QuillTheme.error : QuillTheme.muted(scheme == .dark)).fixedSize(horizontal: false, vertical: true) }
                     }.padding(geometry.size.width < 700 ? 24 : geometry.size.height < 640 ? 28 : 44).frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: step == 0 ? geometry.size.height : 0, alignment: .center)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity).accessibilityIdentifier("onboarding-content")
@@ -107,7 +107,7 @@ struct OnboardingView: View {
             QuillButton(key: "action.continue") { settings.value.accessibilityConsent = true; step = 5 }.disabled(!accepted || !dictation.accessibilityGranted)
         case 5:
             BodyCopy(key: "desktop.setup.shortcut_body")
-            QuillCard { if dictation.shortcutAvailable { CopyText("mac.hotkey.label").font(QuillTheme.sans(26)) } else { HelpText(key: "mac.setup.shortcut_unavailable", size: 14, bad: true) }; HelpText(key: "mac.setup.controls", size: 14); Toggle(Copy.text("desktop.setup.bubble_choice"), isOn: $settings.value.bubbleActive) }
+            QuillCard { if dictation.shortcutAvailable { CopyText("mac.hotkey.keys").font(QuillTheme.sans(26)) } else { HelpText(key: "mac.setup.shortcut_unavailable", size: 14, bad: true) }; HelpText(key: "mac.setup.controls", size: 14); Toggle(Copy.text("desktop.setup.bubble_choice"), isOn: $settings.value.bubbleActive) }
             CopyText("desktop.practice.title").font(QuillTheme.sans(17))
             HelpText(key: "desktop.practice.body")
             TextEditor(text: $practice).font(QuillTheme.sans(16)).frame(minHeight: 160).border(QuillTheme.line(scheme == .dark)).accessibilityLabel(Copy.text("desktop.practice.title"))

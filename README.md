@@ -34,10 +34,12 @@ The [live-provider follow-up](docs/live-provider-validation.md) uses the owner's
 existing Gemini/OpenRouter accounts, synthetic speech and exact editor readback.
 Its results distinguish accepted cleanup from raw fallback and provider failures.
 Four selected iPhone/iPad baseline/current live journeys pass, including repeated
-background keyboard insertion. Updated Windows pipeline packages are 2.0.4;
-this follow-up does not replace the installed 2.0.3 copy.
+background keyboard insertion. Updated Windows pipeline packages are 2.0.4.
+The subsequent [native Groq refresh](docs/native-groq-refresh.md) installs 2.0.4,
+preserves the original Windows keys and preferences, and tracks the new onboarding,
+animated previews and installed microphone-to-insertion acceptance gate.
 
-Windows 2.0.3 is installed normally on this workstation with a Start shortcut and
+Windows 2.0.4 is installed normally on this workstation with a Start shortcut and
 Installed apps entry. Native verification runs on Windows x64/ARM, macOS 15/26
 on Intel/Apple Silicon, and iPhone/iPad simulators. Exact results and limitations
 are recorded in [Windows verification](windows/VERIFICATION.md) and

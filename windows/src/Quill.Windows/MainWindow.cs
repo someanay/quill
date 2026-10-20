@@ -6,7 +6,7 @@ using Microsoft.Win32;
 namespace Quill.Windows;
 public sealed partial class MainWindow : Window {
  private readonly AppServices app; private readonly StackPanel page = new(); private readonly TextBlock notice = new(); private readonly TextBlock liveStatus = new(); private readonly StackPanel nav = new(); private readonly ScrollViewer scroll;
- private string route = "home"; private int step; private bool setupSettings; private AudioRecorder? micTest; private bool micPassed; private bool quitting; private DictationState renderedState; private string renderedShortcut = "";
+ private string route = "home"; private int step; private bool setupSettings; private AudioRecorder? micTest; private bool micPassed; private bool quitting; private DictationState renderedState; private string renderedShortcut = ""; private string dictationNotice = "";
  private readonly List<IDisposable> pageLifetimes = [];
  private string C(string key, string fallback, params object[] args) => app.C(key, fallback, args);
  private QuillSettings S => app.Settings.Value;
@@ -32,7 +32,8 @@ public sealed partial class MainWindow : Window {
   var changed = renderedState != state || renderedShortcut != shortcut; renderedState = state; renderedShortcut = shortcut;
   if (changed) foreach (var update in shortcutPresentations.ToArray()) update();
   if (S.OnboardingComplete && !setupWindow && route == "home") UpdateHomeSession(changed);
-  if (app.Dictation.Error.Length > 0) SetNotice(app.ErrorText(app.Dictation.Error));
+  if (app.Dictation.Error.Length > 0) { dictationNotice = app.ErrorText(app.Dictation.Error); SetNotice(dictationNotice); }
+  else if (dictationNotice.Length > 0) { if (notice.Text == dictationNotice) SetNotice(""); dictationNotice = ""; }
  }
  private void BuildNav() => BuildDesktopNavigation();
  private void Clear() { practiceEditor = null; foreach (var lifetime in pageLifetimes) lifetime.Dispose(); pageLifetimes.Clear(); micTest?.Dispose(); micTest = null; page.Children.Clear(); SetNotice(""); scroll.VerticalContentAlignment = VerticalAlignment.Top; scroll.ScrollToTop(); }
