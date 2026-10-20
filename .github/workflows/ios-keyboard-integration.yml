@@ -19,12 +19,17 @@ on:
         description: Run actual providers with synthetic speech through the real microphone
         type: boolean
         default: false
+      live_runner:
+        description: Focus a live follow-up on an available Mac runner
+        type: choice
+        options: [all, macos-15, macos-26, macos-15-intel, macos-26-intel]
+        default: all
 
 permissions:
   contents: read
 
 concurrency:
-  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}
+  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}-${{ inputs.live_runner || 'all' }}
   cancel-in-progress: true
 
 jobs:
@@ -33,6 +38,7 @@ jobs:
     uses: ./.github/workflows/live-providers.yml
     with:
       platform: ios
+      ios_runner: ${{ inputs.live_runner || 'all' }}
     secrets:
       QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
       QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
