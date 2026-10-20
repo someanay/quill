@@ -1,5 +1,5 @@
 {
-  "revision": 18,
+  "revision": 19,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -2884,7 +2884,7 @@
       "optionalBlank": false
     },
     "ios.home.no_last_used": {
-      "default": "No saved dictations yet. Tap the microphone to begin.",
+      "default": "No saved dictations yet.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3114,7 +3114,7 @@
       "optionalBlank": false
     },
     "ios.audio.route": {
-      "default": "Quill uses the iPhone's built-in microphone. Calls, unplugging an input, or permission changes interrupt recording and show a recovery action.",
+      "default": "Quill prefers this device's built-in microphone. Calls, audio input changes or permission changes can interrupt recording and show a recovery action.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

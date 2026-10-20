@@ -35,7 +35,7 @@ struct HomeView: View {
                         }.frame(maxWidth: .infinity)
                         if wide { context.frame(width: 290) }
                     }
-                }.padding(geometry.size.width >= 700 ? 28 : 20).frame(maxWidth: 1400).frame(maxWidth: .infinity)
+                }.padding(geometry.size.width >= 700 ? 28 : 20).modifier(QScrollClearance()).frame(maxWidth: 1400).frame(maxWidth: .infinity)
             }
         }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans()).onAppear { model.refreshHistory() }
     }

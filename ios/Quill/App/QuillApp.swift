@@ -71,7 +71,7 @@ struct MainTabs: View {
     @State private var columnVisibility = NavigationSplitViewVisibility.all
     var body: some View {
         GeometryReader { geometry in
-            if sizeClass == .regular && geometry.size.width >= 760 {
+            if UIDevice.current.userInterfaceIdiom == .pad && sizeClass == .regular && geometry.size.width >= 760 {
                 NavigationSplitView(columnVisibility: $columnVisibility) {
                     List {
                         Section {

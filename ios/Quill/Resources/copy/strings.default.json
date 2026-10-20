@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 18,
+  "revision": 19,
   "locale": "en",
   "updatedAt": "2026-10-20T00:00:00Z",
   "strings": {
@@ -479,7 +479,7 @@
     "ios.home.no_history": "No dictations yet. Try a recording from Home.",
     "ios.home.dictations_count": "%1$d dictations",
     "ios.home.words_count": "%1$d words in today's saved history",
-    "ios.home.no_last_used": "No saved dictations yet. Tap the microphone to begin.",
+    "ios.home.no_last_used": "No saved dictations yet.",
     "ios.home.tip_title": "From your voice to another app",
     "ios.home.tip_body": "Record in Quill → Send to keyboard → return to your app and tap Insert dictation. The handoff is single use and expires after 60 seconds.",
     "ios.result.title": "Your dictation",
@@ -517,7 +517,7 @@
     "ios.audio.cap": "Stops after %1$d seconds",
     "ios.audio.silence_detail": "A quiet pause of 3.5 seconds stops recording after a 2-second startup grace. The microphone meter uses the same measured audio level.",
     "ios.audio.format": "WAV · 16 kHz · mono · 16-bit PCM",
-    "ios.audio.route": "Quill uses the iPhone's built-in microphone. Calls, unplugging an input, or permission changes interrupt recording and show a recovery action.",
+    "ios.audio.route": "Quill prefers this device's built-in microphone. Calls, audio input changes or permission changes can interrupt recording and show a recovery action.",
     "ios.size.small": "Small",
     "ios.size.medium": "Medium",
     "ios.size.large": "Large",

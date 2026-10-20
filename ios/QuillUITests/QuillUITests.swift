@@ -4,8 +4,10 @@ final class QuillUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     override func tearDownWithError() throws {
         let app = XCUIApplication()
-        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
-        let hierarchy = XCTAttachment(string: app.debugDescription); hierarchy.name = "UI hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+        if app.state != .notRunning {
+            let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
+            let hierarchy = XCTAttachment(string: app.debugDescription); hierarchy.name = "UI hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+        }
         app.terminate()
     }
     private func tap(_ element: XCUIElement, in app: XCUIApplication) {
@@ -153,6 +155,20 @@ final class QuillUITests: XCTestCase {
             app.terminate()
         }
     }
+    func testLastSettingsActionCanScrollAboveNativeNavigation() throws {
+        let app = openHome(); tap(settingsTab(app), in: app)
+        tap(app.buttons["settings.advanced"], in: app)
+        let action = app.buttons["settings.clear-data"]
+        for _ in 0..<12 {
+            let bottom = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.windows.firstMatch.frame.maxY
+            if action.exists && action.isHittable && action.frame.maxY < bottom - 8 { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(action.exists); XCTAssertTrue(action.isHittable)
+        let bottom = app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : app.windows.firstMatch.frame.maxY
+        XCTAssertLessThan(action.frame.maxY, bottom - 8, "The final action must scroll clear of native navigation.")
+        capture(app, "ios-settings-footer-reachable")
+    }
     func testEveryNativeSetupStageInLightAndDark() throws {
         for dark in [false, true] {
             for stage in 1...6 {
@@ -199,6 +215,9 @@ final class QuillUITests: XCTestCase {
             for _ in 0..<5 { if row.exists && row.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(row.exists); XCTAssertTrue(row.isHittable)
         }
+        let countRow = app.descendants(matching: .any).matching(identifier: "home.today.count").firstMatch
+        let lastRow = app.buttons["home.today.last_used"]
+        XCTAssertLessThanOrEqual(countRow.frame.maxY, lastRow.frame.minY, "Large text must not overlap adjacent statistics rows.")
         capture(app, "ios-large-text-home-today")
         settingsTab(app).tap()
         tap(app.buttons["settings.visual"], in: app)
