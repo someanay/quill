@@ -223,7 +223,7 @@ final class OnboardingUITests: XCTestCase {
         for provider in ["gemini", "groq", "openrouter", "openai", "custom"] {
             if provider == "openai" {
                 let other = app.sheets.firstMatch.disclosureTriangles["OpenAI or a custom provider"]
-                reveal(other, in: app); if other.value as? String != "1" { other.click() }
+                if !app.sheets.firstMatch.buttons["key-provider-openai"].exists { reveal(other, in: app); other.click() }
             }
             let row = app.sheets.firstMatch.buttons["key-provider-" + provider]
             reveal(row, in: app); if row.value as? String != "Expanded" { row.click() }
