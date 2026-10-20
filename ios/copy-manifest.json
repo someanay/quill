@@ -1,5 +1,5 @@
 {
-  "revision": 19,
+  "revision": 20,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -837,7 +837,7 @@
       "optionalBlank": false
     },
     "onboarding.key.browser_error": {
-      "default": "The browser could not open. Try again after choosing a default browser in Android settings.",
+      "default": "The browser could not open. Choose a default browser in iOS Settings, then try again.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -1672,7 +1672,7 @@
       "optionalBlank": false
     },
     "settings.privacy.banner_title": {
-      "default": "Nothing is collected by Quill.",
+      "default": "No Quill account or data server.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2670,7 +2670,7 @@
       "optionalBlank": false
     },
     "ios.keyboard.full_access_body": {
-      "default": "Full Access connects the keyboard to transcripts you send from Quill. Your keystrokes and field contents stay in the app you’re typing in. The keyboard cannot use the microphone.",
+      "default": "Full Access lets the keyboard receive transcripts from Quill. It uses nearby text only to place a dictation, without saving or sending that text. Keys and microphone access stay in Quill.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

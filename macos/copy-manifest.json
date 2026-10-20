@@ -1,5 +1,5 @@
 {
-  "revision": 22,
+  "revision": 23,
   "placeholderTestVectors": [
     {
       "input": "",
@@ -2268,7 +2268,7 @@
       "optionalBlank": false
     },
     "settings.privacy.banner_title": {
-      "default": "Nothing is collected by Quill.",
+      "default": "No Quill account or data server.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

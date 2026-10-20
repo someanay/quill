@@ -193,10 +193,16 @@ final class QuillUITests: XCTestCase {
     func testAllProviderFormsInDark() throws { try captureAllProviderForms(dark: true) }
     private func revealFormControl(_ element: XCUIElement, in app: XCUIApplication) {
         let scroll = app.scrollViews.firstMatch
-        for _ in 0..<16 {
-            if element.exists && element.isHittable && scroll.frame.insetBy(dx: 0, dy: 8).contains(element.frame) { return }
-            if element.exists && element.frame.maxY < scroll.frame.minY + 12 { scroll.swipeDown() }
-            else { scroll.swipeUp() }
+        for _ in 0..<24 {
+            let navigation = app.navigationBars.firstMatch
+            let top = max(scroll.frame.minY, navigation.exists ? navigation.frame.maxY : scroll.frame.minY) + 12
+            let bottom = min(scroll.frame.maxY, app.tabBars.firstMatch.exists ? app.tabBars.firstMatch.frame.minY : scroll.frame.maxY) - 12
+            if element.exists && element.isHittable && element.frame.minY >= top && element.frame.maxY <= bottom { return }
+            if element.exists && element.frame.origin.y.isFinite {
+                let distance = min(180, max(-180, (top + bottom) / 2 - element.frame.midY))
+                let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: distance)))
+            } else { scroll.swipeUp() }
         }
         XCTAssertTrue(element.exists); XCTAssertTrue(element.isHittable)
     }

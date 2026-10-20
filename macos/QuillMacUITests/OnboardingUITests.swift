@@ -72,6 +72,17 @@ final class OnboardingUITests: XCTestCase {
         }
         XCTAssertTrue(scroll.frame.contains(row.frame), "Settings row must be inside the visible scroll viewport")
     }
+    private func setDisclosure(_ disclosure: XCUIElement, expanded: Bool, in app: XCUIApplication) {
+        reveal(disclosure, in: app)
+        let expected = expanded ? "1" : "0"
+        if String(describing: disclosure.value ?? "") != expected {
+            // Native macOS disclosure labels are not their chevron's hit target.
+            // Use the observed control's leading glyph, then prove the state.
+            disclosure.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 7, dy: 0)).click()
+        }
+        expectation(for: NSPredicate { _, _ in String(describing: disclosure.value ?? "") == expected }, evaluatedWith: app)
+        waitForExpectations(timeout: 5)
+    }
     func testResizingKeySetupKeepsDraftAndReachableControls() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
         let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 10))
@@ -192,9 +203,9 @@ final class OnboardingUITests: XCTestCase {
                     if target.width > 1000 && page == "about" {
                         for title in ["Privacy Policy", "Terms of Service", "Open-source licenses"] {
                             let disclosure = app.disclosureTriangles[title]
-                            reveal(disclosure, in: app); XCTAssertTrue(disclosure.isHittable); disclosure.click()
+                            setDisclosure(disclosure, expanded: true, in: app)
                             let detail = XCTAttachment(screenshot: app.screenshot()); detail.name = "macOS-legal-\(dark ? "dark" : "light")-" + title; detail.lifetime = .keepAlways; add(detail)
-                            reveal(disclosure, in: app); disclosure.click()
+                            setDisclosure(disclosure, expanded: false, in: app)
                         }
                     }
                     if target.width > 1000 && page == "privacy" {
@@ -223,7 +234,8 @@ final class OnboardingUITests: XCTestCase {
         for provider in ["gemini", "groq", "openrouter", "openai", "custom"] {
             if provider == "openai" {
                 let other = app.sheets.firstMatch.disclosureTriangles["OpenAI or a custom provider"]
-                if !app.sheets.firstMatch.buttons["key-provider-openai"].exists { reveal(other, in: app); other.click() }
+                setDisclosure(other, expanded: true, in: app)
+                XCTAssertTrue(app.sheets.firstMatch.buttons["key-provider-openai"].waitForExistence(timeout: 5))
             }
             let row = app.sheets.firstMatch.buttons["key-provider-" + provider]
             reveal(row, in: app); if row.value as? String != "Expanded" { row.click() }
@@ -234,6 +246,10 @@ final class OnboardingUITests: XCTestCase {
             reveal(save, in: app); XCTAssertTrue(save.isHittable); XCTAssertFalse(save.isEnabled)
             let footer = XCTAttachment(screenshot: app.screenshot()); footer.name = "macOS-key-sheet-footer-\(dark ? "dark" : "light")-" + provider; footer.lifetime = .keepAlways; add(footer)
         }
+        // The normal onboarding walkthrough separately verifies Gemini's initial
+        // expansion; do not leave this presentation matrix on Custom.
+        let gemini = app.sheets.firstMatch.buttons["key-provider-gemini"]
+        reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
         let cancel = app.sheets.firstMatch.buttons["Cancel"]; reveal(cancel, in: app); cancel.click()
         XCTAssertFalse(app.sheets.firstMatch.exists)
     }

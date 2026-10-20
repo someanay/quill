@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 22,
+  "revision": 23,
   "locale": "en",
   "updatedAt": "2026-10-20T00:00:00Z",
   "strings": {
@@ -266,7 +266,7 @@
     "settings.audio.format_sub": "WAV · 16 kHz · mono · 16-bit PCM.",
     "settings.audio.format_value": "Recommended",
     "settings.privacy.title": "Privacy and History",
-    "settings.privacy.banner_title": "Nothing is collected by Quill.",
+    "settings.privacy.banner_title": "No Quill account or data server.",
     "settings.privacy.banner_text": "Audio goes directly to your chosen speech provider. Optional cleanup sends the transcript to your chosen cleanup provider. Quill runs no account or data server. Keys, settings, contact names and history stay on this Mac. Private mode prevents new history entries. Pending recordings and undelivered words are encrypted on this Mac for recovery until you retry, copy, or discard them. Successful recordings are removed.",
     "settings.privacy.private_mode": "Private mode",
     "settings.privacy.private_mode_sub": "Don't save any transcripts",
