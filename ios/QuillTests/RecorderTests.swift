@@ -1,6 +1,7 @@
 import XCTest
 import Foundation
 import AVFoundation
+import SwiftUI
 import QuillCore
 @testable import Quill
 
@@ -123,6 +124,20 @@ private actor DelayedSessionProvider: HTTPTransport {
         XCTAssertFalse(model.recorder.keepsAudioSessionActive)
         await model.keyboardSession.enable(duration: 30)
         XCTAssertTrue(model.keyboardSession.isActive)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let controller = UIHostingController(rootView: KeyboardSessionPanel(session: model.keyboardSession)
+                .environmentObject(model).padding(20).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(Q.paper).preferredColorScheme(style == .dark ? .dark : .light))
+            let size = CGSize(width: 390, height: 600)
+            let window = UIWindow(frame: CGRect(origin: .zero, size: size)); window.overrideUserInterfaceStyle = style
+            window.rootViewController = controller; window.isHidden = false
+            controller.view.frame = CGRect(origin: .zero, size: size); controller.view.layoutIfNeeded()
+            try await Task.sleep(nanoseconds: 100_000_000)
+            let image = UIGraphicsImageRenderer(size: size).image { context in controller.view.layer.render(in: context.cgContext) }
+            let attachment = XCTAttachment(image: image); attachment.name = "Live session host panel " + (style == .dark ? "dark" : "light")
+            attachment.lifetime = .keepAlways; add(attachment)
+            window.isHidden = true; window.rootViewController = nil
+        }
         NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(), userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
         try await Task.sleep(nanoseconds: 400_000_000)
         XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
