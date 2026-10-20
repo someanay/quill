@@ -121,7 +121,9 @@ struct APIKeysView: View {
                     QCard {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack { Text(key.provider.title).fontWeight(.medium); Spacer(); if model.activeKey(key.provider) == key.id { Text(model.c("settings.keys.active")).font(Q.sans(12)).foregroundStyle(Q.success) } }
-                            Text(key.label).foregroundStyle(Q.muted)
+                            if !key.label.isEmpty && key.label.caseInsensitiveCompare(key.provider.title) != .orderedSame {
+                                Text(key.label).foregroundStyle(Q.muted)
+                            }
                             Text("••••••••" + key.suffix).font(.system(.body, design: .monospaced))
                             if key.provider == .custom { Text(key.endpoint).font(Q.sans(12)).foregroundStyle(Q.muted) }
                             HStack {

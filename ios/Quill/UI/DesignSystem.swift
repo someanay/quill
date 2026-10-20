@@ -22,7 +22,7 @@ enum Q {
     static let success = adaptive(0x2E9E6B, 0x43B585)
     static let fieldRadius: CGFloat = 6
     static let cardRadius: CGFloat = 8
-    static let controlRadius: CGFloat = 4
+    static let controlRadius: CGFloat = 6
     static let largeRadius: CGFloat = 12
     static let dialogRadius: CGFloat = 16
     static func sans(_ size: CGFloat = 16, relativeTo style: Font.TextStyle = .body) -> Font { .custom("IBMPlexSans", size: size, relativeTo: style) }
@@ -107,10 +107,17 @@ struct QField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Text(title).font(Q.sans(12)).foregroundStyle(Q.muted)
-            TextField(title, text: $text, axis: .vertical).font(Q.sans()).textInputAutocapitalization(.never).autocorrectionDisabled()
-                .padding(14).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.fieldRadius)).overlay(RoundedRectangle(cornerRadius: Q.fieldRadius).stroke(Q.line, lineWidth: 1.5))
+            TextField(title, text: $text, axis: .vertical).textInputAutocapitalization(.never).autocorrectionDisabled()
+                .modifier(QInputSurface())
                 .accessibilityLabel(title)
         }
+    }
+}
+struct QInputSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content.textFieldStyle(.plain).font(Q.sans()).padding(14).frame(minHeight: 52)
+            .background(Q.surface, in: RoundedRectangle(cornerRadius: Q.fieldRadius))
+            .overlay(RoundedRectangle(cornerRadius: Q.fieldRadius).stroke(Q.line, lineWidth: 1.5))
     }
 }
 struct PermissionIllustration: View {

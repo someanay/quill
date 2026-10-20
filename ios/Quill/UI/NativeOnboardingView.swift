@@ -134,7 +134,7 @@ struct OnboardingView: View {
             QButton(title: model.c("ios.settings.open"), icon: "arrow.up.forward.app") { openSettings() }.accessibilityIdentifier("onboarding.keyboard.settings")
             Text(model.c("ios.setup.keyboard_switch")).font(Q.sans(14)).foregroundStyle(Q.muted)
             TextField(model.c("ios.keyboard.test_field"), text: $keyboardText)
-                .textFieldStyle(.roundedBorder).focused($fieldFocused).frame(minHeight: 48).accessibilityIdentifier("onboarding.keyboard.test")
+                .modifier(QInputSurface()).focused($fieldFocused).accessibilityIdentifier("onboarding.keyboard.test")
             Label(model.c(connected ? "ios.setup.keyboard_connected" : "ios.setup.keyboard_waiting"), systemImage: connected ? "checkmark.circle.fill" : "keyboard")
                 .font(Q.sans(14)).foregroundStyle(connected ? Q.success : Q.muted).accessibilityIdentifier("onboarding.keyboard.status")
             QButton(title: model.c("action.continue")) { move(to: 4) }.disabled(!connected).accessibilityIdentifier("onboarding.keyboard.next")
@@ -169,7 +169,7 @@ struct OnboardingView: View {
             }
             Text(model.c("ios.setup.practice_switch")).font(Q.sans(14)).foregroundStyle(Q.muted)
             TextField(model.c("ios.setup.practice_field"), text: $practiceText)
-                .textFieldStyle(.roundedBorder).focused($fieldFocused).frame(minHeight: 56).accessibilityIdentifier("onboarding.practice.field")
+                .modifier(QInputSurface()).focused($fieldFocused).accessibilityIdentifier("onboarding.practice.field")
             if practiced {
                 Label(model.c("ios.setup.practice_success"), systemImage: "checkmark.circle.fill").foregroundStyle(Q.success).accessibilityIdentifier("onboarding.practice.success")
             }

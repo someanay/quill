@@ -1,5 +1,5 @@
 {
-  "revision": 17,
+  "revision": 18,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -843,7 +843,7 @@
       "optionalBlank": false
     },
     "onboarding.key.choose": {
-      "default": "Choose any 1 of the following",
+      "default": "Choose a provider",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -873,7 +873,7 @@
       "optionalBlank": false
     },
     "onboarding.key.easy": {
-      "default": "Google Gemini (Big Free Usage, Easy Process)",
+      "default": "Google Gemini",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -899,13 +899,13 @@
       "optionalBlank": false
     },
     "onboarding.key.free_note": {
-      "default": "Free-tier limits apply. Paid accounts may be billed under their plan. Quill checks your key without sending audio; successful dictation also depends on your model access and available quota.",
+      "default": "Provider usage limits and charges apply. Checking your key sends no audio.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.free_options": {
-      "default": "OpenRouter (Free options, Longer Process)",
+      "default": "OpenRouter",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -951,7 +951,7 @@
       "optionalBlank": false
     },
     "onboarding.key.more_steps": {
-      "default": "Groq (Big Free Usage, Longer Process)",
+      "default": "Groq",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -975,13 +975,13 @@
       "optionalBlank": false
     },
     "onboarding.key.router_note": {
-      "default": "Free cleanup models are available. Speech transcription may require credits. Quill prefers a free compatible speech model when the live catalog offers one. Checking your key does not spend model credits.",
+      "default": "OpenRouter may charge for transcription. Checking your key sends no audio; your model access and quota determine whether dictation is available.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     },
     "onboarding.key.save_provider": {
-      "default": "Save %1$s API Key Securely",
+      "default": "Save %1$s key",
       "placeholders": [
         "%1$s"
       ],
@@ -1466,7 +1466,7 @@
       "optionalBlank": false
     },
     "settings.bubble.title": {
-      "default": "Visual preferences",
+      "default": "Appearance",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -2178,7 +2178,7 @@
       "optionalBlank": false
     },
     "settings.style.words_promise": {
-      "default": "Style only changes punctuation, capitalization and contractions. It never changes your words.",
+      "default": "Styles adjust punctuation, capitalization and contractions during cleanup.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3407,7 +3407,7 @@
       "optionalBlank": false
     },
     "ios.setup.provider_body": {
-      "default": "Connect your own provider account. Quill saves the key in your device’s Keychain and sends recordings directly to that provider.",
+      "default": "Choose a speech provider, then add your API key. Quill saves it in your device's Keychain and sends recordings directly to that provider.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

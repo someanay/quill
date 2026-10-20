@@ -75,7 +75,12 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     HStack { CopyText("desktop.workspace.title").font(QuillTheme.serif(34)); Spacer(); if settings.value.privateMode { Image(systemName: "eye.slash").accessibilityLabel(Copy.text("settings.privacy.private_mode")) } }
                     if !dictation.microphoneGranted || !dictation.accessibilityGranted || keys.active(settings.value.provider, settings: settings.value) == nil {
-                        QuillCard { CopyText("desktop.workspace.setup_needed").fontWeight(.medium); QuillButton(key: "nav.settings", primary: false, action: openSettings).accessibilityIdentifier("workspace.setup.settings") }
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: "info.circle").foregroundStyle(QuillTheme.brandInk(scheme == .dark))
+                            CopyText("desktop.workspace.setup_needed").font(QuillTheme.sans(14)).fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 12)
+                            Button(Copy.text("nav.settings"), action: openSettings).accessibilityIdentifier("workspace.setup.settings")
+                        }.padding(.vertical, 8)
                     }
                     if geometry.size.width >= 960 {
                         HStack(alignment: .top, spacing: 24) { workspace.frame(maxWidth: .infinity); supporting.frame(width: max(300, geometry.size.width * 0.32)) }
@@ -86,10 +91,14 @@ struct HomeView: View {
     }
     private var workspace: some View {
         VStack(alignment: .leading, spacing: 20) {
-            QuillCard {
+            VStack(alignment: .leading, spacing: 16) {
                 CopyText("desktop.practice.title").font(QuillTheme.serif(25))
                 HelpText(key: "desktop.practice.body", size: 14)
-                TextEditor(text: $practice).font(QuillTheme.sans(17)).frame(minHeight: 230).border(QuillTheme.line(scheme == .dark)).accessibilityLabel(Copy.text("desktop.practice.title"))
+                TextEditor(text: $practice).font(QuillTheme.sans(17)).scrollContentBackground(.hidden)
+                    .padding(16).frame(minHeight: 300)
+                    .background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
+                    .accessibilityLabel(Copy.text("desktop.practice.title")).accessibilityIdentifier("workspace.practice")
                 if dictation.shortcutAvailable { Label(Copy.text("mac.hotkey.label"), systemImage: "keyboard").font(QuillTheme.sans(14)) } else { HelpText(key: "mac.setup.shortcut_unavailable", size: 14, bad: true) }
                 if dictation.state == .recording { InkMeter(amplitude: dictation.level); Text(formatDuration(dictation.elapsed)).monospacedDigit(); QuillButton(key: "mac.dictation.stop") { dictation.stop() } }
                 if dictation.state == .transcribing { ProgressView() }
@@ -104,13 +113,13 @@ struct HomeView: View {
     }
     private var supporting: some View {
         VStack(alignment: .leading, spacing: 20) {
-            QuillCard {
+            QuillFormSection {
                 CopyText("desktop.workspace.configuration").font(QuillTheme.sans(17)).fontWeight(.medium)
                 Text(settings.value.provider.name + " · " + settings.value.speechModel).font(QuillTheme.sans(14)).textSelection(.enabled)
                 Toggle(Copy.text("desktop.setup.bubble_choice"), isOn: Binding(get: { settings.value.bubbleActive && settings.value.bubbleVisible }, set: { value in NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = value; settings.value.bubbleVisible = value }))
                 QuillButton(key: "nav.settings", primary: false, action: openSettings).accessibilityIdentifier("workspace.configuration.settings")
             }
-            QuillCard {
+            QuillFormSection {
                 CopyText("desktop.workspace.recent").font(QuillTheme.sans(17)).fontWeight(.medium)
                 if history.entries.isEmpty { HelpText(key: settings.value.shouldSaveHistory ? "mac.history.empty" : "mac.history.off", size: 14) }
                 ForEach(Array(history.entries.prefix(3))) { entry in
