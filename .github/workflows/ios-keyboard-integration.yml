@@ -51,6 +51,10 @@ jobs:
           xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); u=sys.argv[1]; print(next({"runtime":r,"device":x["name"],"udid":u} for r,g in d["devices"].items() for x in g if x["udid"]==u))' "$UDID"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
+          # Initialize the real Preferences UI before the build. A cold iOS 26
+          # launch returned a foreground PID with no accessibility main window.
+          # No settings are changed here; the test still enables Full Access through UI.
+          xcrun simctl launch "$UDID" com.apple.Preferences
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
       - name: Build the host, real keyboard, and separate editor fixture
         working-directory: ios
