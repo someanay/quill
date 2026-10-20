@@ -24,12 +24,17 @@ on:
         type: choice
         options: [all, macos-15, macos-26, macos-15-intel, macos-26-intel]
         default: all
+      live_device:
+        description: Focus a live follow-up on one device family
+        type: choice
+        options: [all, iPhone, iPad]
+        default: all
 
 permissions:
   contents: read
 
 concurrency:
-  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}-${{ inputs.live_runner || 'all' }}
+  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}-${{ inputs.live_runner || 'all' }}-${{ inputs.live_device || 'all' }}
   cancel-in-progress: true
 
 jobs:
@@ -39,6 +44,7 @@ jobs:
     with:
       platform: ios
       ios_runner: ${{ inputs.live_runner || 'all' }}
+      ios_device: ${{ inputs.live_device || 'all' }}
     secrets:
       QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
       QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}

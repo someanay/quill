@@ -15,6 +15,9 @@ on:
       ios_runner:
         type: string
         default: all
+      ios_device:
+        type: string
+        default: all
     secrets:
       QUILL_LIVE_GEMINI_KEY:
         required: true
@@ -32,7 +35,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: live-providers-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.ios_runner || 'all' }}
+  group: live-providers-${{ github.ref }}-${{ inputs.platform }}-${{ inputs.ios_runner || 'all' }}-${{ inputs.ios_device || 'all' }}
   cancel-in-progress: false
 
 jobs:
@@ -150,7 +153,7 @@ jobs:
       max-parallel: 1
       fail-fast: false
       matrix:
-        device: [iPhone, iPad]
+        device: ${{ fromJSON(inputs.ios_device == 'iPhone' && '["iPhone"]' || inputs.ios_device == 'iPad' && '["iPad"]' || '["iPhone","iPad"]') }}
         runner: ${{ fromJSON((inputs.ios_runner == '' || inputs.ios_runner == 'all') && '["macos-15","macos-26"]' || format('["{0}"]', inputs.ios_runner)) }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
