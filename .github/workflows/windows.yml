@@ -27,6 +27,14 @@ jobs:
         run: python scripts/verify-platform-parity.py --platform windows --independent-copy
       - name: Build and test Windows app
         run: dotnet test windows/Quill.Windows.slnx -c Release --logger "trx;LogFileName=windows-tests.trx" --results-directory dist/verification/windows-tests
+      - name: Verify every native screen and retained setup state
+        run: |
+          dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-all-ui dist/verification/windows-ui
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-setup-window dist/verification/windows-setup
+          exit $LASTEXITCODE
       - name: Verify installer integrity and safe uninstall
         run: ./windows/installer/Test-Installer.ps1
       - name: Package self-contained x64 application and installer
@@ -48,5 +56,7 @@ jobs:
           name: windows-verification
           path: |
             dist/verification/windows-tests
+            dist/verification/windows-ui
+            dist/verification/windows-setup
             dist/verification/installer-tests/**/results.json
           retention-days: 14
