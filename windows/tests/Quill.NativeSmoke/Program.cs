@@ -17,6 +17,18 @@ public static class Program {
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint WindowFromPoint(NativePoint point);
  [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)] private struct NativePoint { public int X; public int Y; }
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint GetThreadDesktop(uint thread);
+ [System.Runtime.InteropServices.DllImport("user32.dll",SetLastError=true)] private static extern nint OpenInputDesktop(uint flags,bool inherit,uint access);
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool CloseDesktop(nint desktop);
+ [System.Runtime.InteropServices.DllImport("user32.dll",CharSet = System.Runtime.InteropServices.CharSet.Unicode)] private static extern bool GetUserObjectInformation(nint handle,int index,System.Text.StringBuilder value,int bytes,out int needed);
+ private static string RunnerDesktopState(nint atPoint) {
+  if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return "local controlled fixture";
+  string Name(nint desktop) { var value = new System.Text.StringBuilder(256); return desktop != 0 && GetUserObjectInformation(desktop,2,value,512,out _) ? value.ToString() : "unavailable"; }
+  string Window(nint handle) { Native.GetWindowThreadProcessId(handle,out var id); var type = new System.Text.StringBuilder(256); Native.GetClassName(handle,type,type.Capacity); string process; try { using var p = Process.GetProcessById((int)id); process = p.ProcessName; } catch { process = "unavailable"; } return $"{handle}/{type}/{process}"; }
+  var input = OpenInputDesktop(0,false,1); var error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+  try { return $"threadDesktop={Name(GetThreadDesktop(GetCurrentThreadId()))}, inputDesktop={Name(input)}, inputError={error}, foreground={Window(Native.GetForegroundWindow())}, atPoint={Window(atPoint)}, interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}"; }
+  finally { if (input != 0) CloseDesktop(input); }
+ }
  private static void ActivateFixture(Window window) {
   var own = GetCurrentThreadId(); var other = Native.GetWindowThreadProcessId(Native.GetForegroundWindow(),out _); var attached = own != other && AttachThreadInput(own,other,true);
   try { SetForegroundWindow(new WindowInteropHelper(window).Handle); window.Activate(); } finally { if (attached) AttachThreadInput(own,other,false); }
@@ -191,7 +203,7 @@ public static class Program {
    var point = window.PointToScreen(new Point(100,80));
    var atPoint = WindowFromPoint(new NativePoint { X = (int)point.X,Y = (int)point.Y });
    Native.GetWindowThreadProcessId(atPoint,out var atPointProcess);
-   if (atPointProcess != Environment.ProcessId) throw new InvalidOperationException("The controlled launcher is occluded; no input was sent.");
+   if (atPointProcess != Environment.ProcessId) throw new InvalidOperationException("The controlled launcher is occluded; no input was sent. " + RunnerDesktopState(atPoint));
    if (!SetCursorPos((int)point.X,(int)point.Y)) throw new InvalidOperationException("Could not position the controlled fixture click.");
    var click = new[] { new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0002 } } },new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0004 } } } };
    if (Native.SendInput((uint)click.Length,click,System.Runtime.InteropServices.Marshal.SizeOf<Native.INPUT>()) != click.Length) throw new InvalidOperationException("The controlled fixture click was not delivered.");
