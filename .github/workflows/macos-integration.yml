@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: macos-textedit-${{ github.ref }}
+  group: macos-textedit-${{ github.ref }}-${{ inputs.live_providers || false }}
   cancel-in-progress: true
 
 jobs:

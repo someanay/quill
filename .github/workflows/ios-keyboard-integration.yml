@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ios-keyboard-${{ github.ref }}
+  group: ios-keyboard-${{ github.ref }}-${{ inputs.live_providers || false }}
   cancel-in-progress: true
 
 jobs:

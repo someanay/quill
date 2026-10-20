@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: windows-${{ github.ref }}
+  group: windows-${{ github.ref }}-${{ inputs.live_providers || false }}
   cancel-in-progress: true
 
 jobs:
