@@ -337,7 +337,19 @@ final class KeyboardIntegrationUITests: XCTestCase {
         attach("pending-handoff-survives-protected-fields", app: fixture)
         stage = "enable-one-live-keyboard-session"
         host.activate()
-        tap(host.buttons["session.start"], in: host)
+        let sessionStart = host.buttons["session.start"]
+        XCTAssertTrue(host.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(sessionStart.waitForExistence(timeout: 10))
+        XCTAssertTrue(sessionStart.isHittable); XCTAssertTrue(sessionStart.isEnabled)
+        let window = host.windows.firstMatch
+        let frame = sessionStart.frame
+        XCTAssertTrue(window.frame.contains(frame))
+        // On the current iPad runtime, element.tap() after this app switch sent
+        // (212, 173) for the observed button centre (424, 346). Use the current
+        // window's point coordinates once; the session must still actually start.
+        window.coordinate(withNormalizedOffset: .zero).withOffset(
+            CGVector(dx: frame.midX - window.frame.minX, dy: frame.midY - window.frame.minY)
+        ).tap()
         XCTAssertTrue(host.staticTexts["session.active"].waitForExistence(timeout: 10))
         attach("host-explicit-live-session", app: host)
         fixture.activate(); tap(fixture.buttons["quill.qa.caret-end"], in: fixture)
