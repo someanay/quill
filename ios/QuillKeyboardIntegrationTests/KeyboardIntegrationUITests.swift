@@ -168,7 +168,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         if !isLive { RunLoop.current.run(until: Date().addingTimeInterval(defaultDelay)); return }
         // This CI fixture always uses its own Mac's loopback server. Do not rely
         // on Xcode preserving URL-valued environment entries in the runner.
-        let url = URL(string: "http://127.0.0.1:8765/play")!
+        let url = URL(string: "http://localhost:8765/play")!
         let played = expectation(description: "Start actual synthetic speech playback on the Mac runner")
         URLSession.shared.dataTask(with: url) { _, response, error in
             XCTAssertNil(error); XCTAssertEqual((response as? HTTPURLResponse)?.statusCode,204); played.fulfill()

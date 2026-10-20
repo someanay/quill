@@ -6,7 +6,17 @@ import Foundation
 final class LiveHTTPAudit: URLProtocol, @unchecked Sendable {
     private static let lock = NSLock()
     private static var events: [[String: Any]] = []
-    static var outputURL: URL?
+    static var outputURL: URL? {
+        didSet {
+            // The installed-keyboard journey deliberately cold-launches the host.
+            // Retain earlier real HTTP evidence from this same isolated session.
+            let prior: [[String: Any]]
+            if let outputURL, let data = try? Data(contentsOf: outputURL), data.count <= 4 * 1024 * 1024,
+               let entries = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] { prior = entries }
+            else { prior = [] }
+            lock.lock(); events = prior; lock.unlock()
+        }
+    }
     private var work: Task<Void, Never>?
     private final class RefuseRedirect: NSObject, URLSessionTaskDelegate {
         func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) { completionHandler(nil) }
