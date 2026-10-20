@@ -5,7 +5,7 @@ import QuillCore
 
 final class NativeTests: XCTestCase {
     @MainActor func testApplicationRegistersItsAdvertisedShortcutOnHostedMac() throws {
-        guard ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" else {
+        guard ProcessInfo.processInfo.environment["QUILL_HOSTED_SHORTCUT_TEST"] == "YES" else {
             throw XCTSkip("The real global-shortcut check runs on the isolated hosted Mac.")
         }
         // Read the actual production startup attempt; do not register a second

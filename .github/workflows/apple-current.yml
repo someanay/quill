@@ -101,7 +101,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
         run: |
           set -o pipefail
-          SIGNING=(CODE_SIGNING_ALLOWED=NO)
+          SIGNING=(CODE_SIGNING_ALLOWED=NO QUILL_HOSTED_SHORTCUT_TEST=YES)
           TEST_FILTER=()
           if [ "$PLATFORM" = macos ] && [ '${{ inputs.mac_native_only }}' = true ]; then
             TEST_FILTER=(-only-testing:QuillMacTests)
@@ -119,6 +119,9 @@ jobs:
             -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath TestResults.xcresult "${SIGNING[@]}" "${TEST_FILTER[@]}" \
             2>&1 | tee native-build.log
+          if [ "$PLATFORM" = macos ]; then
+            grep -q 'testApplicationRegistersItsAdvertisedShortcutOnHostedMac.*passed' native-build.log
+          fi
       - name: Test actual iOS simulator recording
         if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
         working-directory: ios

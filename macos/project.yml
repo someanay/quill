@@ -161,6 +161,9 @@ schemes:
     test:
       targets: [QuillMacTests, QuillMacUITests]
       gatherCoverageData: true
+      macroExpansion: QuillMac
+      environmentVariables:
+        QUILL_HOSTED_SHORTCUT_TEST: "$(QUILL_HOSTED_SHORTCUT_TEST)"
   QuillAXProbe:
     build:
       targets:
