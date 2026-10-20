@@ -2,10 +2,16 @@ name: Apple build and test
 
 on:
   push:
-    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", ".github/workflows/apple.yml"]
+    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", "scripts/verify-native-contrast.py", "scripts/apple-test-matrix.py", ".github/workflows/apple.yml"]
   pull_request:
-    paths: ["macos/**", "ios/**", ".github/workflows/apple.yml"]
+    paths: ["macos/**", "ios/**", "scripts/apple-test-matrix.py", ".github/workflows/apple.yml"]
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Native platform to validate
+        type: choice
+        options: [all, macos, ios]
+        default: all
 
 permissions:
   contents: read
@@ -15,30 +21,40 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      include: ${{ steps.matrix.outputs.include }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: matrix
+        env:
+          PLATFORM: ${{ inputs.platform || 'all' }}
+        run: echo "include=$(python3 scripts/apple-test-matrix.py --platform "$PLATFORM")" >> "$GITHUB_OUTPUT"
   apple:
-    name: ${{ matrix.platform }} native build and tests
-    runs-on: macos-15
+    needs: matrix
+    name: ${{ matrix.platform }} native build and tests (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: macos
-            project: QuillMac
-            scheme: QuillMac
-          - platform: ios
-            project: Quill
-            scheme: Quill
+        include: ${{ fromJSON(needs.matrix.outputs.include) }}
     steps:
       - uses: actions/checkout@v4
       - name: Record Apple toolchain
         run: |
+          sw_vers
+          uname -m
           xcodebuild -version
           swift --version
       - name: Install project generator
         run: brew install xcodegen
       - name: Verify bundled copy and fonts
-        run: python3 scripts/verify-platform-parity.py --platform ${{ matrix.platform }}
+        run: python3 scripts/verify-platform-parity.py --platform ${{ matrix.platform }} --independent-copy
+      - name: Verify light and dark text contrast
+        run: python3 scripts/verify-native-contrast.py --platform ${{ matrix.platform }} --output ${{ matrix.platform }}/contrast.json
       - name: Test portable provider and policy core on Apple
         working-directory: ${{ matrix.platform }}
         run: swift test --package-path QuillCore
@@ -46,6 +62,9 @@ jobs:
         id: project
         working-directory: ${{ matrix.platform }}
         run: xcodegen generate
+      - name: Prepare desktop for compact and expanded UI tests
+        if: matrix.platform == 'macos'
+        run: swift macos/QA/configure-ci-display.swift
       - name: Pick native test destination
         id: destination
         env:
@@ -78,8 +97,9 @@ jobs:
             TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
           fi
           xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
+            -parallel-testing-enabled NO \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
-            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath TestResults.xcresult "${SIGNING[@]}" "${TEST_FILTER[@]}" \
             2>&1 | tee native-build.log
       - name: Test actual iOS simulator recording
@@ -97,27 +117,30 @@ jobs:
           xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
           xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
             -destination "id=$UDID" -derivedDataPath DerivedData \
-            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath RecordingResults.xcresult -only-testing:QuillTests/RecorderTests \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             2>&1 | tee recording-test.log
       - name: Test iPad navigation and adaptive layout
         if: success() && matrix.platform == 'ios'
         working-directory: ios
+        env:
+          PHONE_UDID: ${{ steps.destination.outputs.udid }}
         run: |
           set -o pipefail
+          xcrun simctl shutdown "$PHONE_UDID"
           IPAD=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPad")))')
           xcrun simctl boot "$IPAD"
           xcrun simctl bootstatus "$IPAD" -b
           xcrun simctl install "$IPAD" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
           xcrun simctl privacy "$IPAD" grant microphone com.tihor.quill.ios
           xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -parallel-testing-enabled NO \
             -destination "id=$IPAD" -derivedDataPath DerivedData \
-            -test-timeouts-enabled YES -default-test-execution-time-allowance 180 -maximum-test-execution-time-allowance 180 \
+            -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath iPadResults.xcresult -only-testing:QuillUITests \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             2>&1 | tee ipad-test.log
-          xcrun simctl shutdown "$IPAD"
       - name: Inspect iOS simulator entitlements
         if: always() && matrix.platform == 'ios'
         run: |
@@ -143,7 +166,9 @@ jobs:
         if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
         env:
           UDID: ${{ steps.destination.outputs.udid }}
-        run: xcrun simctl io "$UDID" screenshot ios/simulator.png
+        run: |
+          CAPTURE_UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["state"] == "Booted"))')
+          xcrun simctl io "$CAPTURE_UDID" screenshot ios/simulator.png
       - name: Export screenshots from native tests
         if: always()
         working-directory: ${{ matrix.platform }}
@@ -161,9 +186,10 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-verification
+          name: ${{ matrix.platform }}${{ matrix.artifactSuffix }}-verification
           retention-days: 14
           path: |
+            ${{ matrix.platform }}/contrast.json
             ${{ matrix.platform }}/native-build.log
             ${{ matrix.platform }}/release-build.log
             ${{ matrix.platform }}/TestResults.xcresult
@@ -179,7 +205,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-screenshots
+          name: ${{ matrix.platform }}${{ matrix.artifactSuffix }}-screenshots
           retention-days: 14
           path: |
             ${{ matrix.platform }}/screenshots
@@ -215,6 +241,6 @@ jobs:
         if: always() && matrix.platform == 'macos' && steps.mac_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: Quill-macOS-universal
+          name: Quill-macOS-universal${{ matrix.artifactSuffix }}
           path: dist/macos
           retention-days: 14

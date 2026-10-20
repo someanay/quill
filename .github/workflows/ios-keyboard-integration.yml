@@ -3,6 +3,8 @@ name: iOS installed keyboard integration
 on:
   push:
     paths:
+      - "ios/Quill/**"
+      - "ios/QuillCore/**"
       - "ios/QA/**"
       - "ios/QuillKeyboardIntegrationTests/**"
       - "ios/project.yml"
@@ -22,20 +24,31 @@ concurrency:
 
 jobs:
   installed-keyboard:
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [iPhone, iPad]
+        runner: [macos-15, macos-26]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - name: Record Apple toolchain
-        run: xcodebuild -version
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version
       - name: Install project generator
         run: brew install xcodegen
-      - name: Boot an isolated iPhone simulator
+      - name: Boot an isolated ${{ matrix.device }} simulator
         id: destination
+        env:
+          SIMULATOR_FAMILY: ${{ matrix.device }}
         run: |
           defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
-          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPhone")))')
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys,os; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith(os.environ["SIMULATOR_FAMILY"])))')
           test -n "$UDID"
+          xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); u=sys.argv[1]; print(next({"runtime":r,"device":x["name"],"udid":u} for r,g in d["devices"].items() for x in g if x["udid"]==u))' "$UDID"
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
@@ -92,7 +105,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-installed-keyboard-verification
+          name: ios-installed-keyboard-verification-${{ matrix.device }}-${{ matrix.runner }}
           path: |
             ios/keyboard-build.log
             ios/keyboard-integration.log
