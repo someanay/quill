@@ -195,6 +195,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     }
     func startMicTest() async {
         guard !busy, !canRetry, !cleanupRequired else { return }
+        keyboardSession.end()
         if !microphoneGranted { await requestMicrophone() }
         guard microphoneGranted, !busy, !canRetry, !cleanupRequired else { return }
         do { testingMicrophone = true; try recorder.start(capSeconds: 30, microphoneTest: true) }
@@ -203,6 +204,7 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
     func stopMicTest() { guard testingMicrophone else { return }; recorder.cancel(); testingMicrophone = false }
     func start(voiceSample: Bool = false, capSeconds: Int? = nil) async {
         guard !busy, !canRetry, !cleanupRequired else { return }
+        if capSeconds == nil { keyboardSession.end() }
         stopMicTest()
         if !microphoneGranted { await requestMicrophone() }
         guard microphoneGranted, !busy, !canRetry, !cleanupRequired else { return }

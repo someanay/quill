@@ -45,9 +45,21 @@ import UIKit
             self.editor.becomeFirstResponder()
             self.editor.selectedRange = NSRange(location: self.editor.text.utf16.count, length: 0)
         }, for: .touchUpInside)
+        let appearance = UIButton(type: .system)
+        appearance.setTitle("Change appearance", for: .normal)
+        appearance.accessibilityIdentifier = "quill.qa.appearance"
+        appearance.translatesAutoresizingMaskIntoConstraints = false
+        appearance.addAction(UIAction { [weak self] _ in
+            guard let self else { return }
+            let dark = self.view.window?.overrideUserInterfaceStyle != .dark
+            self.view.window?.overrideUserInterfaceStyle = dark ? .dark : .light
+            self.editor.keyboardAppearance = dark ? .dark : .light
+            self.editor.reloadInputViews()
+        }, for: .touchUpInside)
         view.addSubview(title)
         view.addSubview(fields)
         view.addSubview(end)
+        view.addSubview(appearance)
         view.addSubview(editor)
         NSLayoutConstraint.activate([
             title.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
@@ -60,6 +72,9 @@ import UIKit
             end.topAnchor.constraint(equalTo: fields.bottomAnchor, constant: 8),
             end.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             end.heightAnchor.constraint(equalToConstant: 44),
+            appearance.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            appearance.centerYAnchor.constraint(equalTo: end.centerYAnchor),
+            appearance.heightAnchor.constraint(equalToConstant: 44),
             editor.topAnchor.constraint(equalTo: end.bottomAnchor, constant: 12),
             editor.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             editor.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),

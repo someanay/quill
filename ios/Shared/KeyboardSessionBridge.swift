@@ -16,6 +16,10 @@ enum KeyboardSessionBridge {
 
 struct CoordinatedKeyboardSessionStore {
     let directory: URL
+    private let writeFile: (Data, URL, Data.WritingOptions) throws -> Void
+    init(directory: URL, writeFile: @escaping (Data, URL, Data.WritingOptions) throws -> Void = { data, url, options in try data.write(to: url, options: options) }) {
+        self.directory = directory; self.writeFile = writeFile
+    }
     private var stateURL: URL { directory.appendingPathComponent("state.json") }
     private var commandURL: URL { directory.appendingPathComponent("command.json") }
     private func read<T: Decodable>(_ type: T.Type, at url: URL) -> T? {
@@ -29,7 +33,7 @@ struct CoordinatedKeyboardSessionStore {
             attributes: [.protectionKey: FileProtectionType.complete])
         var folder = directory; var values = URLResourceValues(); values.isExcludedFromBackup = true
         try folder.setResourceValues(values)
-        try JSONEncoder().encode(state).write(to: stateURL, options: [.atomic, .completeFileProtection])
+        try writeFile(JSONEncoder().encode(state), stateURL, [.atomic, .completeFileProtection])
     }
     func send(_ command: KeyboardSessionCommand) throws {
         try coordinated {
@@ -37,7 +41,7 @@ struct CoordinatedKeyboardSessionStore {
             // One acknowledged command at a time. A stale abandoned command may be replaced.
             if let existing = read(KeyboardSessionCommand.self, at: commandURL),
                existing.id != state.acknowledgedCommandID, existing.isValid(for: state) { throw QuillError.audio }
-            try JSONEncoder().encode(command).write(to: commandURL, options: [.atomic, .completeFileProtection])
+            try writeFile(JSONEncoder().encode(command), commandURL, [.atomic, .completeFileProtection])
         }
     }
     func takeCommand() throws -> KeyboardSessionCommand? {

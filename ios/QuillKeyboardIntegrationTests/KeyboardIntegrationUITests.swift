@@ -301,6 +301,11 @@ final class KeyboardIntegrationUITests: XCTestCase {
         try showQuillKeyboard(in: fixture)
         var seamlessExpected = repeated
         for take in 1...2 {
+            if take == 2 {
+                tap(fixture.buttons["quill.qa.appearance"], in: fixture)
+                tap(fixture.buttons["quill.qa.caret-end"], in: fixture)
+                try showQuillKeyboard(in: fixture)
+            }
             stage = "background-keyboard-dictation-\(take)"
             let dictate = fixture.buttons["keyboard.record"]
             expectation(for: NSPredicate(format: "enabled == true AND label == %@", "Dictate"), evaluatedWith: dictate)

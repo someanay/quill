@@ -41,10 +41,12 @@ import QuillCore
         guard let model, !isActive, !model.busy, !model.canRetry, !model.cleanupRequired,
               UIApplication.shared.applicationState == .active, UIApplication.shared.isProtectedDataAvailable else { return }
         if !model.microphoneGranted { await model.requestMicrophone() }
+        guard !isActive, !model.busy, !model.canRetry, !model.cleanupRequired else { return }
         guard model.microphoneGranted, model.hasActiveKey, !model.busy, !model.canRetry else {
             model.errorKey = model.hasActiveKey ? "ios.mic.blocked" : QuillError.noKey.copyKey; return
         }
         model.stopMicTest()
+        if microphone != nil { end() }
         let microphone = KeyboardMicrophoneSession()
         do {
             try microphone.start()
@@ -141,7 +143,8 @@ import QuillCore
             }
         case .stop: model.stopAndTranscribe()
         case .retry:
-            if model.canRetry { model.retry() }
+            if model.cleanupRequired { model.retryRecordingCleanup() }
+            else if model.canRetry { model.retry() }
             else if !model.result.isEmpty { state.transferID = model.sendToKeyboard(model.result); state.phase = state.transferID == nil ? .failed : .ready; self.state = state }
         case .discard: model.cancel(); ownsCapture = false; state.captureID = nil; state.transferID = nil; state.phase = .ready; self.state = state
         case .end: end()

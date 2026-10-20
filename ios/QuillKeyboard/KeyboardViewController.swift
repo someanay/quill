@@ -56,6 +56,7 @@ final class KeyboardViewController: UIInputViewController {
     private var minimumHeight: NSLayoutConstraint?
     private var globeHeight: NSLayoutConstraint?
     private var insertHeight: NSLayoutConstraint?
+    private var endHeight: NSLayoutConstraint?
     private var compactKeys = false
     private var copy = CopyCatalog(strings: [:])
     private func c(_ key: String) -> String { copy.text(key) }
@@ -81,6 +82,7 @@ final class KeyboardViewController: UIInputViewController {
         endButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 13) ?? .systemFont(ofSize: 13)
         endButton.addTarget(self, action: #selector(endSession), for: .touchUpInside)
         endButton.accessibilityIdentifier = "keyboard.session.end"; endButton.isHidden = true
+        let endHeight = endButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 44); endHeight.isActive = true; self.endHeight = endHeight
         toolbar.addArrangedSubview(endButton)
         let globe = key("🌐", action: #selector(nextKeyboard)); self.globe = globe; globe.accessibilityLabel = c("ios.keyboard.next")
         globe.setTitle(nil, for: .normal); globe.setImage(UIImage(systemName: "globe"), for: .normal)
@@ -127,6 +129,7 @@ final class KeyboardViewController: UIInputViewController {
         minimumHeight?.constant = compact ? 260 : 350
         globeHeight?.constant = compact ? 32 : 48
         insertHeight?.constant = compact ? 44 : 48
+        endHeight?.constant = compact ? 32 : 44
         status.numberOfLines = compact ? 1 : 3
         renderKeys()
     }

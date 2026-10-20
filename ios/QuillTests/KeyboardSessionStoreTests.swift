@@ -9,16 +9,23 @@ final class KeyboardSessionStoreTests: XCTestCase {
     }
     override func tearDownWithError() throws { try? FileManager.default.removeItem(at: directory) }
     func testCommandsAreProtectedAtomicAndConsumedOnce() throws {
-        let store = CoordinatedKeyboardSessionStore(directory: directory!)
+        var writes: [Data.WritingOptions] = []
+        let store = CoordinatedKeyboardSessionStore(directory: directory!) { data, url, options in
+            writes.append(options); try data.write(to: url, options: options)
+        }
         let state = KeyboardRecordingSession(); try store.publish(state)
         let command = KeyboardSessionCommand(sessionID: state.id, kind: .start)
         try store.send(command)
         XCTAssertThrowsError(try store.send(KeyboardSessionCommand(sessionID: state.id, kind: .start)))
         XCTAssertEqual(try store.takeCommand(), command); XCTAssertNil(try store.takeCommand())
+        XCTAssertEqual(writes.count, 2)
+        XCTAssertTrue(writes.allSatisfy { $0.contains(.atomic) && $0.contains(.completeFileProtection) })
+        #if !targetEnvironment(simulator)
         for name in ["state.json"] {
             let attributes = try FileManager.default.attributesOfItem(atPath: directory.appendingPathComponent(name).path)
             XCTAssertEqual(attributes[.protectionKey] as? FileProtectionType, .complete)
         }
+        #endif
         XCTAssertEqual(try directory.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup, true)
     }
     func testRestartClosedAndExpiredLeasesRejectOldKeyboardCommands() throws {

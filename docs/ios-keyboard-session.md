@@ -13,6 +13,12 @@ supports background recording with the audio background mode and microphone
 permission. That does not allow a suspended or terminated app to be silently
 woken by a keyboard command.
 
+Apple's [AudioRecordingIntent documentation](https://developer.apple.com/documentation/AppIntents/AudioRecordingIntent)
+requires a Live Activity for that protocol; it does not provide a cold background
+microphone escape hatch. An [Apple DTS answer](https://developer.apple.com/forums/thread/816408)
+also confirms the general background-activation privacy block. Quill does not
+pretend to be a phone/VoIP app to bypass it.
+
 Wispr's [session documentation](https://docs.wisprflow.ai/articles/4841123325-Longer-dictation-sessions-%E2%80%94-now-up-to-20-minutes)
 describes a configurable iOS Flow Session timer, defaulting to five minutes.
 Borrow the explicitly enabled live-session model. Quill must disclose that the

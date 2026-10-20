@@ -49,12 +49,14 @@ import QuillCore
         let path = AppFiles.audio.appendingPathComponent(UUID().uuidString + ".wav")
         var attemptedRecorder: AVAudioRecorder?
         do {
-            try session.setCategory(.playAndRecord, mode: .measurement, options: keepsAudioSessionActive ? [.defaultToSpeaker, .mixWithOthers] : [.defaultToSpeaker])
-            try session.setPreferredSampleRate(16_000)
-            try session.setActive(true)
+            if !keepsAudioSessionActive {
+                try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
+                try session.setPreferredSampleRate(16_000)
+                try session.setActive(true)
+            }
             // Match Android handset-microphone capture; the hardware input can run at another rate,
             // but AVAudioRecorder converts the written PCM stream to provider-compatible 16 kHz mono.
-            if let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) { try session.setPreferredInput(builtIn) }
+            if !keepsAudioSessionActive, let builtIn = session.availableInputs?.first(where: { $0.portType == .builtInMic }) { try session.setPreferredInput(builtIn) }
             let audio = try AVAudioRecorder(url: path, settings: [AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: 16_000, AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false])
             attemptedRecorder = audio
             audio.delegate = self; audio.isMeteringEnabled = true

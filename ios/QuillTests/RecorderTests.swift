@@ -1,5 +1,6 @@
 import XCTest
 import AVFoundation
+import QuillCore
 @testable import Quill
 
 /// Run after `simctl privacy <device> grant microphone com.tihor.quill.ios` on an installed host.
@@ -92,5 +93,26 @@ import AVFoundation
             XCTAssertTrue(session.healthy, "Finishing one take must preserve the live input session.")
         }
         session.stop(); XCTAssertFalse(session.isRunning)
+    }
+    func testRealSessionExpiresAndAnInterruptionDoesNotRestartIt() async throws {
+        let model = AppModel()
+        model.cancel(); model.settings = QuillSettings(); model.settings.selectProvider(.groq)
+        try model.vault.save("session-fixture-" + UUID().uuidString, provider: .groq, endpoint: Provider.groq.baseURL, label: "Session recorder test")
+        let key = try XCTUnwrap(model.vault.active(.groq, endpoint: Provider.groq.baseURL))
+        defer { model.keyboardSession.end(cancelCapture: true); try? model.vault.delete(key) }
+        await model.keyboardSession.enable(duration: 1)
+        XCTAssertTrue(model.keyboardSession.isActive)
+        for _ in 0..<30 {
+            if model.keyboardSession.state?.phase == .closed { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
+        XCTAssertFalse(model.recorder.keepsAudioSessionActive)
+        await model.keyboardSession.enable(duration: 30)
+        XCTAssertTrue(model.keyboardSession.isActive)
+        NotificationCenter.default.post(name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance(), userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue])
+        try await Task.sleep(nanoseconds: 400_000_000)
+        XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
+        XCTAssertFalse(model.recorder.keepsAudioSessionActive)
     }
 }

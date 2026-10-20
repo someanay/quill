@@ -216,4 +216,38 @@ import QuillCore
             let attachment = XCTAttachment(image: image); attachment.name = "Keyboard landscape compact height " + (style == .dark ? "dark" : "light"); attachment.lifetime = .keepAlways; add(attachment)
         }
     }
+    func testSessionKeyboardStatesFitPortraitAndLandscapeInBothAppearances() throws {
+        for compact in [false, true] {
+            for style in [UIUserInterfaceStyle.light, .dark] {
+                for phase in [KeyboardRecordingSession.Phase.ready, .recording, .processing, .failed] {
+                    var session = KeyboardRecordingSession(); session.phase = phase; session.captureID = UUID()
+                    let keyboard = KeyboardViewController(), proxy = TextProxyFixture()
+                    keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { true }, peek: { nil }, consume: { _ in throw QuillError.expired }, prune: {}, session: { session })
+                    keyboard.loadViewIfNeeded()
+                    let container = UIViewController(); container.addChild(keyboard); container.view.addSubview(keyboard.view); keyboard.didMove(toParent: container)
+                    if compact { container.setOverrideTraitCollection(UITraitCollection(verticalSizeClass: .compact), forChild: keyboard) }
+                    let width: CGFloat = compact ? 760 : 320
+                    let window = UIWindow(frame: CGRect(x: 0, y: 0, width: width, height: 550))
+                    window.overrideUserInterfaceStyle = style; keyboard.overrideUserInterfaceStyle = style
+                    window.rootViewController = container; window.isHidden = false
+                    defer { window.isHidden = true; window.rootViewController = nil }
+                    keyboard.viewWillLayoutSubviews()
+                    let size = keyboard.view.systemLayoutSizeFitting(CGSize(width: width, height: 0), withHorizontalFittingPriority: .required, verticalFittingPriority: .fittingSizeLevel)
+                    XCTAssertLessThanOrEqual(size.height, compact ? 300 : 550)
+                    keyboard.view.frame = CGRect(origin: .zero, size: size); keyboard.view.layoutIfNeeded()
+                    for identifier in ["keyboard.record", "keyboard.session.end"] {
+                        let button = try XCTUnwrap(find(UIButton.self, identifier: identifier, in: keyboard.view))
+                        XCTAssertFalse(button.isHidden)
+                        XCTAssertTrue(keyboard.view.bounds.contains(button.convert(button.bounds, to: keyboard.view)))
+                    }
+                    let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+                    XCTAssertEqual(record.isEnabled, phase != .processing)
+                    let image = UIGraphicsImageRenderer(size: size).image { context in keyboard.view.layer.render(in: context.cgContext) }
+                    let attachment = XCTAttachment(image: image)
+                    attachment.name = "Keyboard session \(compact ? "landscape" : "portrait") \(style == .dark ? "dark" : "light") \(phase.rawValue)"
+                    attachment.lifetime = .keepAlways; add(attachment)
+                }
+            }
+        }
+    }
 }
