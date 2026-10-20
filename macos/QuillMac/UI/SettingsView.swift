@@ -59,12 +59,13 @@ struct SettingsView: View {
                 } else {
                     let available = geometry.size.width - (geometry.size.width >= 840 ? 211 : 0) - 72
                     if available >= 642 {
+                        let columnWidth = (available - 22) / 2
                         HStack(alignment: .top, spacing: 22) {
-                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words]).frame(maxWidth: .infinity)
+                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words]).frame(width: columnWidth, alignment: .topLeading)
                             VStack(alignment: .leading, spacing: 22) {
                                 listGroup("settings.group.capture", pages: [.audio, .bubble])
                                 listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
-                            }.frame(maxWidth: .infinity)
+                            }.frame(width: columnWidth, alignment: .topLeading)
                         }
                     } else {
                         VStack(alignment: .leading, spacing: 22) {
@@ -85,7 +86,7 @@ struct SettingsView: View {
     }
     private func listGroup(_ title: String, pages: [SettingsPage]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(key: title)
+            SectionLabel(key: title).frame(maxWidth: .infinity, alignment: .leading)
             VStack(spacing: 0) {
                 ForEach(pages) { item in
                     if item != pages.first { Divider().padding(.leading, 68) }
@@ -102,7 +103,7 @@ struct SettingsView: View {
                         }.padding(.horizontal, 14).frame(minHeight: 66).background(QuillTheme.surface(scheme == .dark)).contentShape(Rectangle())
                     }.buttonStyle(.borderless).accessibilityIdentifier("settings.\(item.rawValue)")
                 }
-            }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
+            }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1).allowsHitTesting(false))
         }
     }
     private func rowValue(_ page: SettingsPage) -> String {
