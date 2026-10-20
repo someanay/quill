@@ -92,6 +92,7 @@ jobs:
             TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
           fi
           xcodebuild test -project "$PROJECT.xcodeproj" -scheme "$SCHEME" \
+            -parallel-testing-enabled NO \
             -destination "$DESTINATION" -derivedDataPath DerivedData \
             -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath TestResults.xcresult "${SIGNING[@]}" "${TEST_FILTER[@]}" \
@@ -118,20 +119,23 @@ jobs:
       - name: Test iPad navigation and adaptive layout
         if: success() && matrix.platform == 'ios'
         working-directory: ios
+        env:
+          PHONE_UDID: ${{ steps.destination.outputs.udid }}
         run: |
           set -o pipefail
+          xcrun simctl shutdown "$PHONE_UDID"
           IPAD=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["name"].startswith("iPad")))')
           xcrun simctl boot "$IPAD"
           xcrun simctl bootstatus "$IPAD" -b
           xcrun simctl install "$IPAD" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
           xcrun simctl privacy "$IPAD" grant microphone com.tihor.quill.ios
           xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
+            -parallel-testing-enabled NO \
             -destination "id=$IPAD" -derivedDataPath DerivedData \
             -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
             -resultBundlePath iPadResults.xcresult -only-testing:QuillUITests \
             CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
             2>&1 | tee ipad-test.log
-          xcrun simctl shutdown "$IPAD"
       - name: Inspect iOS simulator entitlements
         if: always() && matrix.platform == 'ios'
         run: |
@@ -157,7 +161,9 @@ jobs:
         if: always() && matrix.platform == 'ios' && steps.destination.outputs.udid != ''
         env:
           UDID: ${{ steps.destination.outputs.udid }}
-        run: xcrun simctl io "$UDID" screenshot ios/simulator.png
+        run: |
+          CAPTURE_UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["udid"] for group in d["devices"].values() for x in group if x["state"] == "Booted"))')
+          xcrun simctl io "$CAPTURE_UDID" screenshot ios/simulator.png
       - name: Export screenshots from native tests
         if: always()
         working-directory: ${{ matrix.platform }}

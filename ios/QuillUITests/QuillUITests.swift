@@ -31,6 +31,14 @@ final class QuillUITests: XCTestCase {
         // Both observed nodes have the same frame; firstMatch avoids ambiguity.
         return app.buttons.matching(identifier: "gearshape").matching(NSPredicate(format: "label == %@", "Settings")).firstMatch
     }
+    private func backToSettings(_ app: XCUIApplication) {
+        // iPad 18 exposes Show Sidebar before Back in the same navigation bar.
+        // Select the real native Back label rather than the first toolbar control.
+        let back = app.navigationBars.buttons.matching(NSPredicate(format: "identifier != %@ AND (label == %@ OR label == %@)", "ToggleSidebar", "Settings", "Back")).firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5)); XCTAssertTrue(back.isHittable)
+        back.tap()
+        XCTAssertTrue(app.buttons["settings.speech"].waitForExistence(timeout: 5))
+    }
     private func waitForLandscape(_ app: XCUIApplication) {
         var last = CGRect.zero, stable = 0
         for _ in 0..<40 {
@@ -92,7 +100,7 @@ final class QuillUITests: XCTestCase {
         let language = app.staticTexts["speech.language.section"]
         for _ in 0..<8 { if language.exists && language.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(language.waitForExistence(timeout: 5))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        backToSettings(app)
         tap(app.buttons["settings.privacy"], in: app)
         XCTAssertTrue(app.switches["Private mode"].waitForExistence(timeout: 5))
         app.switches["Private mode"].tap()
@@ -149,8 +157,7 @@ final class QuillUITests: XCTestCase {
                 tap(app.buttons["settings." + section], in: app)
                 XCTAssertTrue(app.staticTexts["screen." + section].waitForExistence(timeout: 5), section)
                 capture(app, "ios-settings-\(dark ? "dark" : "light")-" + section)
-                let back = app.navigationBars.buttons.element(boundBy: 0)
-                XCTAssertTrue(back.waitForExistence(timeout: 5)); back.tap()
+                backToSettings(app)
             }
             app.terminate()
         }
