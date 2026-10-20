@@ -1,5 +1,9 @@
 # Approved native design — October 20, 2026 (version 2.0.3)
 
+The subsequent [functional pass](../docs/native-functionality.md) reruns both CI
+architectures successfully and freshly verifies the local microphone lifecycle,
+shortcut registration and installed package without launching the user's app.
+
 The approved design is implemented in native WPF across setup, workspace, history,
 settings and provider forms. IBM Plex typography and Quill colours match Android;
 copy describes Windows shortcuts, microphone settings and UI Automation consent.

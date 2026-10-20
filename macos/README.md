@@ -22,6 +22,10 @@ GitHub Actions. See [current Apple validation](../docs/apple-validation.md) for
 the exact tested revisions, screenshot findings and remaining hardware checks,
 and [the platform experience contract](../docs/platform-experience.md) for scope.
 
+The later [functional verification](../docs/native-functionality.md) records fresh
+passing full suites on all four Mac configurations, 76 production-adapter editor
+checks and four independent diagnostics, with all four universal releases inspected.
+
 ## Build and run
 
 On a Mac with Xcode selected and XcodeGen installed:

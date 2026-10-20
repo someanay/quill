@@ -26,6 +26,10 @@ explicitly enabled five-minute session. Native iPhone/iPad baseline/current test
 installed-keyboard background dictation, both appearances and packages are verified.
 See [the results and remaining device gates](docs/ios-keyboard-session.md).
 
+The additional [cross-platform functionality pass](docs/native-functionality.md)
+also passes Windows x64/ARM64 and all four Intel/Apple Silicon Mac configurations,
+including real editor checks and a fresh local Windows microphone lifecycle check.
+
 Windows 2.0.3 is installed normally on this workstation with a Start shortcut and
 Installed apps entry. Native verification runs on Windows x64/ARM, macOS 15/26
 on Intel/Apple Silicon, and iPhone/iPad simulators. Exact results and limitations

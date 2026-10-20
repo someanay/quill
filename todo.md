@@ -10,6 +10,7 @@ truthful permission/privacy copy and iPhone/iPad validation. See
 [the session contract](docs/ios-keyboard-session.md).
 
 - [x] Prove a real foreground-enabled microphone session supports repeated background keyboard dictation on iPhone/iPad baseline/current CI; review both appearances and inspect final packages. Source `0cf6090`: both full native suites and all four installed-keyboard journeys pass; 464 captures reviewed and four inner packages inspected. Exact runs, hashes and physical-device limits are in [the session report](docs/ios-keyboard-session.md).
+- [x] Additionally verify all three native platforms functionally. Source `abaac97`: fresh Windows x64/ARM64 gates, four full Mac configurations and eight real Mac editor jobs pass; actual local Windows microphone/lifecycle, shortcut registration and installation metadata pass. Inspect all four universal Mac releases and link the unchanged iOS sources to their 294 passing executions. See [functional verification](docs/native-functionality.md) for exact counts, hashes and remaining physical/account/distribution gates.
 
 The owner replaced Android UI parity with independent native experiences sharing
 Quill's DNA. Scope this pass to M14 native presentation, iOS onboarding and validation;
@@ -27,7 +28,7 @@ Quill's DNA. Scope this pass to M14 native presentation, iOS onboarding and vali
 - [x] Install Windows 2.0.3 through the real package, preserve app data, verify Installed apps and Start, and reopen the same PID/HWND after Close.
 - [x] Finish the expanded native x64/ARM Windows, Intel/Apple Silicon macOS 15/26 and iPhone/iPad baseline/current matrix; inspect final screenshots and release packages. All final jobs pass, including eight Mac real-editor jobs and four installed-keyboard journeys; final Mac 109+109 and iOS 178+178 captures reviewed. Exact source revisions, package hashes and physical/distribution limits are in [Apple validation](docs/apple-validation.md).
 - [ ] Complete physical Mac microphone, permission-denial/Settings-return and global-shortcut acceptance.
-- [ ] Physically validate a redesigned iOS keyboard/start/return/insertion loop before implementing onboarding that promises it.
+- [ ] Physically accept the implemented iOS timed-session/keyboard loop, microphone quality, lock/call/audio-route handling and battery cost; simulator background/insertion gates are complete.
 
 The owner superseded Android-only scope and requested complete fresh Windows, macOS and iOS implementations plus copy-tool support, with continuous work across implementation/test passes. Track the new initiative in [platform rebuild](docs/platform-rebuild.md). The following completed snapshots are historical; the October design revision and expanded matrix above supersede their counts and pending hardware statements. Earlier Android milestone history follows.
 

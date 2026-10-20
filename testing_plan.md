@@ -16,6 +16,13 @@ consume-once and cancellation of late delivery after clearing. Review Light/Dark
 ready, recording, processing, failure and pending-insertion layouts. Physical
 idle battery, audio routes, calls and locked-device behavior remain device gates.
 
+The subsequent [three-platform functional verification](docs/native-functionality.md)
+records the completed fresh Windows x64/ARM64 and Mac Intel/Apple Silicon 15/26
+suites, actual TextEdit/Safari/AppKit readbacks, Windows recorder lifecycle,
+installation metadata and inspected release packages. It links the unchanged
+iPhone/iPad sources to their completed session gates and retains the remaining
+physical-device/provider/distribution acceptance separately.
+
 > September 7, 2026: Remote copy updates (M13) have been retired. The app uses
 > bundled text only; the local copy tool edits source for the next signed APK/AAB.
 > Earlier OTA milestones below are historical and no longer release requirements.

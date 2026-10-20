@@ -5,6 +5,11 @@ interaction and its expanded acceptance are recorded separately in
 [the keyboard-session report](ios-keyboard-session.md); the iOS counts and
 manual-switching assessment below describe the named earlier revisions.
 
+The later [cross-platform functionality pass](native-functionality.md) reruns the
+complete Mac Intel/Apple Silicon 15/26 suites and real-editor probes successfully,
+and inspects all four fresh universal releases. Its run IDs supersede the Mac
+execution snapshot below without changing application source.
+
 Status: all final jobs, packages and visual-review gates are complete. All four
 Mac configurations, both iPhone/iPad runtime suites, all four installed-keyboard
 journeys and all eight Mac real-editor jobs are green.
