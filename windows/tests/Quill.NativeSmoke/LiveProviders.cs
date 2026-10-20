@@ -88,10 +88,12 @@ public static partial class Program {
   public Task<FocusTarget> Capture() => native.Capture();
   public Task<bool> CanType() => native.CanType();
   public async Task<bool> Insert(FocusTarget target,string text) {
-   var current = await native.Capture();
-   var before = new { sensitive=current.Sensitive,editable=current.Editable,sameWindow=current.Window == target.Window,sameElement=current.RuntimeId.SequenceEqual(target.RuntimeId),sameContext=current.Context == target.Context,modifierPressed=Native.ModifierPressed(),application=current.Application,hasTargetContext=target.Context != null };
    var inserted = await native.Insert(target,text);
-   Attempts.Add(new { inserted,before }); return inserted;
+   // Observe after the production attempt; an extra preceding Capture could
+   // warm UI Automation and conceal the cold-path timing we need to verify.
+   var current = await native.Capture();
+   var after = new { sensitive=current.Sensitive,editable=current.Editable,sameWindow=current.Window == target.Window,sameElement=current.RuntimeId.SequenceEqual(target.RuntimeId),sameOriginalContext=current.Context == target.Context,modifierPressed=Native.ModifierPressed(),application=current.Application,hasTargetContext=target.Context != null };
+   Attempts.Add(new { inserted,after }); return inserted;
   }
  }
  private static async Task LivePipeline(string wavPath,string output) {

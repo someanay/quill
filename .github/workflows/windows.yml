@@ -11,6 +11,11 @@ on:
         description: Run owner-authorized live providers instead of ordinary verification
         type: boolean
         default: false
+      live_runner:
+        description: Focus a live follow-up on one Windows architecture
+        type: choice
+        options: [all, windows-latest, windows-11-arm]
+        default: all
 
 permissions:
   contents: read
@@ -25,6 +30,7 @@ jobs:
     uses: ./.github/workflows/live-providers.yml
     with:
       platform: windows
+      windows_runner: ${{ inputs.live_runner || 'all' }}
     secrets:
       QUILL_LIVE_GEMINI_KEY: ${{ secrets.QUILL_LIVE_GEMINI_KEY }}
       QUILL_LIVE_OPENROUTER_KEY: ${{ secrets.QUILL_LIVE_OPENROUTER_KEY }}
