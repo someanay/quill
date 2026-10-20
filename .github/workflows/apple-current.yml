@@ -16,8 +16,8 @@ concurrency:
 
 jobs:
   apple:
-    name: ${{ matrix.platform }} current OS native build and tests
-    runs-on: macos-26
+    name: ${{ matrix.platform }} current OS native build and tests (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -26,13 +26,24 @@ jobs:
           - platform: macos
             project: QuillMac
             scheme: QuillMac
+            runner: macos-26
+            artifactSuffix: ""
+          - platform: macos
+            project: QuillMac
+            scheme: QuillMac
+            runner: macos-26-intel
+            artifactSuffix: "-intel"
           - platform: ios
             project: Quill
             scheme: Quill
+            runner: macos-26
+            artifactSuffix: ""
     steps:
       - uses: actions/checkout@v4
       - name: Record Apple toolchain
         run: |
+          sw_vers
+          uname -m
           xcodebuild -version
           swift --version
       - name: Install project generator
@@ -164,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-current-verification
+          name: ${{ matrix.platform }}-current${{ matrix.artifactSuffix }}-verification
           retention-days: 14
           path: |
             ${{ matrix.platform }}/native-build.log
@@ -182,7 +193,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform }}-current-screenshots
+          name: ${{ matrix.platform }}-current${{ matrix.artifactSuffix }}-screenshots
           retention-days: 14
           path: |
             ${{ matrix.platform }}/screenshots
@@ -218,6 +229,6 @@ jobs:
         if: always() && matrix.platform == 'macos' && steps.mac_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: Quill-current-macOS-universal
+          name: Quill-current-macOS-universal${{ matrix.artifactSuffix }}
           path: dist/macos
           retention-days: 14

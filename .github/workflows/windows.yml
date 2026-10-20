@@ -16,7 +16,11 @@ concurrency:
 
 jobs:
   windows:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +48,7 @@ jobs:
       - name: Upload Windows packages
         uses: actions/upload-artifact@v4
         with:
-          name: Quill-Windows-packages
+          name: Quill-Windows-packages-${{ matrix.runner }}
           path: |
             dist/windows/*.zip
             dist/windows/*.zip.sha256
@@ -53,7 +57,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-verification
+          name: windows-verification-${{ matrix.runner }}
           path: |
             dist/verification/windows-tests
             dist/verification/windows-ui
