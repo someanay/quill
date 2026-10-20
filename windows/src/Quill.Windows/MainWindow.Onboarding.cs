@@ -6,6 +6,7 @@ namespace Quill.Windows;
 
 public sealed partial class MainWindow {
  private static readonly string[] SetupLabels = ["welcome", "privacy", "provider", "audio", "access", "shortcut", "ready"];
+ private void ResumeProviderSetup() => ShowStep(3);
 
  private void ShowStep(int value) {
   setupSettings = false; step = Math.Clamp(value,0,6); Clear(); page.MaxWidth = double.PositiveInfinity;

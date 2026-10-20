@@ -49,11 +49,20 @@ final class OnboardingUITests: XCTestCase {
         reveal(field, in: app); field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-groq")
         let other = app.buttons["onboarding.other-providers"]; reveal(other, in: app); other.click()
         XCTAssertTrue(app.staticTexts["settings.page.keys"].waitForExistence(timeout: 10))
+        let addKey = app.buttons["settings.keys.add"]; XCTAssertTrue(addKey.exists); addKey.click()
+        XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["key-provider-groq"].exists); XCTAssertTrue(app.buttons["key-provider-openrouter"].exists)
+        let advanced = app.disclosureTriangles["OpenAI or a custom provider"]; XCTAssertTrue(advanced.exists); reveal(advanced, in: app); advanced.click()
+        XCTAssertTrue(app.buttons["key-provider-openai"].exists); XCTAssertTrue(app.buttons["key-provider-custom"].exists)
+        app.buttons["Cancel"].click()
+        XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
         if !app.buttons["settings.speech"].exists {
             let back = app.buttons["settings-back"]; XCTAssertTrue(back.exists); back.click()
         }
         XCTAssertTrue(app.buttons["settings.speech"].exists, "All provider settings remain reachable at compact sheet widths.")
         let resume = app.buttons["onboarding.key.resume_setup"]; XCTAssertTrue(resume.exists); resume.click()
+        XCTAssertTrue(app.buttons["onboarding.mictest.cta"].waitForExistence(timeout: 5))
+        app.buttons["action.back"].click()
         XCTAssertTrue(field.waitForExistence(timeout: 5)); reveal(field, in: app); app.buttons["key-reveal"].click()
         XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-groq")
         XCTAssertFalse(app.buttons["key-save-groq"].isEnabled)
@@ -92,7 +101,7 @@ final class OnboardingUITests: XCTestCase {
         }
     }
     private func reveal(_ row: XCUIElement, in app: XCUIApplication) {
-        let scroll = app.sheets.firstMatch.exists ? app.sheets.firstMatch.scrollViews.firstMatch : app.scrollViews["settings-scroll"].exists ? app.scrollViews["settings-scroll"] : app.scrollViews["onboarding-content"]
+        let scroll = app.scrollViews["keys-add-scroll"].exists ? app.scrollViews["keys-add-scroll"] : app.sheets.firstMatch.exists ? app.sheets.firstMatch.scrollViews.firstMatch : app.scrollViews["settings-scroll"].exists ? app.scrollViews["settings-scroll"] : app.scrollViews["onboarding-content"]
         for _ in 0..<10 {
             let viewport = scroll.frame.insetBy(dx: 0, dy: 6)
             if row.exists && row.frame.height > 0 && viewport.contains(row.frame) { return }

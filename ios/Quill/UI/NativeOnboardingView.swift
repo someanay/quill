@@ -56,7 +56,7 @@ struct OnboardingView: View {
                     HStack(spacing: 12) {
                         Text(model.c("onboarding.key.settings_heading")).font(Q.sans(15)).fontWeight(.medium)
                         Spacer(minLength: 8)
-                        Button(model.c("onboarding.key.resume_setup")) { otherProviders = false }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(minHeight: 44).accessibilityIdentifier("onboarding.resume")
+                        Button(model.c("onboarding.key.resume_setup")) { otherProviders = false; move(to: 3) }.font(Q.sans(15)).foregroundStyle(Q.brandInk).frame(minHeight: 44).accessibilityIdentifier("onboarding.resume")
                     }.padding(.horizontal, 20).padding(.top, 12).foregroundStyle(Q.ink)
                     Divider()
                     NavigationStack { SettingsView(openAPIKeys: true) }

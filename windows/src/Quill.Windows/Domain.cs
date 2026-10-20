@@ -67,7 +67,9 @@ public sealed class QuillSettings {
   SessionCapSeconds = Math.Clamp(SessionCapSeconds, 60, 300);
   if (!new[] { 0, 60, 1440, 10080, 43200 }.Contains(HistoryRetentionMinutes)) HistoryRetentionMinutes = 60;
   if (string.IsNullOrWhiteSpace(SpeechModel) && Provider != Provider.Custom) SpeechModel = Providers.Get(Provider).SpeechModel;
-  CustomWords ??= []; ContactNames ??= []; AppStyles ??= new(); FreeTierProviders ??= []; CleanupModels ??= []; }
+  CustomWords ??= []; ContactNames ??= [];
+  var styles = new Dictionary<string,WritingStyle>(StringComparer.OrdinalIgnoreCase); foreach (var entry in AppStyles ?? []) styles[entry.Key] = entry.Value; AppStyles = styles;
+  FreeTierProviders ??= []; CleanupModels ??= []; }
 }
 public static class SessionPresentation {
  public static bool ShowFloatingControl(bool enabled,bool visible,DictationState state) => enabled && visible || state != DictationState.Idle;

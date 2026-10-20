@@ -5,7 +5,8 @@ import QuillCore
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showKeys: Bool
-    init(openAPIKeys: Bool = false) { _showKeys = State(initialValue: openAPIKeys) }
+    private let setupContext: Bool
+    init(openAPIKeys: Bool = false) { _showKeys = State(initialValue: openAPIKeys); setupContext = openAPIKeys }
     var body: some View {
         Form {
             Section(model.c("settings.group.dictation")) {
@@ -27,7 +28,7 @@ struct SettingsView: View {
             }
         }.navigationTitle(model.c("nav.settings")).navigationBarTitleDisplayMode(.inline)
             .scrollContentBackground(.hidden).background(Q.paper)
-            .navigationDestination(isPresented: $showKeys) { APIKeysView() }
+            .navigationDestination(isPresented: $showKeys) { APIKeysView(showSetupHelp: setupContext) }
     }
 }
 
@@ -103,12 +104,17 @@ struct ModelPickerView: View {
 
 struct APIKeysView: View {
     @EnvironmentObject private var model: AppModel
+    var showSetupHelp = false
     @State private var removing: SavedKey?
     @State private var showRemove = false
     @State private var addingFor: Provider?
     var body: some View {
         QPage {
             QHeading(title: model.c("settings.keys.title")).accessibilityIdentifier("screen.keys")
+            if showSetupHelp {
+                Text(model.c("onboarding.key.settings_help")).font(Q.sans(13)).foregroundStyle(Q.muted)
+                NavigationLink(model.c("settings.row.speech_model")) { SpeechSettingsView() }.frame(minHeight: 44)
+            }
             QBanner(text: model.c("ios.keys.security"), icon: "lock.shield")
             if let addingFor {
                 QSection(title: model.c("settings.keys.add"))

@@ -13,6 +13,11 @@ public sealed class TestFolder : IDisposable {
  }
 }
 public sealed class StorageTests {
+ [Fact] public void PerAppStyleLookupRemainsCaseInsensitiveAfterRestart() {
+  using var f = new TestFolder(); var store = new SettingsStore(f.Path); store.Value.AppStyles["Notepad"] = WritingStyle.Formal; store.Save();
+  var restored = new SettingsStore(f.Path); Assert.Equal(WritingStyle.Formal,restored.Value.StyleFor("notepad")); Assert.Equal(WritingStyle.Formal,restored.Value.StyleFor("NOTEPAD"));
+  restored.Value.AppStyles["notepad"] = WritingStyle.Casual; restored.Save(); Assert.Single(restored.Value.AppStyles); Assert.Equal(WritingStyle.Casual,new SettingsStore(f.Path).Value.StyleFor("Notepad"));
+ }
  [Fact] public void LegacyPreferencesKeepProviderModelShortcutAndPrivacyWithoutGrantingNativeConsent() {
   using var f = new TestFolder(); var legacy = System.IO.Path.Combine(f.Path,"legacy.json");
   var source = """{"Provider":"Gemini","Model":"chosen-model","CleanupEnabled":false,"CleanupModel":"chosen-cleanup","Hotkey":"Alt+E","Theme":"Dark","OnboardingComplete":true,"PrivateMode":true,"HistoryEnabled":false,"HistoryRetentionMinutes":1440,"SessionCapSeconds":120,"DefaultWritingStyle":"Formal","StartWithWindows":false,"CustomWords":[{"Heard":"quill","Replacement":"Quill"}],"PerAppStyles":{"notepad":"Casual"}}""";

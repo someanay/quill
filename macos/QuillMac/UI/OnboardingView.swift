@@ -42,7 +42,7 @@ struct OnboardingView: View {
         }.onChange(of: step) { _ in dictation.stopMicTest() }.onDisappear { dictation.stopMicTest() }
         .sheet(isPresented: $otherProviders) {
             VStack(spacing: 0) {
-                HStack { HelpText(key: "onboarding.key.settings_help"); Spacer(); QuillButton(key: "onboarding.key.resume_setup", primary: false) { otherProviders = false }.fixedSize(horizontal: true, vertical: false) }.padding(20)
+                HStack { HelpText(key: "onboarding.key.settings_help"); Spacer(); QuillButton(key: "onboarding.key.resume_setup", primary: false) { otherProviders = false; step = 3 }.fixedSize(horizontal: true, vertical: false) }.padding(20)
                 Divider()
                 SettingsView(initialPage: .keys)
             }.frame(minWidth: 640, idealWidth: 960, minHeight: 500, idealHeight: 740)

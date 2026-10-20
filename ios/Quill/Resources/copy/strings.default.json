@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 26,
+  "revision": 27,
   "locale": "en",
   "updatedAt": "2026-10-21T00:00:00Z",
   "strings": {
@@ -626,7 +626,7 @@
     "ios.session.unavailable": "The session is unavailable. Open Quill to start a new keyboard session.",
     "onboarding.key.other_providers": "Add other providers later in Settings",
     "onboarding.key.resume_setup": "Continue setup",
-    "onboarding.key.settings_help": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+    "onboarding.key.settings_help": "Add keys and choose your provider under Speech & model. You can also finish setup now and return here later.",
     "demo.accessibility": "Animated dictation example. A delivery question is answered by recording a reply and inserting the finished text into the message field.",
     "demo.conversation": "Example conversation",
     "demo.hello": "hello",

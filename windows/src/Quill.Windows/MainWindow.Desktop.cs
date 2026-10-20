@@ -18,7 +18,7 @@ public sealed partial class MainWindow {
   MinWidth = 640; MinHeight = 440; MaxWidth = MaxHeight = double.PositiveInfinity;
   compactNavigation.Children.Clear();
   if (visible && setupSettings) {
-   compactNavigation.Children.Add(Action(C("onboarding.key.resume_setup","Continue setup"),() => ShowStep(2)));
+   compactNavigation.Children.Add(Action(C("onboarding.key.resume_setup","Continue setup"),ResumeProviderSetup));
    compactNavigation.Children.Add(Action(C("nav.settings","Settings"),() => Navigate("settings")));
   } else if (visible) {
    foreach (var item in new[] { ("home","nav.home","Home"),("history","nav.history","History"),("settings","nav.settings","Settings") }) {
@@ -165,9 +165,12 @@ public sealed partial class MainWindow {
  private StackPanel? workspaceActions;
  private InkMeter? workspaceMeter;
  private void BuildHomeWorkspace() {
-  if (app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) == null || !S.InjectionConsent) {
-   page.Children.Add(Text(C("desktop.workspace.setup_needed","Finish connecting your provider and permissions to start dictating."),13,true));
-   page.Children.Add(Action(C("windows.advanced.setup","Review setup"),() => ShowStep(app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) != null && !S.InjectionConsent ? 4 : 0)));
+  if (!S.InjectionConsent) {
+   page.Children.Add(Text(C("desktop.workspace.insertion_needed","Review and allow text insertion before dictating."),13,true));
+   page.Children.Add(Action(C("windows.onboarding.review_insert","Review text insertion"),() => ShowStep(4)));
+  } else if (app.Secrets.ActiveId(S.Provider,S.CustomBaseUrl) == null) {
+   page.Children.Add(Text(C("desktop.workspace.key_needed","Add an API key for %1$s to start dictating.",S.Provider),13,true));
+   page.Children.Add(Action(C("settings.keys.add","Add key"),() => Navigate("keys")));
   }
   var columns = new DesktopColumns { FirstFraction = 0.65 }; var start = page.Children.Count;
   var practice = Card(C("desktop.practice.title","Practice here"));

@@ -232,7 +232,7 @@ struct KeysSettings: View {
             if !message.isEmpty { CopyText(message).foregroundStyle(message == "onboarding.key.valid" ? QuillTheme.success : QuillTheme.error) }
             QuillButton(key: "settings.keys.add") { adding = true }
             HelpText(key: "mac.key.security")
-        }.sheet(isPresented: $adding) { ScrollView { VStack(alignment: .leading, spacing: 20) { HStack { CopyText("settings.keys.add").font(QuillTheme.serif()); Spacer(); Button(Copy.text("action.cancel")) { adding = false } }; KeyEditor { adding = false } }.padding(28) }.frame(width: 590, height: 690) }
+        }.sheet(isPresented: $adding) { ScrollView { VStack(alignment: .leading, spacing: 20) { HStack { CopyText("settings.keys.add").font(QuillTheme.serif()); Spacer(); Button(Copy.text("action.cancel")) { adding = false } }; KeyEditor { adding = false } }.padding(28) }.accessibilityIdentifier("keys-add-scroll").frame(width: 590, height: 690) }
         .confirmationDialog(Copy.text("settings.keys.remove"), isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button(Copy.text("settings.keys.remove"), role: .destructive) { if let slot = removing { do { try keys.delete(slot); if settings.value.activeKeys[slot.provider.rawValue] == slot.id { settings.value.activeKeys[slot.provider.rawValue] = keys.slots.first(where: { $0.provider == slot.provider })?.id } } catch { message = "mac.error.storage" } }; removing = nil }
         }

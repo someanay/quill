@@ -117,7 +117,7 @@ public static partial class Program {
   var other = Walk(content).OfType<Button>().Single(button => System.Windows.Automation.AutomationProperties.GetName(button) == services.Copy.Get("onboarding.key.other_providers")); other.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
   if (services.Settings.Value.OnboardingComplete || !Equals(typeof(MainWindow).GetField("route",flags)!.GetValue(window),"keys")) throw new InvalidOperationException("Other providers must open API key settings without completing setup.");
   var resume = Walk(content).OfType<Button>().Single(button => System.Windows.Automation.AutomationProperties.GetName(button) == services.Copy.Get("onboarding.key.resume_setup")); resume.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-  if ((int)typeof(MainWindow).GetField("step",flags)!.GetValue(window)! != 2) throw new InvalidOperationException("Return from settings lost the provider setup step.");
+  if ((int)typeof(MainWindow).GetField("step",flags)!.GetValue(window)! != 3) throw new InvalidOperationException("Other providers later must continue to microphone setup without requiring a Groq key.");
 
   services.Settings.Value.OnboardingComplete = true; typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,["home"]);
   if (window.ResizeMode != ResizeMode.CanResize || window.Width != 1920 || window.Height != 650) throw new InvalidOperationException("Home must retain window size and resizing.");

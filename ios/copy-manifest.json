@@ -1,5 +1,5 @@
 {
-  "revision": 26,
+  "revision": 27,
   "keys": {
     "a11y.back": {
       "default": "Back",
@@ -3781,7 +3781,7 @@
       "optionalBlank": false
     },
     "onboarding.key.settings_help": {
-      "default": "Add a key here, then choose your provider under Speech & model. Return to setup when you are ready.",
+      "default": "Add keys and choose your provider under Speech & model. You can also finish setup now and return here later.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

@@ -12,7 +12,7 @@ final class QuillUITests: XCTestCase {
                     XCUIDevice.shared.orientation = .landscapeLeft; waitForLandscape(app)
                     XCTAssertTrue(app.buttons["onboarding.getStarted"].isHittable)
                     capture(app, "ios-messenger-landscape-\(dark ? "dark" : "light")")
-                    XCUIDevice.shared.orientation = .portrait
+                    restorePortrait(app)
                 }
                 app.terminate()
             }
@@ -66,6 +66,18 @@ final class QuillUITests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
         XCTFail("The app did not settle into a stable landscape window.")
+    }
+    private func restorePortrait(_ app: XCUIApplication) {
+        XCUIDevice.shared.orientation = .portrait
+        var last = CGRect.zero, stable = 0
+        for _ in 0..<40 {
+            let frame = app.windows.firstMatch.frame
+            stable = frame.height > frame.width && frame == last ? stable + 1 : 0
+            if stable >= 4 { return }
+            last = frame
+            RunLoop.current.run(until: Date().addingTimeInterval(0.25))
+        }
+        XCTFail("Portrait restoration must settle before terminating or relaunching the app.")
     }
     private func revealLandscapeControl(_ control: XCUIElement, in app: XCUIApplication) {
         let scroll = app.scrollViews.firstMatch
@@ -137,6 +149,8 @@ final class QuillUITests: XCTestCase {
             XCTAssertTrue(app.buttons["key.provider.gemini"].waitForExistence(timeout: 5))
             capture(app, "ios-setup-provider-settings-\(dark ? "dark" : "light")")
             tap(app.buttons["onboarding.resume"], in: app)
+            XCTAssertTrue(app.staticTexts["onboarding.keyboard"].waitForExistence(timeout: 5))
+            tap(app.buttons["onboarding.back"], in: app)
             XCTAssertTrue(key.waitForExistence(timeout: 5)); tap(app.buttons["Show key"], in: app)
             XCTAssertEqual(app.textFields["key.candidate"].value as? String, "draft-groq")
             XCTAssertFalse(app.buttons["key.provider.gemini"].exists); app.terminate()
@@ -332,7 +346,7 @@ final class QuillUITests: XCTestCase {
             tap(entry, in: app)
             XCTAssertTrue(app.staticTexts["transcript.text"].waitForExistence(timeout: 5))
             capture(app, "ios-history-landscape-\(dark ? "dark" : "light")")
-            XCUIDevice.shared.orientation = .portrait
+            restorePortrait(app)
             app.terminate()
         }
     }
@@ -359,7 +373,7 @@ final class QuillUITests: XCTestCase {
         tap(app.buttons["Dark"], in: app); capture(app, "ios-large-text-dark")
         XCTAssertTrue(app.buttons["Match system"].exists)
         XCUIDevice.shared.orientation = .landscapeLeft
-        defer { XCUIDevice.shared.orientation = .portrait }
+        defer { restorePortrait(app) }
         waitForLandscape(app)
         XCTAssertTrue(app.staticTexts["screen.visual"].waitForExistence(timeout: 5))
         let window = app.windows.firstMatch.frame, heading = app.staticTexts["screen.visual"].frame
