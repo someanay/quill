@@ -176,7 +176,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         let result = host.staticTexts[onboarding ? "dictation.result" : "transcript.text"]
         XCTAssertTrue(result.waitForExistence(timeout: 120))
         let text = result.label
-        for word in ["project","notes","tomorrow","budget"] { XCTAssertTrue(text.lowercased().contains(word)) }
+        for word in ["project","notes","alex","tomorrow","budget","thank"] { XCTAssertTrue(text.lowercased().contains(word)) }
         return text
     }
     private func enableKeyboardThroughSettings() throws {
@@ -357,7 +357,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
                 expectation(for: delivered, evaluatedWith: fixture); waitForExpectations(timeout: 120)
                 seamlessExpected = fixture.textViews["quill.qa.editor"].value as? String ?? ""
                 let addition = String(seamlessExpected.dropFirst(original.count))
-                for word in ["project","notes","tomorrow","budget"] { XCTAssertTrue(addition.lowercased().contains(word)) }
+                for word in ["project","notes","alex","tomorrow","budget","thank"] { XCTAssertTrue(addition.lowercased().contains(word)) }
                 liveReadbacks.append(["stage":"background-\(take)","text":seamlessExpected])
             } else { seamlessExpected += " This is a simulated provider response." }
             requireEditorText(seamlessExpected)

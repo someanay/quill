@@ -71,6 +71,11 @@ public enum CleanupGuard {
         for token in a { budget[token, default: 0] += 1 }
         var overlap = 0
         guard b.allSatisfy({ budget[$0] != nil }) else { return false }
+        let kept = Set(b), fillers: Set<String> = ["um","uh","er","erm","hmm"]
+        var prefix = 0
+        while prefix < a.count && (fillers.contains(a[prefix]) || a[prefix] == "so") { prefix += 1 }
+        let discourse = a.prefix(prefix).contains(where: fillers.contains) && prefix + 3 < a.count && Array(a[prefix..<(prefix + 3)]) == ["like","you","know"] && ["i","we"].contains(a[prefix + 3])
+        guard a.enumerated().allSatisfy({ (discourse && $0.offset >= prefix && $0.offset < prefix + 3) || fillers.contains($0.element) || kept.contains($0.element) }) else { return false }
         for token in b where budget[token, default: 0] > 0 { budget[token, default: 0] -= 1; overlap += 1 }
         return Double(overlap) / Double(b.count) >= 0.7 && Double(overlap) / Double(a.count) >= 0.5
     }

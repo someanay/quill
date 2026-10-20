@@ -982,6 +982,26 @@
       "raw": "Um please send the updated project notes to my uh tomorrow and include the budget of 42 dollars uh thank you",
       "cleaned": "Please send the updated project notes to my email tomorrow and include the budget of 42 dollars. Thank you.",
       "accepted": false
+    },
+    {
+      "raw": "Um please send the updated project notes to Alex tomorrow and include the budget of 42 dollars uh thank you",
+      "cleaned": "Please send the updated project notes to Alex tomorrow and include the budget of 42 dollars.",
+      "accepted": false
+    },
+    {
+      "raw": "send the project notes to Alex tomorrow",
+      "cleaned": "Send the project notes tomorrow.",
+      "accepted": false
+    },
+    {
+      "raw": "do not send the private project notes before Friday",
+      "cleaned": "Do send the private project notes before Friday.",
+      "accepted": false
+    },
+    {
+      "raw": "include the budget of 42 dollars in the project notes",
+      "cleaned": "Include the budget in the project notes.",
+      "accepted": false
     }
   ]
 }

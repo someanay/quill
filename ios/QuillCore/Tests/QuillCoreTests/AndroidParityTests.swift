@@ -7,7 +7,7 @@ final class AndroidParityTests: XCTestCase {
         struct Fixture: Decodable { let sourceSha256: String; let cases: [Case] }
         let url = try XCTUnwrap(Bundle.module.url(forResource: "cleanup", withExtension: "json", subdirectory: "Fixtures"))
         let fixture = try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
-        XCTAssertEqual(fixture.cases.count, 196) // Android basis plus the observed live-provider regression.
+        XCTAssertEqual(fixture.cases.count, 200) // Android basis plus live-provider word-preservation regressions.
         for item in fixture.cases { XCTAssertEqual(CleanupGuard.preserves(item.raw, item.cleaned), item.accepted, "\(item.raw) -> \(item.cleaned)") }
     }
     func testAndroidPlaceholderSignatures() throws {

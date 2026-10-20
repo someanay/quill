@@ -23,10 +23,15 @@ accounts. They also expose actual failures absent from synthetic HTTP tests:
   A non-destructive, once-only migration now preserves existing new-store keys,
   leaves the old encrypted files intact and does not resurrect keys after Clear.
 
-All three native cleanup guards now reject new words after their existing
-contraction normalization. Existing overlap/duplication limits still apply.
-The observed added-word response is a shared regression fixture. Targeted local
-Windows storage/domain tests pass 254 checks with no skips. Native Gemini Flash
+All three native cleanup guards now reject new words and loss of spoken content
+after contraction normalization. Existing overlap/duplication limits still apply.
+Obvious filler sounds and the existing initial hesitant "like you know I/we..."
+case remain removable. Live output that dropped a spoken "thank you" exposed
+the additional omission defect. Four new negative cases protect that ending,
+names, negations and amounts. Prompts explicitly keep those words. The earlier
+successful-delivery marker for the omitted ending does not establish acceptable
+cleanup quality. The shared corpus now has 200 cases; all 243 Windows domain
+checks and both full portable Apple suites pass. Native Gemini Flash
 requests now ask for documented minimal reasoning to avoid unnecessary latency;
 the wall-clock deadline and safe fallback remain in place. Actual cleanup on the
 existing Gemini account took 13.266 seconds in a separate latency diagnostic,

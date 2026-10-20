@@ -77,7 +77,7 @@ private struct LiveFailure: Error { let message: String; init(_ message: String)
                     var readback: CFTypeRef?
                     guard AXUIElementCopyAttributeValue(target.element, kAXValueAttribute as CFString, &readback) == .success, let actual = readback as? String,
                           actual.trimmingCharacters(in: .newlines) == prefix + clean.trimmingCharacters(in: .whitespacesAndNewlines) else { throw LiveFailure("Actual TextEdit readback differs from the live cleaned result.") }
-                    for anchor in ["project","notes","tomorrow","budget"] { guard raw.lowercased().contains(anchor) else { throw LiveFailure("Captured speech lost a required anchor.") } }
+                    for anchor in ["project","notes","alex","tomorrow","budget","thank"] { guard raw.lowercased().contains(anchor) else { throw LiveFailure("Captured speech lost a required anchor.") } }
                     results.append(["speech":speechProvider.rawValue,"cleanup":cleanupProvider.rawValue,"take":take,"passed":true,"input":"actual AudioCapture via BlackHole 2ch synthetic speech","peak":peak,"raw":raw,"clean":clean,"editor":actual,"requests":events])
                     } catch {
                         failed = true

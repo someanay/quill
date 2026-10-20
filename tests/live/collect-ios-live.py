@@ -35,7 +35,7 @@ for index in range(0, 8, 2):
     assert speech['status'] == 200 and cleanup['status'] == 200
     assert speech['path'].endswith((':generateContent', '/audio/transcriptions'))
     assert cleanup['path'].endswith('/chat/completions') and cleanup['finish'] == 'stop'
-    assert all(word in speech['output'].lower() for word in ['project','notes','tomorrow','budget'])
+    assert all(word in speech['output'].lower() for word in ['project','notes','alex','tomorrow','budget','thank'])
     clean.append(cleanup['output'].strip())
 expected = {'practice':clean[0], 'foreground':'Before ' + clean[1]}
 expected['manual-reinsert'] = expected['foreground'] + ' ' + clean[1]

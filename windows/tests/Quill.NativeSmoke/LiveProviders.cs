@@ -42,7 +42,8 @@ public static partial class Program {
  }
  private static QuillSettings LiveSettings(Provider speech,Provider cleanup) => new() { Provider = speech,SpeechModel = Providers.Get(speech).SpeechModel,CleanupProvider = cleanup,CleanupModel = Providers.Get(cleanup).CleanupModel,CleanupAutomatic = false,CleanupEnabled = true,OnboardingComplete = true,InjectionConsent = true,PrivateMode = true,HistoryEnabled = false,Language = "en" };
  private static void RequireSpeech(string text) {
-  var lower = text.ToLowerInvariant(); foreach (var anchor in new[] {"project","notes","tomorrow","budget"}) if (!lower.Contains(anchor,StringComparison.Ordinal)) throw new InvalidOperationException("Live transcription missed a speech anchor.");
+  var lower = text.ToLowerInvariant(); foreach (var anchor in new[] {"project","notes","alex","tomorrow","budget","thank"}) if (!lower.Contains(anchor,StringComparison.Ordinal)) throw new InvalidOperationException("Live transcription missed a speech anchor.");
+  if (!System.Text.RegularExpressions.Regex.IsMatch(lower,@"\b42\b") && !(lower.Contains("forty",StringComparison.Ordinal) && lower.Contains("two",StringComparison.Ordinal))) throw new InvalidOperationException("Live transcription lost the spoken amount.");
  }
  private static void RequireCleanup(LiveAudit audit,string raw,string clean) {
   var response = audit.Requests.LastOrDefault();

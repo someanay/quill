@@ -5,7 +5,7 @@ $quillRoot = [IO.Path]::GetFullPath((Join-Path $nativeRoot '..'))
 $appProject = Join-Path $nativeRoot 'src\Quill.Windows\Quill.Windows.csproj'
 $testProject = Join-Path $nativeRoot 'tests\Quill.Windows.Tests\Quill.Windows.Tests.csproj'
 $distRoot = Join-Path $quillRoot 'dist\windows'
-$packageRoot = Join-Path $distRoot ("packages\Quill-Windows-2.0.3-$Runtime-" + [Guid]::NewGuid().ToString('N'))
+$packageRoot = Join-Path $distRoot ("packages\Quill-Windows-2.0.4-$Runtime-" + [Guid]::NewGuid().ToString('N'))
 $publishRoot = Join-Path $packageRoot 'app'
 New-Item -ItemType Directory -Path $publishRoot -Force | Out-Null
 if (-not $SkipTests) {
@@ -28,7 +28,7 @@ Copy-Item -LiteralPath (Join-Path $nativeRoot 'THIRD-PARTY-NOTICES.md') -Destina
 Copy-Item -LiteralPath (Join-Path $nativeRoot 'VERIFICATION.md') -Destination $packageRoot
 $hashLines = Get-ChildItem -LiteralPath $publishRoot -File -Recurse | Sort-Object FullName | ForEach-Object { '{0}  {1}' -f (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant(),[IO.Path]::GetRelativePath($packageRoot,$_.FullName).Replace('\','/') }
 [IO.File]::WriteAllLines((Join-Path $packageRoot 'SHA256SUMS'),$hashLines,[Text.UTF8Encoding]::new($false))
-$archive = Join-Path $distRoot "Quill-Windows-2.0.3-$Runtime.zip"
+$archive = Join-Path $distRoot "Quill-Windows-2.0.4-$Runtime.zip"
 Compress-Archive -Path (Join-Path $packageRoot '*') -DestinationPath $archive -Force
 $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText("$archive.sha256","$hash  $([IO.Path]::GetFileName($archive))`n",[Text.UTF8Encoding]::new($false))
