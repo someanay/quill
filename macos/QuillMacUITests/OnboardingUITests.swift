@@ -55,7 +55,10 @@ final class OnboardingUITests: XCTestCase {
         let advanced = app.disclosureTriangles["OpenAI or a custom provider"]; XCTAssertTrue(advanced.exists); reveal(advanced, in: app); advanced.click()
         XCTAssertTrue(app.buttons["key-provider-openai"].exists); XCTAssertTrue(app.buttons["key-provider-custom"].exists)
         app.buttons["Cancel"].click()
-        XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
+        // macOS 15 retains the dismissed sheet's AX nodes during its closing
+        // animation, even after the outer Settings sheet is visibly restored.
+        let dismissed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: app.buttons["key-provider-gemini"])
+        XCTAssertEqual(XCTWaiter.wait(for: [dismissed], timeout: 5), .completed, "Cancelling must finish dismissing the provider sheet.")
         if !app.buttons["settings.speech"].exists {
             let back = app.buttons["settings-back"]; XCTAssertTrue(back.exists); back.click()
         }
