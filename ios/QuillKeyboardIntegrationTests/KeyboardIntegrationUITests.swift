@@ -13,6 +13,9 @@ final class KeyboardIntegrationUITests: XCTestCase {
     private var outcome = "incomplete"
     override func setUpWithError() throws {
         continueAfterFailure = false
+        if ProcessInfo.processInfo.environment["QUILL_REQUIRE_LIVE_PROVIDERS"] == "true" {
+            XCTAssertTrue(isLive, "The explicitly selected live test configuration must reach the XCTest runner.")
+        }
         XCUIDevice.shared.orientation = .portrait
     }
     override func tearDownWithError() throws {

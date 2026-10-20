@@ -191,8 +191,10 @@ jobs:
           python3 ../tests/live/speech-server.py ../tests/live/speech.wav > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
           SPEECH_PID=$!
           trap 'kill "$SPEECH_PID" 2>/dev/null || true' EXIT
-          xcodebuild test-without-building -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
-            -destination "id=$UDID" -derivedDataPath LiveDerivedData \
+          TEST_RUN=$(find LiveDerivedData/Build/Products -maxdepth 1 -name '*.xctestrun' -print)
+          test -f "$TEST_RUN"
+          xcodebuild test-without-building -xctestrun "$TEST_RUN" \
+            -destination "id=$UDID" \
             -resultBundlePath LiveKeyboardResults.xcresult \
             -test-timeouts-enabled YES -default-test-execution-time-allowance 900 \
             -maximum-test-execution-time-allowance 1200 \
