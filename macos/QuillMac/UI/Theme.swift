@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CoreText
 import QuillCore
 
@@ -14,8 +15,14 @@ enum QuillTheme {
     static let brand = Color(hex: 0x234DCE)
     static func brandInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xB6C9FF : 0x1A3FAF) }
     static func liveInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xD3DFFF : 0x1A3FAF) }
-    static let error = Color(hex: 0xD6453D)
-    static let success = Color(hex: 0x2E9E6B)
+    static let error = statusColor(light: 0xB93631, dark: 0xE8635B)
+    static let success = statusColor(light: 0x23744F, dark: 0x43B585)
+    private static func statusColor(light: UInt32, dark: UInt32) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let value = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: 1)
+        })
+    }
     static func paper(_ dark: Bool) -> Color { Color(hex: dark ? 0x11141A : 0xF5F7F5) }
     static func surface(_ dark: Bool) -> Color { Color(hex: dark ? 0x171B23 : 0xFFFFFF) }
     static func line(_ dark: Bool) -> Color { Color(hex: dark ? 0x353C48 : 0xD9DED9) }

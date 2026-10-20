@@ -2,7 +2,7 @@ name: Apple current OS build and test
 
 on:
   push:
-    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", ".github/workflows/apple-current.yml"]
+    paths: ["macos/**", "ios/**", "scripts/verify-platform-parity.py", "scripts/verify-native-contrast.py", ".github/workflows/apple-current.yml"]
   pull_request:
     paths: ["macos/**", "ios/**", ".github/workflows/apple-current.yml"]
   workflow_dispatch:
@@ -50,6 +50,8 @@ jobs:
         run: brew install xcodegen
       - name: Verify bundled copy and fonts
         run: python3 scripts/verify-platform-parity.py --platform ${{ matrix.platform }} --independent-copy
+      - name: Verify light and dark text contrast
+        run: python3 scripts/verify-native-contrast.py --platform ${{ matrix.platform }} --output ${{ matrix.platform }}/contrast.json
       - name: Test portable provider and policy core on Apple
         working-directory: ${{ matrix.platform }}
         run: swift test --package-path QuillCore
@@ -187,6 +189,7 @@ jobs:
           name: ${{ matrix.platform }}-current${{ matrix.artifactSuffix }}-verification
           retention-days: 14
           path: |
+            ${{ matrix.platform }}/contrast.json
             ${{ matrix.platform }}/native-build.log
             ${{ matrix.platform }}/release-build.log
             ${{ matrix.platform }}/TestResults.xcresult

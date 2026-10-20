@@ -18,8 +18,9 @@ enum Q {
     static let ink = adaptive(0x202522, 0xE0E7F6)
     static let muted = adaptive(0x5C665F, 0xB2B9C6)
     static let line = adaptive(0xD9DED9, 0x353C48)
-    static let danger = adaptive(0xD6453D, 0xE8635B)
-    static let success = adaptive(0x2E9E6B, 0x43B585)
+    static let danger = adaptive(0xB93631, 0xE8635B)
+    static let dangerFill = adaptive(0xB93631, 0xB93631)
+    static let success = adaptive(0x23744F, 0x43B585)
     static let fieldRadius: CGFloat = 6
     static let cardRadius: CGFloat = 8
     static let controlRadius: CGFloat = 6
@@ -53,7 +54,7 @@ struct QButton: View {
             HStack(spacing: 8) { if let icon { Image(systemName: icon) }; Text(title).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true) }
                 .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular ? 320 : .infinity, minHeight: 50)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
-                .background(secondary ? Q.brandSoft : (destructive ? Q.danger : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
+                .background(secondary ? Q.brandSoft : (destructive ? Q.dangerFill : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
         }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -149,7 +150,7 @@ struct RecordingBubble: View {
     var body: some View {
         ZStack {
             if phase == .recording { Circle().fill(Q.brand.opacity(pulse ? 0.10 : 0.22)).frame(width: size + (pulse ? 26 : 14), height: size + (pulse ? 26 : 14)) }
-            Circle().fill(phase == .failed ? Q.danger : Q.brand).frame(width: size, height: size)
+            Circle().fill(phase == .failed ? Q.dangerFill : Q.brand).frame(width: size, height: size)
                 .overlay(Circle().stroke(.white.opacity(0.92), lineWidth: 2.5)).shadow(color: .black.opacity(0.24), radius: 12, y: 6)
             if [.transcribing, .cleaning].contains(phase) {
                 if reducedMotion { Image(systemName: "ellipsis").foregroundStyle(.white) } else { ProgressView().tint(.white) }

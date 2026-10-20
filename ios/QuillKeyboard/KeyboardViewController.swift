@@ -22,7 +22,7 @@ final class KeyboardViewController: UIInputViewController {
         guard let proxy = activeProxy else { return false }
         return proxy.isSecureTextEntry != true && proxy.keyboardType != .phonePad && proxy.keyboardType != .namePhonePad
     }
-    private let brand = UIColor(red: 35/255, green: 77/255, blue: 206/255, alpha: 1)
+    private let brand = KeyboardViewController.adaptive(0x234DCE, 0x234DCE)
     private static func adaptive(_ light: UInt32, _ dark: UInt32) -> UIColor {
         UIColor { trait in
             let value = trait.userInterfaceStyle == .dark ? dark : light
@@ -32,6 +32,7 @@ final class KeyboardViewController: UIInputViewController {
     private let ink = KeyboardViewController.adaptive(0x202522, 0xE0E7F6)
     private let paper = KeyboardViewController.adaptive(0xF5F7F5, 0x11141A)
     private let surface = KeyboardViewController.adaptive(0xFFFFFF, 0x171B23)
+    private let muted = KeyboardViewController.adaptive(0x5C665F, 0xB2B9C6)
     private let stack = UIStackView()
     private let status = UILabel()
     private let insertButton = UIButton(type: .system)
@@ -74,7 +75,7 @@ final class KeyboardViewController: UIInputViewController {
         globe.widthAnchor.constraint(equalToConstant: 48).isActive = true; toolbar.addArrangedSubview(globe)
         stack.addArrangedSubview(toolbar)
         status.font = UIFont(name: "IBMPlexSans", size: 13) ?? .systemFont(ofSize: 13)
-        status.numberOfLines = 3; status.textColor = .secondaryLabel; status.setContentCompressionResistancePriority(.required, for: .vertical)
+        status.numberOfLines = 3; status.textColor = muted; status.setContentCompressionResistancePriority(.required, for: .vertical)
         status.accessibilityIdentifier = "keyboard.status"; stack.addArrangedSubview(status)
         insertButton.setTitle(c("ios.keyboard.insert"), for: .normal); insertButton.backgroundColor = brand; insertButton.tintColor = .white
         insertButton.titleLabel?.font = UIFont(name: "IBMPlexSans", size: 15) ?? .systemFont(ofSize: 15, weight: .medium)
