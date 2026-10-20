@@ -6,7 +6,28 @@ import QuillCore
 
 @main struct QuillMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    var body: some Scene { Settings { EmptyView() } }
+    var body: some Scene { Settings { EmptyView() }.commands { QuillCommands() } }
+}
+
+@MainActor struct QuillCommands: Commands {
+    var body: some Commands {
+        CommandGroup(replacing: .appSettings) {
+            Button(Copy.text("nav.settings") + "…") { NotificationCenter.default.post(name: .quillOpenSettings, object: nil) }.keyboardShortcut(",", modifiers: .command)
+        }
+        CommandGroup(replacing: .newItem) {
+            Button("Close Window") { NSApp.keyWindow?.performClose(nil) }.keyboardShortcut("w", modifiers: .command)
+        }
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") { NSApp.sendAction(Selector(("undo:")), to: nil, from: nil) }.keyboardShortcut("z", modifiers: .command)
+            Button("Redo") { NSApp.sendAction(Selector(("redo:")), to: nil, from: nil) }.keyboardShortcut("z", modifiers: [.command, .shift])
+        }
+        CommandGroup(replacing: .pasteboard) {
+            Button("Cut") { NSApp.sendAction(#selector(NSText.cut(_:)), to: nil, from: nil) }.keyboardShortcut("x", modifiers: .command)
+            Button("Copy") { NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil) }.keyboardShortcut("c", modifiers: .command)
+            Button("Paste") { NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil) }.keyboardShortcut("v", modifiers: .command)
+            Button("Select All") { NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil) }.keyboardShortcut("a", modifiers: .command)
+        }
+    }
 }
 
 @MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -16,6 +37,7 @@ import QuillCore
     lazy var dictation = Dictation(settings: settings, keys: keys, history: history)
     lazy var crashReports = CrashReports(settings: settings)
     private var mainWindow: NSWindow?
+    private var settingsWindow: NSWindow?
     private var bubble: BubbleController?
     private var statusItem: NSStatusItem?
     private var hotkey: GlobalHotkey?
@@ -28,18 +50,23 @@ import QuillCore
         #if DEBUG
         if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-settings") { settings.value.onboardingComplete = true }
         if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-dark") { settings.value.appTheme = "Dark" }
+        if AppPaths.testMode && ProcessInfo.processInfo.arguments.contains("--ui-history-fixtures") {
+            // Synthetic presentation data in the isolated UI-test store only.
+            let paragraph = "Review the desktop onboarding, then send the revised plan to the team. Keep the keyboard shortcut easy to find and the transcript easy to read."
+            for (index, text) in ["A short dictation for the weekly update.", Array(repeating: paragraph, count: 12).joined(separator: "\n\n")].enumerated() {
+                history.insert(HistoryEntry(text: text, created: Date().addingTimeInterval(Double(index - 2) * 60), provider: .groq, appName: "Quill UI fixture", duration: 15), settings: settings.value)
+            }
+        }
         #endif
         let root = MainView().environmentObject(settings).environmentObject(keys).environmentObject(history).environmentObject(dictation).environmentObject(crashReports)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 610, height: 790), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1120, height: 760), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
+        if let area = NSScreen.main?.visibleFrame { window.setContentSize(NSSize(width: min(1120,area.width - 40), height: min(760,area.height - 80))) }
+        NotificationCenter.default.addObserver(self, selector: #selector(showSettings), name: .quillOpenSettings, object: nil)
         window.title = "Quill"; window.identifier = NSUserInterfaceItemIdentifier("QuillMain"); window.contentView = NSHostingView(rootView: root); window.center(); window.isReleasedWhenClosed = false; mainWindow = window
-        let menu = NSMenu(); let appMenu = NSMenu(); let item = NSMenuItem(); item.submenu = appMenu; menu.addItem(item)
-        appMenu.addItem(withTitle: Copy.text("mac.menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        let edit = NSMenu(title: "Edit"); let editItem = NSMenuItem(); editItem.submenu = edit; menu.addItem(editItem)
-        for (title, action, key) in [("Undo", "undo:", "z"), ("Cut", "cut:", "x"), ("Copy", "copy:", "c"), ("Paste", "paste:", "v"), ("Select All", "selectAll:", "a")] { edit.addItem(withTitle: title, action: Selector(action), keyEquivalent: key) }
-        NSApp.mainMenu = menu
         if !AppPaths.testMode {
             bubble = BubbleController(settings: settings, dictation: dictation)
             createStatusMenu(); hotkey = GlobalHotkey { [weak self] in self?.dictation.toggle() }
+            dictation.shortcutAvailable = hotkey?.registered == true
             if hotkey?.registered == false { dictation.message = "mac.error.hotkey" }
             NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(willSleep), name: NSWorkspace.willSleepNotification, object: nil)
             NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(didWake), name: NSWorkspace.didWakeNotification, object: nil)
@@ -51,6 +78,16 @@ import QuillCore
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool { showMain(); return true }
     func applicationWillTerminate(_ notification: Notification) { dictation.prepareForTermination(); crashReports.finish() }
+    @objc func showSettings() {
+        if settingsWindow == nil {
+            let view = SettingsView().environmentObject(settings).environmentObject(keys).environmentObject(history).environmentObject(dictation).environmentObject(crashReports)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1060, height: 740), styleMask: [.titled,.closable,.miniaturizable,.resizable], backing: .buffered, defer: false)
+            if let area = NSScreen.main?.visibleFrame { window.setContentSize(NSSize(width: min(1060,area.width - 40), height: min(740,area.height - 80))) }
+            window.title = "Quill " + Copy.text("nav.settings"); window.identifier = NSUserInterfaceItemIdentifier("QuillSettings")
+            window.contentView = NSHostingView(rootView: view); window.isReleasedWhenClosed = false; window.center(); settingsWindow = window
+        }
+        settingsWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
+    }
     @objc func showMain() { mainWindow?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     @objc private func toggleRecording() { dictation.toggle() }
     @objc private func toggleBubble() { NotificationCenter.default.post(name: .quillExplicitVisibility, object: nil); settings.value.bubbleActive = true; settings.value.bubbleVisible.toggle() }

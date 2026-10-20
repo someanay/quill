@@ -13,6 +13,7 @@ import AppKit
 
 @MainActor private final class FieldFixtureDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
+    private var requestedField: NSTextField?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let window = NSWindow(
@@ -59,10 +60,18 @@ import AppKit
             secure.heightAnchor.constraint(greaterThanOrEqualToConstant: 30)
         ])
         self.window = window
+        requestedField = CommandLine.arguments.contains("--secure") ? secure : normal
         window.center()
         window.makeKeyAndOrderFront(nil)
         NSApplication.shared.activate(ignoringOtherApps: true)
-        window.makeFirstResponder(CommandLine.arguments.contains("--secure") ? secure : normal)
+        focusRequestedField()
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) { focusRequestedField() }
+    private func focusRequestedField() {
+        guard NSApplication.shared.isActive, let window, let requestedField else { return }
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(requestedField)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }

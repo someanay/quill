@@ -14,10 +14,34 @@ struct SettingsView: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     @State private var page: SettingsPage?
+    private func select(_ next: SettingsPage?) {
+        trace("select " + (next?.rawValue ?? "list"))
+        page = next
+    }
+    private func trace(_ event: String) {
+        #if DEBUG
+        guard AppPaths.testMode else { return }
+        let path = AppPaths.root.appendingPathComponent("settings-navigation.txt")
+        let previous = (try? String(contentsOf: path, encoding: .utf8)) ?? ""
+        try? (previous + event + "\n").write(to: path, atomically: true, encoding: .utf8)
+        #endif
+    }
     var body: some View {
+        GeometryReader { geometry in
+        HStack(spacing: 0) {
+            if geometry.size.width >= 840 {
+                List {
+                    ForEach(SettingsPage.allCases.filter { $0 != .vocab }) { item in
+                        Button { select(item) } label: { Label(Copy.text(item.rowKey), systemImage: item.symbol).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 7) }
+                            .buttonStyle(.plain).accessibilityIdentifier("settings.category.\(item.rawValue)")
+                    }
+                }.listStyle(.sidebar).frame(width: 210)
+                Divider()
+            }
+        ScrollViewReader { scroll in
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                HStack { if page != nil { Button { page = nil } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }
+                HStack { if page != nil { Button { select(nil) } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }.id("settings-top")
                 if let page {
                     switch page {
                     case .speech: SpeechSettings()
@@ -33,20 +57,40 @@ struct SettingsView: View {
                     case .about: AboutSettings()
                     }
                 } else {
-                    listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words, .vocab])
-                    listGroup("settings.group.capture", pages: [.audio, .bubble])
-                    listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                    let available = geometry.size.width - (geometry.size.width >= 840 ? 211 : 0) - 72
+                    if available >= 642 {
+                        let columnWidth = (available - 22) / 2
+                        HStack(alignment: .top, spacing: 22) {
+                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words]).frame(width: columnWidth, alignment: .topLeading)
+                            VStack(alignment: .leading, spacing: 22) {
+                                listGroup("settings.group.capture", pages: [.audio, .bubble])
+                                listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                            }.frame(width: columnWidth, alignment: .topLeading)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 22) {
+                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words])
+                            listGroup("settings.group.capture", pages: [.audio, .bubble])
+                            listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                        }
+                    }
                 }
-            }.padding(28).frame(maxWidth: 800)
-        }.id(page?.rawValue ?? "list").accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
+            }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
+        }.accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
+            .onChange(of: page) { next in trace("changed " + (next?.rawValue ?? "list")); scroll.scrollTo("settings-top", anchor: .top) }
+        }
+        }
+        }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark)).background(QuillTheme.paper(scheme == .dark))
+        .preferredColorScheme(settings.value.appTheme == "Dark" ? .dark : settings.value.appTheme == "Light" ? .light : nil)
+        .frame(minWidth: 640, minHeight: 440)
     }
     private func listGroup(_ title: String, pages: [SettingsPage]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(key: title)
+            SectionLabel(key: title).frame(maxWidth: .infinity, alignment: .leading)
             VStack(spacing: 0) {
                 ForEach(pages) { item in
                     if item != pages.first { Divider().padding(.leading, 68) }
-                    Button { page = item } label: {
+                    Button { select(item) } label: {
                         HStack(spacing: 12) {
                             Image(systemName: item.symbol).font(.system(size: 20)).foregroundStyle(QuillTheme.brandInk(scheme == .dark)).frame(width: 40, height: 40).background(QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 8))
                             VStack(alignment: .leading, spacing: 3) {
@@ -56,10 +100,10 @@ struct SettingsView: View {
                             Spacer(minLength: 8)
                             Text(rowValue(item)).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
                             Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(.secondary)
-                        }.padding(.horizontal, 14).frame(minHeight: 66).contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityIdentifier("settings.\(item.rawValue)")
+                        }.padding(.horizontal, 14).frame(minHeight: 66).background(QuillTheme.surface(scheme == .dark)).contentShape(Rectangle())
+                    }.buttonStyle(.borderless).accessibilityIdentifier("settings.\(item.rawValue)")
                 }
-            }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
+            }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1).allowsHitTesting(false))
         }
     }
     private func rowValue(_ page: SettingsPage) -> String {
@@ -84,12 +128,14 @@ struct ModelPicker: View {
     @State private var models: [ModelOption] = []
     @State private var loading = false
     @State private var failed = false
+    @State private var manual = false
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Picker(Copy.text(use == .dictation ? "settings.speech.model" : "settings.cleanup.model"), selection: $selection) {
                 ForEach(choices) { model in Text(model.id + (model.isFree ? " · " + Copy.text("onboarding.key.console_free") : model.isPaid ? " · " + Copy.text("models.paid") : "")).tag(model.id) }
             }
-            TextField(Copy.text("settings.speech.model_field_label"), text: $selection).textFieldStyle(.roundedBorder).accessibilityIdentifier("model-id")
+            if provider != .custom { Button(Copy.text("desktop.models.manual")) { manual.toggle() }.accessibilityIdentifier("model-manual") }
+            if provider == .custom || manual { QuillTextField(key: "settings.speech.model_field_label", text: $selection, identifier: "model-id") }
             HStack { Button(Copy.text("mac.models.refresh")) { Task { await refresh() } }.disabled(loading); if loading { ProgressView().controlSize(.small) }; if failed { HelpText(key: "mac.models.offline") } }
         }.task(id: provider.rawValue + use.rawValue + (provider == .custom ? settings.value.customBaseURL : "")) {
             models = cached()
@@ -118,13 +164,15 @@ struct ModelPicker: View {
 struct SpeechSettings: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
+    @State private var connecting = false
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-        KeyEditor(activateSpeechProvider: true, prefillSavedKey: true)
-        QuillCard {
+        HelpText(key: "desktop.speech.body", size: 16)
+        QuillFormSection {
             Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.provider }, set: { settings.value.selectProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
+            Button(Copy.text("desktop.speech.manage_key")) { connecting = true }
             if settings.value.provider == .custom {
-                TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder)
+                QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL)
                 HelpText(key: "mac.custom.key_scope")
             }
             ModelPicker(provider: settings.value.provider, use: .dictation, selection: $settings.value.speechModel)
@@ -136,6 +184,15 @@ struct SpeechSettings: View {
             if settings.value.provider == .gemini { HelpText(key: "settings.speech.gemini_caveat") }
         }
         }.onChange(of: settings.value.speechModel) { model in if settings.value.provider == .custom { settings.value.customModel = model } }
+        .sheet(isPresented: $connecting) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    CopyText("desktop.setup.provider_title").font(QuillTheme.serif(30))
+                    KeyEditor(activateSpeechProvider: true, prefillSavedKey: true) { connecting = false }
+                    Button(Copy.text("action.cancel")) { connecting = false }
+                }.padding(32)
+            }.frame(width: 620, height: 700)
+        }
     }
 }
 
@@ -148,7 +205,10 @@ struct KeysSettings: View {
     @State private var message = ""
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HelpText(key: "mac.key.security")
+            if keys.slots.isEmpty {
+                CopyText("settings.keys.empty_title").font(QuillTheme.serif(24))
+                HelpText(key: "settings.keys.empty_body", size: 15)
+            }
             ForEach(Provider.allCases) { provider in
                 let slots = keys.slots.filter { $0.provider == provider }
                 if !slots.isEmpty {
@@ -170,6 +230,7 @@ struct KeysSettings: View {
             }
             if !message.isEmpty { CopyText(message).foregroundStyle(message == "onboarding.key.valid" ? QuillTheme.success : QuillTheme.error) }
             QuillButton(key: "settings.keys.add") { adding = true }
+            HelpText(key: "mac.key.security")
         }.sheet(isPresented: $adding) { ScrollView { VStack(alignment: .leading, spacing: 20) { HStack { CopyText("settings.keys.add").font(QuillTheme.serif()); Spacer(); Button(Copy.text("action.cancel")) { adding = false } }; KeyEditor { adding = false } }.padding(28) }.frame(width: 590, height: 690) }
         .confirmationDialog(Copy.text("settings.keys.remove"), isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button(Copy.text("settings.keys.remove"), role: .destructive) { if let slot = removing { do { try keys.delete(slot); if settings.value.activeKeys[slot.provider.rawValue] == slot.id { settings.value.activeKeys[slot.provider.rawValue] = keys.slots.first(where: { $0.provider == slot.provider })?.id } } catch { message = "mac.error.storage" } }; removing = nil }
@@ -186,7 +247,7 @@ struct CleanupSettings: View {
     @EnvironmentObject var settings: SettingsStore
     @EnvironmentObject var keys: KeychainStore
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             Toggle(Copy.text("settings.cleanup.tidy_title"), isOn: Binding(get: { settings.value.shouldClean }, set: { settings.value.setCleanupEnabled($0) })).toggleStyle(.switch)
             HelpText(key: "settings.cleanup.tidy_sub")
             Toggle(Copy.text("settings.cleanup.automatic"), isOn: Binding(get: { settings.value.cleanupAutomatic }, set: { settings.value.setCleanupAutomatic($0) })).toggleStyle(.switch).accessibilityIdentifier("cleanup-automatic")
@@ -196,7 +257,7 @@ struct CleanupSettings: View {
             } else {
                 Picker(Copy.text("settings.speech.provider"), selection: Binding(get: { settings.value.cleanupProvider }, set: { settings.value.selectCleanupProvider($0) })) { ForEach(Provider.allCases) { Text($0.name).tag($0) } }
                 ModelPicker(provider: settings.value.cleanupProvider, use: .cleanup, selection: $settings.value.cleanupModel)
-                if settings.value.cleanupProvider == .custom { TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder); HelpText(key: "settings.cleanup.custom_endpoint") }
+                if settings.value.cleanupProvider == .custom { QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL); HelpText(key: "settings.cleanup.custom_endpoint") }
             }
             if keys.active(settings.value.effectiveCleanupProvider, settings: settings.value) == nil { Text(Copy.text("settings.speech.key_required", settings.value.effectiveCleanupProvider.name)).foregroundStyle(QuillTheme.error) }
             HelpText(key: "settings.cleanup.provider_help")

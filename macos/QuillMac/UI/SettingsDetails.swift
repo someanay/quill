@@ -11,7 +11,7 @@ struct StyleSettings: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HelpText(key: "settings.style.intro")
-            QuillCard {
+            QuillFormSection {
                 SectionLabel(key: "settings.style.default_section")
                 Picker(Copy.text("settings.style.title"), selection: $settings.value.writingStyle) { ForEach(WritingStyle.allCases) { CopyText("settings.style.\($0.rawValue)").tag($0) } }.pickerStyle(.segmented)
                 HelpText(key: "settings.style.words_promise")
@@ -20,7 +20,7 @@ struct StyleSettings: View {
             SectionLabel(key: "settings.style.per_app_section")
             TextField(Copy.text("settings.style.search_hint"), text: $search).textFieldStyle(.roundedBorder)
             ForEach(apps.filter { search.isEmpty || $0.name.localizedCaseInsensitiveContains(search) }, id: \.id) { app in
-                QuillCard {
+                QuillFormSection {
                     HStack { Text(app.name); Spacer(); Picker(Copy.text("settings.style.assign_title"), selection: Binding<String>(get: { settings.value.styleOverrides[app.id]?.rawValue ?? "default" }, set: { settings.value.styleOverrides[app.id] = WritingStyle(rawValue: $0) })) { CopyText("settings.style.use_default").tag("default"); ForEach(WritingStyle.allCases) { CopyText("settings.style.\($0.rawValue)").tag($0.rawValue) } }.labelsHidden().frame(maxWidth: 180) }
                     Text(Copy.text("mac.style.effective", Copy.text("settings.style.\(settings.value.style(for: app.id).rawValue)"))).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
                 }
@@ -50,8 +50,8 @@ struct WordsSettings: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HelpText(key: "settings.words.body")
-            QuillCard {
-                TextField(Copy.text("settings.words.heard_label"), text: $heard).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-heard")
+            QuillFormSection {
+                QuillTextField(key: "settings.words.heard_label", text: $heard, identifier: "word-heard")
                 HStack {
                     Button(Copy.text(capturing && dictation.state == .recording ? "mac.dictation.stop" : "settings.words.record")) {
                         if capturing && dictation.state == .recording { dictation.stop() }
@@ -59,7 +59,7 @@ struct WordsSettings: View {
                     }.disabled(dictation.state == .transcribing)
                     if capturing { InkMeter(amplitude: dictation.level, bars: 6).frame(height: 34) }
                 }
-                TextField(Copy.text("settings.words.replacement_label"), text: $replacement).textFieldStyle(.roundedBorder).accessibilityIdentifier("word-replacement")
+                QuillTextField(key: "settings.words.replacement_label", text: $replacement, identifier: "word-replacement")
                 QuillButton(key: "settings.words.save") {
                     let word = CustomWord(id: editing ?? UUID(), heard: heard.trimmingCharacters(in: .whitespacesAndNewlines), replacement: replacement.trimmingCharacters(in: .whitespacesAndNewlines))
                     settings.value.words = WordSubstitutions.upsert(settings.value.words, word: word)
@@ -67,7 +67,7 @@ struct WordsSettings: View {
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
-                QuillCard { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
+                QuillFormSection { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
             }
         }.onDisappear { if capturing { dictation.onWordCaptured = nil; dictation.suspend(); capturing = false } }
     }
@@ -81,7 +81,7 @@ struct VocabularySettings: View {
     @State private var failed = false
     @State private var granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             HelpText(key: "settings.vocab.body")
             if !granted { Label(Copy.text("settings.vocab.permission_needed"), systemImage: "person.crop.circle.badge.exclamationmark").foregroundStyle(QuillTheme.error) }
             Text(Copy.text("settings.vocab.imported", String(settings.value.contactNames.count)))
@@ -89,7 +89,7 @@ struct VocabularySettings: View {
             if failed { HelpText(key: "mac.error.contacts").foregroundStyle(QuillTheme.error) }
             Button(Copy.text("settings.vocab.open_settings")) { SystemLinks.open("Privacy_Contacts") }
             if !settings.value.contactNames.isEmpty {
-                DisclosureGroup(Copy.text("settings.vocab.title")) { Text(settings.value.contactNames.joined(separator: ", ")).font(QuillTheme.sans(13)).textSelection(.enabled) }
+                DisclosureGroup(Copy.text("settings.vocab.title")) { Text(settings.value.contactNames.joined(separator: ", ")).font(QuillTheme.sans(13)).textSelection(.enabled) }.disclosureGroupStyle(QuillDisclosureStyle())
                 Button(Copy.text("settings.vocab.clear"), role: .destructive) { clear = true }
             }
         }.onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in granted = CNContactStore.authorizationStatus(for: .contacts) == .authorized }
@@ -100,7 +100,7 @@ struct VocabularySettings: View {
 struct AudioSettings: View {
     @EnvironmentObject var settings: SettingsStore
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             SectionLabel(key: "settings.audio.start_stop")
             HStack { CopyText("settings.audio.trigger"); Spacer(); CopyText("settings.audio.trigger_value") }
             HelpText(key: "mac.hotkey.label")
@@ -119,7 +119,7 @@ struct AudioSettings: View {
 struct BubbleSettings: View {
     @EnvironmentObject var settings: SettingsStore
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             HStack(spacing: 20) {
                 ForEach([false,true], id: \.self) { dark in VStack { BubbleFace(state: .idle, diameter: settings.value.bubbleDiameter, dark: dark); CopyText(dark ? "settings.bubble.preview_dark" : "settings.bubble.preview_light").font(QuillTheme.sans(12)).foregroundStyle(dark ? .white : .black) }.frame(maxWidth: .infinity).padding(18).background(dark ? Color(hex: 0x15161C) : Color(hex: 0xF0F1F6), in: RoundedRectangle(cornerRadius: 12)) }
             }
@@ -136,8 +136,8 @@ struct PrivacySettings: View {
     @State private var report = false
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            QuillCard { CopyText("settings.privacy.banner_title").fontWeight(.medium); HelpText(key: "mac.privacy.body") }
-            QuillCard {
+            QuillFormSection { CopyText("settings.privacy.banner_title").fontWeight(.medium); HelpText(key: "mac.privacy.body") }
+            QuillFormSection {
                 Toggle(Copy.text("settings.privacy.private_mode"), isOn: $settings.value.privateMode).toggleStyle(.switch).accessibilityIdentifier("privacy-private-mode")
                 HelpText(key: "settings.privacy.private_mode_sub")
                 Toggle(Copy.text("settings.privacy.history"), isOn: $settings.value.historyEnabled).toggleStyle(.switch).disabled(settings.value.privateMode)
@@ -145,13 +145,13 @@ struct PrivacySettings: View {
                     CopyText("settings.privacy.history_retention.hour").tag(60); CopyText("settings.privacy.history_retention.day").tag(1440); CopyText("settings.privacy.history_retention.week").tag(10080); CopyText("settings.privacy.history_retention.month").tag(43200); CopyText("settings.privacy.history_retention.forever").tag(0)
                 }.disabled(settings.value.privateMode || !settings.value.historyEnabled)
             }
-            QuillCard {
+            QuillFormSection {
                 SectionLabel(key: "settings.privacy.diagnostics")
                 Toggle(Copy.text("settings.privacy.crash"), isOn: $settings.value.crashReportingEnabled).toggleStyle(.switch)
                 HelpText(key: "settings.privacy.diag_help")
                 Button(Copy.text("settings.privacy.example")) { report = true }
             }
-            QuillCard {
+            QuillFormSection {
                 SectionLabel(key: "settings.privacy.permissions")
                 permission("settings.privacy.mic", granted: dictation.microphoneGranted, pane: "Privacy_Microphone")
                 permission("settings.privacy.accessibility", granted: dictation.accessibilityGranted, pane: "Privacy_Accessibility")
@@ -172,7 +172,7 @@ struct AdvancedSettings: View {
     @State private var reset = false
     @State private var clear = false
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             Toggle(Copy.text("mac.login.enable"), isOn: $settings.value.bootRestore).toggleStyle(.switch)
             HelpText(key: "mac.login.help")
             Button(Copy.text("mac.login.settings")) { if let url = URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension") { NSWorkspace.shared.open(url) } }
@@ -194,12 +194,12 @@ struct AdvancedSettings: View {
 struct AboutSettings: View {
     @State private var licenses = false
     var body: some View {
-        QuillCard {
+        QuillFormSection {
             Wordmark()
             Text(Copy.text("settings.about.version", Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0", Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"))
-            DisclosureGroup(Copy.text("settings.about.privacy_policy")) { HelpText(key: "mac.legal.privacy") }
-            DisclosureGroup(Copy.text("settings.about.terms")) { HelpText(key: "mac.legal.terms") }
-            DisclosureGroup(Copy.text("settings.about.licenses"), isExpanded: $licenses) { Text(licenseText).font(QuillTheme.sans(12)).textSelection(.enabled) }
+            DisclosureGroup(Copy.text("settings.about.privacy_policy")) { HelpText(key: "mac.legal.privacy") }.disclosureGroupStyle(QuillDisclosureStyle())
+            DisclosureGroup(Copy.text("settings.about.terms")) { HelpText(key: "mac.legal.terms") }.disclosureGroupStyle(QuillDisclosureStyle())
+            DisclosureGroup(Copy.text("settings.about.licenses"), isExpanded: $licenses) { Text(licenseText).font(QuillTheme.sans(12)).textSelection(.enabled) }.disclosureGroupStyle(QuillDisclosureStyle())
             HelpText(key: "settings.about.footer")
             HelpText(key: "mac.about.copy")
         }

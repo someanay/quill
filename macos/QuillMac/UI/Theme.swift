@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import CoreText
 import QuillCore
 
@@ -14,8 +15,14 @@ enum QuillTheme {
     static let brand = Color(hex: 0x234DCE)
     static func brandInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xB6C9FF : 0x1A3FAF) }
     static func liveInk(_ dark: Bool) -> Color { Color(hex: dark ? 0xD3DFFF : 0x1A3FAF) }
-    static let error = Color(hex: 0xD6453D)
-    static let success = Color(hex: 0x2E9E6B)
+    static let error = statusColor(light: 0xB93631, dark: 0xE8635B)
+    static let success = statusColor(light: 0x23744F, dark: 0x43B585)
+    private static func statusColor(light: UInt32, dark: UInt32) -> Color {
+        Color(nsColor: NSColor(name: nil) { appearance in
+            let value = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: CGFloat((value >> 16) & 255) / 255, green: CGFloat((value >> 8) & 255) / 255, blue: CGFloat(value & 255) / 255, alpha: 1)
+        })
+    }
     static func paper(_ dark: Bool) -> Color { Color(hex: dark ? 0x11141A : 0xF5F7F5) }
     static func surface(_ dark: Bool) -> Color { Color(hex: dark ? 0x171B23 : 0xFFFFFF) }
     static func line(_ dark: Bool) -> Color { Color(hex: dark ? 0x353C48 : 0xD9DED9) }
@@ -50,7 +57,7 @@ struct Wordmark: View {
 struct QuillCard<Content: View>: View {
     @Environment(\.colorScheme) private var scheme
     @ViewBuilder var content: Content
-    var body: some View { VStack(alignment: .leading, spacing: 14) { content }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1)) }
+    var body: some View { VStack(alignment: .leading, spacing: 14) { content }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1).allowsHitTesting(false)) }
 }
 struct QuillButton: View {
     @Environment(\.colorScheme) private var scheme
@@ -60,9 +67,55 @@ struct QuillButton: View {
     var arguments: [String] = []
     var action: () -> Void
     var body: some View {
-        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).frame(maxWidth: .infinity).frame(minHeight: 50).contentShape(RoundedRectangle(cornerRadius: 4)) }
+        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).padding(.horizontal, 22).frame(minHeight: 44).contentShape(RoundedRectangle(cornerRadius: 6)) }
         .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
-        .background(primary ? QuillTheme.brand : QuillTheme.soft(scheme == .dark), in: RoundedRectangle(cornerRadius: 4)).opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key)
+        .background(primary ? QuillTheme.brand : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+        .opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key).frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+struct QuillFormSection<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View { VStack(alignment: .leading, spacing: 20) { content }.padding(.vertical, 8).frame(maxWidth: .infinity, alignment: .leading) }
+}
+struct QuillTextField: View {
+    @Environment(\.colorScheme) private var scheme
+    let key: String
+    @Binding var text: String
+    var identifier = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            CopyText(key).font(QuillTheme.sans(12)).foregroundStyle(QuillTheme.muted(scheme == .dark))
+            TextField(Copy.text(key), text: $text).textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier(identifier.isEmpty ? key : identifier)
+        }
+    }
+}
+struct QuillDisclosureStyle: DisclosureGroupStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button { configuration.isExpanded.toggle() } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: configuration.isExpanded ? "chevron.down" : "chevron.right")
+                        .font(.system(size: 10, weight: .semibold)).frame(width: 12)
+                    configuration.label
+                    Spacer(minLength: 0)
+                }.frame(maxWidth: .infinity, minHeight: 28, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain)
+                .accessibilityValue(Copy.text(configuration.isExpanded ? "onboarding.key.expanded" : "onboarding.key.collapsed"))
+            if configuration.isExpanded { configuration.content.padding(.leading, 20) }
+        }
+    }
+}
+struct ShortcutKeycaps: View {
+    @Environment(\.colorScheme) private var scheme
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(["⌥", "⌘", "Space"], id: \.self) { key in
+                Text(key).font(QuillTheme.sans(20)).padding(.horizontal, 18).frame(minHeight: 52)
+                    .background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
+            }
+        }.accessibilityElement(children: .ignore).accessibilityLabel(Copy.text("mac.hotkey.label"))
     }
 }
 struct SectionLabel: View {

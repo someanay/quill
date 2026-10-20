@@ -80,14 +80,18 @@ private struct FieldFailure: Error, CustomStringConvertible {
         ]
         for (index, item) in cases.enumerated() {
             let (name, kind, before, selection, payload, expected) = item
+            var phase = "opening synthetic page"
             do {
                 let page = try makePage(kind: kind, text: before, index: String(index), output: output)
                 browser = try await open(document: page, application: application)
+                phase = "initial focused field"
                 let initial = try await focused(injector: injector, bundle: bundle, text: before)
                 let native = SystemAccessibilityAccess()
                 let capabilities = "selectedTextWritable=\(native.isSettable(initial.element, kAXSelectedTextAttribute)), valueWritable=\(native.isSettable(initial.element, kAXValueAttribute))"
                 try setRange(selection, element: initial.element)
+                phase = "requested selection"
                 let target = try await focused(injector: injector, bundle: bundle, text: before, selection: selection)
+                phase = "insertion confirmation"
                 let result = try await injector.insert(payload, target: target)
                 let actual = attribute(target.element, kAXValueAttribute) as? String
                 guard result == .confirmed, actual == expected else {
@@ -98,10 +102,12 @@ private struct FieldFailure: Error, CustomStringConvertible {
                     throw FieldFailure("\(capabilities), result=\(result), expected=\(String(reflecting: expected)), immediate=\(String(reflecting: actual)), after500ms=\(String(reflecting: settled))")
                 }
                 let expectedCaret = InsertionComposer.compose(existing: before, transcript: payload, selection: selection).caret
+                phase = "final text and caret"
                 _ = try await focused(injector: injector, bundle: bundle, text: expected, selection: NSRange(location: expectedCaret, length: 0))
                 report.checks.append(FieldCheck(name: name, passed: true, detail: "Actual Safari AX readback confirmed \(String(reflecting: expected))."))
             } catch {
-                report.checks.append(FieldCheck(name: name, passed: false, detail: "\(error); \(observation())"))
+                report.checks.append(FieldCheck(name: name, passed: false, detail: "\(phase): \(error); \(observation())"))
+                failureScreenshot(output: output, name: "safari-case-\(index)")
             }
         }
         // Diagnose the independent full-value mechanism on a fresh document. Never
@@ -141,7 +147,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
         var application: NSRunningApplication?
         defer { if let application, !application.isTerminated { _ = application.forceTerminate() } }
         let injector = TextInjector()
-        application = try await open(application: url)
+        application = try await launchFixture(url: url)
         let before = "Quill QA normal"
         let initial = try await focused(injector: injector, bundle: bundle, text: before)
         let selection = NSRange(location: before.utf16.count, length: 0)
@@ -156,7 +162,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
             guard old.forceTerminate() else { throw FieldFailure("Could not terminate normal QA fixture before secure-field test.") }
             try await wait("normal fixture exit") { old.isTerminated }
         }
-        application = try await open(application: url, arguments: ["--secure"])
+        application = try await launchFixture(url: url, arguments: ["--secure"])
         let detail = try await secureRefused(injector: injector, bundle: bundle)
         report.checks.append(FieldCheck(name: "native NSSecureTextField refusal", passed: true, detail: detail))
     }
@@ -183,6 +189,9 @@ private struct FieldFailure: Error, CustomStringConvertible {
     private static func open(document: URL? = nil, application: URL, arguments: [String] = []) async throws -> NSRunningApplication {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true; configuration.addsToRecentItems = false
+        // A terminated fixture may remain registered briefly in Launch Services.
+        // Never reuse that stale process for the next, differently focused case.
+        configuration.createsNewApplicationInstance = document == nil
         configuration.arguments = arguments + ["-ApplePersistenceIgnoreState", "YES"]
         return try await withCheckedThrowingContinuation { continuation in
             let complete: (NSRunningApplication?, Error?) -> Void = { app, error in
@@ -195,28 +204,50 @@ private struct FieldFailure: Error, CustomStringConvertible {
         }
     }
 
+    private static func launchFixture(url: URL, arguments: [String] = []) async throws -> NSRunningApplication {
+        let application = try await open(application: url, arguments: arguments)
+        do {
+            try await wait("owned fixture process foreground") {
+                guard !application.isTerminated else { throw FieldFailure("New QA fixture terminated before becoming active. PID=\(application.processIdentifier)") }
+                guard application.isFinishedLaunching else { return false }
+                if NSWorkspace.shared.frontmostApplication?.processIdentifier == application.processIdentifier { return true }
+                _ = application.activate(options: [.activateAllWindows, .activateIgnoringOtherApps])
+                return false
+            }
+        } catch {
+            if !application.isTerminated { _ = application.forceTerminate() }
+            throw FieldFailure("\(error) Expected owned fixture PID=\(application.processIdentifier); \(observation())")
+        }
+        return application
+    }
+
     private static func focused(injector: TextInjector, bundle: String, text: String, selection: NSRange? = nil) async throws -> FocusSnapshot {
         var found: FocusSnapshot?
-        try await wait("focused synthetic \(bundle) field") {
-            guard let target = try injector.snapshot(), target.bundleID == bundle, target.originalText == text else { return false }
+        var last = "no snapshot"
+        do { try await wait("focused synthetic \(bundle) field") {
+            guard let target = try injector.snapshot() else { last = "no editable focused snapshot"; return false }
+            last = "bundle=\(target.bundleID ?? "none"), textLength=\(target.originalText?.utf16.count ?? -1), range=\(String(describing: target.originalRange)), expectedLength=\(text.utf16.count), expectedRange=\(String(describing: selection))"
+            guard target.bundleID == bundle, target.originalText == text else { return false }
             if let selection {
                 guard target.originalRange?.location == selection.location, target.originalRange?.length == selection.length else { return false }
             }
             found = target; return true
-        }
+        } } catch { throw FieldFailure("\(error) Last observation: \(last)") }
         return found!
     }
 
     private static func secureRefused(injector: TextInjector, bundle: String) async throws -> String {
         var detail = ""
-        try await wait("actual secure field refusal") {
+        var last = observation()
+        do { try await wait("actual secure field refusal") {
+            last = observation()
             guard NSWorkspace.shared.frontmostApplication?.bundleIdentifier == bundle else { return false }
             do { _ = try injector.snapshot(); return false }
             catch let error as QuillError where error == .sensitiveField {
                 detail = "Production snapshot refused the real secure field before capture. \(observation())"
                 return true
             }
-        }
+        } } catch { throw FieldFailure("\(error) Last focus metadata: \(last)") }
         return detail
     }
 
@@ -244,7 +275,7 @@ private struct FieldFailure: Error, CustomStringConvertible {
     }
 
     private static func wait(_ description: String, condition: () throws -> Bool) async throws {
-        let deadline = Date().addingTimeInterval(10)
+        let deadline = Date().addingTimeInterval(30)
         while Date() < deadline {
             if try condition() { return }
             try await Task.sleep(nanoseconds: 100_000_000)
@@ -252,6 +283,10 @@ private struct FieldFailure: Error, CustomStringConvertible {
         throw FieldFailure("Timed out waiting for \(description).")
     }
 
+    private static func failureScreenshot(output: URL, name: String) {
+        let capture = Process(); capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture"); capture.arguments = ["-x", output.appendingPathComponent("failure-\(name).png").path]
+        do { try capture.run(); capture.waitUntilExit() } catch { print("Failure screenshot unavailable: \(error)") }
+    }
     private static func finish(_ report: FieldReport, output: URL) -> Never {
         do {
             let encoder = JSONEncoder(); encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

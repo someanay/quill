@@ -13,6 +13,7 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
     @Published private(set) var limitWarning = false
     @Published var message = ""
     @Published private(set) var transcript = ""
+    @Published var shortcutAvailable = true
     @Published var microphoneGranted = AudioCapture.permitted
     @Published var accessibilityGranted = TextInjector.permitted
     @Published var microphoneTest = false

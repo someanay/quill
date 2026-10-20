@@ -19,6 +19,9 @@ AXProbeBuild/Build/Products/Debug/QuillAXProbe "$PWD/TextEditEvidence" \
   2>&1 | tee TextEditEvidence/probe.log
 probe_status=${PIPESTATUS[0]}
 set -e
+if [[ "$probe_status" != 0 ]]; then
+  /usr/sbin/screencapture -x "$PWD/TextEditEvidence/failure.png" || true
+fi
 if [[ "$probe_status" == 78 ]]; then
   echo 'BLOCKED: real macOS Accessibility permission or isolated desktop state is unavailable.'
 elif [[ "$probe_status" != 0 ]]; then

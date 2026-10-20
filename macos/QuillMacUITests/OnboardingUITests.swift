@@ -1,8 +1,22 @@
 import XCTest
+import AppKit
 
 final class OnboardingUITests: XCTestCase {
+    override func setUpWithError() throws { continueAfterFailure = false }
+    override func tearDownWithError() throws {
+        let tracePath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("QuillUITests/settings-navigation.txt")
+        if let trace = try? String(contentsOf: tracePath, encoding: .utf8) {
+            let attachment = XCTAttachment(string: trace); attachment.name = "Settings navigation actions"; attachment.lifetime = .keepAlways; add(attachment)
+        }
+        let app = XCUIApplication()
+        if app.state != .notRunning {
+            let screenshot = XCTAttachment(screenshot: app.screenshot()); screenshot.name = name; screenshot.lifetime = .keepAlways; add(screenshot)
+            let hierarchy = XCTAttachment(string: app.debugDescription); hierarchy.name = "macOS UI hierarchy"; hierarchy.lifetime = .keepAlways; add(hierarchy)
+            app.terminate()
+        }
+    }
     func testGuidedKeyRowsRetainDraftAndRememberExpansion() throws {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "3"]; app.launch()
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
         XCTAssertTrue(app.buttons["key-provider-gemini"].waitForExistence(timeout: 10))
         for provider in ["groq", "openrouter", "gemini"] {
             let row = app.buttons["key-provider-" + provider]; reveal(row, in: app); row.click()
@@ -25,22 +39,26 @@ final class OnboardingUITests: XCTestCase {
         let gemini = app.buttons["key-provider-gemini"]; reveal(gemini, in: app); gemini.click()
     }
     func testEveryOnboardingStagePresentationInLightAndDark() throws {
-        let stages = ["splash", "welcome", "warning", "key", "checklist", "microphone", "bubble", "accessibility", "ready"]
+        let stages = ["welcome", "warning", "key", "microphone", "accessibility", "shortcut", "ready"]
         for dark in [false, true] {
             for (index, stage) in stages.enumerated() {
                 let app = XCUIApplication()
                 app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", String(index)] + (dark ? ["--ui-dark"] : [])
                 app.launch()
                 XCTAssertTrue(app.staticTexts["onboarding-title"].waitForExistence(timeout: 10))
-                if index == 0 { XCTAssertFalse(app.buttons["action.continue"].exists); XCTAssertFalse(app.buttons["onboarding.welcome.cta"].exists) }
-                if index == 1 { XCTAssertTrue(app.staticTexts["onboarding.welcome.already"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
-                if index == 3 { XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled) }
-                if index == 5 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
-                if index == 7 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
+                if index == 0 { XCTAssertTrue(app.buttons["onboarding.welcome.cta"].exists); XCTAssertTrue(app.buttons["onboarding.welcome.open"].exists) }
+
+                if index == 2 {
+                    let gemini = app.buttons["key-provider-gemini"]
+                    reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
+                    XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
+                }
+                if index == 3 { XCTAssertFalse(app.buttons["onboarding.mictest.cta"].isEnabled) }
+                if index == 4 { XCTAssertFalse(app.buttons["onboarding.accessibility.enable_cta"].isEnabled) }
                 let shot = XCTAttachment(screenshot: app.screenshot())
                 shot.name = "macOS-onboarding-presentation-" + (dark ? "dark-" : "light-") + stage
                 shot.lifetime = .keepAlways; add(shot)
-                if index == 1 {
+                if index == 0 {
                     app.buttons["onboarding.welcome.open"].click()
                     XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 5))
                     XCTAssertFalse(app.buttons["key-provider-gemini"].exists)
@@ -50,13 +68,77 @@ final class OnboardingUITests: XCTestCase {
         }
     }
     private func reveal(_ row: XCUIElement, in app: XCUIApplication) {
-        let scroll = app.scrollViews.firstMatch
+        let scroll = app.sheets.firstMatch.exists ? app.sheets.firstMatch.scrollViews.firstMatch : app.scrollViews["settings-scroll"].exists ? app.scrollViews["settings-scroll"] : app.scrollViews["onboarding-content"]
         for _ in 0..<10 {
             let viewport = scroll.frame.insetBy(dx: 0, dy: 6)
             if row.exists && row.frame.height > 0 && viewport.contains(row.frame) { return }
             scroll.scroll(byDeltaX: 0, deltaY: row.frame.minY < viewport.minY ? 200 : -200)
         }
         XCTAssertTrue(scroll.frame.contains(row.frame), "Settings row must be inside the visible scroll viewport")
+    }
+    private func setDisclosure(_ disclosure: XCUIElement, expanded: Bool, in app: XCUIApplication) {
+        reveal(disclosure, in: app)
+        // SwiftUI preserves native disclosure semantics even with our full-row
+        // button style: AX exposes DisclosureTriangle with a numeric value.
+        let expected = expanded ? "1" : "0"
+        if String(describing: disclosure.value ?? "") != expected {
+            disclosure.click()
+        }
+        expectation(for: NSPredicate { _, _ in String(describing: disclosure.value ?? "") == expected }, evaluatedWith: app)
+        waitForExpectations(timeout: 5)
+    }
+    func testResizingKeySetupKeepsDraftAndReachableControls() throws {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-onboarding-stage", "2"]; app.launch()
+        let field = app.secureTextFields["key-input"]; XCTAssertTrue(field.waitForExistence(timeout: 10))
+        reveal(field, in: app); field.click(); field.typeKey("a", modifierFlags: .command); field.typeText("draft-desktop")
+        let window = app.windows.firstMatch
+        let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+        for requested in [CGSize(width: 660, height: 500), CGSize(width: 1160, height: 740), CGSize(width: 760, height: 1000)] {
+            let target = CGSize(width: min(requested.width, screen.width - 40), height: min(requested.height, screen.height - 60))
+            let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+            corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+            XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+            XCTAssertEqual(window.frame.height, target.height, accuracy: 25)
+            reveal(field, in: app); XCTAssertTrue(field.isHittable)
+            app.buttons["key-reveal"].click()
+            XCTAssertEqual(app.textFields["key-input"].value as? String, "draft-desktop")
+            app.buttons["key-reveal"].click()
+            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-resize-\(Int(target.width))x\(Int(target.height))"; shot.lifetime = .keepAlways; add(shot)
+        }
+    }
+    func testWorkspaceAndPopulatedHistoryAcrossWindowSizes() throws {
+        for dark in [false, true] {
+            let app = XCUIApplication()
+            app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-history-fixtures"] + (dark ? ["--ui-dark"] : [])
+            app.launch()
+            XCTAssertTrue(app.buttons["nav.home"].waitForExistence(timeout: 10))
+            let window = app.windows.firstMatch
+            let screen = NSScreen.main?.visibleFrame.size ?? CGSize(width: 1200, height: 900)
+            if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" { XCTAssertGreaterThanOrEqual(screen.width, 1440, "Expanded desktop coverage requires a larger CI display") }
+            for requested in [CGSize(width: 1160, height: 740), CGSize(width: 660, height: 500), CGSize(width: 760, height: 1000)] {
+                let target = CGSize(width: min(requested.width, screen.width - 40), height: min(requested.height, screen.height - 60))
+                let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+                corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+                XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+                XCTAssertEqual(window.frame.height, target.height, accuracy: 25)
+                for page in ["home", "history"] {
+                    let query = app.buttons.matching(identifier: (window.frame.width < 800 ? "compact." : "nav.") + page)
+                    XCTAssertTrue(query.firstMatch.waitForExistence(timeout: 5))
+                    // Native toolbars expose a container button and its actual control.
+                    let navigation = try XCTUnwrap(query.allElementsBoundByIndex.first(where: { $0.isHittable }))
+                    navigation.click()
+                    if page == "history" {
+                        XCTAssertTrue(app.descendants(matching: .any)["history-list"].waitForExistence(timeout: 5))
+                        XCTAssertTrue(app.scrollViews["history-reader"].exists)
+                        XCTAssertTrue(app.buttons["Copy text"].isHittable)
+                    }
+                    let shot = XCTAttachment(screenshot: app.screenshot())
+                    shot.name = "macOS-\(page)-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))"
+                    shot.lifetime = .keepAlways; add(shot)
+                }
+            }
+            app.terminate()
+        }
     }
     func testFirstRunWarningAndKeyFlow() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing"]; app.launch()
@@ -69,6 +151,8 @@ final class OnboardingUITests: XCTestCase {
         let enabled = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: accept)
         wait(for: [enabled], timeout: 6); accept.click()
         XCTAssertTrue(app.secureTextFields["key-input"].waitForExistence(timeout: 6))
+        let gemini = app.buttons["key-provider-gemini"]
+        reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
         XCTAssertFalse(app.buttons["key-save-gemini"].isEnabled)
         let key = XCTAttachment(screenshot: app.screenshot()); key.name = "macOS-key-setup"; key.lifetime = .keepAlways; add(key)
         app.secureTextFields["key-input"].click()
@@ -82,29 +166,100 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12))
         app.buttons["nav.settings"].click()
         XCTAssertTrue(app.buttons["settings.speech"].waitForExistence(timeout: 5)); app.buttons["settings.speech"].click()
+        XCTAssertTrue(app.buttons["model-manual"].waitForExistence(timeout: 5)); app.buttons["model-manual"].click()
         XCTAssertTrue(app.textFields["model-id"].waitForExistence(timeout: 5))
         reveal(app.textFields["model-id"], in: app)
         let speech = XCTAttachment(screenshot: app.screenshot()); speech.name = "macOS-speech-settings"; speech.lifetime = .keepAlways; add(speech)
         reveal(app.buttons["settings-back"], in: app)
         app.buttons["settings-back"].click()
+        XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 6))
+        reveal(app.buttons["settings.cleanup"], in: app)
         app.buttons["settings.cleanup"].click()
         XCTAssertTrue(app.descendants(matching: .any)["cleanup-automatic"].waitForExistence(timeout: 5))
         let cleanup = XCTAttachment(screenshot: app.screenshot()); cleanup.name = "macOS-cleanup-settings"; cleanup.lifetime = .keepAlways; add(cleanup)
+        app.typeKey("w", modifierFlags: .command)
+        XCTAssertFalse(app.windows["QuillSettings"].exists)
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["No dictations yet"].waitForExistence(timeout: 5))
     }
-    func testEverySettingsScreenInDarkAppearance() throws {
-        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings", "--ui-dark"]; app.launch()
+    func testEverySettingsScreenInLightAcrossWindowSizes() throws {
+        try captureEverySettingsScreen(dark: false)
+    }
+    func testEverySettingsScreenInDarkAcrossWindowSizes() throws {
+        try captureEverySettingsScreen(dark: true)
+    }
+    private func captureEverySettingsScreen(dark: Bool) throws {
+            let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"] + (dark ? ["--ui-dark"] : []); app.launch()
+            XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
+            let window = app.windows["QuillSettings"]
+            XCTAssertTrue(window.waitForExistence(timeout: 6))
+            for target in [CGSize(width: 1160, height: 760), CGSize(width: 680, height: 520)] {
+                let corner = window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1)).withOffset(CGVector(dx: -3, dy: -3))
+                corner.click(forDuration: 0.1, thenDragTo: corner.withOffset(CGVector(dx: target.width - window.frame.width, dy: target.height - window.frame.height)))
+                XCTAssertEqual(window.frame.width, target.width, accuracy: 25)
+                let overview = XCTAttachment(screenshot: app.screenshot())
+                overview.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-settings-overview"
+                overview.lifetime = .keepAlways; add(overview)
+                for page in ["speech", "keys", "cleanup", "style", "words", "audio", "bubble", "privacy", "advanced", "about"] {
+                    let row = app.buttons["settings." + page]
+                    reveal(row, in: app)
+                    XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
+                    XCTAssertTrue(app.staticTexts["settings.page." + page].waitForExistence(timeout: 6))
+                    let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-\(dark ? "dark" : "light")-\(Int(target.width))x\(Int(target.height))-" + page; shot.lifetime = .keepAlways; add(shot)
+                    if target.width > 1000 && page == "about" {
+                        for title in ["Privacy Policy", "Terms of Service", "Open-source licenses"] {
+                            let disclosure = app.disclosureTriangles[title]
+                            setDisclosure(disclosure, expanded: true, in: app)
+                            let detail = XCTAttachment(screenshot: app.screenshot()); detail.name = "macOS-legal-\(dark ? "dark" : "light")-" + title; detail.lifetime = .keepAlways; add(detail)
+                            setDisclosure(disclosure, expanded: false, in: app)
+                        }
+                    }
+                    if target.width > 1000 && page == "privacy" {
+                        let review = app.buttons["See an example report"]
+                        reveal(review, in: app); XCTAssertTrue(review.isHittable); review.click()
+                        XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 5))
+                        let report = XCTAttachment(screenshot: app.screenshot()); report.name = "macOS-diagnostics-\(dark ? "dark" : "light")"; report.lifetime = .keepAlways; add(report)
+                        app.sheets.firstMatch.buttons["Close"].click()
+                        let dismissed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.sheets.firstMatch)
+                        wait(for: [dismissed], timeout: 5)
+                    }
+                    reveal(app.buttons["settings-back"], in: app)
+                    app.buttons["settings-back"].click()
+                    XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 4))
+                }
+            }
+            app.terminate()
+    }
+    func testAllProviderKeySheetsInLight() throws { try captureProviderKeySheets(dark: false) }
+    func testAllProviderKeySheetsInDark() throws { try captureProviderKeySheets(dark: true) }
+    private func captureProviderKeySheets(dark: Bool) throws {
+        let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"] + (dark ? ["--ui-dark"] : []); app.launch()
         XCTAssertTrue(app.buttons["nav.settings"].waitForExistence(timeout: 12)); app.buttons["nav.settings"].click()
-        for page in ["speech", "keys", "cleanup", "style", "words", "vocab", "audio", "bubble", "privacy", "advanced", "about"] {
-            let row = app.buttons["settings." + page]
-            reveal(row, in: app)
-            XCTAssertTrue(row.isHittable, "Settings row must be reachable: " + page); row.click()
-            XCTAssertTrue(app.staticTexts["settings.page." + page].waitForExistence(timeout: 6))
-            let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-dark-" + page; shot.lifetime = .keepAlways; add(shot)
-            app.buttons["settings-back"].click()
-            XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 4))
+        let keys = app.buttons["settings.keys"]; reveal(keys, in: app); keys.click()
+        XCTAssertTrue(app.buttons["settings.keys.add"].waitForExistence(timeout: 5)); app.buttons["settings.keys.add"].click()
+        XCTAssertTrue(app.sheets.firstMatch.waitForExistence(timeout: 5))
+        for provider in ["gemini", "groq", "openrouter", "openai", "custom"] {
+            if provider == "openai" {
+                let other = app.sheets.firstMatch.disclosureTriangles["OpenAI or a custom provider"]
+                setDisclosure(other, expanded: true, in: app)
+                XCTAssertTrue(app.sheets.firstMatch.buttons["key-provider-openai"].waitForExistence(timeout: 5))
+            }
+            let row = app.sheets.firstMatch.buttons["key-provider-" + provider]
+            reveal(row, in: app); if row.value as? String != "Expanded" { row.click() }
+            let field = app.sheets.firstMatch.secureTextFields["key-input"]
+            XCTAssertTrue(field.waitForExistence(timeout: 5))
+            let top = XCTAttachment(screenshot: app.screenshot()); top.name = "macOS-key-sheet-\(dark ? "dark" : "light")-" + provider; top.lifetime = .keepAlways; add(top)
+            let save = app.sheets.firstMatch.buttons["key-save-" + provider]
+            reveal(save, in: app); XCTAssertTrue(save.isHittable); XCTAssertFalse(save.isEnabled)
+            let footer = XCTAttachment(screenshot: app.screenshot()); footer.name = "macOS-key-sheet-footer-\(dark ? "dark" : "light")-" + provider; footer.lifetime = .keepAlways; add(footer)
         }
+        // The normal onboarding walkthrough separately verifies Gemini's initial
+        // expansion; do not leave this presentation matrix on Custom.
+        let gemini = app.sheets.firstMatch.buttons["key-provider-gemini"]
+        reveal(gemini, in: app); if gemini.value as? String != "Expanded" { gemini.click() }
+        let cancel = app.sheets.firstMatch.buttons["Cancel"]; reveal(cancel, in: app); cancel.click()
+        let dismissed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.sheets.firstMatch)
+        wait(for: [dismissed], timeout: 5)
     }
     func testCustomWordEditingAndPrivateHistoryGate() throws {
         let app = XCUIApplication(); app.launchArguments = ["--ui-testing", "--ui-settings"]; app.launch()
@@ -122,6 +277,8 @@ final class OnboardingUITests: XCTestCase {
         XCTAssertTrue(privacy.isHittable); privacy.click()
         let toggle = app.descendants(matching: .any)["privacy-private-mode"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5)); toggle.click()
+        app.typeKey("w", modifierFlags: .command)
+        XCTAssertFalse(app.windows["QuillSettings"].exists)
         app.buttons["nav.history"].click()
         XCTAssertTrue(app.staticTexts["History is off"].waitForExistence(timeout: 5))
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "macOS-private-history"; shot.lifetime = .keepAlways; add(shot)

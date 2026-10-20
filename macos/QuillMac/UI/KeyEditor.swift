@@ -31,7 +31,7 @@ private struct KeySetupContent: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            CopyText("onboarding.key.choose").font(QuillTheme.sans(17)).fontWeight(.medium)
+            CopyText("desktop.provider.choose").font(QuillTheme.sans(17)).fontWeight(.medium)
             VStack(spacing: 0) {
                 ForEach(KeySetupController.guidedProviders) { provider in
                     if provider != .gemini { Divider() }
@@ -41,7 +41,7 @@ private struct KeySetupContent: View {
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
             DisclosureGroup(Copy.text("mac.key.other_providers"), isExpanded: $advanced) {
                 VStack(spacing: 0) { ForEach([Provider.openai, .custom]) { provider in providerRow(provider) } }.padding(.top, 8)
-            }.font(QuillTheme.sans(12))
+            }.disclosureGroupStyle(QuillDisclosureStyle()).font(QuillTheme.sans(12))
             if model.storageError { HelpText(key: "onboarding.key.storage_error", bad: true) }
             if browserError { HelpText(key: "onboarding.key.browser_error", bad: true) }
         }.onAppear { refreshClipboardMetadata(); advanced = ["openai", "custom"].contains(model.expanded); model.appear() }
@@ -55,9 +55,9 @@ private struct KeySetupContent: View {
     }
     private func title(_ provider: Provider) -> String {
         switch provider {
-        case .gemini: return Copy.text("onboarding.key.easy")
-        case .groq: return Copy.text("onboarding.key.more_steps")
-        case .openrouter: return Copy.text("onboarding.key.free_options")
+        case .gemini: return Copy.text("desktop.provider.gemini")
+        case .groq: return Copy.text("desktop.provider.groq")
+        case .openrouter: return Copy.text("desktop.provider.openrouter")
         default: return provider.name
         }
     }
@@ -73,8 +73,8 @@ private struct KeySetupContent: View {
                 VStack(alignment: .leading, spacing: 8) {
                     instructions(provider)
                     if provider == .custom {
-                        TextField(Copy.text("settings.speech.custom_url_label"), text: $settings.value.customBaseURL).textFieldStyle(.roundedBorder).disabled(model.saving)
-                        TextField(Copy.text("settings.speech.model_field_label"), text: $settings.value.customModel).textFieldStyle(.roundedBorder).disabled(model.saving)
+                        QuillTextField(key: "settings.speech.custom_url_label", text: $settings.value.customBaseURL).disabled(model.saving)
+                        QuillTextField(key: "settings.speech.model_field_label", text: $settings.value.customModel).disabled(model.saving)
                         HelpText(key: "mac.custom.key_scope")
                     }
                     HStack(spacing: 7) {
