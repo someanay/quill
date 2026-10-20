@@ -14,6 +14,9 @@ public static class Program {
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetForegroundWindow(nint hwnd);
  [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool AttachThreadInput(uint from,uint to,bool attach);
  [System.Runtime.InteropServices.DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
+ [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint WindowFromPoint(NativePoint point);
+ [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)] private struct NativePoint { public int X; public int Y; }
  private static void ActivateFixture(Window window) {
   var own = GetCurrentThreadId(); var other = Native.GetWindowThreadProcessId(Native.GetForegroundWindow(),out _); var attached = own != other && AttachThreadInput(own,other,true);
   try { SetForegroundWindow(new WindowInteropHelper(window).Handle); window.Activate(); } finally { if (attached) AttachThreadInput(own,other,false); }
@@ -176,12 +179,22 @@ public static class Program {
  }
  private static async Task ActivationLauncher(string pipeName,string executable,string folder) {
   if (!string.Equals(Path.GetFullPath(executable),Path.Combine(AppContext.BaseDirectory,"Quill.exe"),StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("The launcher fixture can only open its adjacent Quill test build.");
-  var window = new Window { Title = "Quill shortcut launcher fixture",Width = 400,Height = 180,Content = new TextBlock { Text = "Controlled foreground shortcut launcher",Margin = new(24) } }; window.Show();
+  var window = new Window { Title = "Quill shortcut launcher fixture",Width = 400,Height = 180,WindowStartupLocation = WindowStartupLocation.CenterScreen,Topmost = true,Content = new TextBlock { Text = "Controlled foreground shortcut launcher",Margin = new(24) } }; window.Show();
   using var pipe = new NamedPipeClientStream(".",pipeName,PipeDirection.InOut,PipeOptions.Asynchronous); await pipe.ConnectAsync(10_000); using var reader = new StreamReader(pipe); using var writer = new StreamWriter(pipe) { AutoFlush = true };
   while (await reader.ReadLineAsync() is string command) {
    if (command == "quit") break;
    if (command != "launch") throw new InvalidOperationException("Unexpected launcher command.");
    ActivateFixture(window); var handle = new WindowInteropHelper(window).Handle;
+   await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
+   // A native click on the owned fixture models selecting a shortcut even on
+   // runners that do not initially give programmatically shown windows focus.
+   var point = window.PointToScreen(new Point(100,80));
+   var atPoint = WindowFromPoint(new NativePoint { X = (int)point.X,Y = (int)point.Y });
+   Native.GetWindowThreadProcessId(atPoint,out var atPointProcess);
+   if (atPointProcess != Environment.ProcessId) throw new InvalidOperationException("The controlled launcher is occluded; no input was sent.");
+   if (!SetCursorPos((int)point.X,(int)point.Y)) throw new InvalidOperationException("Could not position the controlled fixture click.");
+   var click = new[] { new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0002 } } },new Native.INPUT { type = 0,union = new() { mouse = new() { flags = 0x0004 } } } };
+   if (Native.SendInput((uint)click.Length,click,System.Runtime.InteropServices.Marshal.SizeOf<Native.INPUT>()) != click.Length) throw new InvalidOperationException("The controlled fixture click was not delivered.");
    for (var attempt = 0; Native.GetForegroundWindow() != handle && attempt < 30; attempt++) await Task.Delay(100);
    if (Native.GetForegroundWindow() != handle) throw new InvalidOperationException($"The controlled shortcut launcher did not own foreground. interactive={Environment.UserInteractive}, session={Process.GetCurrentProcess().SessionId}, visible={window.IsVisible}, expected={handle}, actual={Native.GetForegroundWindow()}");
    // Deliver a harmless key to this fixture before invoking its shortcut. Merely

@@ -45,10 +45,21 @@ struct SettingsView: View {
                     case .about: AboutSettings()
                     }
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 310), spacing: 22, alignment: .top)], alignment: .leading, spacing: 22) {
-                        listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words])
-                        listGroup("settings.group.capture", pages: [.audio, .bubble])
-                        listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                    let available = geometry.size.width - (geometry.size.width >= 840 ? 211 : 0) - 72
+                    if available >= 642 {
+                        HStack(alignment: .top, spacing: 22) {
+                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words]).frame(maxWidth: .infinity)
+                            VStack(alignment: .leading, spacing: 22) {
+                                listGroup("settings.group.capture", pages: [.audio, .bubble])
+                                listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                            }.frame(maxWidth: .infinity)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 22) {
+                            listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words])
+                            listGroup("settings.group.capture", pages: [.audio, .bubble])
+                            listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
+                        }
                     }
                 }
             }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
@@ -76,7 +87,7 @@ struct SettingsView: View {
                             Spacer(minLength: 8)
                             Text(rowValue(item)).font(QuillTheme.sans(12)).foregroundStyle(.secondary)
                             Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(.secondary)
-                        }.padding(.horizontal, 14).frame(minHeight: 66).contentShape(Rectangle())
+                        }.padding(.horizontal, 14).frame(minHeight: 66).background(QuillTheme.surface(scheme == .dark)).contentShape(Rectangle())
                     }.buttonStyle(.plain).accessibilityIdentifier("settings.\(item.rawValue)")
                 }
             }.background(QuillTheme.surface(scheme == .dark), in: RoundedRectangle(cornerRadius: 8)).overlay(RoundedRectangle(cornerRadius: 8).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
