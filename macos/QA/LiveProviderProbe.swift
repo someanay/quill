@@ -52,7 +52,10 @@ private struct LiveFailure: Error { let message: String; init(_ message: String)
                     var observed: [String: Any] = [:]
                     completedText = ""
                     do {
-                    let document = directory.appendingPathComponent("synthetic-\(take).txt"), prefix = "Quill live fixture: "
+                    // An earlier failed request can leave its document unchanged.
+                    // Distinct text identifies this take while TextEdit opens asynchronously.
+                    let identity = "\(speechProvider.rawValue)-\(cleanupProvider.rawValue)-\(take)"
+                    let document = directory.appendingPathComponent("synthetic-\(identity).txt"), prefix = "Quill live \(identity): "
                     try prefix.write(to: document, atomically: true, encoding: .utf8)
                     _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<NSRunningApplication, Error>) in NSWorkspace.shared.open([document], withApplicationAt: editorURL, configuration: launch) { app, error in
                         if let app { continuation.resume(returning: app) } else { continuation.resume(throwing: error ?? LiveFailure("Owned document open failed.")) }
