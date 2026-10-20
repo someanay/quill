@@ -27,7 +27,7 @@ public enum Provider: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .groq: return "llama-3.3-70b-versatile"
         case .openai: return "gpt-4o-mini"
-        case .openrouter: return "openrouter/free"
+        case .openrouter: return "liquid/lfm-2.5-2.6b:free"
         case .gemini: return "gemini-3.5-flash-lite"
         case .custom: return ""
         }

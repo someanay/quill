@@ -34,6 +34,13 @@ so the original four-second budget prevented completion even for a valid reply.
 The three apps now allow a bounded 15 seconds for optional cleanup. Cancellation
 still stops immediately; a timeout or rejected response retains the raw words.
 
+The free router is replaced as the automatic OpenRouter cleanup default by
+`liquid/lfm-2.5-2.6b:free`, a general text model in the actual current free catalog.
+The real production client accepts its cleanup control after 13.622 seconds;
+both tested Gemma free alternatives return 429 and are not selected. Explicit
+saved manual model selections remain unchanged. The router's random selection
+is documented by [OpenRouter](https://github.com/OpenRouterTeam/docs/blob/main/guides/routing/routers/free-router.mdx).
+
 The manual-only `live-providers.yml` workflow exercises live HTTPS providers and
 exact output readback from disposable editor fields. Windows CI supplies a
 synthetic WAV at the recorder interface, then uses the real DictationController,

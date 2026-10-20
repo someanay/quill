@@ -8,7 +8,7 @@ public static class Providers {
  public static ProviderInfo Get(Provider p) => p switch {
   Provider.Groq => new("https://api.groq.com/openai/v1", "whisper-large-v3-turbo", "llama-3.3-70b-versatile", "https://console.groq.com/keys", ["whisper-large-v3-turbo", "whisper-large-v3"]),
   Provider.OpenAI => new("https://api.openai.com/v1", "whisper-1", "gpt-4o-mini", "https://platform.openai.com/api-keys", ["whisper-1", "gpt-4o-mini-transcribe", "gpt-4o-transcribe"]),
-  Provider.OpenRouter => new("https://openrouter.ai/api/v1", "openai/whisper-large-v3-turbo", "openrouter/free", "https://openrouter.ai/keys", ["openai/whisper-large-v3-turbo", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"]),
+  Provider.OpenRouter => new("https://openrouter.ai/api/v1", "openai/whisper-large-v3-turbo", "liquid/lfm-2.5-2.6b:free", "https://openrouter.ai/keys", ["openai/whisper-large-v3-turbo", "openai/gpt-4o-mini-transcribe", "openai/gpt-4o-transcribe"]),
   Provider.Gemini => new("https://generativelanguage.googleapis.com", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite", "https://aistudio.google.com/apikey", ["gemini-3.1-flash-lite", "gemini-3.5-flash", "gemini-3-flash-preview", "gemini-3.1-pro-preview"]),
   _ => new("", "", "", null, []) };
  public static string BaseUrl(Provider p, string custom) => ValidateEndpoint(p == Provider.Custom ? custom : Get(p).BaseUrl);
