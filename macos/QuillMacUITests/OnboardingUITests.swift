@@ -151,6 +151,8 @@ final class OnboardingUITests: XCTestCase {
         let speech = XCTAttachment(screenshot: app.screenshot()); speech.name = "macOS-speech-settings"; speech.lifetime = .keepAlways; add(speech)
         reveal(app.buttons["settings-back"], in: app)
         app.buttons["settings-back"].click()
+        XCTAssertTrue(app.staticTexts["settings.page.list"].waitForExistence(timeout: 6))
+        reveal(app.buttons["settings.cleanup"], in: app)
         app.buttons["settings.cleanup"].click()
         XCTAssertTrue(app.descendants(matching: .any)["cleanup-automatic"].waitForExistence(timeout: 5))
         let cleanup = XCTAttachment(screenshot: app.screenshot()); cleanup.name = "macOS-cleanup-settings"; cleanup.lifetime = .keepAlways; add(cleanup)

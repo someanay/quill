@@ -39,7 +39,7 @@ struct Wordmark: View {
 struct QCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
-    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
+    var body: some View { content.padding(16).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true).background(Q.surface, in: RoundedRectangle(cornerRadius: Q.cardRadius)).overlay(RoundedRectangle(cornerRadius: Q.cardRadius).stroke(Q.line, lineWidth: 1)) }
 }
 struct QButton: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -70,7 +70,7 @@ struct QBanner: View {
                 Text(text).fixedSize(horizontal: false, vertical: true)
             }
         }.font(Q.sans(13)).multilineTextAlignment(.leading).foregroundStyle(error ? Q.danger : Q.brandInk)
-            .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
             .background(error ? Q.danger.opacity(0.09) : Q.brandSoft, in: RoundedRectangle(cornerRadius: Q.largeRadius))
     }
 }
@@ -97,7 +97,7 @@ struct QRow: View {
             }.multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading)
             if let value { Text(value).font(Q.sans(13)).foregroundStyle(Q.muted) }
             if chevron { Image(systemName: "chevron.right").font(.system(size: 12)).foregroundStyle(Q.muted).accessibilityHidden(true) }
-        }.padding(.vertical, 5).frame(minHeight: 48)
+        }.padding(.vertical, 5).frame(minHeight: 48).fixedSize(horizontal: false, vertical: true)
     }
 }
 struct QField: View {

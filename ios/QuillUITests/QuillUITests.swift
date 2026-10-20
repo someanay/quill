@@ -217,6 +217,7 @@ final class QuillUITests: XCTestCase {
         }
         let countRow = app.descendants(matching: .any).matching(identifier: "home.today.count").firstMatch
         let lastRow = app.buttons["home.today.last_used"]
+        XCTAssertLessThanOrEqual(today.frame.maxY, countRow.frame.minY, "Large text must not overlap the statistics heading.")
         XCTAssertLessThanOrEqual(countRow.frame.maxY, lastRow.frame.minY, "Large text must not overlap adjacent statistics rows.")
         capture(app, "ios-large-text-home-today")
         settingsTab(app).tap()

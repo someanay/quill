@@ -26,9 +26,10 @@ struct SettingsView: View {
                 }.listStyle(.sidebar).frame(width: 210)
                 Divider()
             }
+        ScrollViewReader { scroll in
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                HStack { if page != nil { Button { page = nil } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }
+                HStack { if page != nil { Button { page = nil } label: { Image(systemName: "chevron.left") }.accessibilityLabel(Copy.text("action.back")).accessibilityIdentifier("settings-back") }; CopyText(page?.key ?? "settings.title").font(QuillTheme.serif()).accessibilityIdentifier("settings.page.\(page?.rawValue ?? "list")"); Spacer() }.id("settings-top")
                 if let page {
                     switch page {
                     case .speech: SpeechSettings()
@@ -44,14 +45,16 @@ struct SettingsView: View {
                     case .about: AboutSettings()
                     }
                 } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 310), spacing: 22)], alignment: .leading, spacing: 22) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 310), spacing: 22, alignment: .top)], alignment: .leading, spacing: 22) {
                         listGroup("settings.group.dictation", pages: [.speech, .keys, .cleanup, .style, .words])
                         listGroup("settings.group.capture", pages: [.audio, .bubble])
                         listGroup("settings.group.privacy", pages: [.privacy, .advanced, .about])
                     }
                 }
             }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
-        }.id(page?.rawValue ?? "list").accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
+        }.accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
+            .onChange(of: page) { _ in scroll.scrollTo("settings-top", anchor: .top) }
+        }
         }
         }.font(QuillTheme.sans()).foregroundStyle(QuillTheme.ink(scheme == .dark)).background(QuillTheme.paper(scheme == .dark))
         .preferredColorScheme(settings.value.appTheme == "Dark" ? .dark : settings.value.appTheme == "Light" ? .light : nil)
