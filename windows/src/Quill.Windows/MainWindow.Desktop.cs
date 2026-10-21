@@ -12,6 +12,14 @@ public sealed partial class MainWindow {
  private ColumnDefinition companionColumn = null!;
  private readonly StackPanel compactNavigation = new() { Orientation = Orientation.Horizontal, Margin = new(20,8,20,0) };
  private TextBox? practiceEditor;
+ private int practiceGeneration;
+ internal FocusTarget? CapturePracticeContext() {
+  if (!Dispatcher.CheckAccess() || !IsVisible || practiceEditor is not { IsKeyboardFocused: true,IsReadOnly: false,IsEnabled: true } editor) return null;
+  var handle = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+  if (handle == 0 || Native.GetForegroundWindow() != handle || editor.Text.Length >= 200_000) return null;
+  return new(handle,[Environment.ProcessId,practiceGeneration],"Quill",true,false,
+   new EditingContext(editor.Text,editor.SelectionStart,editor.SelectionStart+editor.SelectionLength));
+ }
  private void SetDesktopNavigationVisible(bool visible) {
   setupWindow = !visible;
   ResizeMode = ResizeMode.CanResize;
@@ -175,6 +183,7 @@ public sealed partial class MainWindow {
   var columns = new DesktopColumns { FirstFraction = 0.65 }; var start = page.Children.Count;
   var practice = Card(C("desktop.practice.title","Practice here"));
   practiceEditor = new TextBox { Text = practiceDraft,AcceptsReturn = true,TextWrapping = TextWrapping.Wrap,MinHeight = 210,Height = Math.Clamp(Height - 320,210,500),VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+  practiceGeneration++;
   var editor = practiceEditor; editor.TextChanged += (_,_) => practiceDraft = editor.Text;
   System.Windows.Automation.AutomationProperties.SetName(practiceEditor,C("desktop.practice.title","Try Quill here")); practice.Children.Add(practiceEditor);
   workspaceStatus = Text(app.HotkeyLabel,14,true); practice.Children.Add(workspaceStatus);

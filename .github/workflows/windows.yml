@@ -89,6 +89,8 @@ jobs:
         run: |
           dotnet build windows/tests/Quill.NativeSmoke/Quill.NativeSmoke.csproj -c Release --nologo
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --verify-practice-field dist/verification/windows-ui/practice-field.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-all-ui dist/verification/windows-ui
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & windows/tests/Quill.NativeSmoke/bin/Release/net10.0-windows/Quill.NativeSmoke.exe --render-demo dist/verification/windows-demo

@@ -40,6 +40,7 @@ public static partial class Program {
   if (args.Length == 2 && args[0] == "--render-ui") { RenderUi(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--render-demo") { RenderDemo(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--render-all-ui") { RenderAllUi(args[1]); return 0; }
+  if (args.Length == 2 && args[0] == "--verify-practice-field") { VerifyPracticeField(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--verify-setup-window") { VerifySetupWindow(args[1]); return 0; }
   if (args.Length == 2 && args[0] == "--hotkey-check") { _ = new Application(); var window = new Window(); var handle = new WindowInteropHelper(window).EnsureHandle(); using var hotkey = new HotkeyService(handle); var report = JsonSerializer.Serialize(new { registered = hotkey.Registered,actual = hotkey.Label,preferredError = hotkey.RegistrationError },new JsonSerializerOptions { WriteIndented = true }); File.WriteAllText(args[1],report); Console.WriteLine(report); return hotkey.Registered ? 0 : 1; }
   if (args.Length == 1 && args[0] == "--font-check") { _ = new Application(); foreach (var filename in new[] {"ibm_plex_sans.ttf","ibm_plex_serif.ttf"}) { var glyph = new System.Windows.Media.GlyphTypeface(new Uri("pack://application:,,,/Quill;component/Assets/Fonts/" + filename)); Console.WriteLine(filename + " => " + string.Join(",",glyph.FamilyNames.Values)); } foreach (var f in System.Windows.Media.Fonts.GetFontFamilies(new Uri("pack://application:,,,/Quill;component/"),"./Assets/Fonts/")) Console.WriteLine("Enumerated " + f.Source); foreach (var family in new[] {Theme.Sans,Theme.Serif}) { var typeface = new System.Windows.Media.Typeface(family,FontStyles.Normal,FontWeights.Normal,FontStretches.Normal); if (!typeface.TryGetGlyphTypeface(out var glyph)) throw new InvalidOperationException("Font resolution failed: " + family.Source); Console.WriteLine(family.Source + " => " + string.Join(",",glyph.FamilyNames.Values)); } return 0; }
@@ -137,6 +138,32 @@ public static partial class Program {
   if (notice.Text != "Unrelated setup hint") throw new InvalidOperationException("Clearing a dictation error removed an unrelated notice.");
   File.WriteAllText(Path.Combine(folder,"result.json"),JsonSerializer.Serialize(new { passed = true,rendered,steps = 7,viewports = 6,keyFormRetained = true,practiceEditorRetained = true,shortcutKeycapsRefresh = true,dictationNoticesReset = true }));
   Console.WriteLine($"PASS {rendered} setup layouts, resizable window, retained key form/practice editor, and Home size preservation."); application.Shutdown(); application.Dispatcher.InvokeShutdown();
+ }
+ private static void VerifyPracticeField(string output) {
+  if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") throw new InvalidOperationException("This foreground fixture runs only on dedicated CI.");
+  var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; Exception? failure = null;
+  application.Startup += async (_,_) => {
+   try {
+    using var services = new AppServices(Path.Combine(Path.GetTempPath(),"QuillPractice-" + Guid.NewGuid().ToString("N")),true);
+    services.Settings.Value.OnboardingComplete = true; services.Settings.Value.InjectionConsent = true; Theme.Apply("Light");
+    var window = new MainWindow(services); services.MainWindow = window; window.Show(); ActivateFixture(window);
+    var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+    var editor = (TextBox)typeof(MainWindow).GetField("practiceEditor",flags)!.GetValue(window)!;
+    editor.Focus(); await Task.Delay(250);
+    var timer = Stopwatch.StartNew(); var target = await services.Injector.Capture(); timer.Stop();
+    if (!target.Editable || target.Sensitive || target.Application != "Quill" || target.Context != new EditingContext("",0,0)) throw new InvalidOperationException("The app's own focused practice field was not captured.");
+    if (!await services.Injector.Insert(target,"Native practice नमस्ते") || editor.Text != "Native practice नमस्ते") throw new InvalidOperationException("Practice insertion was not confirmed.");
+    var fresh = await services.Injector.Capture(); editor.Select(1,0);
+    if (await services.Injector.Insert(fresh,"must not insert")) throw new InvalidOperationException("A changed practice caret accepted stale text.");
+    var other = new TextBox(); window.Content = other; other.Focus();
+    if (await services.Injector.Insert(fresh,"must not insert")) throw new InvalidOperationException("A different field accepted the old practice target.");
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);
+    File.WriteAllText(output,JsonSerializer.Serialize(new { passed = true,captureMs = timer.Elapsed.TotalMilliseconds,exactInsertion = true,caretChangeBlocked = true,focusChangeBlocked = true }));
+    Console.WriteLine("PASS native practice capture, exact Unicode insertion and stale-focus refusals");
+   } catch (Exception error) { failure = error; }
+   finally { application.Shutdown(); }
+  };
+  application.Run(); if (failure != null) throw new InvalidOperationException("Native practice fixture failed",failure);
  }
  private static void RenderDemo(string folder) {
   var application = new Application(); var catalog = new CopyCatalog();

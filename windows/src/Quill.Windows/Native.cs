@@ -9,6 +9,8 @@ public record EditingContext(string Text,int Start,int End);
 public record FocusTarget(nint Window, int[] RuntimeId, string Application, bool Editable, bool Sensitive,EditingContext? Context = null);
 public interface ITextInjector { Task<FocusTarget> Capture(); Task<bool> Insert(FocusTarget target, string text); Task<bool> CanType(); }
 public sealed class TextInjector : ITextInjector {
+ private readonly Func<FocusTarget?>? localCapture;
+ public TextInjector(Func<FocusTarget?>? localCapture = null) { this.localCapture = localCapture; }
  private static readonly SemaphoreSlim UiaSlot = new(1,1);
  private static async Task<T> Bounded<T>(Func<T> work, T fallback) {
   if (!await UiaSlot.WaitAsync(0)) return fallback;
@@ -16,7 +18,12 @@ public sealed class TextInjector : ITextInjector {
   try { return await task.WaitAsync(TimeSpan.FromMilliseconds(900)); } catch (Exception e) when (e is TimeoutException or ElementNotAvailableException or InvalidOperationException or COMException) { return fallback; }
  }
  public async Task<bool> CanType() { var target = await Capture(); return target.Editable && !target.Sensitive; }
- public Task<FocusTarget> Capture() => Bounded(CaptureCore,new FocusTarget(0,[],"",false,true));
+ public Task<FocusTarget> Capture() {
+  // Quill owns its practice editor. Read it on its dispatcher instead of making a
+  // cross-thread UI Automation round trip into our own process.
+  var local = localCapture?.Invoke();
+  return local != null ? Task.FromResult(local) : Bounded(CaptureCore,new FocusTarget(0,[],"",false,true));
+ }
  private FocusTarget CaptureCore() {
   var hwnd = Native.GetForegroundWindow();
   try {

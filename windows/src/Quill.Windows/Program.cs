@@ -31,13 +31,14 @@ public static class Program {
 public sealed class AppServices : IDisposable {
  public string Folder { get; } public bool Isolated { get; }
  public CopyCatalog Copy { get; } = new(); public SettingsStore Settings { get; } public SecretStore Secrets { get; } public HistoryStore History { get; }
- public ProviderClient Provider { get; } = new(); public ClipboardService Clipboard { get; } = new(); public ITextInjector Injector { get; } = new TextInjector();
+ public ProviderClient Provider { get; } = new(); public ClipboardService Clipboard { get; } = new(); public ITextInjector Injector { get; }
  public AudioRecorder Recorder { get; } = new(); public DictationController Dictation { get; }
  public MainWindow? MainWindow { get; set; } public BubbleWindow? Bubble { get; private set; }
  private System.Windows.Forms.NotifyIcon? tray; private HotkeyService? hotkey; private readonly DispatcherTimer prune; private CancellationTokenSource? autoReturn; public bool HotkeyAvailable => hotkey?.Registered == true; public bool HotkeyChecked => hotkey != null; public string HotkeyLabel => hotkey?.Label ?? Settings.Value.DictationShortcut;
  private int refreshQueued; private int historyRetention;
  public AppServices(string folder, bool isolated) {
   Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder);
+  Injector = new TextInjector(() => MainWindow?.CapturePracticeContext());
   if (!isolated) {
    var legacy = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"Quill");
    Settings.TryImportLegacy(Path.Combine(legacy,"settings.json"));
