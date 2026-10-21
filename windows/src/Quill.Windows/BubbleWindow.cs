@@ -21,7 +21,7 @@ public sealed class InkMeter : FrameworkElement {
 public sealed class BubbleWindow : Window {
  private readonly AppServices services; private readonly Border circle; private readonly Border halo; private readonly Grid glyph; private readonly TextBlock status; private readonly InkMeter meter; private readonly Border pill; private readonly Button cancel;
  private Point down; private Point windowDown; private bool dragging; private bool pressed; private bool longPressed; private CancellationTokenSource? longPress; private readonly DispatcherTimer focusTimer;
- private (DictationState State,int Size,bool Dark,bool Motion)? rendered;
+ private (DictationState State,int Size,bool Dark,bool Motion,bool Retry)? rendered;
  private readonly RotateTransform spinner = new();
  public BubbleWindow(AppServices services) {
   this.services = services; Width = 258; Height = 110; WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize; AllowsTransparency = true; Background = Brushes.Transparent; Topmost = true; ShowInTaskbar = false; ShowActivated = false;
@@ -60,7 +60,8 @@ public sealed class BubbleWindow : Window {
  }
  public void Refresh() {
   var s = services.Dictation.State; bool recording = s == DictationState.Recording; var size = services.Settings.Value.BubbleSize switch { "Small" => 48, "Large" => 68, _ => 56 };
-  var key = (s,size,Theme.IsDark,Motion.Enabled); bool changed = rendered != key;
+  var key = (s,size,Theme.IsDark,Motion.Enabled,s == DictationState.Error && services.Dictation.CanRetry); bool changed = rendered != key;
+  var actionLabel = recording ? services.C("bubble.recording","Listening. Click to finish") : s == DictationState.Transcribing ? services.C("bubble.transcribing","Transcribing…") : s == DictationState.Paste ? services.C("windows.bubble.tap_paste","Click to paste") : services.Dictation.CanRetry ? services.C("windows.bubble.retry","Click to retry") : services.C("bubble.idle","Start dictation");
   if (changed) {
   rendered = key; circle.Width = size; circle.Height = size;
   var first = s == DictationState.Error ? "#D6453D" : s == DictationState.Transcribing ? "#3E5579" : "#234DCE"; var second = s == DictationState.Error ? "#E8635B" : s == DictationState.Transcribing ? "#526F9E" : "#244FD8";
@@ -74,9 +75,9 @@ public sealed class BubbleWindow : Window {
   } else if (s is DictationState.Paste or DictationState.Error or DictationState.Transcribing) glyph.Children.Add(new TextBlock { Text = s == DictationState.Paste ? "▣" : s == DictationState.Error ? "!" : "⋯", Foreground = Brushes.White, FontSize = 26, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
   else { glyph.Children.Add(new Rectangle { Width = 10, Height = 17, RadiusX = 5, RadiusY = 5, Fill = Brushes.White, VerticalAlignment = VerticalAlignment.Top, Margin = new(0,1,0,0) }); glyph.Children.Add(new System.Windows.Shapes.Path { Data = Geometry.Parse("M5,13 C5,27 23,27 23,13 M14,24 L14,29 M8,29 L20,29"), Stroke = Brushes.White, StrokeThickness = 2.4 }); }
   pill.Visibility = s == DictationState.Idle ? Visibility.Collapsed : Visibility.Visible; meter.Visibility = recording ? Visibility.Visible : Visibility.Collapsed; cancel.Visibility = s == DictationState.Idle ? Visibility.Collapsed : Visibility.Visible;
-  System.Windows.Automation.AutomationProperties.SetName(circle, recording ? services.C("bubble.recording", "Listening. Click to finish") : s == DictationState.Idle ? services.C("bubble.idle","Start dictation") : s.ToString());
+  System.Windows.Automation.AutomationProperties.SetName(circle,actionLabel);
   }
-  status.Text = recording ? TimeSpan.FromMilliseconds(services.Dictation.ElapsedMs).ToString(@"m\:ss") : s == DictationState.Transcribing ? services.C("bubble.transcribing", "Transcribing…") : s == DictationState.Paste ? services.C("windows.bubble.tap_paste", "Click to paste") : services.C("windows.bubble.retry", "Click to retry");
+  status.Text = recording ? TimeSpan.FromMilliseconds(services.Dictation.ElapsedMs).ToString(@"m\:ss") : actionLabel;
   if (recording || changed) meter.Update(services.Dictation.Rms, recording);
  }
 }

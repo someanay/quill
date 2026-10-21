@@ -182,13 +182,14 @@ public sealed partial class MainWindow {
   }
   var columns = new DesktopColumns { FirstFraction = 0.65 }; var start = page.Children.Count;
   var practice = Card(C("desktop.practice.title","Practice here"));
-  practiceEditor = new TextBox { Text = practiceDraft,AcceptsReturn = true,TextWrapping = TextWrapping.Wrap,MinHeight = 210,Height = Math.Clamp(Height - 320,210,500),VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+  practiceEditor = new TextBox { Text = practiceDraft,AcceptsReturn = true,TextWrapping = TextWrapping.Wrap,MinHeight = 150,Height = Math.Clamp(Height - 380,150,500),VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
   practiceGeneration++;
   var editor = practiceEditor; editor.TextChanged += (_,_) => practiceDraft = editor.Text;
   System.Windows.Automation.AutomationProperties.SetName(practiceEditor,C("desktop.practice.title","Try Quill here")); practice.Children.Add(practiceEditor);
-  workspaceStatus = Text(app.HotkeyLabel,14,true); practice.Children.Add(workspaceStatus);
-  workspaceMeter = new InkMeter { Height = 64,Visibility = Visibility.Collapsed }; practice.Children.Add(workspaceMeter);
-  workspaceActions = new StackPanel(); practice.Children.Add(workspaceActions);
+  var sessionLine = new Grid { Height = 26,Margin = new(0,0,0,6) };
+  workspaceStatus = Text(app.HotkeyLabel,14,true); workspaceStatus.Margin = new(0); workspaceStatus.VerticalAlignment = VerticalAlignment.Center; sessionLine.Children.Add(workspaceStatus);
+  workspaceMeter = new InkMeter { Height = 24,Width = 112,HorizontalAlignment = HorizontalAlignment.Right,Visibility = Visibility.Hidden }; sessionLine.Children.Add(workspaceMeter); practice.Children.Add(sessionLine);
+  workspaceActions = new StackPanel { MinHeight = 48 }; practice.Children.Add(workspaceActions);
   var left = new StackPanel(); foreach (var item in page.Children.Cast<UIElement>().Skip(start).ToArray()) { page.Children.Remove(item); left.Children.Add(item); }
   var configuration = Card(C("desktop.workspace.configuration","Your setup"));
   Row(configuration,"\uE9D9",C("settings.row.speech_model","Speech & model"),S.Provider + " · " + S.SpeechModel,null,() => Navigate("speech"));
@@ -206,23 +207,28 @@ public sealed partial class MainWindow {
   recent.Children.Add(Action(C("nav.history","History"),() => Navigate("history")));
   var right = new StackPanel(); foreach (var item in page.Children.Cast<UIElement>().Skip(start).ToArray()) { page.Children.Remove(item); right.Children.Add(item); }
   columns.Children.Add(left); columns.Children.Add(right); page.Children.Add(columns);
-  SizeChangedEventHandler resize = (_,_) => { if (practiceEditor != null) practiceEditor.Height = Math.Clamp(ActualHeight - 320,210,500); };
+  SizeChangedEventHandler resize = (_,_) => { if (practiceEditor != null) practiceEditor.Height = Math.Clamp(ActualHeight - 380,150,500); };
   SizeChanged += resize; pageLifetimes.Add(new PageLifetime(() => SizeChanged -= resize));
  }
  private void UpdateHomeSession(bool changed) {
   if (workspaceStatus == null || workspaceMeter == null || workspaceActions == null) return;
   var state = app.Dictation.State;
   workspaceStatus.Text = state == DictationState.Recording ? C("windows.status.listening","Listening") + "  " + TimeSpan.FromMilliseconds(app.Dictation.ElapsedMs).ToString(@"m\:ss") : state == DictationState.Transcribing ? C("bubble.transcribing","Transcribing…") : app.HotkeyLabel;
-  workspaceMeter.Visibility = state == DictationState.Recording ? Visibility.Visible : Visibility.Collapsed;
+  workspaceMeter.Visibility = state == DictationState.Recording ? Visibility.Visible : Visibility.Hidden;
   workspaceMeter.Update(app.Dictation.Rms,state == DictationState.Recording);
   if (!changed) return;
   workspaceActions.Children.Clear();
-  if (state == DictationState.Recording) workspaceActions.Children.Add(AsyncAction(C("desktop.dictation.stop","Stop dictation"),app.Dictation.StopRecording,true));
+  var actions = new WrapPanel(); workspaceActions.Children.Add(actions);
+  if (state == DictationState.Recording) actions.Children.Add(AsyncAction(C("desktop.dictation.stop","Stop dictation"),app.Dictation.StopRecording,true));
   if (state is DictationState.Paste or DictationState.Error) {
-   if (app.Dictation.LastText.Length > 0) { workspaceActions.Children.Add(Text(app.Dictation.LastText)); workspaceActions.Children.Add(Action(C("history.item.copy","Copy text"),() => app.Clipboard.Copy(app.Dictation.LastText,false))); }
-   if (state == DictationState.Error && app.Dictation.CanRetry) workspaceActions.Children.Add(AsyncAction(C("windows.action.retry","Retry saved recording"),app.Dictation.Toggle,true));
+   if (app.Dictation.LastText.Length > 0) actions.Children.Add(Action(C("history.item.copy","Copy text"),() => app.Clipboard.Copy(app.Dictation.LastText,false)));
+   if (state == DictationState.Error && app.Dictation.CanRetry) actions.Children.Add(AsyncAction(C("windows.action.retry","Retry saved recording"),app.Dictation.Toggle,true));
   }
-  if (state != DictationState.Idle) workspaceActions.Children.Add(AsyncAction(C("windows.action.discard","Discard"),app.Dictation.Cancel));
+  if (state != DictationState.Idle) actions.Children.Add(AsyncAction(C("windows.action.discard","Discard"),app.Dictation.Cancel));
+  if (app.Dictation.LastText.Length > 0 && state is DictationState.Paste or DictationState.Error) {
+   var preview = new TextBox { Text = app.Dictation.LastText,IsReadOnly = true,TextWrapping = TextWrapping.Wrap,MaxHeight = 96,VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+   System.Windows.Automation.AutomationProperties.SetName(preview,C("desktop.workspace.recent","Recent dictations")); workspaceActions.Children.Add(preview);
+  }
  }
 
 }

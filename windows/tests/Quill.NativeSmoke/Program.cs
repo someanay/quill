@@ -199,7 +199,38 @@ public static partial class Program {
    for (var step = 0;step < 7;step++) { typeof(MainWindow).GetMethod("ShowStep",flags)!.Invoke(window,[step]); SaveScreen("onboarding-" + step); SaveFooter("onboarding-" + step); VerifyDesktopLayout(window,"setup",viewport); results.Add(new { viewport,theme,step,passed = true }); }
    foreach (var provider in Enum.GetValues<Provider>()) { new KeySetupDraftStore(services.Folder).Expand(provider.ToString()); typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,["keys"]); typeof(MainWindow).GetMethod("Clear",flags)!.Invoke(window,null); var keyPage = (StackPanel)typeof(MainWindow).GetField("page",flags)!.GetValue(window)!; typeof(MainWindow).GetMethod("GuidedKeys",flags)!.Invoke(window,[keyPage,false,false,new Action(() => {}),false]); SaveScreen("guided-" + provider); SaveFooter("guided-" + provider); VerifyDesktopLayout(window,"setup",viewport); results.Add(new { viewport,theme,provider,passed = true }); }
   }
+  VerifySessionUi(folder,window,services);
   File.WriteAllText(Path.Combine(folder,"render-results.json"),JsonSerializer.Serialize(results,new JsonSerializerOptions { WriteIndented = true })); Console.WriteLine("PASS " + results.Count + " complete native WPF screen renders and " + footerCount + " scrolled page footers"); app.Shutdown(); app.Dispatcher.InvokeShutdown();
+ }
+ private static void VerifySessionUi(string folder,MainWindow window,AppServices services) {
+  var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+  services.Settings.Value.InjectionConsent = true; services.Settings.Value.OnboardingComplete = true;
+  services.Secrets.Add(Provider.Groq,"synthetic-render-fixture","UI fixture");
+  var results = new List<object>();
+  IEnumerable<DependencyObject> Walk(DependencyObject node) { yield return node; for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(node);i++) foreach(var child in Walk(System.Windows.Media.VisualTreeHelper.GetChild(node,i))) yield return child; }
+  foreach(var viewport in new[] {new Size(640,600),new Size(1000,500),new Size(1200,800),new Size(1600,900),new Size(900,1200),new Size(1920,650)})
+  foreach(var theme in new[] {"Light","Dark"})
+  foreach(var state in Enum.GetValues<DictationState>()) {
+   window.Width = viewport.Width; window.Height = viewport.Height; Theme.Apply(theme);
+   typeof(DictationController).GetProperty(nameof(DictationController.State))!.SetValue(services.Dictation,state);
+   typeof(DictationController).GetProperty(nameof(DictationController.Error))!.SetValue(services.Dictation,state == DictationState.Error ? "no_speech" : "");
+   typeof(DictationController).GetProperty(nameof(DictationController.LastText))!.SetValue(services.Dictation,state == DictationState.Paste ? "Your words remain available to copy when an app cannot accept insertion." : "");
+   typeof(MainWindow).GetMethod("Navigate",flags)!.Invoke(window,["home"]); window.RefreshStatus();
+   var root = (FrameworkElement)window.Content; root.Measure(viewport); root.Arrange(new Rect(new Point(),viewport)); root.UpdateLayout();
+   if(state != DictationState.Idle) {
+    var label = services.Copy.Get(state == DictationState.Recording ? "desktop.dictation.stop" : "windows.action.discard");
+    var action = Walk(root).OfType<Button>().Single(x=>System.Windows.Automation.AutomationProperties.GetName(x)==label);
+    var point = action.TransformToAncestor(root).Transform(new Point());
+    if(point.Y < 0 || point.Y+action.ActualHeight > viewport.Height) throw new InvalidOperationException($"Session action is below the viewport: {state} {viewport}");
+   }
+   var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)viewport.Width,(int)viewport.Height,96,96,System.Windows.Media.PixelFormats.Pbgra32); bitmap.Render(root);
+   var png = new System.Windows.Media.Imaging.PngBitmapEncoder(); png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+   using(var file=File.Create(Path.Combine(folder,$"{viewport.Width}x{viewport.Height}-{theme}-session-{state}.png"))) png.Save(file);
+   results.Add(new {viewport,theme,state=state.ToString(),passed=true});
+  }
+  typeof(DictationController).GetProperty(nameof(DictationController.State))!.SetValue(services.Dictation,DictationState.Idle);
+  File.WriteAllText(Path.Combine(folder,"session-render-results.json"),JsonSerializer.Serialize(results));
+  Console.WriteLine($"PASS {results.Count} native session renders with visible recording/recovery actions");
  }
  private static void VerifyDesktopLayout(MainWindow window,string route,Size viewport) {
   IEnumerable<DependencyObject> Descendants(DependencyObject parent) {
