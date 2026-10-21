@@ -13,16 +13,19 @@ public sealed class MessengerDemo : FrameworkElement {
  private readonly Func<string> shortcut;
  private readonly Stopwatch clock = new();
  private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+ private Window? host;
  public double? PreviewTime { get; set; }
  public MessengerDemo(Func<string,string> copy,Func<string> shortcut) {
   this.copy = copy; this.shortcut = shortcut; Height = 320; MinWidth = 220; ClipToBounds = true; IsHitTestVisible = false;
   System.Windows.Automation.AutomationProperties.SetName(this,copy("demo.accessibility"));
   timer.Tick += (_,_) => InvalidateVisual();
-  Loaded += (_,_) => RefreshClock(); IsVisibleChanged += (_,_) => RefreshClock();
-  Unloaded += (_,_) => { timer.Stop(); clock.Stop(); };
+  Loaded += (_,_) => { host = Window.GetWindow(this); if (host != null) host.StateChanged += HostStateChanged; RefreshClock(); };
+  IsVisibleChanged += (_,_) => RefreshClock();
+  Unloaded += (_,_) => { if (host != null) host.StateChanged -= HostStateChanged; host = null; timer.Stop(); clock.Stop(); };
  }
+ private void HostStateChanged(object? sender,EventArgs e) => RefreshClock();
  private void RefreshClock() {
-  if (IsLoaded && IsVisible && Motion.Enabled) { clock.Start(); timer.Start(); }
+  if (IsLoaded && IsVisible && host?.WindowState != WindowState.Minimized && Motion.Enabled) { clock.Start(); timer.Start(); }
   else { timer.Stop(); clock.Stop(); }
   InvalidateVisual();
  }

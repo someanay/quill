@@ -19,8 +19,8 @@ public static class Motion {
  public static void ReleaseCapture(object sender,MouseEventArgs e) => Feedback(sender,false);
  public static void KeyPress(object sender,KeyEventArgs e) { if (e.Key is Key.Space or Key.Enter) Feedback(sender,true); }
  public static void KeyRelease(object sender,KeyEventArgs e) { if (e.Key is Key.Space or Key.Enter) Feedback(sender,false); }
- public static void Reveal(UIElement element) {
+ public static void Reveal(FrameworkElement element) {
   element.BeginAnimation(UIElement.OpacityProperty,null);
-  if (Enabled) element.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimation(0,1,TimeSpan.FromMilliseconds(140)) { FillBehavior = FillBehavior.Stop });
+  if (Enabled && element.IsLoaded && element.IsVisible) element.BeginAnimation(UIElement.OpacityProperty,new DoubleAnimation(0,1,TimeSpan.FromMilliseconds(140)) { FillBehavior = FillBehavior.Stop });
  }
 }

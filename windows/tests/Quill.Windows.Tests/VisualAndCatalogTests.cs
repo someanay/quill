@@ -30,6 +30,16 @@ public sealed class VisualAndCatalogTests(Xunit.Abstractions.ITestOutputHelper o
     Phase("constructing native templates"); var combo = new ComboBox { ItemsSource = new[] {"Groq","OpenAI"},SelectedIndex = 0 }; var check = new CheckBox { Content = "Permission consent",IsChecked = true }; var panel = new StackPanel(); panel.Children.Add(combo); panel.Children.Add(check);
     Phase("measuring controls and initializing system font rendering"); panel.Measure(new Size(500,500)); panel.Arrange(new Rect(0,0,500,500)); combo.ApplyTemplate(); check.ApplyTemplate();
     Assert.NotNull(combo.Template.FindName("PART_Popup",combo)); Assert.NotNull(check.Template.FindName("Track",check));
+    using (var folder = new TestFolder()) using (var services = new AppServices(folder.Path,true)) {
+     var bubble = new BubbleWindow(services);
+     var circle = ((Grid)bubble.Content).Children.OfType<Border>().Single(x => x.Child is Grid);
+     var glyph = (Grid)circle.Child; var mic = glyph.Children[0]; var background = circle.Background;
+     for (int i = 0; i < 100; i++) bubble.Refresh();
+     Assert.Same(mic,glyph.Children[0]); Assert.Same(background,circle.Background);
+     var offscreen = new StackPanel(); Motion.Preference = "Full"; Motion.Reveal(offscreen);
+     Assert.Equal(1,offscreen.Opacity); Assert.False(offscreen.HasAnimatedProperties); Motion.Preference = "Match system";
+     bubble.Close();
+    }
     Phase("shutting down Application"); app.Shutdown(); Phase("Application shutdown returned"); done.SetResult();
    } catch (Exception e) { Phase("exception " + e.GetType().Name); done.SetException(e); }
   }) { IsBackground = true,Name = "Quill WPF verification" };
