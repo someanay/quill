@@ -18,19 +18,28 @@ public static class AudioSignal {
    p += 8 + (int)size + (int)(size & 1);
   }
   if (rate is < 8000 or > 96000 || channels is < 1 or > 2 || offset < 0 || length % (channels*2) != 0) throw new ProviderException("invalid_audio");
-  int frame = rate / 50, stride = channels*2, audible = 0, consecutive = 0;
+  int frame = rate / 50, stride = channels*2, audible = 0, consecutive = 0, longest = 0;
+  var levels = new List<double>(); double previous = 0, earlier = 0, peak = 0;
   for (int p = offset; p + frame*stride <= offset+length; p += frame*stride) {
-   bool active = false;
+   bool active = false; double level = 0;
    for (int channel = 0; channel < channels; channel++) {
     double sum = 0, squares = 0; int min = short.MaxValue, max = short.MinValue;
     for (int i = 0; i < frame; i++) { int sample = BinaryPrimitives.ReadInt16LittleEndian(bytes.Slice(p+i*stride+channel*2,2)); sum += sample; squares += sample*(double)sample; min = Math.Min(min,sample); max = Math.Max(max,sample); }
     // Remove DC offset; a disconnected device, tiny dither or a lone click isn't a dictation.
-    active |= squares/frame - Math.Pow(sum/frame,2) >= 80*80 && max-min >= 320;
+    double energy = Math.Max(0,squares/frame - Math.Pow(sum/frame,2));
+    active |= energy >= 80*80 && max-min >= 320; level = Math.Max(level,Math.Sqrt(energy));
    }
    consecutive = active ? consecutive+1 : 0;
+   longest = Math.Max(longest,consecutive);
    if (active) audible++;
-   if (audible >= 4 && consecutive >= 3) return true;
+   if (consecutive >= 3) peak = Math.Max(peak,Math.Min(level,Math.Min(previous,earlier)));
+   levels.Add(level); earlier = previous; previous = level;
   }
-  return false;
+  if (audible < 4 || longest < 3) return false;
+  // Longer takes need a sustained rise over their own noise floor. This rejects
+  // steady fans/hum/dither without a model, network request or UI-thread work.
+  // Very short syllables retain the absolute floor without an unreliable noise estimate.
+  if (levels.Count < 20) return true;
+  levels.Sort(); return peak >= Math.Max(80,levels[(levels.Count-1)/5]*1.4);
  }
 }

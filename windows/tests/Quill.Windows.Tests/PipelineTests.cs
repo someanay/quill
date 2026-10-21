@@ -4,7 +4,7 @@ namespace Quill.Windows.Tests;
 public sealed class FakeAudio : IAudioRecorder {
  public event Action<double,long>? Level; public event Action? AutoStop; public bool Recording { get; private set; } public int Starts { get; private set; }
  public void Start(QuillSettings settings,bool microphoneTest = false) { Recording = true; Starts++; Level?.Invoke(1000,0); }
- public byte[] Pcm { get; set; } = Enumerable.Range(0,16000).SelectMany(i => BitConverter.GetBytes((short)(Math.Sin(i * Math.PI * 440 / 8000) * 1600))).ToArray();
+ public byte[] Pcm { get; set; } = Enumerable.Range(0,16000).SelectMany(i => BitConverter.GetBytes((short)(Math.Sin(i * Math.PI * 440 / 8000) * 1600 * (.1+.9*Math.Pow(Math.Sin(i*Math.PI/3200),2))))).ToArray();
  public Task<AudioTake> Stop() { Recording = false; return Task.FromResult(new AudioTake(AudioRecorder.Wav(Pcm),1000)); }
  public void EndAutomatically() => AutoStop?.Invoke(); public void Dispose() { Recording = false; }
 }
@@ -16,9 +16,10 @@ public sealed class PipelineFixture : IDisposable {
  public void Dispose() { Controller.Dispose(); Folder.Dispose(); }
 }
 public sealed class PipelineTests {
- [Theory][InlineData(false)][InlineData(true)] public async Task QuietTakeNeverCallsProviderOrDeliversText(bool clipboardOnly) {
+ [Theory][InlineData(false,false)][InlineData(true,false)][InlineData(false,true)][InlineData(true,true)] public async Task QuietTakeNeverCallsProviderOrDeliversText(bool clipboardOnly,bool noise) {
   int calls = 0; using var f = new PipelineFixture((_,_) => { calls++; return Task.FromResult(MockHttp.Json("{\"text\":\"Thank you for watching\"}")); });
-  f.Audio.Pcm = new byte[32000];
+  uint seed = 17;
+  f.Audio.Pcm = noise ? Enumerable.Range(0,16000).SelectMany(_ => { seed=unchecked(seed*1664525+1013904223); return BitConverter.GetBytes((short)((int)(seed>>16)%801-400)); }).ToArray() : new byte[32000];
   if (clipboardOnly) await f.Controller.DictateToClipboard(); else await f.Controller.Toggle();
   await f.Controller.StopRecording();
   Assert.Equal(0,calls); Assert.Equal("no_speech",f.Controller.Error); Assert.Empty(f.Injector.Text); Assert.Empty(f.Clipboard.Text);

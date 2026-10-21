@@ -13,7 +13,8 @@ private final class TestRecording: AudioRecording, @unchecked Sendable {
     var stops = 0
     var cap = 0
     var wav = WAV.encode(pcm: Data((0..<16000).flatMap { i -> [UInt8] in
-        let s = UInt16(bitPattern: Int16(sin(Double(i)*Double.pi*440/8000)*1600))
+        let envelope = 0.1+0.9*pow(sin(Double(i)*Double.pi/3200),2)
+        let s = UInt16(bitPattern: Int16(sin(Double(i)*Double.pi*440/8000)*1600*envelope))
         return [UInt8(s & 255), UInt8(s >> 8)]
     }))
     func start(cap: Int) throws -> UUID { id = UUID(); self.cap = cap; starts += 1; return id }

@@ -22,10 +22,11 @@ public enum AudioSignal {
             }
             guard (8000...96000).contains(rate), (1...2).contains(channels), offset >= 0, length % (channels*2) == 0 else { throw Failure.invalidWAV }
             let frame = rate/50, stride = channels*2
-            var audible = 0, consecutive = 0
+            var audible = 0, consecutive = 0, longest = 0
+            var levels: [Double] = [], previous = 0.0, earlier = 0.0, peak = 0.0
             p = offset
             while p + frame*stride <= offset+length {
-                var active = false
+                var active = false, level = 0.0
                 for channel in 0..<channels {
                     var sum = 0.0, squares = 0.0, low = 32767, high = -32768
                     for i in 0..<frame {
@@ -33,14 +34,21 @@ public enum AudioSignal {
                         sum += Double(s); squares += Double(s)*Double(s); low = min(low,s); high = max(high,s)
                     }
                     let mean = sum/Double(frame)
-                    active = active || (squares/Double(frame) - mean*mean >= 80*80 && high-low >= 320)
+                    let energy = max(0,squares/Double(frame) - mean*mean)
+                    active = active || (energy >= 80*80 && high-low >= 320)
+                    level = max(level,sqrt(energy))
                 }
                 consecutive = active ? consecutive+1 : 0
+                longest = max(longest,consecutive)
                 if active { audible += 1 }
-                if audible >= 4 && consecutive >= 3 { return true }
+                if consecutive >= 3 { peak = max(peak,min(level,min(previous,earlier))) }
+                levels.append(level); earlier = previous; previous = level
                 p += frame*stride
             }
-            return false
+            guard audible >= 4, longest >= 3 else { return false }
+            if levels.count < 20 { return true }
+            levels.sort()
+            return peak >= max(80,levels[(levels.count-1)/5]*1.4)
         }
     }
 }

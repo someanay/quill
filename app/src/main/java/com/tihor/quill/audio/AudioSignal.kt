@@ -19,9 +19,10 @@ object AudioSignal {
         }
         require(rate in 8000..96000 && channels in 1..2 && offset >= 0 && length % (channels*2) == 0) { "Invalid PCM" }
         val frame = rate/50; val stride = channels*2
-        var audible = 0; var consecutive = 0; p = offset
+        var audible = 0; var consecutive = 0; var longest = 0; p = offset
+        val levels = ArrayList<Double>(); var previous = 0.0; var earlier = 0.0; var peak = 0.0
         while (p + frame*stride <= offset+length) {
-            var active = false
+            var active = false; var level = 0.0
             for (channel in 0 until channels) {
                 var sum = 0.0; var squares = 0.0; var low = 32767; var high = -32768
                 for (i in 0 until frame) {
@@ -29,13 +30,20 @@ object AudioSignal {
                     sum += s; squares += s.toDouble()*s; low = minOf(low,s); high = maxOf(high,s)
                 }
                 val mean = sum/frame
-                active = active || squares/frame - mean*mean >= 80*80 && high-low >= 320
+                val energy = maxOf(0.0,squares/frame - mean*mean)
+                active = active || energy >= 80*80 && high-low >= 320
+                level = maxOf(level,kotlin.math.sqrt(energy))
             }
             consecutive = if (active) consecutive+1 else 0
+            longest = maxOf(longest,consecutive)
             if (active) audible++
-            if (audible >= 4 && consecutive >= 3) return true
+            if (consecutive >= 3) peak = maxOf(peak,minOf(level,previous,earlier))
+            levels.add(level); earlier = previous; previous = level
             p += frame*stride
         }
-        return false
+        if (audible < 4 || longest < 3) return false
+        if (levels.size < 20) return true
+        levels.sort()
+        return peak >= maxOf(80.0,levels[(levels.size-1)/5]*1.4)
     }
 }

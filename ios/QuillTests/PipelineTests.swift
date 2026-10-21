@@ -66,7 +66,8 @@ private actor ScriptedProvider: HTTPTransport {
         let url = AppFiles.audio.appendingPathComponent(UUID().uuidString + ".wav")
         var pcm = Data()
         for i in 0..<16000 {
-            let s = UInt16(bitPattern: silent ? 0 : Int16(sin(Double(i)*Double.pi*440/8000)*1600))
+            let envelope = 0.1+0.9*pow(sin(Double(i)*Double.pi/3200),2)
+            let s = UInt16(bitPattern: silent ? 0 : Int16(sin(Double(i)*Double.pi*440/8000)*1600*envelope))
             pcm.append(UInt8(s & 255)); pcm.append(UInt8(s >> 8))
         }
         var data = Data("RIFF".utf8)

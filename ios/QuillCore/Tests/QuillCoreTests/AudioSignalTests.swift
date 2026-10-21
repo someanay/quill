@@ -23,6 +23,14 @@ final class AudioSignalTests: XCTestCase {
             XCTAssertTrue(try AudioSignal.hasAudibleSignal(wav({ Int16(sin(Double($0)*Double.pi*440/8000)*amplitude) }, count: 1600)))
         }
     }
+    func testSteadyMicrophoneNoiseAndHumAreNotDictation() throws {
+        var seed: UInt32 = 17
+        XCTAssertFalse(try AudioSignal.hasAudibleSignal(wav { _ in
+            seed = seed &* 1664525 &+ 1013904223
+            return Int16(Int(seed >> 16) % 801 - 400)
+        }))
+        XCTAssertFalse(try AudioSignal.hasAudibleSignal(wav { Int16(sin(Double($0)*Double.pi*50/8000)*2000) }))
+    }
     func testRejectsMalformedAudio() {
         for data in [Data(), Data("RIFF".utf8), wav({ _ in 0 }).prefix(100)] { XCTAssertThrowsError(try AudioSignal.hasAudibleSignal(data)) }
     }

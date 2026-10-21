@@ -20,6 +20,14 @@ class AudioSignalTest {
     @Test fun shortSoftAndLoudSignalsPass() {
         for (amplitude in listOf(200,2000,32000)) assertTrue(AudioSignal.hasAudibleSignal(wav(1600) { (sin(it*Math.PI*440/8000)*amplitude).toInt().toShort() }))
     }
+    @Test fun steadyMicrophoneNoiseAndHumAreRejected() {
+        var seed = 17
+        assertFalse(AudioSignal.hasAudibleSignal(wav {
+            seed = seed*1664525+1013904223
+            ((seed ushr 16)%801-400).toShort()
+        }))
+        assertFalse(AudioSignal.hasAudibleSignal(wav { (sin(it*Math.PI*50/8000)*2000).toInt().toShort() }))
+    }
     @Test fun malformedAudioIsRejected() {
         for (data in listOf(byteArrayOf(), wav { 0 }.copyOf(40), wav { 0 }.copyOf(100))) {
             assertThrows(IllegalArgumentException::class.java) { AudioSignal.hasAudibleSignal(data) }
