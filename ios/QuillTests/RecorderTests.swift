@@ -162,7 +162,10 @@ private actor DelayedSessionProvider: HTTPTransport {
             if model.phase == .recording { break }; try await Task.sleep(nanoseconds: 100_000_000)
         }
         XCTAssertEqual(model.phase, .recording)
-        try await Task.sleep(nanoseconds: 250_000_000)
+        // Play through the hosted Mac's real loopback input. A quiet microphone
+        // must stop at the signal guard and cannot exercise provider cancellation.
+        let (_, response) = try await URLSession.shared.data(from: URL(string: "http://localhost:8765/play")!)
+        XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 204)
         model.stopAndTranscribe(); XCTAssertEqual(model.phase, .transcribing)
         for _ in 0..<30 {
             if await provider.started { break }; try await Task.sleep(nanoseconds: 10_000_000)
@@ -174,5 +177,33 @@ private actor DelayedSessionProvider: HTTPTransport {
         XCTAssertEqual(model.keyboardSession.state?.phase, .closed)
         XCTAssertFalse(model.recorder.isRecording); XCTAssertFalse(model.recorder.keepsAudioSessionActive)
         XCTAssertEqual(model.result, ""); XCTAssertNil(KeyboardTransfer.peek()); XCTAssertEqual(model.phase, .idle)
+    }
+    func testRealQuietTakeRejectsBeforeProviderAndKeepsKeyboardSessionReady() async throws {
+        let provider = DelayedSessionProvider()
+        let model = AppModel(providerAPI: ProviderAPI(transport: provider))
+        model.cancel(); model.settings = QuillSettings(); model.settings.selectProvider(.groq); model.settings.cleanupEnabled = false
+        try model.vault.save("session-quiet-" + UUID().uuidString, provider: .groq, endpoint: Provider.groq.baseURL, label: "Quiet recorder test")
+        let key = try XCTUnwrap(model.vault.active(.groq, endpoint: Provider.groq.baseURL))
+        defer { model.keyboardSession.end(cancelCapture: true); try? model.vault.delete(key); try? KeyboardTransfer.clear() }
+        try KeyboardTransfer.clear()
+        await model.keyboardSession.enable(duration: 30)
+        for _ in 0..<30 { if model.keyboardSession.ready { break }; try await Task.sleep(nanoseconds: 100_000_000) }
+        XCTAssertTrue(model.keyboardSession.ready)
+        let historyBefore = model.history.count
+        let session = try XCTUnwrap(model.keyboardSession.state)
+        try KeyboardSessionBridge.send(KeyboardSessionCommand(sessionID: session.id, kind: .start))
+        for _ in 0..<30 { if model.phase == .recording { break }; try await Task.sleep(nanoseconds: 100_000_000) }
+        XCTAssertEqual(model.phase, .recording)
+        // Do not request playback. This WAV comes from the real, quiet recorder.
+        try await Task.sleep(nanoseconds: 400_000_000)
+        model.stopAndTranscribe()
+        for _ in 0..<100 { if model.phase == .failed && model.keyboardSession.ready { break }; try await Task.sleep(nanoseconds: 20_000_000) }
+        let reachedProvider = await provider.started
+        XCTAssertFalse(reachedProvider)
+        XCTAssertEqual(model.errorKey, "ios.error.no_speech")
+        XCTAssertEqual(model.result, ""); XCTAssertNil(KeyboardTransfer.peek())
+        XCTAssertEqual(model.history.count, historyBefore); XCTAssertFalse(model.canRetry)
+        XCTAssertEqual(model.keyboardSession.state?.phase, .ready)
+        XCTAssertTrue(model.keyboardSession.isActive)
     }
 }

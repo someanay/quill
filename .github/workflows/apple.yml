@@ -63,6 +63,12 @@ jobs:
           swift --version
       - name: Install project generator
         run: brew install xcodegen
+      - name: Prepare real simulator microphone input
+        if: matrix.platform == 'ios'
+        run: |
+          bash tests/live/prepare-apple-audio.sh
+          swiftc tests/live/LoopbackSpeechPlayer.swift -o "$RUNNER_TEMP/quill-speech-player" -framework AVFoundation
+          "$RUNNER_TEMP/quill-speech-player" "$PWD/tests/live/speech.wav" --self-check
       - name: Verify bundled copy and fonts
         run: python3 scripts/verify-platform-parity.py --platform ${{ matrix.platform }} --independent-copy
       - name: Verify light and dark text contrast
@@ -138,6 +144,14 @@ jobs:
           fi
           xcrun simctl install "$UDID" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
           xcrun simctl privacy "$UDID" grant microphone com.tihor.quill.ios
+          python3 ../tests/live/speech-server.py ../tests/live/speech.wav "$RUNNER_TEMP/quill-speech-player" > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
+          SPEECH_PID=$!
+          trap 'kill "$SPEECH_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --noproxy '*' -fsS http://127.0.0.1:8765/health; then break; fi
+            sleep 1
+          done
+          curl --noproxy '*' -fsS http://localhost:8765/health
           xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \
             -destination "id=$UDID" -derivedDataPath DerivedData \
             -test-timeouts-enabled YES -default-test-execution-time-allowance 360 -maximum-test-execution-time-allowance 360 \
@@ -224,6 +238,8 @@ jobs:
             ${{ matrix.platform }}/TestResults.xcresult
             ${{ matrix.platform }}/RecordingResults.xcresult
             ${{ matrix.platform }}/recording-test.log
+            ${{ runner.temp }}/quill-speech-server.log
+            ${{ runner.temp }}/quill-live-audio-devices.json
             ${{ matrix.platform }}/recording-screenshots
             ${{ matrix.platform }}/iPadResults.xcresult
             ${{ matrix.platform }}/ipad-test.log
