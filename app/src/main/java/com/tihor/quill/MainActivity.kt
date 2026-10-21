@@ -14,7 +14,6 @@ import com.tihor.quill.ui.OnboardingActivity
 import com.tihor.quill.ui.app.QuillApp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * Single-activity host (board B–F shell). Wraps the app in [QuillRoot] (Copy Catalog + Ink&Signal
@@ -26,13 +25,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // First-run gate + crash opt-in: one quick DataStore read.
-        val settings = runBlocking { SettingsRepository(this@MainActivity).settings.first() }
-        // Opt-in, local-first crash reporting (M11): no-ops unless the user turned it on.
-        CrashReporter.install(this, settings.crashReportingEnabled)
-        if (!settings.onboardingComplete) startActivity(Intent(this, OnboardingActivity::class.java))
-
-        setContent { QuillRoot { QuillApp() } }
+        // Await first-run preferences without blocking Android's launch/UI thread.
+        // Keep the gate before composition so Home never flashes ahead of onboarding.
+        // The lifecycle cancels this work if the Activity is destroyed while loading.
+        lifecycleScope.launch {
+            val settings = SettingsRepository(this@MainActivity).settings.first()
+            // Opt-in, local-first crash reporting (M11): no-ops unless enabled.
+            CrashReporter.install(this@MainActivity, settings.crashReportingEnabled)
+            if (!settings.onboardingComplete) {
+                startActivity(Intent(this@MainActivity, OnboardingActivity::class.java))
+            }
+            setContent { QuillRoot { QuillApp() } }
+        }
     }
 
     override fun onStart() {

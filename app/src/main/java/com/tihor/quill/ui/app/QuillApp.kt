@@ -33,7 +33,7 @@ fun QuillApp() {
 
     val savedState = rememberSaveableStateHolder()
     AnimatedContent(targetState = nav.current, modifier = Modifier.fillMaxSize(),
-        transitionSpec = { (fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 16 }) togetherWith fadeOut(tween(110)) },
+        transitionSpec = { (fadeIn(tween(140)) + slideInHorizontally(tween(160)) { it / 24 }) togetherWith fadeOut(tween(90)) },
         label = "screenTransition", // copy-exempt
     ) { destination ->
       savedState.SaveableStateProvider(destination.toString()) {
