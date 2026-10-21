@@ -12,6 +12,10 @@ on:
         type: choice
         options: [all, macos, ios]
         default: all
+      ios_settings_only:
+        description: Focus a regression on all Settings details, sheets, themes, and full-width row interaction
+        type: boolean
+        default: false
       ios_accessibility_only:
         description: Focus an iPhone and iPad regression on maximum Dynamic Type layout; default retains full UI coverage
         type: boolean
@@ -106,7 +110,9 @@ jobs:
           if [ "$PLATFORM" = ios ]; then
             SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
             TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
-            if [ '${{ inputs.ios_accessibility_only }}' = true ]; then
+            if [ '${{ inputs.ios_settings_only }}' = true ]; then
+              TEST_FILTER=(-only-testing:QuillUITests/QuillUITests/testSettingsRowsRespondAcrossTheirVisibleWidthInBothThemes -only-testing:QuillUITests/QuillUITests/testHomeSettingsPrivacyAndKeyboardHelp -only-testing:QuillUITests/QuillUITests/testSettingsScreensAndDarkAppearance -only-testing:QuillUITests/QuillUITests/testEverySettingsDetailScreen -only-testing:QuillUITests/QuillUITests/testLastSettingsActionCanScrollAboveNativeNavigation -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInLight -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInDark)
+            elif [ '${{ inputs.ios_accessibility_only }}' = true ]; then
               TEST_FILTER=(-only-testing:QuillUITests/QuillUITests/testLargerTextDarkSettingsAndLandscapeLayout)
             fi
           fi
@@ -152,7 +158,9 @@ jobs:
           xcrun simctl install "$IPAD" DerivedData/Build/Products/Debug-iphonesimulator/Quill.app
           xcrun simctl privacy "$IPAD" grant microphone com.tihor.quill.ios
           IPAD_FILTER=(-only-testing:QuillUITests)
-          if [ '${{ inputs.ios_accessibility_only }}' = true ]; then
+          if [ '${{ inputs.ios_settings_only }}' = true ]; then
+            IPAD_FILTER=(-only-testing:QuillUITests/QuillUITests/testSettingsRowsRespondAcrossTheirVisibleWidthInBothThemes -only-testing:QuillUITests/QuillUITests/testHomeSettingsPrivacyAndKeyboardHelp -only-testing:QuillUITests/QuillUITests/testSettingsScreensAndDarkAppearance -only-testing:QuillUITests/QuillUITests/testEverySettingsDetailScreen -only-testing:QuillUITests/QuillUITests/testLastSettingsActionCanScrollAboveNativeNavigation -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInLight -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInDark)
+          elif [ '${{ inputs.ios_accessibility_only }}' = true ]; then
             IPAD_FILTER=(-only-testing:QuillUITests/QuillUITests/testLargerTextDarkSettingsAndLandscapeLayout)
           fi
           xcodebuild test-without-building -project Quill.xcodeproj -scheme Quill \

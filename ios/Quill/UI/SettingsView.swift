@@ -10,26 +10,32 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section(model.c("settings.group.dictation")) {
-                NavigationLink { SpeechSettingsView() } label: { Label(model.c("settings.row.speech_model"), systemImage: "waveform") }.accessibilityIdentifier("settings.speech")
-                NavigationLink { APIKeysView() } label: { Label(model.c("settings.row.api_keys"), systemImage: "key") }.accessibilityIdentifier("settings.keys")
-                NavigationLink { CleanupSettingsView() } label: { Label(model.c("settings.row.cleanup"), systemImage: "sparkles") }.accessibilityIdentifier("settings.cleanup")
-                NavigationLink { WritingStyleView() } label: { Label(model.c("settings.row.writing_style"), systemImage: "textformat") }.accessibilityIdentifier("settings.style")
-                NavigationLink { CustomWordsView() } label: { Label(model.c("settings.row.custom_words"), systemImage: "text.book.closed") }.accessibilityIdentifier("settings.words")
+                NavigationLink { SpeechSettingsView() } label: { settingsLabel("settings.row.speech_model", icon: "waveform") }.accessibilityIdentifier("settings.speech")
+                NavigationLink { APIKeysView() } label: { settingsLabel("settings.row.api_keys", icon: "key") }.accessibilityIdentifier("settings.keys")
+                NavigationLink { CleanupSettingsView() } label: { settingsLabel("settings.row.cleanup", icon: "sparkles") }.accessibilityIdentifier("settings.cleanup")
+                NavigationLink { WritingStyleView() } label: { settingsLabel("settings.row.writing_style", icon: "textformat") }.accessibilityIdentifier("settings.style")
+                NavigationLink { CustomWordsView() } label: { settingsLabel("settings.row.custom_words", icon: "text.book.closed") }.accessibilityIdentifier("settings.words")
             }
             Section(model.c("settings.group.capture")) {
-                NavigationLink { AudioSettingsView() } label: { Label(model.c("settings.row.audio"), systemImage: "mic") }.accessibilityIdentifier("settings.audio")
-                NavigationLink { VisualSettingsView() } label: { Label(model.c("ios.settings.appearance"), systemImage: "paintpalette") }.accessibilityIdentifier("settings.visual")
-                NavigationLink { KeyboardHelpView() } label: { Label(model.c("ios.keyboard.title"), systemImage: "keyboard") }.accessibilityIdentifier("settings.keyboard")
+                NavigationLink { AudioSettingsView() } label: { settingsLabel("settings.row.audio", icon: "mic") }.accessibilityIdentifier("settings.audio")
+                NavigationLink { VisualSettingsView() } label: { settingsLabel("ios.settings.appearance", icon: "paintpalette") }.accessibilityIdentifier("settings.visual")
+                NavigationLink { KeyboardHelpView() } label: { settingsLabel("ios.keyboard.title", icon: "keyboard") }.accessibilityIdentifier("settings.keyboard")
             }
             Section(model.c("settings.group.privacy")) {
-                NavigationLink { PrivacySettingsView() } label: { Label(model.c("settings.row.privacy"), systemImage: "lock.shield") }.accessibilityIdentifier("settings.privacy")
-                NavigationLink { AdvancedSettingsView() } label: { Label(model.c("settings.row.advanced"), systemImage: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced")
-                NavigationLink { AboutView() } label: { Label(model.c("settings.row.about"), systemImage: "info.circle") }.accessibilityIdentifier("settings.about")
+                NavigationLink { PrivacySettingsView() } label: { settingsLabel("settings.row.privacy", icon: "lock.shield") }.accessibilityIdentifier("settings.privacy")
+                NavigationLink { AdvancedSettingsView() } label: { settingsLabel("settings.row.advanced", icon: "slider.horizontal.3") }.accessibilityIdentifier("settings.advanced")
+                NavigationLink { AboutView() } label: { settingsLabel("settings.row.about", icon: "info.circle") }.accessibilityIdentifier("settings.about")
             }
         }.navigationTitle(model.c("nav.settings")).navigationBarTitleDisplayMode(.inline)
             .scrollContentBackground(.hidden).background(Q.paper)
             .navigationDestination(isPresented: $showKeys) { APIKeysView(showSetupHelp: setupContext) }
     }
+    private func settingsLabel(_ key: String, icon: String) -> some View {
+        Label(model.c(key), systemImage: icon)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+    }
+
 }
 
 struct SpeechSettingsView: View {

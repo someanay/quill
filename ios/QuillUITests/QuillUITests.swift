@@ -299,6 +299,27 @@ final class QuillUITests: XCTestCase {
     }
     func testSecondaryScreensAndSheetsInLight() throws { try captureSecondaryScreens(dark: false) }
     func testSecondaryScreensAndSheetsInDark() throws { try captureSecondaryScreens(dark: true) }
+    func testSettingsRowsRespondAcrossTheirVisibleWidthInBothThemes() throws {
+        for dark in [false, true] {
+            let app = openHome(arguments: dark ? ["--ui-dark"] : [])
+            tap(settingsTab(app), in: app)
+            for fraction in [0.15, 0.5, 0.9] {
+                let row = app.buttons["settings.privacy"]
+                XCTAssertTrue(row.waitForExistence(timeout: 5)); XCTAssertTrue(row.isHittable)
+                let window = app.windows.firstMatch, frame = row.frame
+                XCTAssertTrue(window.frame.contains(frame))
+                window.coordinate(withNormalizedOffset: .zero).withOffset(
+                    CGVector(dx: frame.minX + frame.width * fraction - window.frame.minX,
+                             dy: frame.midY - window.frame.minY)
+                ).tap()
+                XCTAssertTrue(app.staticTexts["screen.privacy"].waitForExistence(timeout: 5),
+                              "The full Settings row must open from a single tap at \(fraction) of its width.")
+                capture(app, "ios-settings-row-\(dark ? "dark" : "light")-\(fraction)")
+                backToSettings(app)
+            }
+            app.terminate()
+        }
+    }
     private func captureSecondaryScreens(dark: Bool) throws {
         XCUIDevice.shared.orientation = .portrait
         let arguments = dark ? ["--ui-dark"] : []
