@@ -172,7 +172,7 @@ struct BubbleCompanion: View {
             if !dictation.message.isEmpty { CopyText(dictation.message).font(.caption).lineLimit(3) }
             HStack {
                 Button(Copy.text("action.cancel")) { dictation.cancel() }; Spacer()
-                if dictation.state == .error { Button(Copy.text("mac.action.retry")) { dictation.retry() } }
+                if dictation.state == .error && dictation.canRetry { Button(Copy.text("mac.action.retry")) { dictation.retry() } }
                 if dictation.state == .paste { Button(Copy.text("history.sheet.copy")) { dictation.copyTranscript() }; Button(Copy.text("mac.dictation.paste")) { dictation.paste() } }
             }
         }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16)).padding(6)

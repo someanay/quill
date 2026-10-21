@@ -25,6 +25,7 @@ struct AudioMeterSample: Equatable {
     private(set) var elapsed: Double { get { meter.sample.elapsed } set { meter.sample.elapsed = newValue } }
     private(set) var limitWarning: Bool { get { meter.sample.warning } set { meter.sample.warning = newValue } }
     @Published var message = ""
+    var canRetry: Bool { pendingAudio != nil && !recoveryUnavailable }
     @Published private(set) var transcript = ""
     @Published var shortcutAvailable = true
     @Published var microphoneGranted = AudioCapture.permitted

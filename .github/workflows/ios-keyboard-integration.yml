@@ -71,7 +71,11 @@ jobs:
           uname -m
           xcodebuild -version
       - name: Install project generator
-        run: brew install xcodegen
+        run: |
+          brew install xcodegen
+          bash tests/live/prepare-apple-audio.sh
+          swiftc tests/live/LoopbackSpeechPlayer.swift -o "$RUNNER_TEMP/quill-speech-player" -framework AVFoundation
+          "$RUNNER_TEMP/quill-speech-player" "$PWD/tests/live/speech.wav" --self-check
       - name: Boot an isolated ${{ matrix.device }} simulator
         id: destination
         env:
@@ -108,6 +112,14 @@ jobs:
           UDID: ${{ steps.destination.outputs.udid }}
         run: |
           set -o pipefail
+          python3 ../tests/live/speech-server.py ../tests/live/speech.wav "$RUNNER_TEMP/quill-speech-player" > "$RUNNER_TEMP/quill-speech-server.log" 2>&1 &
+          SPEECH_PID=$!
+          trap 'kill "$SPEECH_PID" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --noproxy '*' -fsS http://127.0.0.1:8765/health; then break; fi
+            sleep 1
+          done
+          curl --noproxy '*' -fsS http://localhost:8765/health
           xcodebuild test-without-building -project Quill.xcodeproj -scheme QuillKeyboardIntegration \
             -destination "id=$UDID" -derivedDataPath DerivedData \
             -resultBundlePath KeyboardIntegrationResults.xcresult \
@@ -147,4 +159,6 @@ jobs:
             ios/keyboard-integration.log
             ios/keyboard-evidence
             ios/KeyboardIntegrationResults.xcresult
+            ${{ runner.temp }}/quill-speech-server.log
+            ${{ runner.temp }}/quill-live-audio-devices.json
           retention-days: 14

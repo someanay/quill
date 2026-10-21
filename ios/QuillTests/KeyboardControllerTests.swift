@@ -40,6 +40,20 @@ import QuillCore
 }
 
 @MainActor final class KeyboardControllerTests: XCTestCase {
+    func testQuietTakeShowsNoSpeechAndOffersANewDictation() throws {
+        let proxy = TextProxyFixture(), handoff = HandoffFixture()
+        handoff.item = nil
+        var session = KeyboardRecordingSession(duration: 300); session.phase = .ready; session.errorKey = QuillError.noSpeech.copyKey
+        var commands: [KeyboardSessionCommand.Kind] = []
+        let keyboard = KeyboardViewController()
+        keyboard.environment = KeyboardEnvironment(proxy: { proxy }, fullAccess: { true }, peek: { handoff.item },
+            consume: handoff.consume, prune: {}, session: { session }, command: { commands.append($0.kind) })
+        keyboard.loadViewIfNeeded()
+        let record = try XCTUnwrap(find(UIButton.self, identifier: "keyboard.record", in: keyboard.view))
+        XCTAssertEqual(record.title(for: .normal),"Dictate"); XCTAssertTrue(record.isEnabled)
+        record.sendActions(for: .touchUpInside)
+        XCTAssertEqual(commands,[.start]); XCTAssertEqual(proxy.content,""); XCTAssertEqual(handoff.consumed,0)
+    }
     func testLiveSessionStartsStopsAndAutomaticallyInsertsOnce() throws {
         let proxy = TextProxyFixture(); proxy.content = "Hello"; proxy.selection.location = 5
         let handoff = HandoffFixture(); handoff.item = nil

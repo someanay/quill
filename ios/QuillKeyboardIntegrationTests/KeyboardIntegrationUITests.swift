@@ -22,7 +22,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         attach("final-" + stage, app: fixture)
         attach("final-host-" + stage, app: host)
         if stage.contains("settings") { attach("final-settings-state", app: settings) }
-        let transport = isLive ? "LIVE HTTPS providers; actual loopback microphone and installed keyboard" : "DEBUG synthetic provider; real microphone and installed keyboard extension"
+        let transport = isLive ? "LIVE HTTPS providers; actual loopback microphone and installed keyboard" : "DEBUG synthetic provider; actual loopback microphone speech and silence; installed keyboard extension"
         let report = XCTAttachment(string: "status=\(outcome)\nstage=\(stage)\ntransport=\(transport)\n")
         report.name = "Keyboard integration outcome"; report.lifetime = .keepAlways; add(report)
         if isLive, let data = try? JSONSerialization.data(withJSONObject: liveReadbacks, options: [.prettyPrinted,.sortedKeys]) {
@@ -177,7 +177,6 @@ final class KeyboardIntegrationUITests: XCTestCase {
         XCTAssertTrue(host.buttons["dictation.record"].waitForExistence(timeout: 10))
     }
     private func captureSpeech(defaultDelay: Double = 1.5) {
-        if !isLive { RunLoop.current.run(until: Date().addingTimeInterval(defaultDelay)); return }
         // This CI fixture always uses its own Mac's loopback server. Do not rely
         // on Xcode preserving URL-valued environment entries in the runner.
         let url = URL(string: "http://localhost:8765/play")!
@@ -193,7 +192,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         // the real silence timeout. Tapping a now-ready Dictate button would
         // start a second, empty take. Keep the automatic stop and require its
         // real transcript, cleanup and exact delivery below.
-        if !isLive || button.label == label { tap(button, in: app) }
+        if button.label == label { tap(button, in: app) }
     }
     private func expectedLiveResult(onboarding: Bool = false) -> String {
         if !isLive { return "This is a simulated provider response." }
@@ -407,6 +406,21 @@ final class KeyboardIntegrationUITests: XCTestCase {
             XCTAssertEqual(host.state, .runningBackground, "No app switch or manual Send/Insert is permitted in the new path.")
             attach("keyboard-auto-inserted-background-\(take)", app: fixture)
         }
+        stage = "silent-background-take"
+        let quiet = fixture.buttons["keyboard.record"]
+        expectation(for: NSPredicate(format: "enabled == true AND label == %@", "Dictate"), evaluatedWith: quiet)
+        waitForExpectations(timeout: 12)
+        tap(quiet, in: fixture)
+        expectation(for: NSPredicate(format: "label == %@", "Stop dictation"), evaluatedWith: quiet); waitForExpectations(timeout: 10)
+        // Deliberately do not request playback: the production signal floor must reject this take.
+        RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+        stopLiveCapture(quiet, in: fixture, label: "Stop dictation")
+        expectation(for: NSPredicate(format: "enabled == true AND label == %@", "Dictate"), evaluatedWith: quiet)
+        waitForExpectations(timeout: 15)
+        requireEditorText(seamlessExpected)
+        XCTAssertEqual(host.state,.runningBackground)
+        XCTAssertTrue(fixture.staticTexts["No speech detected. Nothing was inserted. Try again when you're ready."].exists)
+        attach("keyboard-silent-take-no-insertion",app: fixture)
         stage = "end-session-from-keyboard"
         tap(fixture.buttons["keyboard.session.end"], in: fixture)
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: fixture.buttons["keyboard.record"])

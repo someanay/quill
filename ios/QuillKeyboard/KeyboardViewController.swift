@@ -180,7 +180,7 @@ final class KeyboardViewController: UIInputViewController {
             case .recording: status.text = c("ios.session.listening")
             case .processing: status.text = c("ios.session.processing_body")
             case .failed: status.text = c("ios.session.failed")
-            default: status.text = c("ios.session.keyboard_ready")
+            default: status.text = session.errorKey == QuillError.noSpeech.copyKey ? c(QuillError.noSpeech.copyKey) : c("ios.session.keyboard_ready")
             }
         } else { status.text = c("ios.keyboard.record_help") }
     }

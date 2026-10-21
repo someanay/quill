@@ -99,6 +99,7 @@ final class DictationTests: XCTestCase {
         let deadline = Date().addingTimeInterval(3)
         while dictation.state == .transcribing && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
         XCTAssertEqual(dictation.state,.error); XCTAssertEqual(dictation.message,"mac.error.no_speech")
+        XCTAssertFalse(dictation.canRetry)
         XCTAssertEqual(NativeTranscriptProtocol.requests,requests); XCTAssertEqual(dictation.transcript,"")
         XCTAssertNil(try fixture.pending.load())
         dictation.retry(); XCTAssertEqual(NativeTranscriptProtocol.requests,requests)

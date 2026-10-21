@@ -108,7 +108,13 @@ import QuillCore
                     if state.transferID == nil { state.phase = .failed; state.errorKey = QuillError.storage.copyKey }
                     else { state.phase = .ready }
                 }
-            case .failed: state.phase = .failed; state.errorKey = model.errorKey ?? QuillError.audio.copyKey
+            case .failed:
+                state.errorKey = model.errorKey ?? QuillError.audio.copyKey
+                if model.errorKey == QuillError.noSpeech.copyKey && !model.canRetry && !model.cleanupRequired {
+                    // Silence is terminal, not retryable. Keep the microphone lease ready for
+                    // the next explicit take without an app switch or a meaningless Retry.
+                    ownsCapture = false; state.captureID = nil; state.transferID = nil; state.phase = .ready
+                } else { state.phase = .failed }
             case .idle: ownsCapture = false; state.captureID = nil; state.phase = .ready
             }
         }
