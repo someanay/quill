@@ -3216,7 +3216,7 @@
       "optionalBlank": false
     },
     "ios.advanced.timeout_detail": {
-      "default": "Transcription: up to 90 seconds. Cleanup: 4 seconds, then your original transcript is used. Key checks and model refresh: 15 seconds.",
+      "default": "Transcription: up to 90 seconds. Cleanup: up to 25 seconds, then your original transcript is used. Key checks: 15 seconds. Model refresh: 12 seconds.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
