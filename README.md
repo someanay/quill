@@ -39,7 +39,11 @@ The subsequent [native Groq refresh](docs/native-groq-refresh.md) installs 2.0.4
 preserves the original Windows keys and preferences, and tracks the new onboarding,
 animated previews and installed microphone-to-insertion acceptance gate.
 
-Windows 2.0.4 is installed normally on this workstation with a Start shortcut and
+The [responsiveness and quiet-input pass](docs/performance-and-silence.md) removes
+repeated native rendering work, adds motion feedback and rejects quiet or steady-noise
+recordings before provider calls or text delivery. It updates Windows to 2.0.5.
+
+Windows 2.0.5 is installed normally on this workstation with a Start shortcut and
 Installed apps entry. Native verification runs on Windows x64/ARM, macOS 15/26
 on Intel/Apple Silicon, and iPhone/iPad simulators. Exact results and limitations
 are recorded in [Windows verification](windows/VERIFICATION.md) and

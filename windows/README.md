@@ -4,7 +4,7 @@ Native Windows dictation with Quill's shared visual identity and provider pipeli
 
 ## Install
 
-Extract `Quill-Windows-2.0.3-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. After installation, open **Quill** from the Start menu; installation is a one-time step. A portable launch from `app/Quill.exe` is also available. The self-contained package includes .NET; no runtime download is required.
+Extract `Quill-Windows-2.0.5-win-x64.zip`, then run `Quill-Setup.cmd`. The installer verifies the packaged app's checksums and installs for your Windows user without administrator permission. After installation, open **Quill** from the Start menu; installation is a one-time step. A portable launch from `app/Quill.exe` is also available. The self-contained package includes .NET; no runtime download is required.
 
 The installer registers Quill under Windows Installed apps. Uninstall removes only files owned by that installation and preserves settings, keys, history and unrelated files. Both x64 and ARM64 builds pass native Windows CI execution; physical ARM microphone/editor and wider device acceptance remain separate checks. See [verification](VERIFICATION.md).
 
@@ -12,7 +12,7 @@ This build is unsigned. Windows may show its normal unknown-publisher prompt. Th
 
 ## Desktop layout
 
-Version 2.0.3 uses the approved October 20 design in a resizable
+Version 2.0.5 uses the approved October 20 design in a resizable
 1120 × 760 window, with a 640 × 440 minimum. Home and History are the main
 destinations; Settings contains configuration categories. Compact windows use top
 navigation and stack content; wider windows use a sidebar and parallel panes.
@@ -21,7 +21,11 @@ History keeps a selectable list and a scrollable full transcript reader.
 Setup is resizable too. It has a progress rail, a focused task and, in wide windows,
 a contextual explanation/demo pane. It preserves the chosen window size when
 opening Home. The practice editor keeps its text and selection while recording
-status changes. The installed workstation app has been updated to 2.0.3.
+status changes. The installed workstation app has been updated to 2.0.5.
+The status/meter/actions occupy a reserved area so recording controls stay visible.
+Appearance offers Full, Reduced and Match system motion. Quiet recordings are
+rejected locally, including clipboard/recovery and custom-word capture.
+See [performance and silence validation](../docs/performance-and-silence.md).
 
 ## Use
 
@@ -33,7 +37,7 @@ is required. Setup does not copy Android's checklist or bubble-permission screen
 
 Click a supported text field, press the displayed shortcut, speak, then press it again to insert your words. The optional floating control also starts and stops recording; hold it to start clipboard dictation. Quill prefers **Ctrl + Win + Space**, falling back to **Ctrl + Alt + Space** or **Ctrl + Shift + Space** when Windows or another app reserves it. Choose a preference in Advanced. Drag the bubble to an edge; drag it to the bottom to hide for ten minutes. The Home switch hides it until explicitly shown again. Right-click supports clipboard dictation and discard. Tray actions restore the app or bubble. Closing the window keeps Quill in the tray; opening its shortcut again brings the existing window forward without creating another recorder.
 
-The guided key form starts with Gemini, followed by Groq and OpenRouter, with concise instructions linking directly to each provider's key page. OpenAI/custom providers are in a separate disclosure. Drafts are encrypted; validation starts automatically after typing pauses, and Save requires a verified key. Opening a row does not change the active speech provider. Speech setup activates the saved provider; adding a key under API keys preserves speech and cleanup choices.
+Setup asks for a Groq key and offers a direct route to add other providers in Settings. The API keys form in Settings lists Gemini, Groq and OpenRouter, with OpenAI/custom providers in a separate disclosure. Drafts are encrypted; validation starts automatically after typing pauses, and Save requires a verified key. Opening a row does not change the active speech provider. Speech setup activates the saved provider; adding a key under API keys preserves speech and cleanup choices.
 
 Provider/model/language and saved free-model filters, independently configurable cleanup with model memory per provider, active multi-key storage, writing styles, custom words with 8-second voice capture, microphone selection/test, 60–300-second session cap, private mode, history retention, bubble size, theme, startup and scrubbed local diagnostics are under Settings.
 
@@ -65,6 +69,6 @@ dotnet test windows/Quill.Windows.slnx -c Release
 
 `Publish-Quill.ps1 -RunNativeSmoke` additionally tests actual UI Automation and SendInput against a separate controlled editor process. It needs an unlocked interactive desktop and temporarily focuses only that fixture. Tests refuse to type if another app owns focus. The harness restores clipboard data afterward. It is a separate test executable; production builds contain no authentication bypass or fake provider mode.
 
-The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`. The 640-string revision 23 catalog retains formatting contracts and uses Windows-specific instructions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
+The local Copy Tool edits `Assets/copy/strings.default.json` and `windows/copy-manifest.json`. The 661-string revision 27 catalog retains formatting contracts and uses Windows-specific instructions. No remote copy is fetched. Run `python windows/scripts/sync-copy.py` only when importing new Android keys or newly authored Windows defaults; existing Windows catalog edits are preserved.
 
 See `VERIFICATION.md` for actual test evidence and remaining external verification requirements.

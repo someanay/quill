@@ -4,6 +4,12 @@
 
 - [ ] October 21 performance and motion pass: eliminate repeated desktop rendering work, isolate Apple audio-meter updates, add responsive native motion, and reject quiet recordings locally on Windows/macOS/iOS/iPadOS/Android before provider calls or text delivery. Verify new silence/recovery regressions, native builds, both appearances and installed Windows behavior. Physical spoken microphone validation remains owner-deferred.
 
+- [x] Implement cached Windows styles/brushes and retained floating visuals, direct owned-editor capture, Apple meter isolation, native press/page feedback and asynchronous Android startup with shorter existing transitions.
+- [x] Reject quiet/DC/click/steady-noise takes before providers in every dictation, recovery and custom-word path; keep a quiet iOS keyboard session ready for another explicit take. Preserve real speech and credential-validation probes.
+- [x] Verify 394 Windows tests per CI architecture, native editor/installer/layout gates, all four Mac configurations and eight external-editor jobs, 411 Android tests/lint/release builds, and all four installed iPhone/iPad keyboard journeys. [Performance evidence and final iPad app gates](docs/performance-and-silence.md).
+- [x] Pass full baseline/current iPhone/iPad app, native recorder, entitlement and archive execution gates. Final evidence: [performance and silence validation](docs/performance-and-silence.md).
+- [ ] Physical speech/device acceptance remains separate. The final Windows custom-word follow-up is packaged; its installed update awaits Quill being quit after desktop control was stopped.
+
 - [ ] Owner follow-up: Groq-only native onboarding with direct provider Settings and resumable setup; preserve legacy Windows preferences during the 2.0.4 update; verify installed microphone-to-insertion; animate the Android delivery conversation with OS-specific controls in both appearances; audit UI/state consistency. Current evidence and remaining gates: [native Groq refresh](docs/native-groq-refresh.md).
 
 ### Platform experience revision — October 19, 2026
