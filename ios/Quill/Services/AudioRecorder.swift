@@ -4,9 +4,11 @@ import QuillCore
 
 @MainActor final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate {
     @Published private(set) var isRecording = false
-    @Published private(set) var amplitude: Double = 0
-    @Published private(set) var elapsed: Double = 0
-    @Published private(set) var warning = false
+    private struct MeterSample { var amplitude = 0.0; var elapsed = 0.0; var warning = false }
+    @Published private var sample = MeterSample()
+    private(set) var amplitude: Double { get { sample.amplitude } set { sample.amplitude = newValue } }
+    private(set) var elapsed: Double { get { sample.elapsed } set { sample.elapsed = newValue } }
+    private(set) var warning: Bool { get { sample.warning } set { sample.warning = newValue } }
     var onAutomaticStop: (() -> Void)?
     var onInterruption: (() -> Void)?
     var keepsAudioSessionActive = false
@@ -76,10 +78,10 @@ import QuillCore
     private func tick(capture expectedCapture: UUID) {
         guard captureID == expectedCapture, isRecording, let recorder else { return }
         recorder.updateMeters()
-        elapsed = ProcessInfo.processInfo.systemUptime - startedAt
+        let duration = ProcessInfo.processInfo.systemUptime - startedAt
         let normalized = pow(10, Double(recorder.averagePower(forChannel: 0)) / 20)
-        amplitude = amplitude * 0.65 + min(1, normalized * 6) * 0.35
-        warning = RecordingLimits.shouldWarn(elapsed: elapsed, cap: cap)
+        sample = MeterSample(amplitude: amplitude * 0.65 + min(1, normalized * 6) * 0.35,
+                             elapsed: duration, warning: RecordingLimits.shouldWarn(elapsed: duration, cap: cap))
         if !recorder.isRecording { onInterruption?(); return }
         if RecordingLimits.reached(elapsed: elapsed, cap: cap) || (!testMode && detector.feed(rms: normalized * 32767, elapsed: elapsed)) {
             onAutomaticStop?()

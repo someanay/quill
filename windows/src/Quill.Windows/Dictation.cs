@@ -10,6 +10,7 @@ public sealed class DictationController : IDisposable {
  public string Error { get; private set; } = "";
  public long ElapsedMs { get; private set; }
  public double Rms { get; private set; }
+ public bool CanRetry => pending != null || File.Exists(pendingPath);
  private bool nextClipboardOnly; private bool clipboardOnly; private bool privateRecording;
  private sealed record SavedRecording(byte[] Wav,long DurationMs,bool? Private);
  public Task DictateToClipboard() { if (State == DictationState.Idle) nextClipboardOnly = true; return Toggle(); }
@@ -27,7 +28,7 @@ public sealed class DictationController : IDisposable {
   try {
    if (State == DictationState.Recording) { pending = await recorder.Stop(); await TranscribePending(); }
    else if (!stopOnly && State == DictationState.Paste) { if (await clipboard.Paste(LastText,injector)) Set(DictationState.Idle); else Set(DictationState.Paste,"focus_to_paste"); }
-   else if (!stopOnly && State == DictationState.Error) await RetryInternal();
+   else if (!stopOnly && State == DictationState.Error) { if (CanRetry) await RetryInternal(); else await Start(); }
    else if (!stopOnly && State == DictationState.Idle) await Start();
   } catch (OperationCanceledException) { ClearPending(); Set(DictationState.Idle); }
   catch (Exception e) { SavePending(); Set(DictationState.Error, Code(e)); }
@@ -58,6 +59,7 @@ public sealed class DictationController : IDisposable {
  private async Task TranscribePending() {
   var take = pending ?? throw new InvalidOperationException(); var s = sessionSettings ?? settings.Value; var token = cancellation?.Token ?? CancellationToken.None;
   if (take.Wav.Length < 3244) { ClearPending(); throw new ProviderException("empty_recording"); }
+  if (!await Task.Run(() => AudioSignal.HasAudibleSignal(take.Wav),token)) { ClearPending(); LastText = ""; Rms = 0; throw new ProviderException("no_speech"); }
   Set(DictationState.Transcribing);
   var raw = await provider.Transcribe(take.Wav,s,secrets.Read(s.Provider,s.CustomBaseUrl) ?? "",token); token.ThrowIfCancellationRequested();
   var text = raw;

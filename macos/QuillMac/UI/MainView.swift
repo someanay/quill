@@ -25,7 +25,7 @@ struct MainView: View {
                         Group {
                             if tab == "history" { HistoryView() }
                             else { HomeView(openSettings: openSettings, openHistory: { tab = "history" }) }
-                        }.toolbar {
+                        }.id(tab).modifier(QuillPageReveal()).toolbar {
                             ToolbarItemGroup {
                                 if geometry.size.width < 800 {
                                     Button { tab = "home" } label: { Label(Copy.text("nav.home"), systemImage: "house") }.accessibilityIdentifier("compact.home")
@@ -100,7 +100,7 @@ struct HomeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 7).stroke(QuillTheme.line(scheme == .dark), lineWidth: 1))
                     .accessibilityLabel(Copy.text("desktop.practice.title")).accessibilityIdentifier("workspace.practice")
                 if dictation.shortcutAvailable { Label(Copy.text("mac.hotkey.label"), systemImage: "keyboard").font(QuillTheme.sans(14)) } else { HelpText(key: "mac.setup.shortcut_unavailable", size: 14, bad: true) }
-                if dictation.state == .recording { InkMeter(amplitude: dictation.level); Text(formatDuration(dictation.elapsed)).monospacedDigit(); QuillButton(key: "mac.dictation.stop") { dictation.stop() } }
+                if dictation.state == .recording { LiveMeter(meter: dictation.meter, showTime: true); QuillButton(key: "mac.dictation.stop") { dictation.stop() } }
                 if dictation.state == .transcribing { ProgressView() }
                 if !dictation.message.isEmpty { CopyText(dictation.message).fixedSize(horizontal: false, vertical: true).foregroundStyle(dictation.state == .error ? QuillTheme.error : QuillTheme.muted(scheme == .dark)) }
                 if !dictation.transcript.isEmpty { Text(dictation.transcript).textSelection(.enabled) }

@@ -22,7 +22,7 @@ public sealed class MessengerDemo : FrameworkElement {
   Unloaded += (_,_) => { timer.Stop(); clock.Stop(); };
  }
  private void RefreshClock() {
-  if (IsLoaded && IsVisible && SystemParameters.ClientAreaAnimation) { clock.Start(); timer.Start(); }
+  if (IsLoaded && IsVisible && Motion.Enabled) { clock.Start(); timer.Start(); }
   else { timer.Stop(); clock.Stop(); }
   InvalidateVisual();
  }
@@ -36,7 +36,7 @@ public sealed class MessengerDemo : FrameworkElement {
    var text = new FormattedText(value,CultureInfo.CurrentUICulture,System.Windows.FlowDirection.LeftToRight,new Typeface(Theme.Sans,FontStyles.Normal,FontWeights.Normal,FontStretches.Normal),size,ink,VisualTreeHelper.GetDpi(this).PixelsPerDip) { MaxTextWidth = width,LineHeight = size * 1.38 };
    dc.DrawText(text,new Point(x,y)); return text;
   }
-  var time = PreviewTime ?? (SystemParameters.ClientAreaAnimation ? clock.Elapsed.TotalSeconds % 12 : 9.5);
+  var time = PreviewTime ?? (Motion.Enabled ? clock.Elapsed.TotalSeconds % 12 : 9.5);
   var listening = time >= 1.6 && time < 5.5; var working = time >= 5.5 && time < 7.2; var filled = time >= 7.2;
   Box(0.5,0.5,379,319,B("Surface"),B("Line"),10);
   for (var i = 0;i < 3;i++) dc.DrawEllipse(B("Line"),null,new Point(20 + i * 12,20),3,3);

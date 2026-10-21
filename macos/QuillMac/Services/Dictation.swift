@@ -6,11 +6,24 @@ import ServiceManagement
 import QuillCore
 
 enum DictationState: Equatable { case idle, recording, transcribing, paste, error }
+struct AudioMeterSample: Equatable {
+    var level = 0.0
+    var elapsed = 0.0
+    var warning = false
+}
+@MainActor final class AudioMeterState: ObservableObject {
+    @Published var sample = AudioMeterSample()
+    var level: Double { sample.level }
+    var elapsed: Double { sample.elapsed }
+    var warning: Bool { sample.warning }
+}
 @MainActor final class Dictation: ObservableObject {
     @Published private(set) var state: DictationState = .idle
-    @Published private(set) var level = 0.0
-    @Published private(set) var elapsed = 0.0
-    @Published private(set) var limitWarning = false
+    // Audio ticks belong to meter leaves, not every page observing the session.
+    let meter = AudioMeterState()
+    private(set) var level: Double { get { meter.sample.level } set { meter.sample.level = newValue } }
+    private(set) var elapsed: Double { get { meter.sample.elapsed } set { meter.sample.elapsed = newValue } }
+    private(set) var limitWarning: Bool { get { meter.sample.warning } set { meter.sample.warning = newValue } }
     @Published var message = ""
     @Published private(set) var transcript = ""
     @Published var shortcutAvailable = true
@@ -49,8 +62,8 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         self.injector = injector ?? TextInjector()
         self.audio.onLevel = { [weak self] id, amplitude, duration, warn in Task { @MainActor in
             guard let self, self.captureID == id, self.state == .recording || self.microphoneTest else { return }
-            self.level = self.level * 0.35 + amplitude * 0.65; self.elapsed = duration; self.limitWarning = warn
-            if self.microphoneTest && amplitude > 0.06 { self.testHeard = true }
+            self.meter.sample = AudioMeterSample(level: self.level * 0.35 + amplitude * 0.65, elapsed: duration, warning: warn)
+            if self.microphoneTest && amplitude > 0.06 && !self.testHeard { self.testHeard = true }
         } }
         self.audio.onAutoStop = { [weak self] id in Task { @MainActor in guard let self, self.captureID == id else { return }; if self.microphoneTest { self.stopMicTest() } else { self.stop() } } }
         permissionTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in Task { @MainActor in self?.refreshPermissions() } }
@@ -62,7 +75,9 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         restorePending()
     }
     func refreshPermissions() {
-        microphoneGranted = microphonePermission(); accessibilityGranted = TextInjector.permitted
+        let microphone = microphonePermission(), accessibility = TextInjector.permitted
+        if microphoneGranted != microphone { microphoneGranted = microphone }
+        if accessibilityGranted != accessibility { accessibilityGranted = accessibility }
         if accessibilityGranted && !settings.value.accessibilityEnabledOnce { settings.value.accessibilityEnabledOnce = true }
         if state == .recording && !microphoneGranted { suspend(); message = "mac.error.microphone" }
         if Date().timeIntervalSince(lastHistoryRefresh) >= 60 { history.refresh(settings: settings.value); lastHistoryRefresh = Date() }
@@ -105,6 +120,13 @@ enum DictationState: Equatable { case idle, recording, transcribing, paste, erro
         pipeline = Task { [weak self] in
             guard let self else { return }
             do {
+                let audible = try await Task.detached(priority: .userInitiated) { try AudioSignal.hasAudibleSignal(audio) }.value
+                try Task.checkCancellation(); guard token == generation else { return }
+                if !audible {
+                    guard clearSavedTake() else { report(QuillError.storage); return }
+                    pendingAudio = nil; transcript = ""; target = nil; recordingSettings = nil; onWordCaptured = nil
+                    report(QuillError.noSpeech); return
+                }
                 let options = SpeechRequest(provider: snapshot.provider, model: snapshot.speechModel, baseURL: snapshot.customBaseURL, language: snapshot.language)
                 let raw = try await client.transcribe(audio: audio, options: options, key: key)
                 try Task.checkCancellation(); guard token == generation else { return }

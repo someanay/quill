@@ -440,6 +440,7 @@
     "settings.bubble.return_never": "Never",
     "settings.bubble.return_minutes": "%1$d min",
     "bubble.dismiss.timed": "Bubble hidden for %1$d min. Shake your phone or tap the notification to bring it back sooner.",
-    "bubble.dismiss.never": "Bubble hidden until you bring it back. Shake your phone or use Quill or its notification."
+    "bubble.dismiss.never": "Bubble hidden until you bring it back. Shake your phone or use Quill or its notification.",
+    "recording.no_speech": "No speech detected. Nothing was inserted. Try again when you're ready."
   }
 }

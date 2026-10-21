@@ -4,7 +4,8 @@ namespace Quill.Windows.Tests;
 public sealed class FakeAudio : IAudioRecorder {
  public event Action<double,long>? Level; public event Action? AutoStop; public bool Recording { get; private set; } public int Starts { get; private set; }
  public void Start(QuillSettings settings,bool microphoneTest = false) { Recording = true; Starts++; Level?.Invoke(1000,0); }
- public Task<AudioTake> Stop() { Recording = false; return Task.FromResult(new AudioTake(AudioRecorder.Wav(new byte[32000]),1000)); }
+ public byte[] Pcm { get; set; } = Enumerable.Range(0,16000).SelectMany(i => BitConverter.GetBytes((short)(Math.Sin(i * Math.PI * 440 / 8000) * 1600))).ToArray();
+ public Task<AudioTake> Stop() { Recording = false; return Task.FromResult(new AudioTake(AudioRecorder.Wav(Pcm),1000)); }
  public void EndAutomatically() => AutoStop?.Invoke(); public void Dispose() { Recording = false; }
 }
 public sealed class FakeInjector : ITextInjector { public bool Sensitive { get; set; } public bool Accepted { get; set; } = true; public bool Editable { get; set; } = true; public Action? OnInsert { get; set; } public string Text { get; private set; } = ""; public string Application { get; set; } = "test-editor"; public Task<FocusTarget> Capture() => Task.FromResult(new FocusTarget(12,[3,2],Application,Editable,Sensitive)); public Task<bool> Insert(FocusTarget target,string text) { Text = text; OnInsert?.Invoke(); return Task.FromResult(Accepted); } public Task<bool> CanType() => Task.FromResult(!Sensitive); }
@@ -15,6 +16,23 @@ public sealed class PipelineFixture : IDisposable {
  public void Dispose() { Controller.Dispose(); Folder.Dispose(); }
 }
 public sealed class PipelineTests {
+ [Theory][InlineData(false)][InlineData(true)] public async Task QuietTakeNeverCallsProviderOrDeliversText(bool clipboardOnly) {
+  int calls = 0; using var f = new PipelineFixture((_,_) => { calls++; return Task.FromResult(MockHttp.Json("{\"text\":\"Thank you for watching\"}")); });
+  f.Audio.Pcm = new byte[32000];
+  if (clipboardOnly) await f.Controller.DictateToClipboard(); else await f.Controller.Toggle();
+  await f.Controller.StopRecording();
+  Assert.Equal(0,calls); Assert.Equal("no_speech",f.Controller.Error); Assert.Empty(f.Injector.Text); Assert.Empty(f.Clipboard.Text);
+  Assert.Empty(f.Controller.LastText); Assert.Empty(f.History.List(f.Settings.Value)); Assert.Empty(Directory.GetFiles(f.Folder.Path,"pending*"));
+  Assert.False(f.Controller.CanRetry); await f.Controller.Toggle(); Assert.Equal(DictationState.Recording,f.Controller.State); Assert.Equal(0,calls);
+ }
+ [Fact] public async Task RecoveredSilentAudioIsDiscardedWithoutUploading() {
+  using var f = new PipelineFixture((_,_) => throw new InvalidOperationException("must not upload"));
+  var path = Path.Combine(f.Folder.Path,"pending-audio.dpapi");
+  File.WriteAllBytes(path,System.Security.Cryptography.ProtectedData.Protect(AudioRecorder.Wav(new byte[32000]),null,System.Security.Cryptography.DataProtectionScope.CurrentUser));
+  using var restored = new DictationController(f.Settings,f.Secrets,f.History,new ProviderClient(new MockHttp((_,_) => throw new InvalidOperationException("must not upload"))),new FakeAudio(),f.Injector,f.Clipboard,f.Folder.Path);
+  await restored.Toggle(); Assert.Equal("no_speech",restored.Error); Assert.False(restored.CanRetry); Assert.False(File.Exists(path));
+  Assert.Empty(f.Injector.Text); Assert.Empty(f.Clipboard.Text); Assert.Empty(f.History.List(f.Settings.Value));
+ }
  [Fact] public async Task NoEditableFieldBlocksOrdinaryCaptureButAllowsExplicitClipboardDictation() { using var f = new PipelineFixture((_,_) => Task.FromResult(MockHttp.Json("{\"text\":\"clipboard words\"}"))); f.Injector.Editable = false; await f.Controller.Toggle(); Assert.Equal(0,f.Audio.Starts); Assert.Equal("focus_to_paste",f.Controller.Error); await f.Controller.Cancel(); await f.Controller.DictateToClipboard(); await f.Controller.StopRecording(); Assert.Equal(DictationState.Idle,f.Controller.State); Assert.Equal("clipboard words",f.Clipboard.Text); Assert.False(f.Clipboard.Transient); Assert.Empty(f.Injector.Text); }
  [Fact] public async Task LateStopCallbacksNeverRestartRecording() { using var f = new PipelineFixture((_,_) => Task.FromResult(MockHttp.Json("{\"text\":\"one recording\"}"))); await f.Controller.Toggle(); await f.Controller.StopRecording(); await f.Controller.StopRecording(); Assert.Equal(1,f.Audio.Starts); Assert.Equal(DictationState.Idle,f.Controller.State); }
  [Fact] public async Task PrivateRecordingStaysPrivateAcrossFailureAndRetry() { int calls = 0; using var f = new PipelineFixture((_,_) => Task.FromResult(++calls == 1 ? MockHttp.Json("{}",503) : MockHttp.Json("{\"text\":\"private retry\"}"))); f.Settings.Value.PrivateMode = true; await f.Controller.Toggle(); await f.Controller.Toggle(); f.Settings.Value.PrivateMode = false; await f.Controller.Toggle(); Assert.Equal(DictationState.Idle,f.Controller.State); Assert.Empty(f.History.List(f.Settings.Value)); }

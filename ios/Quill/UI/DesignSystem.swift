@@ -56,7 +56,15 @@ struct QButton: View {
                 .font(Q.sans(15)).fontWeight(.medium).padding(.horizontal, 20).padding(.vertical, 14).frame(maxWidth: sizeClass == .regular && !typeSize.isAccessibilitySize ? 320 : .infinity, minHeight: 50)
                 .foregroundStyle(secondary ? Q.brandInk : .white)
                 .background(secondary ? Q.brandSoft : (destructive ? Q.dangerFill : Q.brand), in: RoundedRectangle(cornerRadius: Q.controlRadius))
-        }.buttonStyle(.plain).frame(maxWidth: .infinity, alignment: .leading)
+        }.buttonStyle(QPressStyle()).frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+struct QPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduced
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.86 : 1)
+            .scaleEffect(configuration.isPressed && !reduced ? 0.98 : 1)
+            .animation(reduced ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 struct QTextButton: View {
@@ -72,7 +80,7 @@ struct QTextButton: View {
                 .padding(.horizontal, 8)
                 .frame(minWidth: 44, maxWidth: fillWidth ? (sizeClass == .regular && !typeSize.isAccessibilitySize ? 320 : .infinity) : nil, minHeight: 44)
                 .contentShape(Rectangle())
-        }.buttonStyle(.plain).foregroundStyle(Q.brandInk)
+        }.buttonStyle(QPressStyle()).foregroundStyle(Q.brandInk)
             .frame(maxWidth: fillWidth ? .infinity : nil, alignment: .leading)
     }
 }
@@ -196,6 +204,15 @@ struct QPage<Content: View>: View {
                     .modifier(QScrollClearance())
                     .frame(maxWidth: 980).frame(maxWidth: .infinity)
             }.scrollDismissesKeyboard(.interactively)
-        }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans())
+        }.background(Q.paper).foregroundStyle(Q.ink).font(Q.sans()).modifier(QPageReveal())
+    }
+}
+struct QPageReveal: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduced
+    @State private var visible = false
+    func body(content: Content) -> some View {
+        content.opacity(visible || reduced ? 1 : 0).onAppear {
+            withAnimation(reduced ? nil : .easeOut(duration: 0.14)) { visible = true }
+        }.onDisappear { visible = false }
     }
 }

@@ -35,6 +35,7 @@ public sealed class AppServices : IDisposable {
  public AudioRecorder Recorder { get; } = new(); public DictationController Dictation { get; }
  public MainWindow? MainWindow { get; set; } public BubbleWindow? Bubble { get; private set; }
  private System.Windows.Forms.NotifyIcon? tray; private HotkeyService? hotkey; private readonly DispatcherTimer prune; private CancellationTokenSource? autoReturn; public bool HotkeyAvailable => hotkey?.Registered == true; public bool HotkeyChecked => hotkey != null; public string HotkeyLabel => hotkey?.Label ?? Settings.Value.DictationShortcut;
+ private int refreshQueued; private int historyRetention;
  public AppServices(string folder, bool isolated) {
   Folder = folder; Isolated = isolated; Settings = new(folder); Secrets = new(folder);
   if (!isolated) {
@@ -45,8 +46,19 @@ public sealed class AppServices : IDisposable {
   History = new(folder);
   Dictation = new(Settings, Secrets, History, Provider, Recorder, Injector, Clipboard, folder);
   Recorder.AutoStop += () => Application.Current.Dispatcher.BeginInvoke(async () => await Dictation.StopRecording());
-  Dictation.Changed += () => Application.Current.Dispatcher.BeginInvoke(() => { MainWindow?.RefreshStatus(); RefreshSessionIndicator(); });
-  Settings.Changed += () => { Theme.Apply(Settings.Value.Theme); RefreshSessionIndicator(); History.Prune(Settings.Value); };
+  Motion.Preference = Settings.Value.Motion; historyRetention = Settings.Value.HistoryRetentionMinutes;
+  Dictation.Changed += () => {
+   if (Interlocked.Exchange(ref refreshQueued,1) != 0 || Application.Current.Dispatcher.HasShutdownStarted) return;
+   Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background,new Action(() => {
+    Interlocked.Exchange(ref refreshQueued,0);
+    if (MainWindow?.IsVisible == true && MainWindow.WindowState != WindowState.Minimized) MainWindow.RefreshStatus();
+    RefreshSessionIndicator();
+   }));
+  };
+  Settings.Changed += () => {
+   Motion.Preference = Settings.Value.Motion; Theme.Apply(Settings.Value.Theme); RefreshSessionIndicator();
+   if (historyRetention != Settings.Value.HistoryRetentionMinutes) { historyRetention = Settings.Value.HistoryRetentionMinutes; History.Prune(Settings.Value); }
+  };
   prune = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) }; prune.Tick += (_, _) => { try { History.Prune(Settings.Value); } catch (IOException) { } }; prune.Start();
  }
  public string C(string key, string fallback, params object[] args) => Copy.All.ContainsKey(key) ? Copy.Get(key, args) : fallback;
@@ -77,10 +89,11 @@ public sealed class AppServices : IDisposable {
  public void ResetBubblePosition() { Bubble?.Close(); Bubble = null; if (Settings.Value.BubbleVisible && Settings.Value.BubbleActive) ShowBubble(); }
  public void Notice(string code) { MainWindow?.SetNotice(ErrorText(code)); }
  public string ErrorText(string code) => C("windows.error." + code, code switch {
+  "no_speech" => "No speech detected. Nothing was inserted. Try again when you're ready.",
   "key_missing" => "Add an active key for the selected provider in API keys.", "bad_key" => "That key was rejected. Check you copied it fully, then replace it in API keys.", "quota" => "Your provider's quota or credits are exhausted. Check your provider account, then retry.", "rate_limit" => "Your provider is receiving too many requests. Wait a moment, then retry.", "network" => "Couldn't reach your provider. Check your connection, then retry. Your recording is saved.", "timeout" => "Your provider took too long. Retry the saved recording.", "empty_transcript" => "Didn't catch that. Try speaking again.", "empty_recording" => "That recording was too short. Try speaking again.", "microphone_missing" => "Connect a microphone, then try again.", "microphone_denied" => "Allow desktop microphone access in Windows Settings, then try again.", "microphone_error" => "The microphone stopped unexpectedly. Reconnect it and try again.", "sensitive_field" => "Dictation is off in password and sensitive fields.", "setup_required" => "Complete setup and allow text insertion before dictating.", "focus_to_paste" => "Click an editable text field, then click the floating control to insert your dictation.", "recording_recovered" => "A previous recording is saved. Retry it or discard it.", "model_missing" => "Choose a model in Speech & model.", "invalid_configuration" => "Check the HTTPS server URL and model in Speech & model.", "key_unavailable" => "Windows couldn't unlock the saved key. Add it again in API keys.", "storage_error" => "Local storage is unavailable. Your current recording remains in memory.", "redirect_blocked" => "The provider redirected the request. Check the configured endpoint.", "invalid_response" => "The provider returned an unreadable response. Retry or choose another model.", _ => "Something interrupted the dictation. Retry the recording or discard it." });
  public void RecordCrash(Exception exception) {
   if (!Settings.Value.CrashReportingEnabled) return;
-  try { File.WriteAllText(Path.Combine(Folder, "crash-report.txt"), $"Quill Windows 2.0.4\nOS: {Environment.OSVersion.Version}\nTime: {DateTimeOffset.UtcNow:O}\nError type: {exception.GetType().FullName}\n" + string.Join('\n', new StackTrace(exception, false).GetFrames().Select(f => f.GetMethod()).Where(m => m?.DeclaringType?.Namespace?.StartsWith("Quill", StringComparison.Ordinal) == true).Select(m => m!.DeclaringType!.FullName + "." + m.Name))); } catch (IOException) { }
+  try { File.WriteAllText(Path.Combine(Folder, "crash-report.txt"), $"Quill Windows 2.0.5\nOS: {Environment.OSVersion.Version}\nTime: {DateTimeOffset.UtcNow:O}\nError type: {exception.GetType().FullName}\n" + string.Join('\n', new StackTrace(exception, false).GetFrames().Select(f => f.GetMethod()).Where(m => m?.DeclaringType?.Namespace?.StartsWith("Quill", StringComparison.Ordinal) == true).Select(m => m!.DeclaringType!.FullName + "." + m.Name))); } catch (IOException) { }
  }
  public void Dispose() { autoReturn?.Cancel(); autoReturn?.Dispose(); prune.Stop(); hotkey?.Dispose(); tray?.Dispose(); Bubble?.Close(); Dictation.Dispose(); }
 }

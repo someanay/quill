@@ -28,7 +28,7 @@ struct OnboardingView: View {
                         HStack { if geometry.size.width < 900 { Wordmark() }; Spacer(); if step > 0 { Button(Copy.text("action.back")) { step -= 1 }.accessibilityIdentifier("action.back") } }
                         if step > 0 { Text(Copy.text("desktop.setup.progress", String(step + 1), "7")).font(QuillTheme.sans(12)).foregroundStyle(.secondary) }
                         Text(Copy.text(title).replacingOccurrences(of: ", ", with: step == 0 ? ",\n" : ", ")).font(QuillTheme.serif(step == 0 && geometry.size.width >= 900 && geometry.size.height >= 640 ? 64 : 34)).fontWeight(step == 0 ? .semibold : .regular).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-title")
-                        stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : geometry.size.height < 640 ? 56 : 88), compact: geometry.size.height < 640)
+                        stepContent(contentWidth: geometry.size.width - (geometry.size.width >= 900 ? 200 : 0) - (geometry.size.width < 700 ? 48 : geometry.size.height < 640 ? 56 : 88), compact: geometry.size.height < 640).id(step).modifier(QuillPageReveal())
                         if !dictation.message.isEmpty { CopyText(dictation.message).foregroundStyle(dictation.state == .error ? QuillTheme.error : QuillTheme.muted(scheme == .dark)).fixedSize(horizontal: false, vertical: true) }
                     }.padding(geometry.size.width < 700 ? 24 : geometry.size.height < 640 ? 28 : 44).frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: step == 0 ? geometry.size.height : 0, alignment: .center)
@@ -91,7 +91,7 @@ struct OnboardingView: View {
         case 3:
             BodyCopy(key: "mac.setup.audio_body")
             QuillCard {
-                InkMeter(amplitude: dictation.level).frame(maxWidth: .infinity)
+                LiveMeter(meter: dictation.meter).frame(maxWidth: .infinity)
                 if dictation.testHeard { Label(Copy.text("onboarding.mictest.heard"), systemImage: "checkmark.circle.fill").foregroundStyle(QuillTheme.success) }
                 QuillButton(key: dictation.microphoneTest ? "mac.mic.stop_test" : "mac.mic.test") {
                     if dictation.microphoneTest { dictation.stopMicTest() }
@@ -111,7 +111,7 @@ struct OnboardingView: View {
             CopyText("desktop.practice.title").font(QuillTheme.sans(17))
             HelpText(key: "desktop.practice.body")
             TextEditor(text: $practice).font(QuillTheme.sans(16)).frame(minHeight: 160).border(QuillTheme.line(scheme == .dark)).accessibilityLabel(Copy.text("desktop.practice.title"))
-            if dictation.state == .recording { InkMeter(amplitude: dictation.level) }
+            if dictation.state == .recording { LiveMeter(meter: dictation.meter) }
             if dictation.state == .transcribing { ProgressView() }
             QuillButton(key: "action.continue") { step = 6 }.disabled(dictation.state == .recording || dictation.state == .transcribing)
         default:

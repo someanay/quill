@@ -76,7 +76,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-            }.padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
+            }.id(page).modifier(QuillPageReveal()).padding(36).frame(maxWidth: 980, alignment: .leading).frame(maxWidth: .infinity, alignment: .leading)
         }.accessibilityIdentifier("settings-scroll").frame(maxWidth: .infinity)
             .onChange(of: page) { next in trace("changed " + (next?.rawValue ?? "list")); scroll.scrollTo("settings-top", anchor: .top) }
         }

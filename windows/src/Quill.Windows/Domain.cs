@@ -18,6 +18,7 @@ public static class Providers {
  public static bool HasFreeCleanup(Provider p) => p is Provider.Groq or Provider.OpenRouter or Provider.Gemini;
 }
 public sealed class QuillSettings {
+ public string Motion { get; set; } = "Match system";
  public string DictationShortcut { get; set; } = "Ctrl + Win + Space";
  public Provider Provider { get; set; } = Provider.Groq;
  public string SpeechModel { get; set; } = "whisper-large-v3-turbo";
@@ -64,6 +65,7 @@ public sealed class QuillSettings {
   if (new[] { "whatsapp", "telegram", "signal", "messages", "chrome", "msedge", "firefox", "brave", "opera", "notepad", "onenote" }.Contains(id)) return WritingStyle.Neutral;
   return DefaultStyle; }
  public void Validate() {
+  if (Motion is not ("Match system" or "Full" or "Reduced")) Motion = "Match system";
   SessionCapSeconds = Math.Clamp(SessionCapSeconds, 60, 300);
   if (!new[] { 0, 60, 1440, 10080, 43200 }.Contains(HistoryRetentionMinutes)) HistoryRetentionMinutes = 60;
   if (string.IsNullOrWhiteSpace(SpeechModel) && Provider != Provider.Custom) SpeechModel = Providers.Get(Provider).SpeechModel;

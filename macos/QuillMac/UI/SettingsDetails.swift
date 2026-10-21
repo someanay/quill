@@ -57,7 +57,7 @@ struct WordsSettings: View {
                         if capturing && dictation.state == .recording { dictation.stop() }
                         else { dictation.start(wordCapture: true); capturing = dictation.state == .recording; if capturing { dictation.onWordCaptured = { text in heard = text; capturing = false } } }
                     }.disabled(dictation.state == .transcribing)
-                    if capturing { InkMeter(amplitude: dictation.level, bars: 6).frame(height: 34) }
+                    if capturing { LiveMeter(meter: dictation.meter, bars: 6).frame(height: 34) }
                 }
                 QuillTextField(key: "settings.words.replacement_label", text: $replacement, identifier: "word-replacement")
                 QuillButton(key: "settings.words.save") {
@@ -67,7 +67,7 @@ struct WordsSettings: View {
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
-                QuillFormSection { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
+                QuillFormSection { HStack { VStack(alignment: .leading) { Text(word.heard); Text("â†’ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
             }
         }.onDisappear { if capturing { dictation.onWordCaptured = nil; dictation.suspend(); capturing = false } }
     }
@@ -118,10 +118,11 @@ struct AudioSettings: View {
 
 struct BubbleSettings: View {
     @EnvironmentObject var settings: SettingsStore
+    @EnvironmentObject var dictation: Dictation
     var body: some View {
         QuillFormSection {
             HStack(spacing: 20) {
-                ForEach([false,true], id: \.self) { dark in VStack { BubbleFace(state: .idle, diameter: settings.value.bubbleDiameter, dark: dark); CopyText(dark ? "settings.bubble.preview_dark" : "settings.bubble.preview_light").font(QuillTheme.sans(12)).foregroundStyle(dark ? .white : .black) }.frame(maxWidth: .infinity).padding(18).background(dark ? Color(hex: 0x15161C) : Color(hex: 0xF0F1F6), in: RoundedRectangle(cornerRadius: 12)) }
+                ForEach([false,true], id: \.self) { dark in VStack { BubbleFace(state: .idle, diameter: settings.value.bubbleDiameter, meter: dictation.meter, dark: dark); CopyText(dark ? "settings.bubble.preview_dark" : "settings.bubble.preview_light").font(QuillTheme.sans(12)).foregroundStyle(dark ? .white : .black) }.frame(maxWidth: .infinity).padding(18).background(dark ? Color(hex: 0x15161C) : Color(hex: 0xF0F1F6), in: RoundedRectangle(cornerRadius: 12)) }
             }
             HelpText(key: "settings.bubble.help")
             Picker(Copy.text("settings.bubble.size"), selection: $settings.value.bubbleSize) { ForEach(["Small","Medium","Large"], id: \.self) { CopyText("mac.size.\($0.lowercased())").tag($0) } }.pickerStyle(.segmented)

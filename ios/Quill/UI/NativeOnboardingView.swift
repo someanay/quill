@@ -31,7 +31,7 @@ struct OnboardingView: View {
                         VStack(alignment: .leading, spacing: 24) {
                             HStack { Wordmark(); Spacer(); Text(model.c("ios.setup.progress", String(step), "6")).font(Q.sans(14)).foregroundStyle(Q.muted) }
                             if step > 1 { ProgressView(value: Double(step), total: 6).tint(Q.brand) }
-                            stageContent
+                            stageContent.id(step).modifier(QPageReveal())
                         }.padding(wide ? 40 : 24).frame(maxWidth: 720, alignment: .leading).frame(maxWidth: .infinity)
                     }.scrollDismissesKeyboard(.interactively)
                         .safeAreaInset(edge: .bottom, spacing: 0) { if step == 1 { welcomeActions } }

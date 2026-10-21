@@ -12,7 +12,10 @@ private final class TestRecording: AudioRecording, @unchecked Sendable {
     var starts = 0
     var stops = 0
     var cap = 0
-    let wav = WAV.encode(pcm: Data(repeating: 12, count: 32000))
+    var wav = WAV.encode(pcm: Data((0..<16000).flatMap { i -> [UInt8] in
+        let s = UInt16(bitPattern: Int16(sin(Double(i)*Double.pi*440/8000)*1600))
+        return [UInt8(s & 255), UInt8(s >> 8)]
+    }))
     func start(cap: Int) throws -> UUID { id = UUID(); self.cap = cap; starts += 1; return id }
     func stop() -> Data { stops += 1; return wav }
     func cancel() { stops += 1 }
@@ -76,6 +79,31 @@ private final class FailingPendingStore: PendingTakeStoring {
 }
 
 final class DictationTests: XCTestCase {
+    @MainActor func testAudioTicksInvalidateOnlyMeterLeaves() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        let dictation = fixture.dictation
+        dictation.start(wordCapture: true)
+        var pages = 0, meters = 0
+        let pageSubscription = dictation.objectWillChange.sink { pages += 1 }
+        let meterSubscription = dictation.meter.objectWillChange.sink { meters += 1 }
+        for i in 0..<100 { fixture.audio.onLevel?(fixture.audio.id,0.3,Double(i)*0.08,false) }
+        for _ in 0..<100 where meters < 100 { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(meters,100); XCTAssertEqual(pages,0)
+        withExtendedLifetime((pageSubscription,meterSubscription)) {}
+    }
+    @MainActor func testQuietTakeNeverUploadsAndCannotRestoreForRetry() async throws {
+        let fixture = try DictationFixture(); defer { fixture.dispose() }
+        fixture.audio.wav = WAV.encode(pcm: Data(repeating: 0, count: 32000))
+        let dictation = fixture.dictation, requests = NativeTranscriptProtocol.requests
+        dictation.start(wordCapture: true); dictation.stop()
+        let deadline = Date().addingTimeInterval(3)
+        while dictation.state == .transcribing && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(dictation.state,.error); XCTAssertEqual(dictation.message,"mac.error.no_speech")
+        XCTAssertEqual(NativeTranscriptProtocol.requests,requests); XCTAssertEqual(dictation.transcript,"")
+        XCTAssertNil(try fixture.pending.load())
+        dictation.retry(); XCTAssertEqual(NativeTranscriptProtocol.requests,requests)
+        XCTAssertEqual(fixture.makeDictation().state,.idle)
+    }
     @MainActor func testFailedDiscardKeepsRecoveryBlockedUntilDeletionSucceeds() throws {
         let fixture = try DictationFixture(); defer { fixture.dispose() }
         try fixture.pending.save(PendingTake(audio: fixture.audio.wav, transcript: nil, settings: fixture.settings.value, duration: 1, clipboardOnly: false, wordCapture: false))

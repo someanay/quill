@@ -2,6 +2,8 @@
 
 ## M14 — Native platform rebuild (authorized September 8, 2026)
 
+- [ ] October 21 performance and motion pass: eliminate repeated desktop rendering work, isolate Apple audio-meter updates, add responsive native motion, and reject quiet recordings locally on Windows/macOS/iOS/iPadOS/Android before provider calls or text delivery. Verify new silence/recovery regressions, native builds, both appearances and installed Windows behavior. Physical spoken microphone validation remains owner-deferred.
+
 - [ ] Owner follow-up: Groq-only native onboarding with direct provider Settings and resumable setup; preserve legacy Windows preferences during the 2.0.4 update; verify installed microphone-to-insertion; animate the Android delivery conversation with OS-specific controls in both appearances; audit UI/state consistency. Current evidence and remaining gates: [native Groq refresh](docs/native-groq-refresh.md).
 
 ### Platform experience revision — October 19, 2026

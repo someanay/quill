@@ -211,7 +211,7 @@ public sealed partial class MainWindow {
   if (state == DictationState.Recording) workspaceActions.Children.Add(AsyncAction(C("desktop.dictation.stop","Stop dictation"),app.Dictation.StopRecording,true));
   if (state is DictationState.Paste or DictationState.Error) {
    if (app.Dictation.LastText.Length > 0) { workspaceActions.Children.Add(Text(app.Dictation.LastText)); workspaceActions.Children.Add(Action(C("history.item.copy","Copy text"),() => app.Clipboard.Copy(app.Dictation.LastText,false))); }
-   if (state == DictationState.Error) workspaceActions.Children.Add(AsyncAction(C("windows.action.retry","Retry saved recording"),app.Dictation.Toggle,true));
+   if (state == DictationState.Error && app.Dictation.CanRetry) workspaceActions.Children.Add(AsyncAction(C("windows.action.retry","Retry saved recording"),app.Dictation.Toggle,true));
   }
   if (state != DictationState.Idle) workspaceActions.Children.Add(AsyncAction(C("windows.action.discard","Discard"),app.Dictation.Cancel));
  }

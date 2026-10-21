@@ -4,10 +4,12 @@ import QuillCore
 @testable import Quill
 
 private actor ScriptedProvider: HTTPTransport {
+    private(set) var requests = 0
     var results: [HTTPResult]
     let delay: UInt64
     init(_ bodies: [(Int, String)], delay: UInt64 = 0) { results = bodies.map { HTTPResult(data: Data($0.1.utf8), status: $0.0) }; self.delay = delay }
     func send(_ request: URLRequest) async throws -> HTTPResult {
+        requests += 1
         if delay > 0 { try await Task.sleep(nanoseconds: delay) }
         guard !results.isEmpty else { throw QuillError.network }
         return results.removeFirst()
@@ -59,15 +61,38 @@ private actor ScriptedProvider: HTTPTransport {
         keyIDs.append(try XCTUnwrap(model.vault.active(.groq, endpoint: Provider.groq.baseURL)))
         return model
     }
-    private func wav() throws -> URL {
+    private func wav(silent: Bool = false) throws -> URL {
         try AppFiles.prepare()
         let url = AppFiles.audio.appendingPathComponent(UUID().uuidString + ".wav")
-        try (Data("RIFF".utf8) + Data(repeating: 0, count: 100)).write(to: url, options: [.atomic, .completeFileProtection])
+        var pcm = Data()
+        for i in 0..<16000 {
+            let s = UInt16(bitPattern: silent ? 0 : Int16(sin(Double(i)*Double.pi*440/8000)*1600))
+            pcm.append(UInt8(s & 255)); pcm.append(UInt8(s >> 8))
+        }
+        var data = Data("RIFF".utf8)
+        func u32(_ v: Int) { for shift in stride(from: 0, to: 32, by: 8) { data.append(UInt8((v >> shift) & 255)) } }
+        func u16(_ v: Int) { data.append(UInt8(v & 255)); data.append(UInt8((v >> 8) & 255)) }
+        u32(36+pcm.count); data.append(Data("WAVEfmt ".utf8)); u32(16); u16(1); u16(1); u32(16000); u32(32000); u16(2); u16(16); data.append(Data("data".utf8)); u32(pcm.count); data.append(pcm)
+        try data.write(to: url, options: [.atomic, .completeFileProtection])
         return url
     }
     private func wait(_ model: AppModel, phase: DictationPhase) async throws {
         for _ in 0..<200 { if model.phase == phase { return }; try await Task.sleep(nanoseconds: 10_000_000) }
         XCTFail("Expected \(phase), got \(model.phase)")
+    }
+    func testSilenceNeverUploadsPublishesOrBecomesRetryable() async throws {
+        for voiceSample in [false, true] {
+            let provider = ScriptedProvider([(200, #"{"text":"Thank you for watching"}"#)])
+            let store = PipelineHistory(), model = try makeModel(provider, store: store)
+            let file = try wav(silent: true)
+            try model.processCapturedRecording(file, configuration: model.settings, voiceSample: voiceSample)
+            try await wait(model, phase: .failed)
+            let requests = await provider.requests
+            XCTAssertEqual(requests, 0); XCTAssertEqual(model.errorKey, "ios.error.no_speech")
+            XCTAssertEqual(model.result, ""); XCTAssertEqual(model.voiceWordResult, ""); XCTAssertTrue(store.data.isEmpty)
+            XCTAssertFalse(model.canRetry); XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+            model.retry(); XCTAssertFalse(model.canRetry)
+        }
     }
     func testSuccessfulPipelineSavesExactFinalTextAndDeletesAudio() async throws {
         let store = PipelineHistory(), model = try makeModel(ScriptedProvider([(200, #"{"text":"tihor hello"}"#)]), store: store)

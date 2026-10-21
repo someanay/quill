@@ -2774,7 +2774,7 @@
       "optionalBlank": false
     },
     "windows.bubble.contrast": {
-      "default": "The white ring keeps the optional floating control visible over other windows. Windows Reduce Motion controls its animation.",
+      "default": "The contrast ring and shadow keep Quill visible over light and dark apps. Choose Full animations, Reduced, or Match system.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
@@ -3994,6 +3994,18 @@
       "placeholders": [
         "%1$s"
       ],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.error.no_speech": {
+      "default": "No speech detected. Nothing was inserted. Try again when you're ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
+    "windows.appearance.motion": {
+      "default": "Animations",
+      "placeholders": [],
       "overridable": true,
       "optionalBlank": false
     }

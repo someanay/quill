@@ -124,7 +124,7 @@ DEFAULTS = {
     "ios.notice.title": "Quill",
     "ios.error.endpoint": "Enter a valid HTTPS base URL without a username, password, query or fragment.",
     "ios.error.no_key": "Add and verify a key for your selected speech provider in Settings → API keys.",
-    "ios.error.no_speech": "No speech was returned. Retry or record again closer to the microphone.",
+    "ios.error.no_speech": "No speech detected. Nothing was inserted. Try again when you're ready.",
     "ios.error.rate_limit": "The provider is rate-limiting requests. Wait a moment, then tap Retry.",
     "ios.error.provider": "The provider couldn't complete this request. Check its service status and model, then tap Retry.",
     "ios.error.response": "The provider returned an incomplete or unreadable transcript. Tap Retry or choose another model.",

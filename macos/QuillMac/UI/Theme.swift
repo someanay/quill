@@ -67,10 +67,40 @@ struct QuillButton: View {
     var arguments: [String] = []
     var action: () -> Void
     var body: some View {
-        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).padding(.horizontal, 22).frame(minHeight: 44).contentShape(RoundedRectangle(cornerRadius: 6)) }
-        .buttonStyle(.plain).foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
-        .background(primary ? QuillTheme.brand : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+        Button(action: action) { Text(Copy.catalog.resolve(key, arguments: arguments)).font(QuillTheme.sans(15)).fontWeight(.medium).padding(.horizontal, 22).frame(minHeight: 44).contentShape(RoundedRectangle(cornerRadius: 6))
+            .foregroundStyle(primary ? Color.white : QuillTheme.brandInk(scheme == .dark))
+            .background(primary ? QuillTheme.brand : Color.clear, in: RoundedRectangle(cornerRadius: 6)) }
+        .buttonStyle(QuillPressStyle())
         .opacity(enabled ? 1 : 0.45).accessibilityIdentifier(key).frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+struct QuillPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduced
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.opacity(configuration.isPressed ? 0.86 : 1)
+            .scaleEffect(configuration.isPressed && !reduced ? 0.98 : 1)
+            .animation(reduced ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+struct QuillPageReveal: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduced
+    @State private var visible = false
+    func body(content: Content) -> some View {
+        content.opacity(visible || reduced ? 1 : 0).onAppear {
+            withAnimation(reduced ? nil : .easeOut(duration: 0.14)) { visible = true }
+        }.onDisappear { visible = false }
+    }
+}
+struct LiveMeter: View {
+    @ObservedObject var meter: AudioMeterState
+    var bars = 13
+    var showTime = false
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            InkMeter(amplitude: meter.level, bars: bars)
+            if showTime { Text(formatDuration(meter.elapsed)).monospacedDigit() }
+            if showTime && meter.warning { CopyText("mac.audio.warning").font(.caption) }
+        }
     }
 }
 struct QuillFormSection<Content: View>: View {

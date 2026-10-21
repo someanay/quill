@@ -3627,6 +3627,12 @@
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false
+    },
+    "mac.error.no_speech": {
+      "default": "No speech detected. Nothing was inserted. Try again when you're ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
     }
   }
 }

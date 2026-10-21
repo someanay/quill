@@ -16,6 +16,11 @@ public sealed class VisualAndCatalogTests(Xunit.Abstractions.ITestOutputHelper o
     Phase("loading bundled font families and first light theme"); Theme.Apply("Light");
     Phase("applying dark theme"); Theme.Apply("Dark");
     Phase("reapplying light theme"); Theme.Apply("Light");
+    var sameTheme = app.Resources[typeof(Button)];
+    var allocations = GC.GetAllocatedBytesForCurrentThread(); var timer = System.Diagnostics.Stopwatch.StartNew();
+    for (int i = 0; i < 100; i++) Theme.Apply("Light");
+    timer.Stop(); Phase($"100 unchanged theme applications: {timer.Elapsed.TotalMilliseconds:F2} ms, {GC.GetAllocatedBytesForCurrentThread()-allocations} allocated bytes");
+    Assert.Same(sameTheme,app.Resources[typeof(Button)]);
     Assert.Equal("#FF234DCE",((SolidColorBrush)app.Resources["Brand"]).Color.ToString());
     foreach (var family in new[] {Theme.Sans,Theme.Serif}) foreach (var weight in new[] {FontWeights.Normal,FontWeights.SemiBold}) {
      Phase("resolving " + family.Source + " " + weight); var typeface = new Typeface(family,FontStyles.Normal,weight,FontStretches.Normal);

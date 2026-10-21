@@ -153,7 +153,7 @@ public enum Endpoint {
     }
 }
 public enum QuillError: Error, Equatable, Sendable {
-    case badKey, quota, rateLimit, network, timeout, emptyTranscript, blockedTranscript, incompleteTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, noFocusedField, sensitiveField, focusChanged, cancelled, storage
+    case badKey, quota, rateLimit, network, timeout, emptyTranscript, noSpeech, blockedTranscript, incompleteTranscript, invalidEndpoint, invalidModel, responseTooLarge, provider(Int), noMicrophone, noAccessibility, noFocusedField, sensitiveField, focusChanged, cancelled, storage
     public var copyKey: String {
         switch self {
         case .badKey: return "mac.error.bad_key"
@@ -170,6 +170,7 @@ public enum QuillError: Error, Equatable, Sendable {
         case .sensitiveField: return "mac.error.sensitive"
         case .focusChanged: return "mac.error.focus_changed"
         case .storage: return "mac.error.storage"
+        case .noSpeech: return "mac.error.no_speech"
         case .blockedTranscript: return "mac.error.blocked"
         case .incompleteTranscript: return "mac.error.incomplete"
         case .cancelled: return "mac.status.cancelled"

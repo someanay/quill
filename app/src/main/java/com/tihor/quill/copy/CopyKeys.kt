@@ -433,6 +433,7 @@ object CopyKeys {
 
     // --- STT failure feedback (overridable) ---
     const val STT_QUOTA_TOAST = "stt.quota.toast"
+    const val RECORDING_NO_SPEECH = "recording.no_speech"
 
     // --- Overlay bubble + FGS notification (overridable) ---
     const val NOTIFICATION_ACTION_SHOW = "notification.action.show"
@@ -641,6 +642,7 @@ object CopyKeys {
             SETTINGS_SURVIVAL_ROW, SETTINGS_SURVIVAL_TITLE, SETTINGS_SURVIVAL_BODY,
             SETTINGS_SURVIVAL_STEPS, SETTINGS_SURVIVAL_OPEN, SETTINGS_SURVIVAL_FALLBACK,
             STT_QUOTA_TOAST,
+            RECORDING_NO_SPEECH,
             NOTIFICATION_ACTION_SHOW, NOTIFICATION_ACTION_STOP,
             NOTIFICATION_TITLE_ACTIVE, NOTIFICATION_TEXT_ACTIVE,
             NOTIFICATION_TITLE_HIDDEN, NOTIFICATION_TEXT_HIDDEN,

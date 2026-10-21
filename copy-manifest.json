@@ -1230,6 +1230,12 @@
       "overridable": true,
       "optionalBlank": false
     },
+    "recording.no_speech": {
+      "default": "No speech detected. Nothing was inserted. Try again when you're ready.",
+      "placeholders": [],
+      "overridable": true,
+      "optionalBlank": false
+    },
     "reliability.boot.channel": {
       "default": "Quill reliability",
       "placeholders": [],

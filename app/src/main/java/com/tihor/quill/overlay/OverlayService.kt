@@ -959,6 +959,21 @@ class OverlayService : Service() {
     private fun transcribeAndInject(wav: File) {
         applyState(BubbleState.TRANSCRIBING)
         transcriptionJob = scope.launch {
+            // Include retries: a quiet take must never become provider-generated filler.
+            val audible = try {
+                kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    com.tihor.quill.audio.AudioSignal.hasAudibleSignal(wav.readBytes())
+                }
+            } catch (error: Exception) {
+                if (error is kotlinx.coroutines.CancellationException) throw error
+                applyState(BubbleState.ERROR); return@launch
+            }
+            if (!audible) {
+                wav.delete(); currentRecording = null; clipboardMode = false
+                applyState(BubbleState.IDLE)
+                toast(Copy.repository(this@OverlayService).get(CopyKeys.RECORDING_NO_SPEECH))
+                return@launch
+            }
             val settings = settingsRepository.settings.first()
             // Per-provider key (decision 3): the ACTIVE provider's own slot, never another provider's.
             val key = sttKeyStore.get(settings.provider)

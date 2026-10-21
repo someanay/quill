@@ -461,7 +461,7 @@
     "windows.audio.stop_test": "Stop microphone test",
     "windows.audio.test": "Start / stop microphone test",
     "windows.bubble.clipboard": "Dictate to clipboard",
-    "windows.bubble.contrast": "The white ring keeps the optional floating control visible over other windows. Windows Reduce Motion controls its animation.",
+    "windows.bubble.contrast": "The contrast ring and shadow keep Quill visible over light and dark apps. Choose Full animations, Reduced, or Match system.",
     "windows.bubble.discard": "Discard dictation",
     "windows.bubble.pin": "Keep the floating control visible outside text fields",
     "windows.bubble.reset_position": "Reset floating control position",
@@ -662,6 +662,8 @@
     "windows.error.provider_busy": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
     "desktop.workspace.insertion_needed": "Review and allow text insertion before dictating.",
     "windows.onboarding.review_insert": "Review text insertion",
-    "desktop.workspace.key_needed": "Add an API key for %1$s to start dictating."
+    "desktop.workspace.key_needed": "Add an API key for %1$s to start dictating.",
+    "windows.error.no_speech": "No speech detected. Nothing was inserted. Try again when you're ready.",
+    "windows.appearance.motion": "Animations"
   }
 }

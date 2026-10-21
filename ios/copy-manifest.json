@@ -3278,7 +3278,7 @@
       "optionalBlank": false
     },
     "ios.error.no_speech": {
-      "default": "No speech was returned. Retry or record again closer to the microphone.",
+      "default": "No speech detected. Nothing was inserted. Try again when you're ready.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

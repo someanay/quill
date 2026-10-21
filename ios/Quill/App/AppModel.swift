@@ -252,9 +252,19 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
             guard let self else { return }
             defer { self.endBackgroundTask(backgroundIdentifier) }
             do {
+                // File loading and PCM analysis must not stall scrolling, typing or the recorder UI.
+                let (wav, audible) = try await Task.detached(priority: .userInitiated) {
+                    let bytes = try Data(contentsOf: file)
+                    return (bytes, try AudioSignal.hasAudibleSignal(bytes))
+                }.value
+                try Task.checkCancellation(); guard self.generation == token else { return }
+                if !audible {
+                    self.result = ""; self.voiceWordResult = ""; self.pendingCompletion = nil
+                    if self.finishRecording(as: .discarded), !self.cleanupRequired { self.phase = .failed; self.report(QuillError.noSpeech) }
+                    return
+                }
                 let config = try ProviderConfiguration(provider: capture.provider, customBaseURL: capture.customBaseURL, model: capture.model, language: capture.language)
                 let key = try self.vault.secret(capture.provider, endpoint: config.endpoint)
-                let wav = try Data(contentsOf: file)
                 let raw = try await self.providerAPI.transcribe(config, key: key, wav: wav)
                 try Task.checkCancellation()
                 var cleaned: String?
@@ -372,7 +382,10 @@ enum DictationPhase: String { case idle, recording, transcribing, cleaning, read
         keyboardSession.end(cancelCapture: true)
         do { try KeyboardTransfer.clear(); notice = c("ios.transfer.cleared") } catch { report(error) }
     }
-    func refreshHistory() { do { history = try historyStore?.entries(retentionMinutes: settings.retentionMinutes) ?? [] } catch { report(error) } }
+    func refreshHistory() { do {
+        let rows = try historyStore?.entries(retentionMinutes: settings.retentionMinutes) ?? []
+        if rows != history { history = rows }
+    } catch { report(error) } }
     func deleteHistory(_ entry: HistoryEntry) { do { try historyStore?.delete(entry.id); refreshHistory() } catch { report(error) } }
     func clearHistory() { do { try historyStore?.clear(); refreshHistory() } catch { report(error) } }
     func setPrivateMode(_ value: Bool) {

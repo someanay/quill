@@ -587,6 +587,7 @@
     "demo.record": "Tap to record",
     "demo.keyboard": "Quill keyboard",
     "mac.error.provider_busy": "Your provider is temporarily busy. Wait a moment, then retry. You can choose another provider in Speech & model.",
-    "mac.hotkey.keys": "⌘ Option Space"
+    "mac.hotkey.keys": "⌘ Option Space",
+    "mac.error.no_speech": "No speech detected. Nothing was inserted. Try again when you're ready."
   }
 }
