@@ -580,7 +580,7 @@
     "windows.words.delete": "Delete word",
     "windows.words.heard": "What Quill hears",
     "windows.words.help": "Replace whole words or phrases that your speech provider mishears. Replacements apply after cleanup.",
-    "windows.words.listening": "Listening. Click Record again to finish.",
+    "windows.words.listening": "Listening. Click the same button again to stop.",
     "windows.words.replacement": "Correct spelling",
     "windows.words.speak": "Speak a word to capture its transcription",
     "desktop.setup.progress": "Step %1$d of %2$d",

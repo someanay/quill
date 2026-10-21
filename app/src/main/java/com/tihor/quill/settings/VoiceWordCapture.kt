@@ -25,6 +25,7 @@ class VoiceWordCapture(private val context: Context) {
     sealed interface Failure {
         data object NoKey : Failure
         data object Network : Failure
+        data object NoSpeech : Failure
     }
 
     private val recorder = AudioRecorder(context)
@@ -45,6 +46,15 @@ class VoiceWordCapture(private val context: Context) {
 
     /** Transcribe [wav] against the user's STT provider; returns the trimmed text or a [Failure]. */
     suspend fun transcribe(wav: File): Result<String> {
+        val audible = try {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                com.tihor.quill.audio.AudioSignal.hasAudibleSignal(wav.readBytes())
+            }
+        } catch (error: Exception) {
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            return Result.failure(FailureException(Failure.Network))
+        }
+        if (!audible) return Result.failure(FailureException(Failure.NoSpeech))
         val settings = settingsRepo.settings.first()
         // Per-provider key (decision 3): the active provider's own slot.
         val key = sttKeyStore.get(settings.provider)
@@ -62,7 +72,8 @@ class VoiceWordCapture(private val context: Context) {
                 language = language,
                 prompt = RomanizePrompt.promptFor(language),
             ),
-        ).map { it.text.trim() }
+        ).onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
+            .map { it.text.trim() }
             .recoverCatching { throw FailureException(Failure.Network) }
     }
 

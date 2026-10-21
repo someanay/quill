@@ -3492,7 +3492,7 @@
       "optionalBlank": false
     },
     "windows.words.listening": {
-      "default": "Listening. Click Record again to finish.",
+      "default": "Listening. Click the same button again to stop.",
       "placeholders": [],
       "overridable": true,
       "optionalBlank": false

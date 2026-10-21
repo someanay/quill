@@ -807,20 +807,22 @@ private fun AddWordDialog(onAdd: (String, String) -> Unit, onDismiss: () -> Unit
                     return@launch
                 }
                 phase = WordCapturePhase.TRANSCRIBING
-                capture.transcribe(wav).fold(
-                    onSuccess = { text ->
-                        if (text.isNotBlank()) heard = text
-                        phase = WordCapturePhase.IDLE
-                    },
-                    onFailure = {
-                        errorKey = when ((it as? VoiceWordCapture.FailureException)?.failure) {
-                            VoiceWordCapture.Failure.NoKey -> K.SETTINGS_WORDS_ERR_KEY
-                            else -> K.SETTINGS_WORDS_ERR_NETWORK
-                        }
-                        phase = WordCapturePhase.IDLE
-                    },
-                )
-                runCatching { wav.delete() }
+                try {
+                    capture.transcribe(wav).fold(
+                        onSuccess = { text ->
+                            if (text.isNotBlank()) heard = text
+                            phase = WordCapturePhase.IDLE
+                        },
+                        onFailure = {
+                            errorKey = when ((it as? VoiceWordCapture.FailureException)?.failure) {
+                                VoiceWordCapture.Failure.NoKey -> K.SETTINGS_WORDS_ERR_KEY
+                                VoiceWordCapture.Failure.NoSpeech -> K.RECORDING_NO_SPEECH
+                                else -> K.SETTINGS_WORDS_ERR_NETWORK
+                            }
+                            phase = WordCapturePhase.IDLE
+                        },
+                    )
+                } finally { runCatching { wav.delete() } }
             }
         }
     }

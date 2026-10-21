@@ -126,8 +126,18 @@ public sealed partial class MainWindow : Window {
   Back(); Heading(C("windows.settings.words","Custom words")); var card = Card(subtitle:C("windows.words.help","Replace whole words or phrases that your speech provider mishears. Replacements apply after cleanup."));
   foreach (var word in S.CustomWords.ToArray()) { card.Children.Add(Text(word.Heard + " → " + word.Replacement)); card.Children.Add(Action(C("windows.words.delete","Delete word"),() => { S.CustomWords.Remove(word); app.Settings.Save(); Navigate("words"); })); }
   var heard = Field(card,C("windows.words.heard","What Quill hears")); var replacement = Field(card,C("windows.words.replacement","Correct spelling"));
-  async Task FinishWord(AudioRecorder recorder) { if (!ReferenceEquals(micTest,recorder)) return; micTest = null; try { var take = await recorder.Stop(); var raw = await app.Provider.Transcribe(take.Wav,S,app.Secrets.Read(S.Provider,S.CustomBaseUrl) ?? "",CancellationToken.None); if (route == "words") { heard.Text = raw; SetNotice(""); } } finally { recorder.Dispose(); } }
-  card.Children.Add(AsyncAction(C("windows.words.speak","Speak a word to capture its transcription"),async () => { if (micTest is { } current) { await FinishWord(current); return; } var recorder = new AudioRecorder(); micTest = recorder; recorder.AutoStop += () => Dispatcher.BeginInvoke(async () => { try { await FinishWord(recorder); } catch (Exception e) { SetNotice(app.ErrorText(DictationController.Code(e))); } }); try { recorder.Start(new QuillSettings { InputDevice = S.InputDevice, InputDeviceName = S.InputDeviceName, SessionCapSeconds = 8 }); } catch { micTest = null; recorder.Dispose(); throw; } SetNotice(C("windows.words.listening","Listening. Tap the same button again to stop.")); })); card.Children.Add(Action(C("windows.words.add","Add custom word"),() => { if (string.IsNullOrWhiteSpace(heard.Text) || string.IsNullOrWhiteSpace(replacement.Text)) return; Words.Upsert(S.CustomWords,heard.Text,replacement.Text); app.Settings.Save(); Navigate("words"); },true));
+  async Task FinishWord(AudioRecorder recorder) {
+   if (!ReferenceEquals(micTest,recorder)) return; micTest = null;
+   try {
+    var take = await recorder.Stop();
+    var audible = await Task.Run(() => AudioSignal.HasAudibleSignal(take.Wav));
+    if (route != "words") return;
+    if (!audible) { SetNotice(app.ErrorText("no_speech")); return; }
+    var raw = await app.Provider.Transcribe(take.Wav,S,app.Secrets.Read(S.Provider,S.CustomBaseUrl) ?? "",CancellationToken.None);
+    if (route == "words") { heard.Text = raw; SetNotice(""); }
+   } finally { recorder.Dispose(); }
+  }
+  card.Children.Add(AsyncAction(C("windows.words.speak","Speak a word to capture its transcription"),async () => { if (micTest is { } current) { await FinishWord(current); return; } var recorder = new AudioRecorder(); micTest = recorder; recorder.AutoStop += () => Dispatcher.BeginInvoke(async () => { try { await FinishWord(recorder); } catch (Exception e) { SetNotice(app.ErrorText(DictationController.Code(e))); } }); try { recorder.Start(new QuillSettings { InputDevice = S.InputDevice, InputDeviceName = S.InputDeviceName, SessionCapSeconds = 8 }); } catch { micTest = null; recorder.Dispose(); throw; } SetNotice(C("windows.words.listening","Listening. Click the same button again to stop.")); })); card.Children.Add(Action(C("windows.words.add","Add custom word"),() => { if (string.IsNullOrWhiteSpace(heard.Text) || string.IsNullOrWhiteSpace(replacement.Text)) return; Words.Upsert(S.CustomWords,heard.Text,replacement.Text); app.Settings.Save(); Navigate("words"); },true));
  }
  private void Contacts() {
   Back(); Heading(C("windows.settings.contacts","Contact names")); var card = Card(subtitle:C("windows.contacts.help","Import a vCard file from your contacts app. Quill keeps candidate names locally; it does not retain phone numbers or email addresses. Imported names are not sent to speech or cleanup providers."));
