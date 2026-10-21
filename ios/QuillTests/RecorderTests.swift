@@ -197,7 +197,10 @@ private actor DelayedSessionProvider: HTTPTransport {
         // Do not request playback. This WAV comes from the real, quiet recorder.
         try await Task.sleep(nanoseconds: 400_000_000)
         model.stopAndTranscribe()
-        for _ in 0..<100 { if model.phase == .failed && model.keyboardSession.ready { break }; try await Task.sleep(nanoseconds: 20_000_000) }
+        for _ in 0..<100 {
+            if model.phase == .failed && model.keyboardSession.state?.phase == .ready && model.keyboardSession.state?.errorKey == "ios.error.no_speech" { break }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
         let reachedProvider = await provider.started
         XCTAssertFalse(reachedProvider)
         XCTAssertEqual(model.errorKey, "ios.error.no_speech")
