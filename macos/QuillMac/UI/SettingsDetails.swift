@@ -67,7 +67,7 @@ struct WordsSettings: View {
                 }.disabled(heard.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || replacement.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             ForEach(settings.value.words) { word in
-                QuillFormSection { HStack { VStack(alignment: .leading) { Text(word.heard); Text("â†’ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
+                QuillFormSection { HStack { VStack(alignment: .leading) { Text(word.heard); Text("→ " + word.replacement).foregroundStyle(QuillTheme.brandInk(scheme == .dark)) }; Spacer(); Button(Copy.text("mac.action.edit")) { heard = word.heard; replacement = word.replacement; editing = word.id }; Button(Copy.text("settings.words.delete"), role: .destructive) { settings.value.words.removeAll { $0.id == word.id } }.accessibilityIdentifier("word-delete") } }
             }
         }.onDisappear { if capturing { dictation.onWordCaptured = nil; dictation.suspend(); capturing = false } }
     }
