@@ -226,7 +226,17 @@ final class KeyboardIntegrationUITests: XCTestCase {
                 try openSettingsRow("Add New Keyboard", prefix: true)
                 try openSettingsRow("Quill", prefix: true)
             }
-            try openSettingsRow("Quill", prefix: true)
+            // Adding the extension returns to the installed-keyboards table.
+            // Wait for that real page, then target its current row rather than
+            // a hit point retained from the Add New Keyboard picker.
+            XCTAssertTrue(settings.navigationBars["Keyboards"].buttons["Edit"].waitForExistence(timeout: 10))
+            let installed = settings.cells["com.tihor.quill.ios.keyboard"]
+            XCTAssertTrue(installed.waitForExistence(timeout: 10)); XCTAssertTrue(installed.isHittable)
+            let window = settings.windows.firstMatch, frame = installed.frame
+            XCTAssertTrue(window.frame.contains(frame))
+            window.coordinate(withNormalizedOffset: .zero).withOffset(
+                CGVector(dx: frame.midX - window.frame.minX, dy: frame.midY - window.frame.minY)
+            ).tap()
         }
         attach("settings-keyboard-added", app: settings)
         let fullAccess = settings.switches.matching(NSPredicate(format: "label CONTAINS[c] 'Allow Full Access'")).firstMatch
