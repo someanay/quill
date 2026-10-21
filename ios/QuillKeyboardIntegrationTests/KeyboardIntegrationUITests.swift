@@ -64,6 +64,19 @@ final class KeyboardIntegrationUITests: XCTestCase {
         for _ in 0..<6 { if element.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(element.isHittable); element.tap()
     }
+    private func tapInCurrentWindow(_ element: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
+        XCTAssertTrue(element.waitForExistence(timeout: 10))
+        XCTAssertTrue(element.isHittable); XCTAssertTrue(element.isEnabled)
+        let window = app.windows.firstMatch
+        let frame = element.frame
+        XCTAssertTrue(window.frame.contains(frame))
+        // Current iPad XCTest can halve an element tap's coordinates after an
+        // app switch. Use the observed window's point space for one actual tap.
+        window.coordinate(withNormalizedOffset: .zero).withOffset(
+            CGVector(dx: frame.midX - window.frame.minX, dy: frame.midY - window.frame.minY)
+        ).tap()
+    }
     private func settingsRow(_ title: String, prefix: Bool = false) -> XCUIElement {
         let predicate = prefix
             ? NSPredicate(format: "label BEGINSWITH[c] %@", title)
@@ -325,9 +338,16 @@ final class KeyboardIntegrationUITests: XCTestCase {
         if isLive { liveReadbacks.append(["stage":"foreground","text":expected]) }
         XCTAssertFalse(insert.isEnabled, "A consumed handoff must not be insertable again.")
         attach("real-extension-inserted-and-consumed", app: fixture)
-        stage = "protected-fields-with-pending-transcript"
-        host.activate(); tap(host.buttons["Send to keyboard"], in: host)
+        stage = "republish-before-protected-fields"
+        host.activate()
+        tapInCurrentWindow(host.buttons["transcript.send"], in: host)
+        attach("host-republished-before-protected-fields", app: host)
         fixture.activate()
+        try showQuillKeyboard(in: fixture)
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: fixture.buttons["keyboard.insert"])
+        waitForExpectations(timeout: 10)
+        attach("pending-handoff-before-protected-fields", app: fixture)
+        stage = "protected-fields-with-pending-transcript"
         tap(fixture.secureTextFields["quill.qa.secure"], in: fixture)
         expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: fixture.buttons["keyboard.insert"]); waitForExpectations(timeout: 5)
         attach("system-keyboard-for-protected-field", app: fixture)
@@ -348,18 +368,7 @@ final class KeyboardIntegrationUITests: XCTestCase {
         stage = "enable-one-live-keyboard-session"
         host.activate()
         let sessionStart = host.buttons["session.start"]
-        XCTAssertTrue(host.wait(for: .runningForeground, timeout: 10))
-        XCTAssertTrue(sessionStart.waitForExistence(timeout: 10))
-        XCTAssertTrue(sessionStart.isHittable); XCTAssertTrue(sessionStart.isEnabled)
-        let window = host.windows.firstMatch
-        let frame = sessionStart.frame
-        XCTAssertTrue(window.frame.contains(frame))
-        // On the current iPad runtime, element.tap() after this app switch sent
-        // (212, 173) for the observed button centre (424, 346). Use the current
-        // window's point coordinates once; the session must still actually start.
-        window.coordinate(withNormalizedOffset: .zero).withOffset(
-            CGVector(dx: frame.midX - window.frame.minX, dy: frame.midY - window.frame.minY)
-        ).tap()
+        tapInCurrentWindow(sessionStart, in: host)
         XCTAssertTrue(host.staticTexts["session.active"].waitForExistence(timeout: 10))
         attach("host-explicit-live-session", app: host)
         fixture.activate(); tap(fixture.buttons["quill.qa.caret-end"], in: fixture)
