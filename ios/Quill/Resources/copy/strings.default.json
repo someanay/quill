@@ -534,7 +534,7 @@
     "ios.diagnostics.review": "Review diagnostic report",
     "ios.diagnostics.share": "Share this report",
     "ios.diagnostics.enable": "Enable reviewed diagnostic reports in Privacy to share this report.",
-    "ios.advanced.timeout_detail": "Transcription: up to 90 seconds. Cleanup: 4 seconds, then your original transcript is used. Key checks and model refresh: 15 seconds.",
+    "ios.advanced.timeout_detail": "Transcription: up to 90 seconds. Cleanup: up to 25 seconds, then your original transcript is used. Key checks: 15 seconds. Model refresh: 12 seconds.",
     "ios.advanced.background": "A keyboard session explicitly keeps the microphone active for up to five minutes. End it in Quill or the keyboard. Calls, audio-route changes, device locking and system termination can end the session; open Quill to restart it.",
     "ios.about.version": "Version %1$s · iOS",
     "ios.about.provider_terms": "Quill is free to use. Your speech and cleanup providers may charge for API usage. Choose models and providers according to your own accounts and terms.",

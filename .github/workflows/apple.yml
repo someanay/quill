@@ -111,7 +111,7 @@ jobs:
             SIGNING=(CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual)
             TEST_FILTER=(-skip-testing:QuillTests/RecorderTests)
             if [ '${{ inputs.ios_settings_only }}' = true ]; then
-              TEST_FILTER=(-only-testing:QuillUITests/QuillUITests/testSettingsRowsRespondAcrossTheirVisibleWidthInBothThemes -only-testing:QuillUITests/QuillUITests/testHomeSettingsPrivacyAndKeyboardHelp -only-testing:QuillUITests/QuillUITests/testSettingsScreensAndDarkAppearance -only-testing:QuillUITests/QuillUITests/testEverySettingsDetailScreen -only-testing:QuillUITests/QuillUITests/testLastSettingsActionCanScrollAboveNativeNavigation -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInLight -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInDark)
+              TEST_FILTER=(-only-testing:QuillTests/NativeTests/testTimeoutExplanationMatchesActualProviderRequests -only-testing:QuillUITests/QuillUITests/testSettingsRowsRespondAcrossTheirVisibleWidthInBothThemes -only-testing:QuillUITests/QuillUITests/testHomeSettingsPrivacyAndKeyboardHelp -only-testing:QuillUITests/QuillUITests/testSettingsScreensAndDarkAppearance -only-testing:QuillUITests/QuillUITests/testEverySettingsDetailScreen -only-testing:QuillUITests/QuillUITests/testLastSettingsActionCanScrollAboveNativeNavigation -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInLight -only-testing:QuillUITests/QuillUITests/testSecondaryScreensAndSheetsInDark)
             elif [ '${{ inputs.ios_accessibility_only }}' = true ]; then
               TEST_FILTER=(-only-testing:QuillUITests/QuillUITests/testLargerTextDarkSettingsAndLandscapeLayout)
             fi

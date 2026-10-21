@@ -26,6 +26,21 @@ import QuillCore
         XCTAssertNotNil(UIFont(name: "IBMPlexSans", size: 16))
         XCTAssertNotNil(UIFont(name: "IBMPlexSerifVar-Regular", size: 24))
     }
+    func testTimeoutExplanationMatchesActualProviderRequests() throws {
+        let bundle = Bundle(for: AppModel.self)
+        let url = bundle.url(forResource: "strings.default", withExtension: "json", subdirectory: "copy") ?? bundle.url(forResource: "strings.default", withExtension: "json")
+        let text = try CopyCatalog(data: Data(contentsOf: XCTUnwrap(url))).text("ios.advanced.timeout_detail")
+        let config = try ProviderConfiguration(provider: .groq, model: "request-contract-fixture")
+        let wav = Data("RIFF".utf8) + Data(repeating: 0, count: 44)
+        let speech = try ProviderRequests.speech(config, key: "test-only", wav: wav)
+        let cleanup = try ProviderRequests.cleanup(config, key: "test-only", raw: "Hello", style: .neutral)
+        let validation = try ProviderRequests.validation(config, key: "test-only")
+        let models = try ProviderRequests.models(config, key: "test-only")
+        XCTAssertTrue(text.contains("Transcription: up to \(Int(speech.timeoutInterval)) seconds"))
+        XCTAssertTrue(text.contains("Cleanup: up to \(Int(cleanup.timeoutInterval)) seconds"))
+        XCTAssertTrue(text.contains("Key checks: \(Int(validation.timeoutInterval)) seconds"))
+        XCTAssertTrue(text.contains("Model refresh: \(Int(models.timeoutInterval)) seconds"))
+    }
     func testKeychainRoundtripAndExactEndpointIsolation() throws {
         let vault = KeyVault()
         let endpoint = "https://example.invalid/" + UUID().uuidString
