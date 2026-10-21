@@ -162,14 +162,19 @@ test frameworks for verification.
 ## Installed app and remaining device gates
 
 Windows 2.0.5 is installed under the normal per-user Programs directory with its
-Start shortcut and Installed apps registration. The `4c6be93` installer preserved
-all four existing native data files byte for byte. Both active provider keys
-also compare equal to the original owner credentials without exposing them.
-The final custom-word package is built and verified in CI. Desktop interaction
-was stopped by the owner with Escape before its installed update; the installed
-app remains on `4c6be93`, with the main performance and dictation-silence fixes.
-A later CLI installer attempt also refused while Quill was running; it changed
-no installed files or data. No desktop input or process termination followed Escape.
+Start shortcut and Installed apps registration. After the owner quit Quill, the
+final `719b69b` custom-word follow-up was applied through the CLI installer with
+launch disabled. Its installed product version is
+`2.0.5+719b69b26b9c2f0293181dea6322dd94c10e8d1b`. All four existing native data
+files remained byte for byte unchanged. Both active provider keys compare equal
+to the original owner credentials, and the original settings file is unchanged.
+Verification revealed no credentials. Alt + E, insertion consent and Full motion
+were preserved; Quill remains closed.
+
+The installed package ZIP SHA-256 is
+`df8a04d9b9966350b5059202b1657d13c73cf6fec7bc1bb9fd984304c34c6575`.
+An earlier CLI attempt refused while Quill was running and changed no files.
+No desktop input or process termination followed the owner's Escape stop.
 
 The installed `4c6be93` quiet-take check used Alt + E and the current default
 DroidCam input. It showed “No speech detected,” left the practice field empty,
